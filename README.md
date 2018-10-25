@@ -2,19 +2,48 @@
 
 Pure python 3D tools. 
 
-A complete-ish rebuild of my first pyrender. 
+A complete-ish rebuild of my first repository, pyrender. 
+This code is a sandbox of many different tools I have worked with over the years.
 
-I built this as a tool to learn. 
+The big changes are:
 
-This is a nearly rebuilt version with:
+  -- cleaner, more organized code 
+  -- added 3X3 matrices 
+  -- matrix and vectors are thier own types of object now
+  -- numpy integration, so it can interface to numpy arrays seamlessly 
+  -- improved object operators and primitive objects
+     -- point operators 
+     -- polygon operators 
+     -- object3D type 
 
 
-2D vector 
-3D vector 
-3X3 matrix 
-4X4 matrix 
 
-and more 
+Inspired by projects I have on over the last 10 years:
+
+   - virtual reality / game design 
+   - 3D animation and graphics  
+   - GIS and mapping
+   - robotics
+   - embdedded hardware interface to an electron microcope 
+   - scratch built computer vision system 
+
+
+Contains libraries for:
+
+  -   2D vector 
+  -   3D vector 
+  -   3X3 matrix 
+  -   4X4 matrix 
+
+
+
+Organized by the following modules:
+
+   -  dag_ops    - directed acyclic graph, first stab at a scene graph (not working yet)
+   -  grid_ops   - nothing here yet
+   -  math_ops   - matrix, vectors, and math stuff 
+   -  raster_ops - image manipulation with PIL 
+
 
 
 
