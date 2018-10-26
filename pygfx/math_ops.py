@@ -6,7 +6,6 @@ import math
 import os
 
 import numpy as np             #for testing - remove later 
-from scipy.linalg import expm  #for testing - remove later
 from numpy.linalg import inv
 
 

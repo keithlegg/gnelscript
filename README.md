@@ -5,27 +5,23 @@ Pure python 3D tools.
 A complete-ish rebuild of my first repository, pyrender. 
 This code is a sandbox of many different tools I have worked with over the years.
 
-The big changes are:
+The big changes from oringial pyrender:
 
-  -- cleaner, more organized code 
-  -- added 3X3 matrices 
-  -- matrix and vectors are thier own types of object now
-  -- numpy integration, so it can interface to numpy arrays seamlessly 
-  -- improved object operators and primitive objects
-     -- point operators 
-     -- polygon operators 
-     -- object3D type 
+  - cleaner, more organized code 
+  - added 3X3 matrices 
+  - matrix and vectors are thier own types of object now
+  - numpy integration, so it can interface to numpy arrays seamlessly 
+  - improved object operators and primitive objects
+  - point operators 
+  - polygon operators 
+  - object3D type 
 
 
 
 Inspired by projects I have on over the last 10 years:
 
-   - virtual reality / game design 
-   - 3D animation and graphics  
-   - GIS and mapping
-   - robotics
-   - embdedded hardware interface to an electron microcope 
-   - scratch built computer vision system 
+   virtual reality, game design, 3D animation, GIS and mapping
+   robotics, embdedded hardware, computer vision 
 
 
 Contains libraries for:
