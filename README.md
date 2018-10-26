@@ -2,7 +2,7 @@
 
 Pure python 3D tools. 
 
-A complete-ish rebuild of my first repository, pyrender. 
+A complete-ish rebuild of my oringial repository, pyrender. 
 This code is a sandbox of many different tools I have worked with over the years.
 
 The big changes from oringial pyrender:
@@ -11,11 +11,11 @@ The big changes from oringial pyrender:
   - added 3X3 matrices 
   - matrix and vectors are thier own types of object now
   - numpy integration, so it can interface to numpy arrays seamlessly 
-  - improved object operators and primitive objects
   - point operators 
   - polygon operators 
+  - improved object operators and primitive objects
   - object3D type 
-
+  - "matrix" render - pass a 3X3, or 4X4 matrix to renderer directly 
 
 
 Inspired by projects I have on over the last 10 years:

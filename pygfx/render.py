@@ -177,6 +177,10 @@ class simple_render(object):
         """ 
             render a single object 
         """
+       
+        if not object3d.points:
+            print('## errror - object has no point geometry.')
+
         #output image properties 
         res_x = self.res[0]
         res_y = self.res[1]
@@ -188,8 +192,8 @@ class simple_render(object):
         else:
             # default is to just make a new framebuffer from scratch
             rndr_bfr = self.fb 
-            rndr_bfr.create_buffer(res_x, res_y)#make a new image in memory
-            rndr_bfr.fill_color( (25,20,25) ) #make bg all dark 
+            #rndr_bfr.create_buffer(res_x, res_y)#make a new image in memory
+            #rndr_bfr.fill_color( (25,20,25) ) #make bg all dark 
 
         ###########################
         # render line geometry  
@@ -403,8 +407,6 @@ class simple_render(object):
         """ 
             polydata = [ points[], polygons[], normals[] ]
         """
-
-        obj_ops = object3d() # use for obj operations
         vecmath = vec2()     # use for math operations
 
         polydata = self.sort_polys(obj) #pre process polys before rendering 
@@ -429,8 +431,8 @@ class simple_render(object):
         cnt = 0
 
         for ply in polydata[1]:
-            num_idx = len(ply) #number of vertecies per poly 
-            drwply = [] #3 points of triangle to draw
+            num_idx = len(ply) # number of vertices per poly 
+            drwply = []        # 3 points of triangle to draw
             
             #only look at 3 and four sided polys 
             if num_idx==3 or num_idx == 4:
@@ -462,8 +464,8 @@ class simple_render(object):
                 #add some color to the polygons here  
                     
                 if self.COLOR_MODE=='normal':    
-                    #attempt at coloring by face normal - not good
-                    
+                    obj.calc_face_normals()
+
                     #print( polydata[2] )
 
                     n2 = polydata[2][idx-1]
@@ -478,9 +480,6 @@ class simple_render(object):
                         facecolor = ( 255,0,0 )
                     else:    
                         facecolor = ( 0,0,255 )
-
-
-
              
                 if self.COLOR_MODE=='zdepth':                 
                     #COLOR BY Z DISTANCE FROM CAMERA
@@ -531,7 +530,7 @@ class simple_render(object):
 
                 if self.SHOW_FACE_CENTER:
                     #draw face normal 
-                    cn =  obj_ops.poly_centroid(drwply) 
+                    cn =  obj.poly_centroid(drwply) 
                     cntr_pt = ( (cn[0]*scale)+center[0], (cn[1]*scale)+center[1] ) 
                     output.draw_fill_circle( cntr_pt[0], cntr_pt[1], 2, (255,255,20) )
 
@@ -542,5 +541,11 @@ class simple_render(object):
                     output.connect_the_dots( l3, (0,255,0), 1)                 
 
         ## ## ## ## ##   
-        #output.save_file('%s/scanlinez_%s.png'%(path, ct)) 
-        output.save_file('scanlinez_.png') 
+        #output.save_file('scanlinez_.png') 
+
+
+class fancy_render(simple_render):
+    def __init__(self):
+        pass
+
+

@@ -12,8 +12,9 @@ from pygfx.point_ops import *
 
 obj = object3d()
 
-
 obj.load_obj('objects/sphere2.obj')
+#obj.prim_quad(axis='z')
+
 #obj.prim_cube()
 
 obj.triangulate() 
@@ -21,21 +22,31 @@ obj.triangulate()
 #obj.scale_pts((.2,.2,.2)) 
 #obj.rotate_pts((30,30,30)) 
 
-
 obj.show() 
+
 
 rscale = 150
 
-
-
 ropr = simple_render()
-#ropr.render_obj((100,0,255), 0, 0, 0, 1, rscale, object3d=obj)
-ropr.SHOW_FACE_CENTER = False
+ropr.render_objects.append(obj) 
+
+
+
+
+#ropr.render_multiobj( (100,0,255), 0, 0, 0, 1, rscale )
+
+ropr.SHOW_EDGES = False
+#ropr.SHOW_FACE_CENTER = False
 #ropr.COLOR_MODE = 'normal'
+ropr.COLOR_MODE = 'zdepth'
+
 #ropr.SHOW_EDGES = False 
 
-#ropr.save_image('simple_render.png')
-ropr.scanline(obj, rscale)  
+
+ropr.scanline(obj, rscale) 
+#ropr.render_obj((100,0,255), 0, 0, 0, 1, rscale, object3d=obj)
+ 
+ropr.save_image('simple_render.png')
 
 
 
@@ -110,7 +121,7 @@ print( v3.math.rtd(v3.np_angle_between(v1, v2)) )
 
 
 ##############################
-# examples of direct matrix manipulation and acroname code  
+# examples of direct matrix manipulation 
 ##############################
 
 """
@@ -118,7 +129,7 @@ obj = polygon_operator()
 obj.prim_cube()
 ropr = render_3d()
 mu = math_util()
-ac = acroname() 
+
 
 rx = 20;ry = 10;rz = 0
 
