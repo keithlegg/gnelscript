@@ -1,13 +1,13 @@
 
 
-from pycv.raster_ops import *
-from pycv.point_ops import *
+from pygfx.raster_ops import *
+from pygfx.point_ops import *
 
 
-from pycv.math_ops import math_util as mu
-#from pycv.math_ops import vec2  
-#from pycv.math_ops import vec3  
-#from pycv.math_ops import matrix33 
+from pygfx.math_ops import math_util as mu
+#from pygfx.math_ops import vec2  
+#from pygfx.math_ops import vec3  
+#from pygfx.math_ops import matrix33 
 
 import numpy as np 
 

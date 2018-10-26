@@ -3,7 +3,7 @@
 
 import os, sys, math
 
-from pycv.point_ops import PointOperator
+from pygfx.point_ops import PointOperator
 
 
 

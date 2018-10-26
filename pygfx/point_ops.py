@@ -7,11 +7,11 @@ import math
 import numpy as np  
 
 
-from pycv.math_ops import math_util as mu
-from pycv.math_ops import vec2  
-from pycv.math_ops import vec3  
-from pycv.math_ops import matrix33 
-from pycv.math_ops import matrix44
+from pygfx.math_ops import math_util as mu
+from pygfx.math_ops import vec2  
+from pygfx.math_ops import vec3  
+from pygfx.math_ops import matrix33 
+from pygfx.math_ops import matrix44
 
 
 
@@ -1045,13 +1045,13 @@ class object3d(polygon_operator):
         data.append('  rotation      : %s %s %s'%( self.rot[0], self.rot[1], self.rot[2]) )
         data.append('  scale         : %s %s %s'%( self.scale[0], self.scale[1], self.scale[2]) )
         data.append(' --------------------------- ' )        
-        data.append('  num normals   : %s'      %(  'null' ) )#unimplemented
-        data.append('  num verts     : %s'      %(  len(self.points) ) )
-        data.append('  num polygons  : %s'      %(  len(self.polygons) ) )
+        data.append('  num face normals   : %s' %(  len(self.face_normals) ) )#unimplemented
+        data.append('  num verts          : %s' %(  len(self.points) ) )
+        data.append('  num polygons       : %s' %(  len(self.polygons) ) )
         data.append(' --------------------------- ' )         
-        data.append('  num triangles : %s'      %(   tris) )
-        data.append('  num quads     : %s'      %(   quads) )  
-        data.append('  num other     : %s'      %(   other) ) 
+        data.append('  num triangles      : %s' %(   tris) )
+        data.append('  num quads          : %s' %(   quads) )  
+        data.append('  num other          : %s' %(   other) ) 
         data.append('############################\n')
 
         for d in data:
@@ -1105,10 +1105,10 @@ class object3d(polygon_operator):
 
     ############################################### 
     def convert_pts_vec3(self):
-        """ return a list of pycv vec3 objects for each vertex """
+        """ return a list of pygfx vec3 objects for each vertex """
 
         vectrx = []
-        #load each point into a pycv.vec3 object 
+        #load each point into a pygfx.vec3 object 
         for pt in self.points:
             v = vec3().insert(pt)
             ##
@@ -1134,7 +1134,7 @@ class object3d(polygon_operator):
 
         #secondary tweaks to the normal data 
         scale     = 1
-        normalize = False  #normalize each face normal 
+        normalize = False  #make each face normal unit length 
 
         out_face_normals = [] 
 
@@ -1147,7 +1147,7 @@ class object3d(polygon_operator):
             v1=vec3();v2=vec3()
             v3=vec3();v4=vec3()
 
-            # load each point into a pycv.vec3 object 
+            # load each point into a pygfx.vec3 object 
             # 3 sided polys
             if len(f) == 3:
                 v1.insert( self.points[f[0]-1] )
@@ -1204,7 +1204,7 @@ class object3d(polygon_operator):
             v1=vec3();v2=vec3()
             v3=vec3();v4=vec3()
 
-            # load each point into a pycv.vec3 object 
+            # load each point into a pygfx.vec3 object 
             # 3 sided polys
             if len(f) == 3:
                 v1.insert( self.points[f[0]-1] )
