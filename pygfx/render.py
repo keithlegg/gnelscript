@@ -32,6 +32,12 @@ class simple_render(object):
         self.rp   = []          # render path data  (lines)
         self.rpts = []          # render point data (points)
         
+        half_x = resx/2 
+        half_y = resy/2 
+
+        #centered to screen - so use HALF of res        
+        self.clip_x = [0,half_x]
+        self.clip_y = [0,half_y]
 
         if framebuffer==None:
             self.res = [resx, resy]
@@ -55,12 +61,35 @@ class simple_render(object):
         self.SHOW_FACES           = True
         self.SHOW_NORMALS         = True  
         self.SHOW_FACE_CENTER     = True
+        self.SHOW_SCREEN_CLIP     = False # broken 
+        self.DO_SCREEN_CLIP       = False # broken 
 
         self.COLOR_MODE           = 'flat'    ####'flat', 'zdepth',  'normal' 
         ###############################################
 
+    def post_process(self):
+        if self.SHOW_SCREEN_CLIP:
+            center = (int(self.fb.res_x/2), int(self.fb.res_y/2) )
+
+            cxmin = center[0]-self.clip_x[0] 
+            cxmax = center[0]+self.clip_x[1] 
+            cymin = center[1]-self.clip_y[0] 
+            cymax = center[1]+self.clip_y[1] 
+
+            ## square = [ (cxmin,cymin),(cxmin,cymax),
+            ##            (cxmin,cymax),(cxmax,cymax),
+            ##            (cxmax,cymax),(cxmax,cymin),                       
+            ##            (cxmax,cymin),(cxmin,cymin)                       
+            ## ]
+
+
+            self.fb.connect_the_dots( [(cxmin,cymin),(cxmax,cymax)] , (0,255,0), 2  )   
+
+
+
     ## ## ## ## ## 
     def save_image(self,filename='output.png', noalpha=True):
+        self.post_process()
         self.fb.save_file(filename, noalpha=noalpha)        
 
     ## ## ## ## ##  
@@ -96,11 +125,17 @@ class simple_render(object):
 
         points_projected = []
 
+        #crappy orthographic projection (no Z at all) 
+        ## for p in pvtxs:
+        ##     sx = (p[0]*scale) + center[0]  
+        ##     sy = (p[1]*scale) + center[1]  
+        ##     points_projected.append( (sx,sy) )
+   
         for p in pvtxs:
             sx = (p[0]*scale) + center[0]  
             sy = (p[1]*scale) + center[1]  
             points_projected.append( (sx,sy) )
-   
+
         return points_projected
 
     ## ## ## ## ##  
@@ -137,6 +172,9 @@ class simple_render(object):
         ##########################
         #print('render geom info  points:%s poly:%s'%(len(object3d.points), len(object3d.polygons) )  )
         ##########################
+
+
+
         #project rotated points into screen space  
         for ply in object3d.polygons:
             num_idx = len(ply) #walk array of indeces to vertecies
@@ -150,9 +188,12 @@ class simple_render(object):
                     # #start of line
                     x = pvtxs[idx][0] #first vtx - x component  
                     y = pvtxs[idx][1] #first vtx - y component 
+                    z = pvtxs[idx][2] #first vtx - z component 
+
                     # #end of line
-                    x2 = pvtxs[idx2][0] #first vtx - x component  
-                    y2 = pvtxs[idx2][1] #first vtx - y component 
+                    x2 = pvtxs[idx2][0] #second vtx - x component  
+                    y2 = pvtxs[idx2][1] #second vtx - y component 
+                    z2 = pvtxs[idx2][2] #second vtx - z component 
 
                     #attempt at perspective rendering . math, BLAH!
                     if self.is_orthographic==False:
@@ -167,7 +208,37 @@ class simple_render(object):
                     sy =  ((y*scale) +center[1])  
                     #end of line to draw in 2d
                     ex =  ((x2*scale)+center[0])  
-                    ey =  ((y2*scale)+center[1])    
+                    ey =  ((y2*scale)+center[1])   
+
+                    ############################
+                    if self.DO_SCREEN_CLIP:
+                        # clip lines to 2D screen size  
+                        cxmin = center[0]-self.clip_x[0] 
+                        cxmax = center[0]+self.clip_x[1] 
+                        
+                        cymin = center[1]-self.clip_y[0] 
+                        cymax = center[1]+self.clip_y[1] 
+
+                        if sx < cxmin:
+                            sx = cxmin
+                        if sx > cxmax:
+                            sx = cxmax
+
+                        if ex < cxmin:
+                            ex = cxmin
+                        if ex > cxmax:
+                            ex = cxmax
+
+                        if sy < cymin:
+                            sy = cymin
+                        if sy > cymax:
+                            sy = cymax
+
+                        if ey < cymin:
+                            ey = cymin
+                        if ey > cymax:
+                            ey = cymax
+
                     lines_to_draw.append(  ( (sx,sy), (ex, ey) ) )
    
         return lines_to_draw

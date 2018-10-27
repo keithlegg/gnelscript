@@ -1118,8 +1118,8 @@ class matrix44(object):
         """
 
         PI_OVER_360 = 0.00872664625
-        xymax = 100
-        ymax = znear * math.tan(fov * PI_OVER_360);
+        #xymax = 100
+        xymax = znear * math.tan(fov * PI_OVER_360);
 
         ymin = -xymax;
         xmin = -xymax;
@@ -1137,9 +1137,15 @@ class matrix44(object):
 
         m = self.identity
 
-        m[0]  = w; m[4]  = 0; m[8]  = 0 ; m[12] = 0
-        m[1]  = 0; m[5]  = h; m[9]  = 0 ; m[13] = 0
-        m[2]  = 0; m[6]  = 0; m[10] = q ; m[14] = -1
-        m[3]  = 0; m[7]  = 0; m[11] = qn;
+        # m[0]  = w; m[4]  = 0; m[8]  = 0 ; m[12] = 0
+        # m[1]  = 0; m[5]  = h; m[9]  = 0 ; m[13] = 0
+        # m[2]  = 0; m[6]  = 0; m[10] = q ; m[14] = qn 
+        # m[3]  = 0; m[7]  = 0; m[11] =-1 ; m[15] = 0
+
+        m[0]=w ; m[1]=0  ; m[2]=0  ; m[3]=0;
+        m[4]=0 ; m[5]=h  ; m[6]=0  ; m[7]=0;
+        m[8]=0 ; m[9]=0  ; m[10]=q ; m[11]=-1;
+        m[12]=0; m[13]=0 ; m[14]=qn; m[15]=0;
+        
         #print(m)
         return m

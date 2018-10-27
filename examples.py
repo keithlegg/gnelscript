@@ -2,55 +2,43 @@
 
 from pygfx.render import *
 from pygfx.point_ops import *
+from pygfx.math_ops import  math_util
 
 
 
-
-######################################################################
-
+#######################################################
 
 
+"""
 obj = object3d()
-
 obj.load_obj('objects/sphere2.obj')
 #obj.prim_quad(axis='z')
-
 #obj.prim_cube()
-
 obj.triangulate() 
 #obj.calc_face_normals() 
 #obj.scale_pts((.2,.2,.2)) 
 #obj.rotate_pts((30,30,30)) 
-
 obj.show() 
-
-
 rscale = 150
-
 ropr = simple_render()
 ropr.render_objects.append(obj) 
+"""
 
 
-
-
+"""
 #ropr.render_multiobj( (100,0,255), 0, 0, 0, 1, rscale )
-
 ropr.SHOW_EDGES = False
 #ropr.SHOW_FACE_CENTER = False
 #ropr.COLOR_MODE = 'normal'
 ropr.COLOR_MODE = 'zdepth'
-
 #ropr.SHOW_EDGES = False 
-
-
 ropr.scanline(obj, rscale) 
 #ropr.render_obj((100,0,255), 0, 0, 0, 1, rscale, object3d=obj)
- 
 ropr.save_image('simple_render.png')
+"""
 
 
-
-######################################################################
+#######################################################
 
 """ 
 
@@ -70,7 +58,7 @@ obj.save_obj('wire_viz.obj', as_lines=True)
 """ 
 
  
-#############
+#######################################################
 
 """
 obj = object3d()
@@ -103,42 +91,64 @@ ropr.scanline(obj, rscale)
 
 
 
-#############
+#######################################################
 
-"""
-v1 = Vec3d(0,.9,0)
-v2 = Vec3d(0, 1,0)
-v3 = Vec3d()
-print( v3.math.rtd(v2.angle_between(v1))        ) 
-print( v3.math.rtd(v3.np_angle_between(v1, v2)) )
-"""
-
-#############
-
-#mx = my.buildPerspProjMat( .0001, 1.0, 1, 100)
-#ropr.render_matrix_obj( None , mx ,     1,   10000, 'custom_render.png' , obj      )
-
-
-
-##############################
-# examples of direct matrix manipulation 
-##############################
-
-"""
-obj = polygon_operator()
-obj.prim_cube()
-ropr = render_3d()
-mu = math_util()
-
-
-rx = 20;ry = 10;rz = 0
-
-dtr = mu.dtr
-
-
-ropr.render_matrix_obj( matrix33 , None ,     1,   100, 'custom_render.png' , obj      )
- 
 """ 
+v1 = vec3(1, 0, 0)
+v2 = vec3(0, 1, 0)
+v3 = vec3()
+mu = math_util() 
+print( mu.rtd(v2.angle_between(v1))        ) 
+print( mu.rtd(v3.np_angle_between(v1, v2)) )
+""" 
+
+#######################################################
+
+"""
+obj = object3d()
+obj.prim_cube()
+#obj.scale_pts((3,3,30))
+#obj.rotate_pts((30,30,30))
+ropr = simple_render()
+#                          fov, aspect, znear, zfar)
+#mx = m44.buildPerspProjMat( 200, 1, 1, 100)
+ropr.render_obj((100,0,255), 0, 0, 0, 1, 50, object3d=obj)
+ropr.save_image('simple_render.png')
+"""
+
+#######################################################
+
+"""
+obj = object3d()
+obj.prim_cube()
+obj.rotate_pts((30,30,30))
+
+obj2 = object3d()
+obj2.prim_quad(axis='z')
+obj2.rotate_pts((30,30,30))
+
+ropr = simple_render()
+ropr.anim([obj,obj2], linethick=1, numframes=100)
+"""
+
+
+
+
+
+#######################################################
+# examples of direct matrix manipulation 
+
+
+"""
+obj = object3d()
+obj.prim_cube()
+ropr = simple_render()
+m33 = matrix33(.4,.4,0,.5,-.5,0,0,0,1)
+ropr.render_matrix_obj( m33 , None ,     1,   200, 'custom_render.png' , obj      )
+"""
+
+
+#######################################################
 
 #x = matrix_33(-5,5,9,10,0,1,66,77,88)
 #x = matrix_33(5,1,5,4,4,22,6,0,0)
@@ -149,11 +159,7 @@ ropr.render_matrix_obj( matrix33 , None ,     1,   100, 'custom_render.png' , ob
 
 
 
-
-
-
-
-######################################################################
+#######################################################
 
 
 
