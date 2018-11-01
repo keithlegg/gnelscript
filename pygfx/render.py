@@ -12,16 +12,9 @@ from pygfx.math_ops import math_util as mu
 import numpy as np 
 
 
-#lass render_3d(object):  
-#    """ about as simple as a renderer can be """
-#    def __init__(self, resx=800, resy=600, framebuffer=None):
 
-class simple_render(object):  
-    """ about as simple as a renderer can be 
-        
-        orthographic projection 
-        
-    """
+
+class render3d(object):  
 
     def __init__(self, resx=800, resy=600, framebuffer=None):
         self.pg   = polygon_operator()      #use this for the matrix rotation and more
@@ -31,13 +24,6 @@ class simple_render(object):
         
         self.rp   = []          # render path data  (lines)
         self.rpts = []          # render point data (points)
-        
-        half_x = resx/2 
-        half_y = resy/2 
-
-        #centered to screen - so use HALF of res        
-        self.clip_x = [0,half_x]
-        self.clip_y = [0,half_y]
 
         if framebuffer==None:
             self.res = [resx, resy]
@@ -48,11 +34,11 @@ class simple_render(object):
             self.res = [framebuffer.res_x, framebuffer.res_y]
 
 
+        ###############################################
         self.render_objects = [] #list of object3d's 
 
-
-        ###############################################
         # renderer properties 
+        self.COLOR_MODE           = 'flat'    ####'flat', 'zdepth',  'normal'
         self.is_orthographic      = True
         self.renderpoints         = True 
         self.render_normal_lines  = True 
@@ -63,80 +49,14 @@ class simple_render(object):
         self.SHOW_FACE_CENTER     = True
         self.SHOW_SCREEN_CLIP     = False # broken 
         self.DO_SCREEN_CLIP       = False # broken 
-
-        self.COLOR_MODE           = 'flat'    ####'flat', 'zdepth',  'normal' 
-        ###############################################
-
-    def post_process(self):
-        if self.SHOW_SCREEN_CLIP:
-            center = (int(self.fb.res_x/2), int(self.fb.res_y/2) )
-
-            cxmin = center[0]-self.clip_x[0] 
-            cxmax = center[0]+self.clip_x[1] 
-            cymin = center[1]-self.clip_y[0] 
-            cymax = center[1]+self.clip_y[1] 
-
-            ## square = [ (cxmin,cymin),(cxmin,cymax),
-            ##            (cxmin,cymax),(cxmax,cymax),
-            ##            (cxmax,cymax),(cxmax,cymin),                       
-            ##            (cxmax,cymin),(cxmin,cymin)                       
-            ## ]
-
-
-            self.fb.connect_the_dots( [(cxmin,cymin),(cxmax,cymax)] , (0,255,0), 2  )   
-
-
+ 
 
     ## ## ## ## ## 
     def save_image(self,filename='output.png', noalpha=True):
         self.post_process()
-        self.fb.save_file(filename, noalpha=noalpha)        
-
-    ## ## ## ## ##  
-    def scribe(self, str):
-        print(str)
-
-    ## ## ## ## ##  
-    def project_points(self, object3d,  rx, ry, rz, scale, res_x=None, res_y=None):
-        """
-           project 3D point geometry into 2D
-        """
-       
-        #I dont think these belong here  
-        if res_x==None:
-            res_x = self.res[0]
-        if res_y==None:
-            res_y = self.res[1]
-
-        center = (int(res_x/2), int(res_y/2) ) #we will need to know center of image when we project geometry into screen space
+        self.fb.save_file(filename, noalpha=noalpha)     
         
-        ##############################
-        # various matrix ops 
-        pvtxs = self.m33.rotate_pts_3d( object3d.points, rx, ry, rz )  #3X3 matrix - tested and works
 
-        # rotate with a 4X4 matrix 
-        #pvtxs = self.m44.rotate_pts_3d( object3d.points, rx, ry, rz )  #4X4 matrix - tested and works
-        
-        # rotate the points by a 3X3 matrix directly 
-        #matrix = self.m33.identity
-        #pvtxs =  matrix.batch_mult_pts( object3d.points )
-        
-        ##############################
-
-        points_projected = []
-
-        #crappy orthographic projection (no Z at all) 
-        ## for p in pvtxs:
-        ##     sx = (p[0]*scale) + center[0]  
-        ##     sy = (p[1]*scale) + center[1]  
-        ##     points_projected.append( (sx,sy) )
-   
-        for p in pvtxs:
-            sx = (p[0]*scale) + center[0]  
-            sy = (p[1]*scale) + center[1]  
-            points_projected.append( (sx,sy) )
-
-        return points_projected
 
     ## ## ## ## ##  
     def project_polygons(self, object3d,  rx, ry, rz, scale, res_x=None, res_y=None):
@@ -243,6 +163,234 @@ class simple_render(object):
    
         return lines_to_draw
 
+
+
+##########################################################################################################
+##########################################################################################################
+
+
+class simple_render(object):  
+    """ about as simple as a renderer can be 
+        
+        orthographic projection 
+        
+    """
+
+    def __init__(self, resx=800, resy=600, framebuffer=None):
+        self.pg   = polygon_operator()      #use this for the matrix rotation and more
+        self.m33  = matrix33()       
+        self.m44  = matrix44()
+        self.fb   = PixelOp()   #framebuffer and raster freinds
+        
+        self.rp   = []          # render path data  (lines)
+        self.rpts = []          # render point data (points)
+        
+        half_x = resx/2 
+        half_y = resy/2 
+
+        #centered to screen - so use HALF of res        
+        self.clip_x = [0,half_x]
+        self.clip_y = [0,half_y]
+
+        if framebuffer==None:
+            self.res = [resx, resy]
+            self.fb.create_buffer(resx, resy)
+        
+        if framebuffer:
+            self.fb = framebuffer
+            self.res = [framebuffer.res_x, framebuffer.res_y]
+
+
+        self.render_objects = [] #list of object3d's 
+
+
+        ###############################################
+        # renderer properties 
+        self.is_orthographic      = True
+        self.renderpoints         = True 
+        self.render_normal_lines  = True 
+        self.SHOW_VEC_HITS        = False  #faces cover this up!
+        self.SHOW_EDGES           = True
+        self.SHOW_FACES           = True
+        self.SHOW_NORMALS         = True  
+        self.SHOW_FACE_CENTER     = True
+        self.SHOW_SCREEN_CLIP     = False # broken 
+        self.DO_SCREEN_CLIP       = False # broken 
+
+        self.COLOR_MODE           = 'flat'    ####'flat', 'zdepth',  'normal' 
+        ###############################################
+
+    ## ## ## ## ## 
+    def save_image(self,filename='output.png', noalpha=True):
+        self.post_process()
+        self.fb.save_file(filename, noalpha=noalpha)     
+
+    def post_process(self):
+        if self.SHOW_SCREEN_CLIP:
+            center = (int(self.fb.res_x/2), int(self.fb.res_y/2) )
+
+            cxmin = center[0]-self.clip_x[0] 
+            cxmax = center[0]+self.clip_x[1] 
+            cymin = center[1]-self.clip_y[0] 
+            cymax = center[1]+self.clip_y[1] 
+
+            ## square = [ (cxmin,cymin),(cxmin,cymax),
+            ##            (cxmin,cymax),(cxmax,cymax),
+            ##            (cxmax,cymax),(cxmax,cymin),                       
+            ##            (cxmax,cymin),(cxmin,cymin)                       
+            ## ]
+
+
+            self.fb.connect_the_dots( [(cxmin,cymin),(cxmax,cymax)] , (0,255,0), 2  )   
+       
+
+    ## ## ## ## ##  
+    def project_points(self, object3d,  rx, ry, rz, scale, res_x=None, res_y=None):
+        """
+           project 3D point geometry into 2D
+        """
+       
+        #I dont think these belong here  
+        if res_x==None:
+            res_x = self.res[0]
+        if res_y==None:
+            res_y = self.res[1]
+
+        center = (int(res_x/2), int(res_y/2) ) #we will need to know center of image when we project geometry into screen space
+        
+        ##############################
+        # various matrix ops 
+        pvtxs = self.m33.rotate_pts_3d( object3d.points, rx, ry, rz )  #3X3 matrix - tested and works
+
+        # rotate with a 4X4 matrix 
+        #pvtxs = self.m44.rotate_pts_3d( object3d.points, rx, ry, rz )  #4X4 matrix - tested and works
+        
+        # rotate the points by a 3X3 matrix directly 
+        #matrix = self.m33.identity
+        #pvtxs =  matrix.batch_mult_pts( object3d.points )
+        
+        ##############################
+
+        points_projected = []
+
+        #crappy orthographic projection (no Z at all) 
+        ## for p in pvtxs:
+        ##     sx = (p[0]*scale) + center[0]  
+        ##     sy = (p[1]*scale) + center[1]  
+        ##     points_projected.append( (sx,sy) )
+   
+        for p in pvtxs:
+            sx = (p[0]*scale) + center[0]  
+            sy = (p[1]*scale) + center[1]  
+            points_projected.append( (sx,sy) )
+
+        return points_projected
+
+    ## ## ## ## ##  
+    def project_polygons(self, object3d,  rx, ry, rz, scale, res_x=None, res_y=None):
+        """
+          rotate and project 3D line geometry into 2D.
+
+          You can convert this data INTO 3d by adding an empty Z axis.
+             - - - 
+          iterate through each point (vector) and mutliply it by a rotation 4X4 matrix
+
+        """
+        if res_x==None:
+            res_x = self.res[0]
+        
+        if res_y==None:
+            res_y = self.res[1]
+
+        center = (int(res_x/2), int(res_y/2) ) #we will need to know center of image when we project geometry into screen space
+        
+        ############################
+        # various matrix ops
+        #pvtxs = self.m33.rotate_pts_3d( object3d.points, rx, ry, rz )  # tested and works
+
+        pvtxs = self.m44.rotate_pts_3d( object3d.points, rx, ry, rz )  # tested and works
+
+        # rotate the points by a 3X3 matrix directly 
+        #matrix = self.m33.identity
+        #pvtxs =  matrix.batch_mult_pts( object3d.points )
+
+        ############################
+
+        lines_to_draw = []
+        ##########################
+        #print('render geom info  points:%s poly:%s'%(len(object3d.points), len(object3d.polygons) )  )
+        ##########################
+
+
+
+        #project rotated points into screen space  
+        for ply in object3d.polygons:
+            num_idx = len(ply) #walk array of indeces to vertecies
+            for pt in range(num_idx):
+
+                if pt<num_idx-1:
+                    #a line needs two points, simply walk through the list two at a time
+                    idx  = int(ply[pt])-1 #index start of line in 2d
+                    idx2 = int(ply[pt+1])-1 #index end of line in 2d
+                    
+                    # #start of line
+                    x = pvtxs[idx][0] #first vtx - x component  
+                    y = pvtxs[idx][1] #first vtx - y component 
+                    z = pvtxs[idx][2]/10 #first vtx - z component 
+
+                    # #end of line
+                    x2 = pvtxs[idx2][0] #second vtx - x component  
+                    y2 = pvtxs[idx2][1] #second vtx - y component 
+                    z2 = pvtxs[idx2][2]/10 #second vtx - z component 
+
+                    #attempt at perspective rendering . math, BLAH!
+                    if self.is_orthographic==False:
+                        #z = (pvtxs[idx][2] + pvtxs[idx2][2])/2
+                        # here is my sad attempt at cheapo perspective:
+                        #scale = scale -(z*20)   #terrible perspective illusion,  but a really cool effect
+                        pass
+
+
+                    #start of line to draw in 2d 
+                    sx =  ((x*scale) +center[0])  
+                    sy =  ((y*scale) +center[1])  
+                    #end of line to draw in 2d
+                    ex =  ((x2*scale)+center[0])  
+                    ey =  ((y2*scale)+center[1])   
+
+                    ############################
+                    if self.DO_SCREEN_CLIP:
+                        # clip lines to 2D screen size  
+                        cxmin = center[0]-self.clip_x[0] 
+                        cxmax = center[0]+self.clip_x[1] 
+                        
+                        cymin = center[1]-self.clip_y[0] 
+                        cymax = center[1]+self.clip_y[1] 
+
+                        if sx < cxmin:
+                            sx = cxmin
+                        if sx > cxmax:
+                            sx = cxmax
+
+                        if ex < cxmin:
+                            ex = cxmin
+                        if ex > cxmax:
+                            ex = cxmax
+
+                        if sy < cymin:
+                            sy = cymin
+                        if sy > cymax:
+                            sy = cymax
+
+                        if ey < cymin:
+                            ey = cymin
+                        if ey > cymax:
+                            ey = cymax
+
+                    lines_to_draw.append(  ( (sx,sy), (ex, ey) ) )
+   
+        return lines_to_draw
+
     ## ## ## ## ## 
     def render_obj (self, color, rx, ry, rz, thick, scale, framebuffer=None, object3d =None):
         """ 
@@ -299,7 +447,7 @@ class simple_render(object):
                 self.render_obj(color, rx, ry, rz, thick, scale, framebuffer=self.fb, object3d=obj) 
 
     ## ## ## ## ## 
-    def anim(self, objs, init_rots=(0,0,0), linethick=5, numframes=5):
+    def anim(self, objs, init_rots=(0,0,0), linethick=5, numframes=5, scale=150):
         """
             DEBUG - add interpolation for "keyframes"
 
@@ -314,7 +462,7 @@ class simple_render(object):
         output_type = 'png'
 
         step_degrees = 5
-        scale = 150
+        
         #linethick = 5
 
         RX=init_rots[0];RY=init_rots[1];RZ=init_rots[2]
@@ -615,8 +763,6 @@ class simple_render(object):
         #output.save_file('scanlinez_.png') 
 
 
-class fancy_render(simple_render):
-    def __init__(self):
-        pass
+
 
 

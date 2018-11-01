@@ -2,7 +2,7 @@
 
 from pygfx.render import *
 from pygfx.point_ops import *
-from pygfx.math_ops import  math_util
+from pygfx.math_ops import  *
 
 
 
@@ -104,32 +104,38 @@ print( mu.rtd(v3.np_angle_between(v1, v2)) )
 
 #######################################################
 
-"""
+""" 
 obj = object3d()
 obj.prim_cube()
 #obj.scale_pts((3,3,30))
-#obj.rotate_pts((30,30,30))
+obj.rotate_pts((30,30,30))
 ropr = simple_render()
 #                          fov, aspect, znear, zfar)
 #mx = m44.buildPerspProjMat( 200, 1, 1, 100)
-ropr.render_obj((100,0,255), 0, 0, 0, 1, 50, object3d=obj)
+ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
 ropr.save_image('simple_render.png')
-"""
+""" 
 
 #######################################################
 
-"""
+""" 
 obj = object3d()
 obj.prim_cube()
 obj.rotate_pts((30,30,30))
-
-obj2 = object3d()
-obj2.prim_quad(axis='z')
-obj2.rotate_pts((30,30,30))
+obj.scale_pts((.1,.1,.1))
 
 ropr = simple_render()
-ropr.anim([obj,obj2], linethick=1, numframes=100)
+ropr.anim([obj], linethick=1, numframes=100, scale=100)
 """
+#######################################################
+
+
+v4 = vec4(1,2,3,4)
+m44 = matrix44()
+#m44.np_inverse() 
+
+
+print(m44*v4)
 
 
 

@@ -132,8 +132,10 @@ class math_util(object):
 class vec2(object):    
 
     def __init__(self,x=0,y=0):
-        self.x = x;self.y = y    
-
+        self.mu = math_util()
+        self.x = x
+        self.y = y    
+        
     def __repr__(self):
         return '(%s, %s)' % (self.x, self.y)
 
@@ -548,8 +550,105 @@ class vec3(object):
 
         return None 
 
+###############################################
+class vec4(object):
+    """ untested - 
+        homogeneous coordinate experiment  
+    """
 
-                
+    def __init__(self,x=0,y=0,z=0,w=1):
+        self.x=x
+        self.y=y
+        self.z=z
+        self.w=w  
+        
+        #self.mu = math_util() 
+
+    def __getitem__(self, index):
+        if index==0:
+            return self.x
+        if index==1:
+            return self.y
+        if index==2:
+            return self.z
+        if index==3:
+            return self.w
+
+    def __setitem__(self, key, item):
+        if key==0:
+            self.x = item
+        if key==1:
+            self.y = item
+        if key==2:
+            self.z = item
+        if key==3:
+            self.w = item
+
+    def to_vec3(self):
+        w = self.w
+        return type(vec3)( (self.x/w), (self.y/w), (self.z/w))
+
+    def from_vec3(self, vec3):
+        self.x = vec3.x        
+        self.y = vec3.y  
+        self.z = vec3.z
+        self.w = 1  
+
+#[xyzw]∗⎡⎣⎢⎢⎢m00m10m20m30m01m11m21m31m02m12m22m32m03m13m23m33⎤⎦⎥⎥⎥
+#x′=x∗m00+y∗m10+z∗m20+w∗m30y′=x∗m01+y∗m11+z∗m21+w∗m31z′=x∗m02+y∗m12+z∗m22+w∗m32w′=x∗m03+y∗m13+z∗m23+w∗m33
+
+
+
+###############################################
+class spherical(object):
+    """ untested -   polar and spherical coordinates """
+
+    def __init__(self,r=0,t=0,p=0):
+        """ r = radius 
+            t = theta 
+            p = phi  (not needed for polar)
+        """
+        #self.mu = math_util() 
+        self.r=r
+        self.t=t
+        self.p=p
+
+    def __getitem__(self, index):
+        if index==0:
+            return self.r
+        if index==1:
+            return self.t
+        if index==2:
+            return self.p
+
+    def __setitem__(self, key, item):
+        if key==0:
+            self.r = item
+        if key==1:
+            self.t = item
+        if key==2:
+            self.p = item
+
+    def sphr_to_cartesian(self):
+        """ from David Goulds book, page 14 """
+        x = self.r * math.sin(self.p) * math.cos(self.t)
+        y = self.r * math.sin(self.p) * math.sin(self.t)
+        z = self.r * math.cos(self.p)        
+        return type(vec3)(x,y,z)
+    
+    def cartesian_to_sphr(self, vec3):
+      
+        #r = length( x y z )
+        #p = tan -1 (length(x y), z) 
+        #t = tan -1 (y,x)
+        #    return type(spherical)()        
+        pass
+
+    #def polar_to_cartesian(self):
+    #    pass
+    #def cartesian_to_polar(self, vec3):
+    #   return type(spherical)()
+
 
 
 ###############################################
@@ -743,15 +842,15 @@ class matrix33(object):
         """
 
         if isinstance(n, vec3):
-            outx = self.m[0] * n.x + self.m[3] * n.y + self.m[6] * n.z 
-            outy = self.m[1] * n.x + self.m[4] * n.y + self.m[7] * n.z 
-            outz = self.m[2] * n.x + self.m[5] * n.y + self.m[8] * n.z 
+            outx = self.m[0]*n.x + self.m[3]*n.y + self.m[6]*n.z 
+            outy = self.m[1]*n.x + self.m[4]*n.y + self.m[7]*n.z 
+            outz = self.m[2]*n.x + self.m[5]*n.y + self.m[8]*n.z 
             return  (outx, outy, outz)
 
         if isinstance(n, tuple) or isinstance(n, list) or isinstance(n, np.ndarray):
-            outx = self.m[0] * n[0] + self.m[3] * n[1] + self.m[6] * n[2] 
-            outy = self.m[1] * n[0] + self.m[4] * n[1] + self.m[7] * n[2] 
-            outz = self.m[2] * n[0] + self.m[5] * n[1] + self.m[8] * n[2] 
+            outx = self.m[0]*n[0] + self.m[3]*n[1] + self.m[6]*n[2] 
+            outy = self.m[1]*n[0] + self.m[4]*n[1] + self.m[7]*n[2] 
+            outz = self.m[2]*n[0] + self.m[5]*n[1] + self.m[8]*n[2] 
             return  (outx, outy, outz)
 
         if type(n) == type(self):
@@ -780,8 +879,7 @@ class matrix33(object):
 
     def rotate_pts_3d(self, points, xrot, yrot, zrot):
         """
-           previously named rotate_mat3 
-           using the "standard" 9 element, Row major, 3X3 rotation matrix used by Maya
+          The "standard" 9 element, Row major, 3X3 rotation matrix used by Maya
                 
            [0  1  2]      xx xy xz 
            [3  4  5]      yx yy yz 
@@ -842,6 +940,18 @@ class matrix44(object):
         the patern "return type(self) is nice to retrurn copies of itself,
         but beware that this structure is not compatible for passing mutable types.
         Only primitive types work, in this case floats  
+
+
+       -------------------------------------------------------------------------
+       standard affine transformation matrix.
+
+       ⎡m00  m01 m02 0⎤
+       ⎢m10  m11 m12 0⎥
+       ⎢m20  m21 m22 0⎥
+       ⎣Tx   Ty  Tz  1⎦
+       -------------------------------------------------------------------------
+
+
     """    
     def __init__(self, a=1,b=0,c=0,d=0,
                        e=0,f=1,g=0,h=0,
@@ -880,19 +990,57 @@ class matrix44(object):
                )
    
     def __mul__(self, n):
-        """multiply two 4X4 matricies together """
+        """multiply by other matrix or a vector """
+
+        if isinstance(n, vec4):
+            #untested
+            #https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic
+            #    -projection-matrix/building-basic-perspective-projection-matrix
+
+            # row major * vec4 
+            # outx = n.x*self.m[0]   + n.y*self.m[1]  +  n.z*self.m[2]   +  n.w *self.m[3] 
+            # outy = n.x*self.m[4]   + n.y*self.m[5]  +  n.z*self.m[6]   +  n.w *self.m[7] 
+            # outz = n.x*self.m[8]   + n.y*self.m[9]  +  n.z*self.m[10]  +  n.w *self.m[11]                         
+            # outw = n.x*self.m[12]  + n.y*self.m[13] +  n.z*self.m[14]  +  n.w *self.m[15] 
+            
+            # column major * vec4 
+            outx = n.x*self.m[0]  + n.y*self.m[4]  +  n.z*self.m[8]   +  n.w *self.m[12] 
+            outy = n.x*self.m[1]  + n.y*self.m[5]  +  n.z*self.m[9]   +  n.w *self.m[13] 
+            outz = n.x*self.m[2]  + n.y*self.m[6]  +  n.z*self.m[10]  +  n.w *self.m[14]                         
+            outw = n.x*self.m[3]  + n.y*self.m[7]  +  n.z*self.m[11]  +  n.w *self.m[15] 
+
+            return  (outx, outy, outz, outw)
 
         if isinstance(n, vec3) or isinstance(n, np.ndarray):
-            outx = self.m[0] * n.x + self.m[4] * n.y + self.m[8]  * n.z + self.m[12]
-            outy = self.m[1] * n.x + self.m[5] * n.y + self.m[9]  * n.z + self.m[13]
-            outz = self.m[2] * n.x + self.m[6] * n.y + self.m[10] * n.z + self.m[14]
+            # column major -                      why add the last 12,13,14 ? (affine?)            
+            # outx = self.m[0] * n.x + self.m[4] * n.y + self.m[8]  * n.z + self.m[12]
+            # outy = self.m[1] * n.x + self.m[5] * n.y + self.m[9]  * n.z + self.m[13]
+            # outz = self.m[2] * n.x + self.m[6] * n.y + self.m[10] * n.z + self.m[14]
+
+            # column major  , without elements 12,13,14 
+            outx = self.m[0] * n.x + self.m[4] * n.y + self.m[8]  * n.z 
+            outy = self.m[1] * n.x + self.m[5] * n.y + self.m[9]  * n.z 
+            outz = self.m[2] * n.x + self.m[6] * n.y + self.m[10] * n.z 
             return  (outx, outy, outz)
 
+
         if isinstance(n, tuple) or isinstance(n, list):
-            outx = self.m[0] * n[0] + self.m[4] * n[1] + self.m[8]  * n[2] + self.m[12]
-            outy = self.m[1] * n[0] + self.m[5] * n[1] + self.m[9]  * n[2] + self.m[13]
-            outz = self.m[2] * n[0] + self.m[6] * n[1] + self.m[10] * n[2] + self.m[14]
+            #why add the last 12,13,14 ? (transform?)
+            # outx = self.m[0] * n[0] + self.m[4] * n[1] + self.m[8]  * n[2] + self.m[12]
+            # outy = self.m[1] * n[0] + self.m[5] * n[1] + self.m[9]  * n[2] + self.m[13]
+            # outz = self.m[2] * n[0] + self.m[6] * n[1] + self.m[10] * n[2] + self.m[14]
+
+            # same as first, without 12,13,14 - column major             
+            outx = self.m[0] * n[0] + self.m[4] * n[1] + self.m[8]  * n[2] 
+            outy = self.m[1] * n[0] + self.m[5] * n[1] + self.m[9]  * n[2] 
+            outz = self.m[2] * n[0] + self.m[6] * n[1] + self.m[10] * n[2] 
+
+            # same as first, without 12,13,14 -  row major 
+            # outx = self.m[0] * n[0] + self.m[1] * n[1] + self.m[2]  * n[2] 
+            # outy = self.m[4] * n[0] + self.m[5] * n[1] + self.m[6]  * n[2] 
+            # outz = self.m[8] * n[0] + self.m[9] * n[1] + self.m[10] * n[2] 
             return  (outx, outy, outz)
+
 
         if type(n) == type(self):
             return type(self)(
@@ -921,9 +1069,9 @@ class matrix44(object):
         return type(self)()
 
 
-    @property
-    def np_inverse(self):
-        pass
+   # @property
+   # def np_inverse(self):
+   #     pass
 
     #@property
     def test_index(self):
@@ -1039,37 +1187,35 @@ class matrix44(object):
 
     def rotate_pts_3d(self, points, xrot, yrot, zrot):
         """
-           -  previously named rotate_mat4
-           
-           using the "standard" 16 element, Row major, 4X4 rotation matrix used by Maya
-         
-           [0  1  2  3]     [   XVEC    0 ]
-           [4  5  6  7]     [   YVEC    0 ]
-           [8  9  10 11]    [   ZVEC    0 ]
-           [12 13 14 15]    [ 0  0  0   0 ]
+           The "standard" 16 element, Row major, 4X4 rotation matrix 
 
-           [0  1  2  3]      xx xy xz 0
-           [4  5  6  7]      yx yy yz 0
-           [8  9  10 11]     zx zy zz 0
-           [12 13 14 15]     0  0  0  0
+           ⎡0   1   2   3  ⎤    ⎡   XVEC    0 ⎤
+           ⎢4   5   6   7  ⎥    ⎢   YVEC    0 ⎥
+           ⎢8   9   10  11 ⎥    ⎢   ZVEC    0 ⎥
+           ⎣12  13  14  15 ⎦    ⎣ 0  0  0   0 ⎦
+
+           ⎡0   1   2   3 ⎤     ⎡xx  xy  xz  0⎤
+           ⎢4   5   6   7 ⎥     ⎢yx  yy  yz  0⎥
+           ⎢8   9   10  11⎥     ⎢zx  zy  zz  0⎥
+           ⎣12  13  14  15⎦     ⎣0   0   0   0⎦
            ------------------------------
            rotate Y matrix     
-           |  cos(y)  0      -sin(y)  0 | 
-           |  0       1       0       0 | 
-           |  sin(y)  0       cos(y)  0 | 
-           |  0       0       0       1 | 
+           ⎡  cos(y)  0      -sin(y)  0 ⎤ 
+           ⎢  0       1       0       0 ⎥ 
+           ⎢  sin(y)  0       cos(y)  0 ⎥ 
+           ⎣  0       0       0       1 ⎦
            ------------------------------
            rotate Z  matrix 
-           |  cos(z)  sin(z)  0       0 | 
-           | -sin(z)  cos(z)  0       0 |
-           |  0       0       1       0 |
-           |  0       0       0       1 |
+           ⎡  cos(z)  sin(z)  0       0 ⎤ 
+           ⎢ -sin(z)  cos(z)  0       0 ⎥
+           ⎢  0       0       1       0 ⎥
+           ⎣  0       0       0       1 ⎦
            ------------------------------
            rotate X matrix  
-           |  1       0       0       0 |  
-           |  0       cos(x)  sin(x)  0 |  
-           |  0      -sin(x)  cos(x)  0 |  
-           |  0       0       0       1 | 
+           ⎡  1       0       0       0 ⎤  
+           ⎢  0       cos(x)  sin(x)  0 ⎥  
+           ⎢  0      -sin(x)  cos(x)  0 ⎥  
+           ⎣  0       0       0       1 ⎦ 
         """
         dtr = self.mu.dtr
 
