@@ -564,6 +564,9 @@ class vec4(object):
         
         #self.mu = math_util() 
 
+    def __repr__(self):
+        return '(%s, %s, %s, %s)' % (self.x, self.y, self.z, self.w)
+
     def __getitem__(self, index):
         if index==0:
             return self.x
@@ -586,7 +589,7 @@ class vec4(object):
 
     def to_vec3(self):
         w = self.w
-        return type(vec3)( (self.x/w), (self.y/w), (self.z/w))
+        return vec3( (self.x/w), (self.y/w), (self.z/w) )
 
     def from_vec3(self, vec3):
         self.x = vec3.x        
@@ -597,7 +600,52 @@ class vec4(object):
 #[xyzw]∗⎡⎣⎢⎢⎢m00m10m20m30m01m11m21m31m02m12m22m32m03m13m23m33⎤⎦⎥⎥⎥
 #x′=x∗m00+y∗m10+z∗m20+w∗m30y′=x∗m01+y∗m11+z∗m21+w∗m31z′=x∗m02+y∗m12+z∗m22+w∗m32w′=x∗m03+y∗m13+z∗m23+w∗m33
 
+###############################################
+class quaternion(object):
+    """ untested - 
+        first stab at quaternion   
+    """
 
+    def __init__(self,x=0,y=0,z=0,w=1):
+        self.x=x
+        self.y=y
+        self.z=z
+        self.w=w  
+
+    def __repr__(self):
+        return '(%s, %s, %s, %s)' % (self.x, self.y, self.z, self.w)
+
+    def __getitem__(self, index):
+        if index==0:
+            return self.x
+        if index==1:
+            return self.y
+        if index==2:
+            return self.z
+        if index==3:
+            return self.w
+
+    def __setitem__(self, key, item):
+        if key==0:
+            self.x = item
+        if key==1:
+            self.y = item
+        if key==2:
+            self.z = item
+        if key==3:
+            self.w = item
+
+    #def __mul__(self, other):
+    #    if isinstance(other, np.ndarray):
+
+    #def inverse
+    #def mag 
+    #def difference
+    #def dot_product 
+    #def to_m44
+    #def from_m44
+    #def to_euler
+    #def from_euler
 
 ###############################################
 class spherical(object):
@@ -649,7 +697,7 @@ class spherical(object):
     #def cartesian_to_polar(self, vec3):
     #   return type(spherical)()
 
-
+###############################################
 
 ###############################################
 class matrix33(object):
@@ -707,17 +755,19 @@ class matrix33(object):
         a = self.copy() 
         o = a[0]* ((a[4]*a[8])-(a[5]*a[7])) - a[1]*((a[3]*a[8])-(a[5]*a[6])) +  a[2]*((a[3]*a[7])-(a[4]*a[6]))
         return o
-      
 
-    @property
-    def np_inverse(self):
+    def np_inverse(self, mtype='numpy'):
         """ seems to work, but I am not convinced """
         a = self.copy(mtype='numpy')
         b = inv(a)
-        c = matrix33()
-        c.insert(b)
+        if mtype=='numpy':
+            return b 
+        if mtype=='m33':    
+            c = matrix33()
+            c.insert(b)
+            return c
         #print('## inverse \n\n', self  , ' \n\n', c , ' \n\n',  self*c )
-        return b
+
 
 
     def serialize(self, inarray):
@@ -880,25 +930,26 @@ class matrix33(object):
     def rotate_pts_3d(self, points, xrot, yrot, zrot):
         """
           The "standard" 9 element, Row major, 3X3 rotation matrix used by Maya
-                
-           [0  1  2]      xx xy xz 
-           [3  4  5]      yx yy yz 
-           [6  7  8]      zx zy zz 
+             
+
+           ⎡0  1  2⎤      xx xy xz 
+           ⎢3  4  5⎥      yx yy yz 
+           ⎣6  7  8⎦      zx zy zz 
            ------------------------------
-           rotate Y matrix     
-           |cos(y)  0      -sin(y) | 
-           |0       1       0      | 
-           |sin(y)  0       cos(y) | 
+                Rotate Y matrix     
+           ⎡cos(y)  0      -sin(y) ⎤ 
+           ⎢0       1       0      ⎥ 
+           ⎣sin(y)  0       cos(y) ⎦ 
            ------------------------------
-           rotate Z  matrix 
-           |  cos(z)  sin(z)  0    | 
-           | -sin(z)  cos(z)  0    |
-           |  0       0       1    |
+                Rotate Z  matrix 
+           ⎡  cos(z)  sin(z)  0    ⎤ 
+           ⎢ -sin(z)  cos(z)  0    ⎥
+           ⎣  0       0       1    ⎦
            ------------------------------
-           rotate X matrix  
-           | 1       0         0   |    
-           | 0    cos(x)   sin(x)  |  
-           | 0    -sin(x)   cos(x) |  
+                Rotate X matrix  
+           ⎡ 1       0         0   ⎤    
+           ⎢ 0    cos(x)   sin(x)  ⎥  
+           ⎣ 0   -sin(x)   cos(x)  ⎦  
            ------------------------------            
  
         """
@@ -937,7 +988,7 @@ class matrix44(object):
     """ 4X4 matrix from pure python 
         limited support to interface to numpy arrays 
 
-        the patern "return type(self) is nice to retrurn copies of itself,
+        the patern "return type(self) is nice to return copies of itself,
         but beware that this structure is not compatible for passing mutable types.
         Only primitive types work, in this case floats  
 
@@ -1011,11 +1062,12 @@ class matrix44(object):
 
             return  (outx, outy, outz, outw)
 
+
         if isinstance(n, vec3) or isinstance(n, np.ndarray):
             # column major -                      why add the last 12,13,14 ? (affine?)            
-            # outx = self.m[0] * n.x + self.m[4] * n.y + self.m[8]  * n.z + self.m[12]
-            # outy = self.m[1] * n.x + self.m[5] * n.y + self.m[9]  * n.z + self.m[13]
-            # outz = self.m[2] * n.x + self.m[6] * n.y + self.m[10] * n.z + self.m[14]
+            # outx = self.m[0] * n.x + self.m[4] * n.y + self.m[8]  * n.z     + self.m[12]
+            # outy = self.m[1] * n.x + self.m[5] * n.y + self.m[9]  * n.z     + self.m[13]
+            # outz = self.m[2] * n.x + self.m[6] * n.y + self.m[10] * n.z     + self.m[14]
 
             # column major  , without elements 12,13,14 
             outx = self.m[0] * n.x + self.m[4] * n.y + self.m[8]  * n.z 
@@ -1026,16 +1078,16 @@ class matrix44(object):
 
         if isinstance(n, tuple) or isinstance(n, list):
             #why add the last 12,13,14 ? (transform?)
-            # outx = self.m[0] * n[0] + self.m[4] * n[1] + self.m[8]  * n[2] + self.m[12]
-            # outy = self.m[1] * n[0] + self.m[5] * n[1] + self.m[9]  * n[2] + self.m[13]
-            # outz = self.m[2] * n[0] + self.m[6] * n[1] + self.m[10] * n[2] + self.m[14]
+            # outx = self.m[0] * n[0] + self.m[4] * n[1] + self.m[8]  * n[2]     + self.m[12]
+            # outy = self.m[1] * n[0] + self.m[5] * n[1] + self.m[9]  * n[2]     + self.m[13]
+            # outz = self.m[2] * n[0] + self.m[6] * n[1] + self.m[10] * n[2]     + self.m[14]
 
-            # same as first, without 12,13,14 - column major             
+            # column major, same as first, without 12,13,14               
             outx = self.m[0] * n[0] + self.m[4] * n[1] + self.m[8]  * n[2] 
             outy = self.m[1] * n[0] + self.m[5] * n[1] + self.m[9]  * n[2] 
             outz = self.m[2] * n[0] + self.m[6] * n[1] + self.m[10] * n[2] 
 
-            # same as first, without 12,13,14 -  row major 
+            # row major - same as first, without 12,13,14    
             # outx = self.m[0] * n[0] + self.m[1] * n[1] + self.m[2]  * n[2] 
             # outy = self.m[4] * n[0] + self.m[5] * n[1] + self.m[6]  * n[2] 
             # outz = self.m[8] * n[0] + self.m[9] * n[1] + self.m[10] * n[2] 
@@ -1068,14 +1120,21 @@ class matrix44(object):
         #return  [ 1,0,0,0 ,0,1,0,0 ,0,0,1,0 ,0,0,0,1]
         return type(self)()
 
+    def np_inverse(self, mtype='numpy'):
+        """ untested """
+        a = self.copy(mtype='numpy')
+        b = inv(a)
+        if mtype=='numpy':
+            return b 
+        if mtype=='m44':    
+            c = matrix44()
+            c.insert(b)
+            return c
 
-   # @property
-   # def np_inverse(self):
-   #     pass
 
     #@property
     def test_index(self):
-        """ fill matrix with incermenting number to see indices """
+        """ fill matrix with incrementing number to see indices """
         tmp = type(self)()
         for i in range(16):
             tmp[i] = i
@@ -1110,7 +1169,7 @@ class matrix44(object):
     #@property
     def copy(self, mtype=None):
         """ UNTESTED """
-        if not mtype:        
+        if mtype == None:        
             return type(self)(
                 self.m[0] , self.m[1] , self.m[2] , self.m[3] ,
                 self.m[4] , self.m[5] , self.m[6] , self.m[7] ,
