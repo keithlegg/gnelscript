@@ -130,7 +130,7 @@ ropr.anim([obj], linethick=1, numframes=100, scale=100)
 #######################################################
 
 
-
+"""
 v3 = vec3(41,32,13)
 v4 = vec4()
 
@@ -140,10 +140,27 @@ m44 = matrix44(1,3,4,5, 6,7,23,5, 6,3,23,3 ,5,6,7,8 )
 v4.from_vec3(v3)
 
 print( v4 )
+"""
 
 # print( m44.np_inverse )
 # print(m44*v4)
 
+
+q1 = quaternion()
+q2 = quaternion()
+
+q1.from_euler(1,1,0)
+
+
+#q1.set_rotx(45)
+#q2.set_roty(145)
+
+#q1.conjugate(q2)
+q3 = q1 * q2 
+
+print( q3.slerp(q1,q2,2) ) 
+
+#print(q1.to_m33() )
 
 
 

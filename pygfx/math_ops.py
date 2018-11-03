@@ -602,50 +602,341 @@ class vec4(object):
 
 ###############################################
 class quaternion(object):
-    """ untested - 
-        first stab at quaternion   
+    """ UNTESTED
+        first stab at quaternion 
+        mostly converted from C - 
+        taken from this: https://github.com/mycmessia/3D-Math-Primer/blob/master/3D%20Math/Quaternion.cpp 
+
     """
 
-    def __init__(self,x=0,y=0,z=0,w=1):
+    def __init__(self,w=1,x=0,y=0,z=0):
+        self.w=w 
         self.x=x
         self.y=y
         self.z=z
-        self.w=w  
 
     def __repr__(self):
-        return '(%s, %s, %s, %s)' % (self.x, self.y, self.z, self.w)
+        return '(%s, %s, %s, %s)' % (self.w, self.x, self.y, self.z)
 
     def __getitem__(self, index):
         if index==0:
-            return self.x
-        if index==1:
-            return self.y
-        if index==2:
-            return self.z
-        if index==3:
             return self.w
+        if index==1:
+            return self.x
+        if index==2:
+            return self.y
+        if index==3:
+            return self.z
 
     def __setitem__(self, key, item):
         if key==0:
-            self.x = item
-        if key==1:
-            self.y = item
-        if key==2:
-            self.z = item
-        if key==3:
             self.w = item
+        if key==1:
+            self.x = item
+        if key==2:
+            self.y = item
+        if key==3:
+            self.z = item
 
-    #def __mul__(self, other):
-    #    if isinstance(other, np.ndarray):
+    def set_rotx (self, theta):
+        theta_over2 = theta * .5
+        self.w = math.cos(theta_over2);
+        self.x = math.sin(theta_over2);
+        self.y = 0
+        self.z = 0
 
-    #def inverse
-    #def mag 
-    #def difference
-    #def dot_product 
-    #def to_m44
-    #def from_m44
-    #def to_euler
-    #def from_euler
+    def set_roty (self, theta):
+        theta_over2 = theta * .5
+        self.w = math.cos(theta_over2)
+        self.x = 0
+        self.y = math.sin(theta_over2)
+        self.z = 0
+
+    def set_rotz (self, theta):
+        theta_over2 = theta * .5
+        self.w = math.cos(theta_over2)
+        self.x = 0
+        self.y = 0
+        self.z = math.sin(theta_over2)
+
+    def from_euler(self, h, p, b, transType='obj2inertial'):
+        sp=0;sb=0;sh=0
+        cp=0;cb=0;ch=0
+        
+        sp = math.sin(p*.5) 
+        sb = math.sin(b*.5) 
+        sh = math.sin(h*.5) 
+
+        cp = math.cos(p*.5) 
+        cb = math.cos(b*.5) 
+        ch = math.cos(h*.5) 
+       
+        if (transType == 'obj2inertial'):
+            self.w = ch * cp * cb + sh * sp * sb
+            self.x = ch * sp * cb + sh * cp * sb
+            self.y = -ch * sp * sb + sh * cp * cb
+            self.z = -sh * sp * cb + ch * cp * sb
+        elif (transType == 'inertial2ob'):
+            self.w = ch * cp * cb + sh * sp * sb
+            self.x = -ch * sp * cb - sh * cp * sb
+            self.y = ch * sp * sb - sh * cp * cb
+            self.z = sh * sp * cb - ch * cp * sb
+        
+        else:
+            print( "Invalid transType!" ) 
+
+
+ 
+    ####################### 
+
+    def mag(self):
+        mag = float( math.sqrt(  self.w*self.w + 
+                                 self.x*self.x + 
+                                 self.y*self.y + 
+                                 self.z*self.z) ) 
+        return mag 
+
+    def normalize(self):
+        mag = self.mag() 
+        if mag > 0:
+            oneOverMag = float( 1.0 / mag)
+            self.w *= oneOverMag;
+            self.x *= oneOverMag;
+            self.y *= oneOverMag;
+            self.z *= oneOverMag;
+        else:
+            #identity();
+            pass
+
+
+    def dot_product(self, q): 
+        #return a.x * b.x + a.y * b.y + a.z * b.z + a.z * a.z; #surely this is a typo
+        return self.x*q.x + self.y*q.y + self.z*q.z + self.z*q.z; #<-- ??
+
+    def conjugate(self, q):
+        result = type(self)()
+        
+        result.w = q.w
+        result.x = -q.x
+        result.y = -q.y
+        result.z = -q.z
+        return result
+
+
+    def __mul__(self, a):
+        result = type(self)()
+    
+        w = self.w
+        x = self.x
+        y = self.y
+        z = self.z
+
+        result.w = w * a.w - x * a.x - y * a.y - z * a.z;
+        result.x = w * a.x + x * a.w + z * a.y + y * a.z;
+        result.y = w * a.y + y * a.w + x * a.z + z * a.x;
+        result.z = w * a.z + z * a.w + y * a.x + x * a.y;
+        
+        return result;
+
+
+    def from_m33(self, m33):
+        """ 
+           ⎡m00  m01 m02 0⎤
+           ⎢m10  m11 m12 0⎥
+           ⎢m20  m21 m22 0⎥
+           ⎣Tx   Ty  Tz  1⎦
+
+        """
+
+        m11 = rm.m11;
+        m12 = rm.m12;
+        m13 = rm.m13;
+        
+        m21 = rm.m21;
+        m22 = rm.m22;
+        m23 = rm.m23;
+        
+        m31 = rm.m31;
+        m32 = rm.m32;
+        m33 = rm.m33;
+        
+        fourWSquareMinus1 = m11 + m22 + m33;
+        fourXSquareMinus1 = m11 - m22 - m33;
+        fourYSquareMinus1 = m22 - m11 - m33;
+        fourZSquareMinus1 = m33 - m11 - m22;
+        
+        maxIndex = 0
+        max = fourWSquareMinus1
+        
+        if fourXSquareMinus1 > max:
+            max = fourXSquareMinus1
+            maxIndex = 1
+        
+        if (fourYSquareMinus1 > max):
+            max = fourYSquareMinus1
+            maxIndex = 2
+        
+        if (fourZSquareMinus1 > max):
+            max = fourZSquareMinus1
+            maxIndex = 3
+        
+        max = sqrt (max + 1.0) * 0.5
+        mult = 0.25 / max
+        
+        ## switch (maxIndex)
+        ##     case 0:
+        ##         w = max;
+        ##         x = (m23 - m32) * mult;
+        ##         y = (m31 - m13) * mult;
+        ##         z = (m12 - m21) * mult;
+        ##         break;
+        ##     case 1:
+        ##         x = max;
+        ##         w = (m23 - m32) * mult;
+        ##         y = (m12 + m21) * mult;
+        ##         z = (m31 + m13) * mult;
+        ##         break;
+        ##     case 2:
+        ##         y = max;
+        ##         w = (m31 - m13) * mult;
+        ##         x = (m12 + m21) * mult;
+        ##         z = (m23 + m32) * mult;
+        ##         break;
+        ##     case 3:
+        ##         z = max;
+        ##         w = (m12 - m21) * mult;
+        ##         x = (m31 + m13) * mult;
+        ##         y = (m23 + m32) * mult;
+        ##         z = (m23 + m32) * mult;
+        ##         break;
+        ##     default:
+        ##         break;
+ 
+
+
+    def to_m33(self, transType='inertial2obj'):
+ 
+            mo = matrix33() 
+            q = self 
+
+            if (transType == 'inertial2obj'):
+ 
+                mo[0] = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
+                mo[1] = 2.0 * (q.x * q.y + q.w * q.z)
+                mo[2] = 2.0 * (q.x * q.z + q.w * q.y)
+                
+                mo[3] = 2.0 * (q.x * q.y - q.w * q.z)
+                mo[4] = 1.0 - 2.0 * (q.x * q.x + q.z * q.z)
+                mo[5] = 2.0 * (q.y * q.z + q.w * q.x)
+                
+                mo[6] = 2.0 * (q.x * q.z + q.w * q.y)
+                mo[7] = 2.0 * (q.y * q.z - q.w * q.x)
+                mo[8] = 1.0 - 2.0 * (q.x * q.x + q.y * q.y)
+ 
+                return mo 
+
+            elif (transType == 'obj2inertial'):
+ 
+                mo[0] = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
+                mo[1] = 2.0 * (q.x * q.y - q.w * q.z)
+                mo[2] = 2.0 * (q.x * q.z + q.w * q.y)
+                
+                mo[3] = 2.0 * (q.x * q.y + q.w * q.z)
+                mo[4] = 1.0 - 2.0 * (q.x * q.x + q.z * q.z)
+                mo[5] = 2.0 * (q.y * q.z - q.w * q.x)
+
+                mo[6] = 2.0 * (q.x * q.z + q.w * q.y)
+                mo[7] = 2.0 * (q.y * q.z + q.w * q.x)
+                mo[8] = 1.0 - 2.0 * (q.x * q.x + q.y * q.y)
+ 
+                return mo 
+
+            else:
+                print("Invalid transType!")
+            
+  
+
+    def set_rot_zxis(self, axis, theta):
+        #assert((vectorMag(axis) - 1.0f) < 0.01f);
+        thetaOver2 = theta * .5
+        sinThetaOver2 = math.sin(thetaOver2)
+       
+        w = math.cos(thetaOver2)
+        x = axis.x * sinThetaOver2
+        y = axis.y * sinThetaOver2
+        z = axis.z * sinThetaOver2
+
+    def get_rot_angle(self):
+        thetaOver2 = math.acos(self.w)
+        return thetaOver2 * 2.0
+
+    """
+    Vector3 Quaternion::getRotationAxis() const
+        float sinThetaOver2Sq = 1.0f - w * w;
+        
+        float oneOverSinThetaOver2 = 1.0f / sqrt(sinThetaOver2Sq);
+        
+        float nx = x * oneOverSinThetaOver2;
+        float ny = y * oneOverSinThetaOver2;
+        float nz = z * oneOverSinThetaOver2;
+        
+        return Vector3 (nx, ny, nz);
+    """
+
+
+    # most important advantage of Quaternion is fluent slerp operation
+    def slerp (self, q0, q1, t):
+ 
+        if (t <= 0):
+            return q0
+        if (t >= 1):
+            return q1
+
+        cosOmega = self.dot_product(q0, q1)
+        
+        q1w = q1.w
+        q1x = q1.x
+        q1y = q1.y
+        q1z = q1.z
+        
+        # avoid getting different results
+        if (cosOmega < 0):
+            q1w = -q1w
+            q1x = -q1x
+            q1y = -q1y
+            q1z = -q1z
+            cosOmega -= cosOmega
+        
+        k0 = 0
+        k1 = 0
+        # avoid sth over 0 happening
+        if cosOmega > 0.999:
+            k0 = 1.0 - t
+            k1 = t
+        else:
+        
+            sinOmega = math.sqrt(1.0 - cosOmega * cosOmega)
+            omega = math.atan2 (sinOmega, cosOmega)
+            oneOverSinOmega = 1.0/sinOmega
+            
+            k0 = math.sin ((1.0- t) * omega) * oneOverSinOmega
+            k1 = math.sin (t*omega) * oneOverSinOmega
+        
+        ####
+        result = type(self)()
+        
+        result.x = k0 * q0.x + k1 * q1x;
+        result.y = k0 * q0.y + k1 * q1y;
+        result.z = k0 * q0.z + k1 * q1z;
+        result.w = k0 * q0.w + k1 * q1w;
+        
+        return result
+    
+
+    #def inverse(self)
+    #def difference(self)
+    #def to_euler(self)
+    #def slerp(self)
 
 ###############################################
 class spherical(object):
