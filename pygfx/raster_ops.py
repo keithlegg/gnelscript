@@ -4,7 +4,7 @@ import os, sys, math
 
 from PIL import Image, ImageOps
 
-from pygfx.point_ops import point_operator
+from pygfx.point_ops import point_operator_2d
 
 
 
@@ -12,7 +12,7 @@ from pygfx.point_ops import point_operator
 class RasterObj(object):
     
     def __init__(self):
-        self.ptgen = point_operator()
+        self.ptgen = point_operator_2d()
 
         self.debug_msg = False
         self.res_x = None
@@ -507,8 +507,8 @@ class PixelOp (RasterObj):
                 color = 128
             else:
                 color = 0
-        
-        for i in self.ptgen.calc_circle(x_orig, y_orig, dia):
+
+        for i in self.ptgen.calc_circle_2d(x_orig, y_orig, dia):
             try:
                 dpix[ i[0], i[1] ]= color
             except IndexError:
@@ -768,7 +768,7 @@ class PixelOp (RasterObj):
         else:
             framebuffer= self.fb
 
-        pts = self.ptgen.calc_circle(x_orig, y_orig, dia)
+        pts = self.ptgen.calc_circle_2d(x_orig, y_orig, dia)
         pts.append((x_orig, y_orig))  #add the center too 
 
         is_checked = False

@@ -182,6 +182,21 @@ m44.from_euler(0,45,0)
 ropr.render_matrix_obj( None , m44 ,     1,   100, 'custom_render.png' , obj      )
 """ 
 
+obj = object3d()
+obj.prim_circle() 
+obj.triangulate()
+ 
+#print(obj.poly_centroid(obj.points))
+
+#obj.scale_pts((3,3,30))
+#obj.rotate_pts((30,30,30))
+ropr = simple_render()
+ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
+ropr.save_image('simply_render.png')
+
+#print( obj.calc_circle() )
+
+
 #######################################################
 
 #x = matrix33(-5,5,9,10,0,1,66,77,88)

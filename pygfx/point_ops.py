@@ -14,6 +14,65 @@ from pygfx.math_ops import matrix33
 from pygfx.math_ops import matrix44
 
 
+class point_operator_2d(object):
+    def __init__(self):
+        self.mu   = mu()
+            
+    def rotate_point_2d(self, point, pivot, angle, doRound=False):
+        """ helper to rotate a single point in 2 dimensions """
+        
+        x1 = point[0] - pivot[0]  #x
+        y1 = point[1] - pivot[1]  #y  
+
+        dtr = self.dtr
+
+        a = x1 * math.cos(dtr(angle)) - y1 * math.sin(dtr(angle))
+        b = x1 * math.sin(dtr(angle)) + y1 * math.cos(dtr(angle))
+                
+        if not doRound:
+            return (a + pivot[0], b + pivot[1]);
+        if doRound:
+            return ( round(a + pivot[0]), round(b + pivot[1]) );
+
+    def batch_transform_pts_2d(self, pts, new_coord, doround=False):
+        """ UNTESTED ? - takes a list of tuples and returns a shifted list of tuples , based on a tuple of (x,y) shift"""
+
+        out = []
+        for pt in pts:
+            if not doround:
+                out.append( (pt[0]+ new_coord[0], pt[1]+ new_coord[1] ) ) 
+            if doround:
+                out.append( ( int(pt[0]+ new_coord[0]), int(pt[1]+ new_coord[1]) ) )         
+        return out
+
+    def batch_rotate_pts_2d(self, pts, pivot, angle, doround=False):
+        out = []
+        for pt in pts:
+            out.append( self.rotate_point_2d(pt, pivot, angle, doround) )
+        return out
+
+    def calc_circle_2d(self, x_orig, y_orig, dia, periodic=True, spokes=23):
+        """ spokes = num spokes """
+
+        plot_x = 0;plot_y = 0;
+        out = []
+        
+        degs = 360/spokes
+        dit = 0
+        
+        dtr = self.mu.dtr
+
+        for i in range(spokes):
+            plot_x = x_orig + (math.sin(dtr(dit))*dia) 
+            plot_y = y_orig + (math.cos(dtr(dit))*dia) 
+            out.append( (plot_x, plot_y))
+             
+            dit+=degs
+        
+        if periodic:
+             out.append( out[0] )
+
+        return out
 
 class point_operator(object):
 
@@ -160,11 +219,9 @@ class point_operator(object):
             out.append(  size  ) #south
         return out
 
+    """
     def rotate_points_shifted(self, points, oldpivot, newpivot, angle, doOffset=False, doRound=False):
-        """ rotate points and shift the output from an old point to a new point 
-            doOffset is a SECOND shift of the points if you want to nudge them more, ( fine tuning )
-        """
-
+        #old 2d rotate function  
         rotated_fids =  self.batch_rotate_pts( points, oldpivot, angle , doRound)
 
         deltax = newpivot[0]-oldpivot[0]
@@ -178,44 +235,19 @@ class point_operator(object):
                 newfids.append( (pt[0]+(deltax+doOffset[0]), pt[1]+(deltay+doOffset[1])  ) )
 
         return newfids 
+    """
 
-    def rotate_point(self, point, pivot, angle, doRound=False):
-        """ helper to rotate a single point in 2 dimensions """
-        
-        x1 = point[0] - pivot[0]  #x
-        y1 = point[1] - pivot[1]  #y  
-
-        dtr = self.dtr
-
-        a = x1 * math.cos(dtr(angle)) - y1 * math.sin(dtr(angle))
-        b = x1 * math.sin(dtr(angle)) + y1 * math.cos(dtr(angle))
-                
-        if not doRound:
-            return (a + pivot[0], b + pivot[1]);
-        if doRound:
-            return ( round(a + pivot[0]), round(b + pivot[1]) );
-
-    def batch_transform_pts(self, pts, new_coord, doround=False):
-        """ UNTESTED ? - takes a list of tuples and returns a shifted list of tuples , based on a tuple of (x,y) shift"""
-
-        out = []
-        for pt in pts:
-            if not doround:
-                out.append( (pt[0]+ new_coord[0], pt[1]+ new_coord[1] ) ) 
-            if doround:
-                out.append( ( int(pt[0]+ new_coord[0]), int(pt[1]+ new_coord[1]) ) )         
-        return out
-
-    def batch_rotate_pts(self, pts, pivot, angle, doround=False):
-        out = []
-        for pt in pts:
-            out.append( self.rotate_point(pt, pivot, angle, doround) )
-        return out
-
-    def calc_circle(self, x_orig, y_orig, dia, periodic=True, spokes=23, doRound=False):
+    def calc_circle(self, origin=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
         """ spokes = num spokes """
 
-        plot_x = 0;plot_y = 0;
+        px=0
+        py=0
+        pz=0 
+
+        ox = origin[0]
+        oy = origin[1]
+        oz = origin[2]
+
         out = []
         
         degs = 360/spokes
@@ -224,17 +256,22 @@ class point_operator(object):
         dtr = self.mu.dtr
 
         for i in range(spokes):
-
-            plot_x = x_orig + (math.sin(dtr(dit))*dia) 
-            plot_y = y_orig + (math.cos(dtr(dit))*dia) 
-            if doRound:
-                out.append( (int(plot_x), int(plot_y)) ) 
-            else:
-                out.append( (plot_x, plot_y))
+            if axis=='x':
+                py = oy + (math.sin(dtr(dit))*dia) 
+                pz = oz + (math.cos(dtr(dit))*dia) 
+                out.append( (px, py, pz))
+            if axis=='y':
+                px = ox + (math.sin(dtr(dit))*dia) 
+                pz = oz + (math.cos(dtr(dit))*dia) 
+                out.append( (px, py, pz))
+            if axis=='z':
+                px = ox + (math.sin(dtr(dit))*dia) 
+                py = oy + (math.cos(dtr(dit))*dia) 
+                out.append( (px, py, pz))                
             dit+=degs
         
         if periodic:
-             out.append( out[0] )
+            out.append( out[0] )
 
         return out
  
@@ -629,7 +666,7 @@ class polygon_operator(point_operator):
         pass 
 
     ###############################################   
-    def poly_centroid(self, triangle):
+    def triangle_centroid(self, triangle):
         """ get 3D center of object (average XYZ point) """
 
         # all 3 x coordinates 
@@ -651,6 +688,30 @@ class polygon_operator(point_operator):
         x= (x1+x2+x3)/3
         y= (y1+y2+y3)/3
         z= (z1+z2+z3)/3
+
+        return [x,y,z]
+
+    ###############################################  
+
+    ###############################################   
+    def poly_centroid(self, pts):
+        """ get 3D center of object (average XYZ point) """
+
+        ct = 0
+        ptsx = []
+        ptsy = []
+        ptsz = []
+
+        for pt in pts:
+            ptsx.append(pt[0])
+            ptsy.append(pt[1])
+            ptsz.append(pt[2])            
+            ct += 1
+
+        #average them 
+        x= sum(ptsx)/ct
+        y= sum(ptsy)/ct
+        z= sum(ptsz)/ct
 
         return [x,y,z]
 
@@ -760,6 +821,32 @@ class polygon_operator(point_operator):
             tmp.append( (x,y,z) )
         self.points = tmp
 
+    ############################################### 
+    def radial_trichop(self):
+        """ put a vertex at the center of polygon 
+            then form triangles in a circle 
+            for N sided polygons 
+        """
+        
+        out_polys = []
+
+        for poly in self.polygons:
+            num_vtx = len(poly)
+
+            if num_vtx==3:
+                out_polys.append(poly)
+
+            elif num_vtx==4:
+                v1=poly[0];v2=poly[1];
+                v3=poly[2];v4=poly[3]; 
+                out_polys.append( (v1,v3,v4) ) 
+                out_polys.append( (v1,v2,v3) )              
+ 
+            else:
+                print('# cant triangulate %s sided poly '%num_vtx)
+        # overwrite old data 
+        self.polygons = out_polys
+
 
     ############################################### 
     def triangulate(self):
@@ -776,12 +863,14 @@ class polygon_operator(point_operator):
             if num_vtx==3:
                 out_polys.append(poly)
 
-            if num_vtx==4:
+            elif num_vtx==4:
                 v1=poly[0];v2=poly[1];
                 v3=poly[2];v4=poly[3]; 
                 out_polys.append( (v1,v3,v4) ) 
                 out_polys.append( (v1,v2,v3) )              
-
+ 
+            else:
+                print('# cant triangulate %s sided poly '%num_vtx)
         # overwrite old data 
         self.polygons = out_polys
 
@@ -1248,15 +1337,19 @@ class object3d(polygon_operator):
     ###############################################  
     def prim_cone(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
         ## """ Not done yet - this makes a cone """
-        ## spokes = 8
-        ## circpts = self.calc_circle(0, 0, size, spokes, False)   #2D data
+
+        spokes = 8
+        #circpts = self.calc_circle(0, 0, size, spokes, False)   #2D data
         ## self.points = self.cvt_2d_to_3d(circpts)            #converted to 3D
         ## tmp = []
         ## for x in range(spokes):
         ##     tmp.append(x)
         ## tmp.append(0) #make periodic - insert start at end to close the cicle
         ## self.polygons = [tuple(tmp)]
-        pass
+        
+        self.rotate_pts( rot )
+        self.xform_pts( pos )
+
 
     ############################################### 
     def prim_sphere(self, pos=(0,0,0), rot=(0,0,0), radius=1):
@@ -1473,21 +1566,26 @@ class object3d(polygon_operator):
         self.xform_pts( pos )
 
     ###############################################  
-    def prim_circle(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1, spokes = 5):
+    def prim_circle(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1, spokes = 5):
         """ UNFINSIHED single polygon operations  """    
 
-        print("### prim circle called ", axis, pos, rot, size, spokes)
+        # ARGS: calc_circle_2d( x_orig, y_orig, dia, periodic, spokes=23):
+        #pts2d = self.calc_circle_2d(1, 0, size, False, spokes)   #2D data
+        #for pt in self.cvt_2d_to_3d(pts2d):  #converted to 3D
+        #    pts.append(pt)
 
-        pts2d = self.calc_circle(0, 0, size, False, spokes, False)   #2D data
+        pts    = []
+        plyidx = []
+    
+        # calc_circle( origin=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
+        pts = self.calc_circle( (0,0,0), 1, axis, True, spokes )
         
-        pts = []; plyidx = []
-
-        for pt in self.cvt_2d_to_3d(pts2d):  #converted to 3D
-            pts.append(pt)
-        
+        #we add one because calc_circle_2d returns zero indexed data but OBJ is NOT zero indexed        
         for x in range(spokes):
-            #we add one because calc_circle returns zero indexed data but OBJ is NOT zero indexed
             plyidx.append(x+1) 
+
+        print(len(pts))
+        print(plyidx)
 
         self._insert_poly_idxs(tuple(plyidx))
         self._insert_points(pts)
