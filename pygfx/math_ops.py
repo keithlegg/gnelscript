@@ -656,21 +656,21 @@ class quaternion(object):
         theta_over2 = theta * .5
         self.w = math.cos(theta_over2);
         self.x = math.sin(theta_over2);
-        self.y = 0
-        self.z = 0
+        #self.y = 0
+        #self.z = 0
 
     def set_roty (self, theta):
         theta_over2 = theta * .5
         self.w = math.cos(theta_over2)
-        self.x = 0
+        #self.x = 0
         self.y = math.sin(theta_over2)
-        self.z = 0
+        #self.z = 0
 
     def set_rotz (self, theta):
         theta_over2 = theta * .5
         self.w = math.cos(theta_over2)
-        self.x = 0
-        self.y = 0
+        #self.x = 0
+        #self.y = 0
         self.z = math.sin(theta_over2)
 
     def from_euler(self, h, p, b, trans_type='obj2inertial'):
@@ -1054,7 +1054,6 @@ class matrix33(object):
        
         if isinstance(iterable, matrix33):
             self.m = iterable.m
-
 
         #numpy ND array 
         if isinstance(iterable, np.ndarray):
@@ -1455,7 +1454,10 @@ class matrix44(object):
 
     def insert(self, iterable):
         """ UNTESTED - load the first 16 things we find into this matrix """
-       
+
+        if isinstance(iterable, matrix44):
+            self.m = iterable.m
+
          #numpy ND array 
         if isinstance(iterable, np.ndarray):
             out = [];idx=0
@@ -1547,6 +1549,40 @@ class matrix44(object):
             tmp_buffer.append( self * pvec )
         return tmp_buffer
 
+    def from_euler(self, xrot, yrot, zrot):
+        """
+            derived from the rotate_pts_3d function 
+
+        """
+        dtr = self.mu.dtr
+
+        ####
+        #build rotationY (see diagram above) 
+        y_matrix     =  self.identity
+        y_matrix[0]  =  math.cos(dtr( yrot ))
+        y_matrix[2]  = -math.sin(dtr( yrot ))
+        y_matrix[8]  =  math.sin(dtr( yrot ))
+        y_matrix[10] =  math.cos(dtr( yrot ))
+
+        ####                
+        #build rotationZ (see diagram above) 
+        z_matrix    =  self.identity
+        z_matrix[0] =  math.cos(dtr( zrot ))
+        z_matrix[1] =  math.sin(dtr( zrot ))
+        z_matrix[4] = -math.sin(dtr( zrot ))
+        z_matrix[5] =  math.cos(dtr( zrot ))
+        tmp_matr = y_matrix * z_matrix 
+
+        ####
+        #build rotationX (see diagram above) 
+        x_matrix     =  self.identity
+        x_matrix[5]  =   math.cos(dtr( xrot )) 
+        x_matrix[6]  =   math.sin(dtr( xrot )) 
+        x_matrix[9]  =  -math.sin(dtr( xrot ))
+        x_matrix[10] =   math.cos(dtr( xrot ))
+        rotation_44 = x_matrix * tmp_matr
+ 
+        self.insert(rotation_44)
 
     def rotate_pts_3d(self, points, xrot, yrot, zrot):
         """

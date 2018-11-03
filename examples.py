@@ -147,27 +147,18 @@ print( v4 )
 
 #######################################################
 # test of new quaternion type 
- 
+
+""" 
 q1 = quaternion()
-#q1.from_euler(0,180,0)
-
-#q1.set_rotx(180)
-#m33 = q1.to_m33()#trans_type='obj2inertial'
-
 m33 = matrix33()
-
-m33.from_euler(0,100,0)
-
-print( m33 )
+m33.from_euler(45,0,45)
 q1.from_m33(m33)
-print( q1.to_m33() )
-
-
-#obj = object3d()
-#obj.prim_cube()
-#ropr = simple_render()
-#ropr.render_matrix_obj( m33 , None ,     1,   100, 'custom_render.png' , obj      )
- 
+m9 = q1.to_m33() 
+obj = object3d()
+obj.prim_cube()
+ropr = simple_render()
+ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj      )
+""" 
 
 #######################################################
 # examples of direct matrix manipulation 
@@ -181,6 +172,15 @@ m33 = matrix33(.4,.4,0,.5,-.5,0,0,0,1)
 ropr.render_matrix_obj( m33 , None ,     1,   200, 'custom_render.png' , obj      )
 """
 
+
+""" 
+obj = object3d()
+obj.prim_cube()
+ropr = simple_render()
+m44 = matrix44()
+m44.from_euler(0,45,0)
+ropr.render_matrix_obj( None , m44 ,     1,   100, 'custom_render.png' , obj      )
+""" 
 
 #######################################################
 
