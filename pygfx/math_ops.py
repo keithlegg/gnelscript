@@ -615,6 +615,10 @@ class quaternion(object):
         self.y=y
         self.z=z
 
+    #def inverse(self)
+    #def difference(self)
+    #def to_euler(self)
+
     def __repr__(self):
         return '(%s, %s, %s, %s)' % (self.w, self.x, self.y, self.z)
 
@@ -638,6 +642,16 @@ class quaternion(object):
         if key==3:
             self.z = item
 
+    @property
+    def identity(self):
+        return type(self)(1,0,0,0)
+
+    def set_identity(self):
+        self.w=1 
+        self.x=0
+        self.y=0
+        self.z=0
+
     def set_rotx (self, theta):
         theta_over2 = theta * .5
         self.w = math.cos(theta_over2);
@@ -659,7 +673,7 @@ class quaternion(object):
         self.y = 0
         self.z = math.sin(theta_over2)
 
-    def from_euler(self, h, p, b, transType='obj2inertial'):
+    def from_euler(self, h, p, b, trans_type='obj2inertial'):
         sp=0;sb=0;sh=0
         cp=0;cb=0;ch=0
         
@@ -671,23 +685,19 @@ class quaternion(object):
         cb = math.cos(b*.5) 
         ch = math.cos(h*.5) 
        
-        if (transType == 'obj2inertial'):
+        if (trans_type == 'obj2inertial'):
             self.w = ch * cp * cb + sh * sp * sb
             self.x = ch * sp * cb + sh * cp * sb
             self.y = -ch * sp * sb + sh * cp * cb
             self.z = -sh * sp * cb + ch * cp * sb
-        elif (transType == 'inertial2ob'):
+        elif (trans_type == 'inertial2ob'):
             self.w = ch * cp * cb + sh * sp * sb
             self.x = -ch * sp * cb - sh * cp * sb
             self.y = ch * sp * sb - sh * cp * cb
             self.z = sh * sp * cb - ch * cp * sb
         
         else:
-            print( "Invalid transType!" ) 
-
-
- 
-    ####################### 
+            print( "Invalid trans_type!" ) 
 
     def mag(self):
         mag = float( math.sqrt(  self.w*self.w + 
@@ -700,23 +710,22 @@ class quaternion(object):
         mag = self.mag() 
         if mag > 0:
             oneOverMag = float( 1.0 / mag)
-            self.w *= oneOverMag;
-            self.x *= oneOverMag;
-            self.y *= oneOverMag;
-            self.z *= oneOverMag;
+            self.w *= oneOverMag
+            self.x *= oneOverMag
+            self.y *= oneOverMag
+            self.z *= oneOverMag
         else:
-            #identity();
-            pass
-
+            self.set_identity()
 
     def dot_product(self, q): 
-        #return a.x * b.x + a.y * b.y + a.z * b.z + a.z * a.z; #surely this is a typo
-        return self.x*q.x + self.y*q.y + self.z*q.z + self.z*q.z; #<-- ??
+        #return a.x * b.x + a.y * b.y + a.z * b.z + a.z * a.z; #surely this is a typo?
+        #return self.x*q.x + self.y*q.y + self.z*q.z + self.z*q.z;   #<-- ??
+        return self.x*q.x + self.y*q.y + self.z*q.z + self.z*self.z; #<-- ??
 
     def conjugate(self, q):
         result = type(self)()
         
-        result.w = q.w
+        result.w =  q.w
         result.x = -q.x
         result.y = -q.y
         result.z = -q.z
@@ -731,95 +740,77 @@ class quaternion(object):
         y = self.y
         z = self.z
 
-        result.w = w * a.w - x * a.x - y * a.y - z * a.z;
-        result.x = w * a.x + x * a.w + z * a.y + y * a.z;
-        result.y = w * a.y + y * a.w + x * a.z + z * a.x;
-        result.z = w * a.z + z * a.w + y * a.x + x * a.y;
+        result.w = w * a.w - x * a.x - y * a.y - z * a.z
+        result.x = w * a.x + x * a.w + z * a.y + y * a.z
+        result.y = w * a.y + y * a.w + x * a.z + z * a.x
+        result.z = w * a.z + z * a.w + y * a.x + x * a.y
         
         return result;
 
 
     def from_m33(self, m33):
         """ 
-           ⎡m00  m01 m02 0⎤
-           ⎢m10  m11 m12 0⎥
-           ⎢m20  m21 m22 0⎥
-           ⎣Tx   Ty  Tz  1⎦
-
+           m11  m12 m13 
+           m21  m22 m23 
+           m31  m32 m33 
         """
-
-        m11 = rm.m11;
-        m12 = rm.m12;
-        m13 = rm.m13;
         
-        m21 = rm.m21;
-        m22 = rm.m22;
-        m23 = rm.m23;
-        
-        m31 = rm.m31;
-        m32 = rm.m32;
-        m33 = rm.m33;
-        
-        fourWSquareMinus1 = m11 + m22 + m33;
-        fourXSquareMinus1 = m11 - m22 - m33;
-        fourYSquareMinus1 = m22 - m11 - m33;
-        fourZSquareMinus1 = m33 - m11 - m22;
+        four_w_sq_min1 = m33[0] + m33[4] + m33[8]
+        four_x_sq_min1 = m33[0] - m33[4] - m33[8]
+        four_y_sq_min1 = m33[4] - m33[0] - m33[8]
+        four_z_sq_min1 = m33[8] - m33[0] - m33[4]
         
         maxIndex = 0
-        max = fourWSquareMinus1
+        max = four_w_sq_min1
         
-        if fourXSquareMinus1 > max:
-            max = fourXSquareMinus1
+        if four_x_sq_min1 > max:
+            max = four_x_sq_min1
             maxIndex = 1
         
-        if (fourYSquareMinus1 > max):
-            max = fourYSquareMinus1
+        if (four_y_sq_min1 > max):
+            max = four_y_sq_min1
             maxIndex = 2
         
-        if (fourZSquareMinus1 > max):
-            max = fourZSquareMinus1
+        if (four_z_sq_min1 > max):
+            max = four_z_sq_min1
             maxIndex = 3
         
-        max = sqrt (max + 1.0) * 0.5
+        max = math.sqrt (max + 1.0) * 0.5
         mult = 0.25 / max
         
-        ## switch (maxIndex)
-        ##     case 0:
-        ##         w = max;
-        ##         x = (m23 - m32) * mult;
-        ##         y = (m31 - m13) * mult;
-        ##         z = (m12 - m21) * mult;
-        ##         break;
-        ##     case 1:
-        ##         x = max;
-        ##         w = (m23 - m32) * mult;
-        ##         y = (m12 + m21) * mult;
-        ##         z = (m31 + m13) * mult;
-        ##         break;
-        ##     case 2:
-        ##         y = max;
-        ##         w = (m31 - m13) * mult;
-        ##         x = (m12 + m21) * mult;
-        ##         z = (m23 + m32) * mult;
-        ##         break;
-        ##     case 3:
-        ##         z = max;
-        ##         w = (m12 - m21) * mult;
-        ##         x = (m31 + m13) * mult;
-        ##         y = (m23 + m32) * mult;
-        ##         z = (m23 + m32) * mult;
-        ##         break;
-        ##     default:
-        ##         break;
+        if maxIndex==0:
+            self.w = max;
+            self.x = (m33[5] - m33[7]) * mult;
+            self.y = (m33[6] - m33[2]) * mult;
+            self.z = (m33[1] - m33[3]) * mult;
+
+        if maxIndex==1:
+            self.x = max;
+            self.w = (m33[5] - m33[7]) * mult;
+            self.y = (m33[1] + m33[3]) * mult;
+            self.z = (m33[6] + m33[2]) * mult;
+
+        if maxIndex==2:
+            self.y = max;
+            self.w = (m33[6] - m33[2]) * mult;
+            self.x = (m33[1] + m33[3]) * mult;
+            self.z = (m33[5] + m33[7]) * mult;
+
+        if maxIndex==3:
+            self.z = max;
+            self.w = (m33[1] - m33[3]) * mult;
+            self.x = (m33[6] + m33[2]) * mult;
+            self.y = (m33[5] + m33[7]) * mult;
+            self.z = (m33[5] + m33[7]) * mult;
  
 
 
-    def to_m33(self, transType='inertial2obj'):
+    def to_m33(self, trans_type='inertial2obj'):
  
             mo = matrix33() 
             q = self 
 
-            if (transType == 'inertial2obj'):
+            if (trans_type == 'inertial2obj'):
  
                 mo[0] = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
                 mo[1] = 2.0 * (q.x * q.y + q.w * q.z)
@@ -835,7 +826,7 @@ class quaternion(object):
  
                 return mo 
 
-            elif (transType == 'obj2inertial'):
+            elif (trans_type == 'obj2inertial'):
  
                 mo[0] = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
                 mo[1] = 2.0 * (q.x * q.y - q.w * q.z)
@@ -852,10 +843,8 @@ class quaternion(object):
                 return mo 
 
             else:
-                print("Invalid transType!")
-            
-  
-
+                print("Invalid trans_type!")
+   
     def set_rot_zxis(self, axis, theta):
         #assert((vectorMag(axis) - 1.0f) < 0.01f);
         thetaOver2 = theta * .5
@@ -869,22 +858,18 @@ class quaternion(object):
     def get_rot_angle(self):
         thetaOver2 = math.acos(self.w)
         return thetaOver2 * 2.0
-
-    """
-    Vector3 Quaternion::getRotationAxis() const
-        float sinThetaOver2Sq = 1.0f - w * w;
+ 
+    def get_rot_axis(self):
+        sin_theta_over2Sq = 1.0 - self.w * self.w
+        one_over_sin_theta = 1.0 / math.sqrt(sin_theta_over2Sq)
         
-        float oneOverSinThetaOver2 = 1.0f / sqrt(sinThetaOver2Sq);
+        nx = self.x * one_over_sin_theta
+        ny = self.y * one_over_sin_theta
+        nz = self.z * one_over_sin_theta
         
-        float nx = x * oneOverSinThetaOver2;
-        float ny = y * oneOverSinThetaOver2;
-        float nz = z * oneOverSinThetaOver2;
-        
-        return Vector3 (nx, ny, nz);
-    """
+        return vec3(nx, ny, nz)
+ 
 
-
-    # most important advantage of Quaternion is fluent slerp operation
     def slerp (self, q0, q1, t):
  
         if (t <= 0):
@@ -931,12 +916,6 @@ class quaternion(object):
         result.w = k0 * q0.w + k1 * q1w;
         
         return result
-    
-
-    #def inverse(self)
-    #def difference(self)
-    #def to_euler(self)
-    #def slerp(self)
 
 ###############################################
 class spherical(object):
@@ -987,8 +966,6 @@ class spherical(object):
     #    pass
     #def cartesian_to_polar(self, vec3):
     #   return type(spherical)()
-
-###############################################
 
 ###############################################
 class matrix33(object):
@@ -1059,8 +1036,6 @@ class matrix33(object):
             return c
         #print('## inverse \n\n', self  , ' \n\n', c , ' \n\n',  self*c )
 
-
-
     def serialize(self, inarray):
         """ serialize this array into a list 
             if you want it as a numpy array use self.copy(mtype='numpy')
@@ -1077,6 +1052,10 @@ class matrix33(object):
             accepts numpy.ndarray, list, and tuple 
         """
        
+        if isinstance(iterable, matrix33):
+            self.m = iterable.m
+
+
         #numpy ND array 
         if isinstance(iterable, np.ndarray):
             out = [];idx=0
@@ -1217,6 +1196,40 @@ class matrix33(object):
             tmp_buffer.append( self * pvec )
         return tmp_buffer
 
+
+    def from_euler(self, xrot, yrot, zrot):
+        """
+            derived from the rotate_pts_3d function 
+
+        """
+        dtr = self.mu.dtr
+
+        # build rotationY (see diagram above) 
+        y_matrix =  self.identity
+        y_matrix[0]  =  math.cos(dtr( yrot ))
+        y_matrix[2]  = -math.sin(dtr( yrot ))
+        y_matrix[6]  =  math.sin(dtr( yrot ))
+        y_matrix[8]  =  math.cos(dtr( yrot ))
+
+        ####                
+        # build rotationZ (see diagram above) 
+        z_matrix    =  self.identity
+        z_matrix[0] =  math.cos(dtr( zrot ))
+        z_matrix[1] =  math.sin(dtr( zrot ))
+        z_matrix[3] = -math.sin(dtr( zrot ))
+        z_matrix[4] =  math.cos(dtr( zrot ))
+        tmp_matr =  y_matrix * z_matrix 
+
+        ####
+        # build rotationX (see diagram above) 
+        x_matrix =  self.identity
+        x_matrix[4]  =   math.cos(dtr( xrot )) 
+        x_matrix[5]  =   math.sin(dtr( xrot )) 
+        x_matrix[7]  =  -math.sin(dtr( xrot ))
+        x_matrix[8]  =   math.cos(dtr( xrot ))
+        rotation_33 = x_matrix * tmp_matr 
+ 
+        self.insert(rotation_33)
 
     def rotate_pts_3d(self, points, xrot, yrot, zrot):
         """

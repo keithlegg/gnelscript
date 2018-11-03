@@ -145,25 +145,29 @@ print( v4 )
 # print( m44.np_inverse )
 # print(m44*v4)
 
-
+#######################################################
+# test of new quaternion type 
+ 
 q1 = quaternion()
-q2 = quaternion()
+#q1.from_euler(0,180,0)
 
-q1.from_euler(1,1,0)
+#q1.set_rotx(180)
+#m33 = q1.to_m33()#trans_type='obj2inertial'
 
+m33 = matrix33()
 
-#q1.set_rotx(45)
-#q2.set_roty(145)
+m33.from_euler(0,100,0)
 
-#q1.conjugate(q2)
-q3 = q1 * q2 
-
-print( q3.slerp(q1,q2,2) ) 
-
-#print(q1.to_m33() )
+print( m33 )
+q1.from_m33(m33)
+print( q1.to_m33() )
 
 
-
+#obj = object3d()
+#obj.prim_cube()
+#ropr = simple_render()
+#ropr.render_matrix_obj( m33 , None ,     1,   100, 'custom_render.png' , obj      )
+ 
 
 #######################################################
 # examples of direct matrix manipulation 
@@ -180,8 +184,8 @@ ropr.render_matrix_obj( m33 , None ,     1,   200, 'custom_render.png' , obj    
 
 #######################################################
 
-#x = matrix_33(-5,5,9,10,0,1,66,77,88)
-#x = matrix_33(5,1,5,4,4,22,6,0,0)
+#x = matrix33(-5,5,9,10,0,1,66,77,88)
+#x = matrix33(5,1,5,4,4,22,6,0,0)
 #iv = x.np_inverse
 
 
