@@ -3,6 +3,7 @@
 from pygfx.render import *
 from pygfx.point_ops import *
 from pygfx.math_ops import  *
+from pygfx.obj3d import  *
 
 
 
@@ -129,6 +130,26 @@ ropr.anim([obj], linethick=1, numframes=100, scale=100)
 """
 #######################################################
 
+"""
+# build polygons from scratch points 
+
+obj = object3d()
+
+pts = [(1,1,1),(0,1,1),(-1,-1,1),(2,-2,1)]
+polys = [(1,2,3,4), (2,4,1)]
+obj._insert_poly_idxs(polys)
+obj._insert_points(pts)
+
+pts = [(0,-3,-1),(2,-2,1),(3,-1,1)]
+polys = [(1,2,3)]
+obj._insert_poly_idxs(polys)
+obj._insert_points(pts)
+
+obj.save_obj("radial_trichop.obj")
+"""
+
+#######################################################
+
 
 """
 v3 = vec3(41,32,13)
@@ -182,30 +203,49 @@ m44.from_euler(0,45,0)
 ropr.render_matrix_obj( None , m44 ,     1,   100, 'custom_render.png' , obj      )
 """ 
 
-obj = object3d()
-#obj.prim_triangle(axis='z', pos=(0,0,-1)) 
-obj.prim_circle(axis='x',spokes=9, pos=(0,0,5)) 
 
 
+# prim_circle(self, axis='z',pos=(0,0,0), rot=(0,0,0), size=1, spokes = 5):
+#obj.prim_circle('x', (1,0,0), (0,0,0), 1) 
 #obj.prim_circle(axis='z',spokes=74) 
 #obj.prim_quad(axis='x') 
-
-obj2 = object3d()
+#obj2 = object3d()
 #obj2.prim_triangle(axis='z', pos=(0,0,1)) 
-obj2.prim_circle(axis='x',spokes=9, pos=(0,0,-5)) 
-
+#obj2.prim_circle('x', (-1,0,0), (0,0,0), 1) 
 #obj.triangulate()
 #obj.radial_triangulate(offset=(0,2,0)) 
-
-obj.poly_loft(obj2) 
-
+#obj.poly_loft(obj2) 
 #obj.insert(obj2)
 
-obj.save_obj("radial_trichop.obj")
 
-ropr = simple_render()
-ropr.render_obj((100,0,255), 45, 45, 0, 1, 150, object3d=obj)
-ropr.save_image('simply_render.png')
+
+obj = object3d()
+#obj.prim_triangle(axis='z', pos=(0,0,0)) 
+obj.prim_circle(axis='z', pos=(0,0,0), spokes=42) 
+
+
+#obj2.prim_triangle(axis='z', pos=(0,0,-1)) 
+#obj.insert(obj2) 
+#obj.save_obj("radial_trichop.obj")
+
+ctr = obj.get_face_centroid(0)
+
+
+
+pts = obj.get_face_pts(0) 
+for pt in pts:
+    tmp = object3d()
+    print("### ", pt )
+
+    #prim_cube(self, linecolor=None, pos=(0,0,0), rot=(0,0,0), size=1):
+    tmp.prim_cube(size=.01, pos=pt)
+    obj.insert(tmp)  
+
+obj.save_obj("cubey.obj")
+
+#ropr = simple_render()
+#ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
+#ropr.save_image('simply_render.png')
 
 #print( obj.calc_circle() )
 
