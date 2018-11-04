@@ -183,24 +183,28 @@ ropr.render_matrix_obj( None , m44 ,     1,   100, 'custom_render.png' , obj    
 """ 
 
 obj = object3d()
-#obj.prim_triangle(axis='z') 
+#obj.prim_triangle(axis='z', pos=(0,0,-1)) 
+obj.prim_circle(axis='x',spokes=9, pos=(0,0,5)) 
 
-#prim_circle(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1, spokes = 5)
-obj.prim_circle(axis='z',spokes=74) 
 
-#obj.prim_quad(axis='y') 
+#obj.prim_circle(axis='z',spokes=74) 
+#obj.prim_quad(axis='x') 
 
+obj2 = object3d()
+#obj2.prim_triangle(axis='z', pos=(0,0,1)) 
+obj2.prim_circle(axis='x',spokes=9, pos=(0,0,-5)) 
+
+#obj.triangulate()
+#obj.radial_triangulate(offset=(0,2,0)) 
+
+obj.poly_loft(obj2) 
 
 #obj.insert(obj2)
 
-#obj.triangulate()
-obj.radial_triangulate(offset=(0,0,2)) 
-
 obj.save_obj("radial_trichop.obj")
 
-
 ropr = simple_render()
-ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
+ropr.render_obj((100,0,255), 45, 45, 0, 1, 150, object3d=obj)
 ropr.save_image('simply_render.png')
 
 #print( obj.calc_circle() )

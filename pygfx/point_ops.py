@@ -473,10 +473,15 @@ class polygon_operator(point_operator):
         self.points = tmp
 
     ############################################### 
-    def radial_triangulate(self, offset=None ):
+    def radial_triangulate(self, as_new_obj=False, offset=None ):
         """ put a vertex at the center of polygon 
             then form triangles in a circle 
             for N sided polygons 
+
+ 
+            as_new_obj - replace object OR append to it 
+            offset     - optional spatial offset for new center point 
+                         added so I could turn a circle into an arrow :)   
         """
         
 
@@ -494,13 +499,12 @@ class polygon_operator(point_operator):
             # this will be added as a new point, center of radial mesh      
             fac_ctr = self.poly_centroid(fac_pts)
             
-            # offset is a transform of the radial center point 
-            # added so I can turn a cirle into a cone 
+            # offset is a spatial transform of the radial center point
+            #DEBUG TODO - option to move along face normal!!  
             if offset is not None:
                 fac_ctr[0] = fac_ctr[0]+offset[0]
                 fac_ctr[1] = fac_ctr[1]+offset[1]
                 fac_ctr[2] = fac_ctr[2]+offset[2]
-
 
             # start a new polygon dataset to append later 
             out_pts.append(fac_ctr)
@@ -509,20 +513,63 @@ class polygon_operator(point_operator):
 
             # iterate by two and connect to new radial center     
             for i in range(int(len(poly))):
-                #if i==0:
-                #    out_polys.append( (1, poly[i], poly[len(poly)-1] ) ) 
-                print("############## i ", i )
-
-                #if i>0:
                 out_polys.append( (1, poly[i-1]+1, poly[i]+1 ) ) 
-
          
- 
-        # STUPID BUG ALERT, you have to do the indecies first
-        #self._insert_poly_idxs(out_polys)
-        #self._insert_points(out_pts)
-        self.points = out_pts
-        self.polygons = out_polys
+        if as_new_obj:
+            self.points = out_pts
+            self.polygons = out_polys
+        else:    
+            # STUPID BUG ALERT, you have to do the indecies first
+            self._insert_poly_idxs(out_polys)
+            self._insert_points(out_pts)
+
+
+    ############################################### 
+    def poly_loft(self, obj2, as_new_obj=False):
+        """ assume two profiles have been passed in with identical polygon ordering 
+            connect them togther with new side wall polygons 
+        """
+        print("### debug begin loft op ")
+
+        if len(self.polygons) != len(obj2.polygons):
+            print("## debug ## objects must have the same num polys! ")
+            return None 
+
+
+        new_pts = []
+        new_plys = [] 
+
+        print("### poly counts for both objects %s %s"%( len(self.points), len(obj2.points) )  )
+        for i,poly in enumerate(self.polygons):
+
+            #print("obj 1 ## ", poly )
+            for pidx in poly:
+                print('## ', self.points[pidx-1] )
+                new_pts.append(self.points[pidx-1]) # first half of new poly quad
+
+            print("obj 2 ## ", obj2.polygons[i] )
+            for pidx in obj2.polygons[i]:
+                print('## ', obj2.points[pidx-1] )
+                new_pts.append(obj2.points[pidx-1]) # second half of new poly quad
+                num = len(new_pts)
+                new_plys.append( (num-3, num-2, num ) )                   # assemble the new polygon indices 
+                #new_plys.append( (1,2,3,4) )                   # assemble the new polygon indices 
+
+        
+        print('#####################')
+        print(new_plys)
+        print(len(new_pts))
+
+        self._insert_poly_idxs(obj2.polygons)
+        self._insert_points(obj2.points)
+
+        if True:#as_new_obj:
+            self.points = new_pts
+            self.polygons = new_plys
+        else:    
+            # STUPID BUG ALERT, you have to do the indecies first
+            self._insert_poly_idxs(new_plys)
+            self._insert_points(new_pts)
 
     ############################################### 
     def triangulate(self):
@@ -546,9 +593,8 @@ class polygon_operator(point_operator):
                 out_polys.append( (v1,v2,v3) )              
  
             else:
-                print('# cant triangulate %s sided poly '%num_vtx)
-                # experimental triangulate N sided polygons 
-                #self.radial_triangulate(offset=(0,0,0))
+                print('# experimental N sided triangulation for %s sided poly '%num_vtx)
+                self.radial_triangulate(offset=(0,0,0))
 
         # overwrite old data 
         self.polygons = out_polys
@@ -830,8 +876,8 @@ class object3d(polygon_operator):
         """
 
         if isinstance(obj, object3d):
-            print("########## DEBUG ", obj.points )
-            print("########## DEBUG ", obj.polygons )
+            #print("########## DEBUG ", obj.points )
+            #print("########## DEBUG ", obj.polygons )
 
             # STUPID BUG ALERT, you have to do the indecies first
             self._insert_poly_idxs(obj.polygons)

@@ -4,13 +4,19 @@ Pure python Swiss Army Knife for 3D and 3D graphics.
 
 Procedural model, Render, composite images. 
 
-I am writing this to learn 3D math and graphic better. It is for fun and a
-tool to teach 3D math and graphics. It may even be useful for something.
+I am writing this to learn 3D math. It is for fun and to be used
+as a platform to teach 3D math and graphics. 
+
+It may even be useful for something.
 
 Inspired by years of working with Maya 3D and Houdini. 
 I love the "ops" idea from houdini, everything is an operator and
 you chain them together.
 
+
+design goals:
+    - simple. - Only do what needs to be done and nothing more
+    - flat code structure as possible. All components should be easy to find 
 
 only requires:
     - PIL 

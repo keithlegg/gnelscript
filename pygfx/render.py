@@ -388,7 +388,33 @@ class simple_render(object):
                             ey = cymax
 
                     lines_to_draw.append(  ( (sx,sy), (ex, ey) ) )
-   
+                
+                ###################################
+                # test to draw last line of poly 
+                if pt==num_idx-1:
+                    idx  = int(ply[pt])-1   # index start of line in 2d
+                    idx2 = int(ply[0])-1   # index end of line in 2d
+
+                    # start of line
+                    x = pvtxs[idx][0] #first vtx - x component  
+                    y = pvtxs[idx][1] #first vtx - y component 
+                    z = pvtxs[idx][2]/10 #first vtx - z component 
+
+                    # end of line
+                    x2 = pvtxs[idx2][0] #second vtx - x component  
+                    y2 = pvtxs[idx2][1] #second vtx - y component 
+                    z2 = pvtxs[idx2][2]/10 #second vtx - z component 
+
+                    #start of line to draw in 2d 
+                    sx =  ((x*scale) +center[0])  
+                    sy =  ((y*scale) +center[1])  
+                    #end of line to draw in 2d
+                    ex =  ((x2*scale)+center[0])  
+                    ey =  ((y2*scale)+center[1])   
+
+                    
+                    lines_to_draw.append(  ( (sx,sy), (ex, ey) ) )
+
         return lines_to_draw
 
     ## ## ## ## ## 
