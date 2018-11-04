@@ -185,16 +185,19 @@ ropr.render_matrix_obj( None , m44 ,     1,   100, 'custom_render.png' , obj    
 obj = object3d()
 #obj.prim_triangle(axis='z') 
 
-#prim_circle(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1, spokes = 5):
+#prim_circle(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1, spokes = 5)
+obj.prim_circle(axis='z',spokes=74) 
 
-obj.prim_circle(axis='z',spokes=57) 
+#obj.prim_quad(axis='y') 
+
+
+#obj.insert(obj2)
 
 #obj.triangulate()
- 
+obj.radial_triangulate(offset=(0,0,2)) 
 
-
-obj.radial_trichop() 
 obj.save_obj("radial_trichop.obj")
+
 
 ropr = simple_render()
 ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)

@@ -222,17 +222,6 @@ class polygon_operator(point_operator):
         self.linecolor  = (0,240,00)
         self.vtxcolor   = (0,240,00)
 
-    def insert(self, points, polyids):
-        """ insert a new polygon dataset into current shell 
-        """
-        num_pts  = len(self.points)
-        num_facs = len(self.polygons)
-
-        self.points.extend(points) 
-        for ply in polyids:
-            pass
-
-
     ############################################### 
     def get_mean_z(self, triangle):
         z1 = triangle[0][2]
@@ -374,7 +363,7 @@ class polygon_operator(point_operator):
         x = sum(ptsx)/len(ptsx)
         y = sum(ptsy)/len(ptsy)
         z = sum(ptsz)/len(ptsz)
-        return (x,y,z)
+        return [x,y,z]
         #return(0,0,0)
 
     ###############################################  
@@ -484,43 +473,56 @@ class polygon_operator(point_operator):
         self.points = tmp
 
     ############################################### 
-    def radial_trichop(self):
+    def radial_triangulate(self, offset=None ):
         """ put a vertex at the center of polygon 
             then form triangles in a circle 
             for N sided polygons 
         """
         
+
         out_polys = []
         out_pts   = []
 
         for poly in self.polygons:
             fac_pts = []
-            for pt in poly:
+            for ptidx in poly:
+
                 # build a list of points that make up polygon
-                fac_pts.append(self.points[pt-1]) #not zero indexed?
+                fac_pts.append(self.points[ptidx-1]) #not zero indexed?
+
             # calculate the center of each polygon
             # this will be added as a new point, center of radial mesh      
             fac_ctr = self.poly_centroid(fac_pts)
+            
+            # offset is a transform of the radial center point 
+            # added so I can turn a cirle into a cone 
+            if offset is not None:
+                fac_ctr[0] = fac_ctr[0]+offset[0]
+                fac_ctr[1] = fac_ctr[1]+offset[1]
+                fac_ctr[2] = fac_ctr[2]+offset[2]
+
 
             # start a new polygon dataset to append later 
             out_pts.append(fac_ctr)
-            # add all the old points to our new dataset  
+            # add all the old points to our new dataset, plus our new center point   
             out_pts.extend(self.points)
 
             # iterate by two and connect to new radial center     
             for i in range(int(len(poly))):
-                if i>0:
-                    out_polys.append( (1, poly[i-1], poly[i] ) ) 
-                #if i == len(poly):
-                #    out_polys.append( (1, poly[i-1], poly[i] ) ) 
+                #if i==0:
+                #    out_polys.append( (1, poly[i], poly[len(poly)-1] ) ) 
+                print("############## i ", i )
 
-            #print( out_pts )   
-            #print( out_polys )           
+                #if i>0:
+                out_polys.append( (1, poly[i-1]+1, poly[i]+1 ) ) 
+
+         
  
-        # overwrite old data 
+        # STUPID BUG ALERT, you have to do the indecies first
+        #self._insert_poly_idxs(out_polys)
+        #self._insert_points(out_pts)
         self.points = out_pts
         self.polygons = out_polys
-
 
     ############################################### 
     def triangulate(self):
@@ -545,6 +547,9 @@ class polygon_operator(point_operator):
  
             else:
                 print('# cant triangulate %s sided poly '%num_vtx)
+                # experimental triangulate N sided polygons 
+                #self.radial_triangulate(offset=(0,0,0))
+
         # overwrite old data 
         self.polygons = out_polys
 
@@ -726,7 +731,6 @@ class object3d(polygon_operator):
     def __init__(self):
         super().__init__()  
 
-        #self.faces          = []
         self.face_normals    = []
         #self.point_normals  = []
 
@@ -820,14 +824,28 @@ class object3d(polygon_operator):
         for d in data:
             print(d)
 
+
+    def insert(self, obj):
+        """ insert an objects geometry into this object 
+        """
+
+        if isinstance(obj, object3d):
+            print("########## DEBUG ", obj.points )
+            print("########## DEBUG ", obj.polygons )
+
+            # STUPID BUG ALERT, you have to do the indecies first
+            self._insert_poly_idxs(obj.polygons)
+            self._insert_points(obj.points)
+
+
     ############################################### 
     def _insert_points(self, pt_array):
         """ append points to internal """
 
         #print("insert points count got called ", len(pt_array) )
 
-        for p in pt_array:
-            self.points.append(p)
+        #for p in pt_array:
+        self.points.extend(pt_array)
 
     ############################################### 
     def _insert_poly_idxs(self, idx_array):
