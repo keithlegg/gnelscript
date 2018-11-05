@@ -59,13 +59,12 @@ class object3d(polygon_operator):
 
             polys have to be re-indexed to match the higher index values
         """
-        n = len(self.points)
 
         for pt in otherobj.points:
             self.points.append(pt)
 
         for ply in otherobj.polygons:
-            self.polygons.append(self._reindex_ply(ply,n))  
+            self.polygons.append(self._reindex_ply(ply, self.numpts))  
 
     ###############################################  
     def show(self):
@@ -87,17 +86,32 @@ class object3d(polygon_operator):
         data.append('  rotation      : %s %s %s'%( self.rot[0], self.rot[1], self.rot[2]) )
         data.append('  scale         : %s %s %s'%( self.scale[0], self.scale[1], self.scale[2]) )
         data.append(' --------------------------- ' )        
-        data.append('  num face normals   : %s' %(  len(self.face_normals) ) )#unimplemented
-        data.append('  num verts          : %s' %(  len(self.points) ) )
-        data.append('  num polygons       : %s' %(  len(self.polygons) ) )
+        data.append('  num face normals   : %s' %  self.numfacnrml )  # unimplemented
+        data.append('  num verts          : %s' %  self.numpts     )
+        data.append('  num polygons       : %s' %  self.numply     )
         data.append(' --------------------------- ' )         
-        data.append('  num triangles      : %s' %(   tris) )
-        data.append('  num quads          : %s' %(   quads) )  
-        data.append('  num other          : %s' %(   other) ) 
+        data.append('  num triangles      : %s' %  tris  )
+        data.append('  num quads          : %s' %  quads )  
+        data.append('  num other          : %s' %  other ) 
         data.append('############################\n')
 
         for d in data:
             print(d)
+
+    ############################################### 
+    @property
+    def numply(self):
+        return len(self.polygons)
+
+    @property
+    def numpts(self):
+        return len(self.points)   
+
+    @property
+    def numfacnrml(self):
+        return len(self.face_normals)  
+
+    ############################################### 
 
 
     def insert(self, obj):
@@ -131,11 +145,11 @@ class object3d(polygon_operator):
         #print("insert polygon count got called ", idx_array, type(idx_array) )
 
         # add this to the indexes, so they get added "on top" of existing polygons 
-        n_ply = len(self.polygons)
+        n_ply = self.numply
 
         #if any polygons are loaded, auto increment the face indecies  
         if n_ply>0:
-            n = len(self.points) 
+            n = self.numpts 
         else:
             n = 0
 
@@ -301,7 +315,11 @@ class object3d(polygon_operator):
 
     ############################################### 
     def one_vec_to_obj(self, r3, pos=None):
-        """ single vector into a renderable 3D line """
+        """ single vector into a renderable 3D line 
+            
+            can be from world origin or from a point 
+
+        """
         
         if pos:
             pts = [
@@ -315,10 +333,8 @@ class object3d(polygon_operator):
                    (r3[0], r3[1], r3[2]), 
                   ]
 
-        n = len(self.points) # add this number to the indexes in case of existing geom 
-
+        n = self.numpts # add this number to the indexes in case of existing geom 
         plyidx = [(n+1,n+2)]
-
         #append points to internal 
         for p in pts:
             self.points.append(p)
@@ -336,7 +352,7 @@ class object3d(polygon_operator):
                (r3_2[0], r3_2[1], r3_2[2]), 
               ]
 
-        n = len(self.points) # add this number to the indexes in case of existing geom 
+        n = self.numpts # add this number to the indexes in case of existing geom 
 
         plyidx = [(n+1,n+2)]
 
@@ -354,8 +370,8 @@ class object3d(polygon_operator):
             - can be a list of single values (vec3)
               or a list 2 two values         (vec,position)
 
-
         """
+
         for v in vecs:
             if len(v) == 1:
                 self.one_vec_to_obj(v) 
@@ -486,13 +502,13 @@ class object3d(polygon_operator):
 
         # the first top vertex at (0, 0, r)
         self.points.append( (0,0,radius) )
-        fid = len(self.points)-1
+        fid = self.numpts-1
 
         faces = [] 
 
         # compute 10 vertices at 1st and 2nd rows
         for i in range(1,8):
-            n = len(self.points) # add to this index each time
+            n = self.numpts # add to this index each time
 
             z  = radius * math.sin(V_ANGLE)  # elevaton
             xy = radius * math.cos(V_ANGLE)  # length on XY plane

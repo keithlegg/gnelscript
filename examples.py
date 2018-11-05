@@ -211,11 +211,18 @@ obj = object3d()
 
 obj.load_obj('objects/sphere.obj')
 
-#print(  obj.get_face_edges(340) ) 
+obj2 = object3d()
 
-#obj.triangulate()
+obj.show() 
 
-obj.save_obj("monkey_trich.obj")
+print(obj.numply , obj.numpts )
+
+edges =  obj.get_face_edges(12)  
+print("## edges ", edges[1] )
+
+obj2.vectorlist_to_obj(edges[1])
+
+obj2.save_obj("edges.obj")
 
 ropr = simple_render()
 ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
