@@ -15,6 +15,9 @@ from pygfx.math_ops import matrix44
 
 
 class point_operator(object):
+    """ what became of the original point generator 
+
+    """
 
     def __init__(self):
         self.mu   = mu()
@@ -239,31 +242,26 @@ class polygon_operator(point_operator):
         for p in self.points:
             print(p)
 
+    ###############################################  
+    def get_poly_geom(self, slice=None, ids=None):
+        """ get one or more faces as a new object 
+            specify a list of ids, or a range
+        """
 
-    ############################################### 
+        if ids:
+            # list of specific ids 
+            pass 
+ 
+        if slice:
+            # start-end id range 
+            pass 
 
-    """
-    def copy_pt(self, f_idx, pt_idx):
-        ##  extract point by index 
-        ##  give it an index to polygon, and then point of that polygon 
-        ##   
-        ##  return a vector , or coordinate   
-        
-    def copy_edge(self, f_idx, e_idx):
-        ## extract edges by index 
-        ## give it an index to polygon, and then edge of that polygon 
-        ## return a vector , or coordinate pair  
-        
-    def copy_face(self, f_idx ):
-        ## extract point by index 
-        ## give it an index to polygon, and then point of that polygon 
-        ## return a vector , or coordinate   
-        return None
-    """
+
 
     ###############################################  
     def get_face_pts(self, fid):
-        """ lookup and return the constituent points of a polygon """
+        """ lookup and return the points of a polygon in this object """
+
         tmp = []
 
         if fid<0 or fid > len(self.polygons)-1:
@@ -276,6 +274,21 @@ class polygon_operator(point_operator):
         return tmp
 
     ###############################################  
+    def get_face_data(self, fid):
+        """ lookup and return the polygon indices and points or a single polygon """
+
+        tmp = []
+
+        if fid<0 or fid > len(self.polygons)-1:
+            print('# show_poly- bad face index : %s'%fid)
+            return None
+
+        for v_id in self.polygons[fid]:
+            tmp.append(self.points[v_id-1])
+
+        return [self.polygons[fid], tmp]
+
+    ###############################################  
     def get_face_normal(self, fid):
         """ UNFINISHED """
         tmp = self.get_face_pts(fid) 
@@ -284,28 +297,38 @@ class polygon_operator(point_operator):
 
     ###############################################  
     def get_face_edges(self, fid):
-        """ UNFINISHED 
-            return boundary edge segments as arrays of lines in 3D
-            for extruding  
+        """ UNTESTED 
+            return [[VTX_IDS], [VTX_PTS]]
         """
-        tmp = self.get_face_pts(fid) 
+        tmp = self.get_face_data(fid)  # [poly idx, pt data] 
 
-        data = []
+        out_edge_pts = []
+        out_edge_ids = []
+
+        poly = tmp[0]
+
+        # iterate by two and connect to new radial center   
+        # thanks to pythons negative index, this works a treat  
+        for i in range(len(poly)):
+            out_edge_ids.append( (poly[i-1], poly[i] ) ) 
+            out_edge_pts.append( (self.points[poly[i-1]-1], self.points[poly[i]-1] ) ) 
+
+        return [out_edge_ids, out_edge_pts]
+
 
     ###############################################  
-    def get_obj_centroid(self):
-        pass
+    #def get_edge_centroid(self, f_id , e_id):
+    #    pass
 
     ###############################################        
     def get_face_centroid(self, fid):
         #print('### num faces ', len(self.polygons))
-        if fid > len(self.polygons):
-            print('## error FID too high ')
-            return None 
-
         pts = self.get_face_pts(fid)
         return self.poly_centroid(pts) 
 
+    ############################################### 
+    #def get_obj_centroid(self):
+    #    pass
 
     ###############################################  
     def show_poly(self, id):

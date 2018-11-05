@@ -49,8 +49,6 @@ class object3d(polygon_operator):
         for i in f_idx:
            out_face.append(i+offset)
         return tuple(out_face)
-        
-
 
     ############################################### 
 
