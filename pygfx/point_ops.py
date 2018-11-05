@@ -267,7 +267,7 @@ class polygon_operator(point_operator):
         tmp = []
 
         if fid<0 or fid > len(self.polygons)-1:
-            print('#show_poly- bad face index : %s'%fid)
+            print('# show_poly- bad face index : %s'%fid)
             return None
 
         for v_id in self.polygons[fid]:
@@ -293,8 +293,15 @@ class polygon_operator(point_operator):
         data = []
 
     ###############################################  
+    def get_obj_centroid(self):
+        pass
+
+    ###############################################        
     def get_face_centroid(self, fid):
-        print('### num faces ', len(self.polygons))
+        #print('### num faces ', len(self.polygons))
+        if fid > len(self.polygons):
+            print('## error FID too high ')
+            return None 
 
         pts = self.get_face_pts(fid)
         return self.poly_centroid(pts) 
@@ -514,7 +521,7 @@ class polygon_operator(point_operator):
         
 
     ############################################### 
-    def radial_triangulate_obj(self, as_new_obj=True, offset=None ):
+    def radial_triangulate_obj(self, as_new_obj=False, offset=None ):
         """ put a vertex at the center of polygon 
             then form triangles in a circle 
             for N sided polygons 

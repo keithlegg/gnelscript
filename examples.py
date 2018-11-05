@@ -221,7 +221,7 @@ ropr.render_matrix_obj( None , m44 ,     1,   100, 'custom_render.png' , obj    
 
 obj = object3d()
 #obj.prim_triangle(axis='z', pos=(0,0,0)) 
-obj.prim_circle(axis='z', pos=(0,0,0), spokes=42) 
+#obj.prim_circle(axis='z', pos=(0,0,0), spokes=42) 
 
 
 #obj2.prim_triangle(axis='z', pos=(0,0,-1)) 
@@ -230,16 +230,6 @@ obj.prim_circle(axis='z', pos=(0,0,0), spokes=42)
 
 ctr = obj.get_face_centroid(0)
 
-
-
-pts = obj.get_face_pts(0) 
-for pt in pts:
-    tmp = object3d()
-    print("### ", pt )
-
-    #prim_cube(self, linecolor=None, pos=(0,0,0), rot=(0,0,0), size=1):
-    tmp.prim_cube(size=.01, pos=pt)
-    obj.insert(tmp)  
 
 obj.save_obj("cubey.obj")
 
@@ -276,6 +266,24 @@ ropr.save_image('my3d.png')
 
 
 #######################################################
+
+
+
+def circle_with_cube_all_pts():
+	""" make a circle with a rotated cube at each point """
+	obj = object3d()
+	obj.prim_circle(axis='z', pos=(0,0,0), spokes=42) 
+	ctr = obj.get_face_centroid(0)
+	obj.triangulate(force=True)
+	pts = obj.get_face_pts(0) 
+	ct = 0
+	for pt in pts:
+	    tmp = object3d()
+	    tmp.prim_cube(size=.05, pos=pt, rot=(ct,ct,ct))
+	    ct += 10
+	    obj.insert(tmp)  
+	obj.save_obj("cubey.obj")
+
 
 
 

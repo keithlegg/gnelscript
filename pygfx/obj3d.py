@@ -300,7 +300,157 @@ class object3d(polygon_operator):
         #return vectrx
         return out_face_normals
 
+
+    ############################################### 
+    def one_vec_to_obj(self, r3, pos=None):
+        """ single vector into a renderable 3D line """
+        
+        if pos:
+            pts = [
+                   (pos[0]       , pos[1]      , pos[2]       ),
+                   (pos[0]+r3[0] , pos[1]+r3[1], pos[2]+r3[2] ),                   
+                  ]
+
+        if not pos:    
+            pts = [
+                   (0    , 0    , 0    ),
+                   (r3[0], r3[1], r3[2]), 
+                  ]
+
+        n = len(self.points) # add this number to the indexes in case of existing geom 
+
+        plyidx = [(n+1,n+2)]
+
+        #append points to internal 
+        for p in pts:
+            self.points.append(p)
+        for vec in plyidx:    
+            self.polygons.append( vec )  
+
+    ############################################### 
+    def two_vecs_to_obj(self, r3_1, r3_2):
+        """ a vector between two other vectors 
+            probably not useful, but interesting 
+        """
+        
+        pts = [
+               (r3_1[0], r3_1[1], r3_1[2]),
+               (r3_2[0], r3_2[1], r3_2[2]), 
+              ]
+
+        n = len(self.points) # add this number to the indexes in case of existing geom 
+
+        plyidx = [(n+1,n+2)]
+
+        #append points to internal 
+        for p in pts:
+            self.points.append(p)
+        for vec in plyidx:    
+            self.polygons.append( vec )  
+ 
+    ############################################### 
+    def vectorlist_to_obj(self, vecs):
+        """ take a list of vectors and convert it to renderable geometry 
+        
+            vecs:
+            - can be a list of single values (vec3)
+              or a list 2 two values         (vec,position)
+
+
+        """
+        for v in vecs:
+            if len(v) == 1:
+                self.one_vec_to_obj(v) 
+            if len(v) == 2:
+                self.one_vec_to_obj(v[0], v[1])                 
+                
+        # experiment to make a line bewteen each 2 points 
+        #for i,v in enumerate(vecs):
+        #    if i>0:    
+        #        self.two_vecs_to_obj(vecs[i-1], v) 
+
     ###############################################  
+    ###############################################  
+    #        BUILTIN PRIMITIVE OBJECTS
+    ###############################################  
+    ###############################################  
+  
+    def prim_line(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
+        """ 3d lines, 2 point polygons """
+
+        if axis=='x':
+            pts =[ (-size,0,0), (size,0,0) ]
+        if axis=='y':
+            pts =[ (0,-size,0), (0,size,0) ]
+        if axis=='z':
+            pts =[ (0,0,-size) , (0,0,size) ]
+
+        plyidx = (1,2)
+       
+        self._insert_poly_idxs(plyidx) 
+        self._insert_points(pts)
+        self.rotate_pts( rot )
+        self.xform_pts( pos )
+
+    ###############################################  
+    def prim_triangle(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
+        """ single polygon operations (that can be stacked together ?) """
+
+        if axis=='x':
+            pts =  [(0,-size,0), (0,0,size), (0,size,0) ]
+        if axis=='y':
+            pts =  [(0,0,-size), (size,0,0), (0,0,size) ]
+        if axis=='z':
+            pts =  [(-size,0,0), (0,size,0), (size,0,0) ]
+
+        plyidx = (1,2,3)
+       
+        self._insert_poly_idxs(plyidx) 
+        self._insert_points(pts)
+        self.rotate_pts( rot )
+        self.xform_pts( pos )
+        
+    ###############################################  
+    def prim_quad(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
+        """ single polygon operations (that can be stacked together ?) """
+        
+        if axis == 'x':
+            pts = [(0,-size,-size), (0,-size,size), (0,size,size), (0,size,-size) ] #X AXIS
+
+        if axis == 'y':
+            pts = [(-size,0,-size), (-size,0,size), (size,0,size), (size,0,-size) ] #Y AXIS
+            
+        if axis == 'z':
+            pts = [(-size,-size,0), (-size,size,0), (size,size,0), (size,-size,0) ] #Z AXIS
+
+        plyidx    = (1,2,3,4)
+       
+        self._insert_poly_idxs(plyidx) 
+        self._insert_points(pts)
+        self.rotate_pts( rot )
+        self.xform_pts( pos )
+
+    ###############################################  
+    def prim_circle(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1, spokes = 9):
+        """ UNFINSIHED single polygon operations  """    
+
+        pts    = []
+        plyidx = []
+
+        pts = self.calc_circle( pos, size, axis, True, spokes )
+        
+        #we add one because calc_circle_2d returns zero indexed data but OBJ is NOT zero indexed        
+        for x in range(spokes):
+            plyidx.append(x+1) 
+
+        #print(len(pts))
+        #print(plyidx)
+
+        self._insert_poly_idxs(tuple(plyidx))
+        self._insert_points(pts)
+
+    ###############################################
+
     def prim_cone(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
         ## """ Not done yet - this makes a cone """
 
@@ -476,101 +626,44 @@ class object3d(polygon_operator):
         self.xform_pts( pos )
 
     ###############################################  
-    def prim_line(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
-        """ 3d lines, 2 point polygons """
-
-        if axis=='x':
-            pts =[ (-size,0,0), (size,0,0) ]
-        if axis=='y':
-            pts =[ (0,-size,0), (0,size,0) ]
-        if axis=='z':
-            pts =[ (0,0,-size) , (0,0,size) ]
-
-        plyidx = (1,2)
-       
-        self._insert_poly_idxs(plyidx) 
-        self._insert_points(pts)
-        self.rotate_pts( rot )
-        self.xform_pts( pos )
-
-    ###############################################  
-    def prim_triangle(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
-        """ single polygon operations (that can be stacked together ?) """
-
-        if axis=='x':
-            pts =  [(0,-size,0), (0,0,size), (0,size,0) ]
-        if axis=='y':
-            pts =  [(0,0,-size), (size,0,0), (0,0,size) ]
-        if axis=='z':
-            pts =  [(-size,0,0), (0,size,0), (size,0,0) ]
-
-        plyidx = (1,2,3)
-       
-        self._insert_poly_idxs(plyidx) 
-        self._insert_points(pts)
-        self.rotate_pts( rot )
-        self.xform_pts( pos )
-
-    ###############################################  
-    def prim_quad(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
-        """ single polygon operations (that can be stacked together ?) """
-        
-        if axis == 'x':
-            pts = [(0,-size,-size), (0,-size,size), (0,size,size), (0,size,-size) ] #X AXIS
-
-        if axis == 'y':
-            pts = [(-size,0,-size), (-size,0,size), (size,0,size), (size,0,-size) ] #Y AXIS
-            
-        if axis == 'z':
-            pts = [(-size,-size,0), (-size,size,0), (size,size,0), (size,-size,0) ] #Z AXIS
-
-        plyidx    = (1,2,3,4)
-       
-        self._insert_poly_idxs(plyidx) 
-        self._insert_points(pts)
-        self.rotate_pts( rot )
-        self.xform_pts( pos )
-
-    ###############################################  
-    def prim_circle(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1, spokes = 5):
-        """ UNFINSIHED single polygon operations  """    
-
-        # ARGS: calc_circle_2d( x_orig, y_orig, dia, periodic, spokes=23):
-        #pts2d = self.calc_circle_2d(1, 0, size, False, spokes)   #2D data
-        #for pt in self.cvt_2d_to_3d(pts2d):  #converted to 3D
-        #    pts.append(pt)
-
-        pts    = []
-        plyidx = []
-    
-        # calc_circle( origin=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
-        pts = self.calc_circle( pos, size, axis, True, spokes )
-        
-        #we add one because calc_circle_2d returns zero indexed data but OBJ is NOT zero indexed        
-        for x in range(spokes):
-            plyidx.append(x+1) 
-
-        #print(len(pts))
-        #print(plyidx)
-
-        self._insert_poly_idxs(tuple(plyidx))
-        self._insert_points(pts)
+    def prim_arrow(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1, spokes = 5):
+        """ UNFINSIHED single polygon operations  """   
+        pass
 
     ############################################### 
     def prim_cube(self, linecolor=None, pos=(0,0,0), rot=(0,0,0), size=1):
         """ single polygon operations (that can be stacked togteher ?) """
         pts = [];plybfr = []
                 
-        # by adding position argument we can create it in different places
-        pts.append( (-size+pos[0], -size+pos[1], size+pos[2])  ) #vertex 0
-        pts.append( (-size+pos[0],  size+pos[1], size+pos[2])  ) #vertex 1
-        pts.append( ( size+pos[0],  size+pos[1], size+pos[2])  ) #vertex 2  
-        pts.append( ( size+pos[0], -size+pos[1], size+pos[2])  ) #vertex 3
-        # notice these next 4 are the same coordinates with a negative Z instead!
-        pts.append( (-size+pos[0], -size+pos[1], -size+pos[2])  ) #vertex 4
-        pts.append( (-size+pos[0],  size+pos[1], -size+pos[2])  ) #vertex 5
-        pts.append( ( size+pos[0],  size+pos[1], -size+pos[2])  ) #vertex 6  
-        pts.append( ( size+pos[0], -size+pos[1], -size+pos[2])  ) #vertex 7
+        pivot = 'obj' #make object at origin, then move VS make in place       
+        
+        if pivot == 'world':  
+            """ build it in place - making the pivot point at world zero """
+            # by adding position argument we can create it in different places
+            pts.append( (-size+pos[0], -size+pos[1], size+pos[2])  ) #vertex 0
+            pts.append( (-size+pos[0],  size+pos[1], size+pos[2])  ) #vertex 1
+            pts.append( ( size+pos[0],  size+pos[1], size+pos[2])  ) #vertex 2  
+            pts.append( ( size+pos[0], -size+pos[1], size+pos[2])  ) #vertex 3
+            # notice these next 4 are the same coordinates with a negative Z instead!
+            pts.append( (-size+pos[0], -size+pos[1], -size+pos[2])  ) #vertex 4
+            pts.append( (-size+pos[0],  size+pos[1], -size+pos[2])  ) #vertex 5
+            pts.append( ( size+pos[0],  size+pos[1], -size+pos[2])  ) #vertex 6  
+            pts.append( ( size+pos[0], -size+pos[1], -size+pos[2])  ) #vertex 7
+
+        if pivot == 'obj':
+            """ build it center of world THEN move it into place """
+
+            # by adding position argument we can create it in different places
+            pts.append( (-size, -size, size)  ) #vertex 0
+            pts.append( (-size,  size, size)  ) #vertex 1
+            pts.append( ( size,  size, size)  ) #vertex 2  
+            pts.append( ( size, -size, size)  ) #vertex 3
+            # notice these next 4 are the same coordinates with a negative Z instead!
+            pts.append( (-size, -size, -size)  ) #vertex 4
+            pts.append( (-size,  size, -size)  ) #vertex 5
+            pts.append( ( size,  size, -size)  ) #vertex 6  
+            pts.append( ( size, -size, -size)  ) #vertex 7
+
 
         # plot the connections between the points that will form polygons
         plybfr.append( (1,2,3,4) ) #polygon 0  #front
@@ -588,75 +681,11 @@ class object3d(polygon_operator):
 
         self._insert_poly_idxs(plybfr) 
         self._insert_points(pts)
+
         self.rotate_pts( rot )
-        #self.xform_pts( pos )
-
-    ############################################### 
-    def one_vec_to_obj(self, r3, pos=None):
-        """ single vector into a renderable 3D line """
-        
-        if pos:
-            pts = [
-                   (pos[0]       , pos[1]      , pos[2]       ),
-                   (pos[0]+r3[0] , pos[1]+r3[1], pos[2]+r3[2] ),                   
-                  ]
-
-        if not pos:    
-            pts = [
-                   (0    , 0    , 0    ),
-                   (r3[0], r3[1], r3[2]), 
-                  ]
-
-        n = len(self.points) # add this number to the indexes in case of existing geom 
-
-        plyidx = [(n+1,n+2)]
-
-        #append points to internal 
-        for p in pts:
-            self.points.append(p)
-        for vec in plyidx:    
-            self.polygons.append( vec )  
-
-    ############################################### 
-    def two_vecs_to_obj(self, r3_1, r3_2):
-        """ a vector between two other vectors 
-            probably not useful, but interesting 
-        """
-        
-        pts = [
-               (r3_1[0], r3_1[1], r3_1[2]),
-               (r3_2[0], r3_2[1], r3_2[2]), 
-              ]
-
-        n = len(self.points) # add this number to the indexes in case of existing geom 
-
-        plyidx = [(n+1,n+2)]
-
-        #append points to internal 
-        for p in pts:
-            self.points.append(p)
-        for vec in plyidx:    
-            self.polygons.append( vec )  
- 
-    ############################################### 
-    def vectorlist_to_obj(self, vecs):
-        """ take a list of vectors and convert it to renderable geometry 
-        
-            vecs:
-            - can be a list of single values (vec3)
-              or a list 2 two values         (vec,position)
+        if pivot == 'obj':
+            self.xform_pts( pos )
 
 
-        """
-        for v in vecs:
-            if len(v) == 1:
-                self.one_vec_to_obj(v) 
-            if len(v) == 2:
-                self.one_vec_to_obj(v[0], v[1])                 
-                
-        # experiment to make a line bewteen each 2 points 
-        #for i,v in enumerate(vecs):
-        #    if i>0:    
-        #        self.two_vecs_to_obj(vecs[i-1], v) 
 
 
