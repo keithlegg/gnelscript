@@ -217,8 +217,13 @@ class polygon_operator(point_operator):
     def __init__(self):
         super().__init__()  
 
-        self.points    = []             #list of tuples of XYZ points per vertex         -  [(x,y,z), (x,y,z)]  
-        self.polygons  = []             #list of tuples for 2 or more vertex connections -  [(1,2,5,8) , (1,2)] 
+        self.points          = []    # list of tuples of XYZ points per vertex         -  [(x,y,z), (x,y,z)]  
+        self.polygons        = []    # list of tuples for 2 or more vertex connections -  [(1,2,5,8) , (1,2)] 
+        self.face_normals    = []
+        #self.point_normals  = []
+
+        #self.point_colors   = []
+        #self.line_colors    = []
 
         #render properties
         self.linecolors = None #iterable of colors for lines 
@@ -233,8 +238,10 @@ class polygon_operator(point_operator):
         return (z1+z2+z3)/3
 
     ###############################################     
-    def calc_bbox(self, object):
-        """ UNFINISHED """
+    def calc_bbox(self, object=None, fids=None ):
+        """ UNFINISHED  
+            get the boudning area of an object or face(s)
+        """
         maxx = 0
         maxy = 0
         maxz = 0
@@ -244,7 +251,8 @@ class polygon_operator(point_operator):
 
     ###############################################  
     def get_poly_geom(self, slice=None, ids=None):
-        """ get one or more faces as a new object 
+        """ UNFINISHED  
+            get one or more faces as a new object 
             specify a list of ids, or a range
         """
 
@@ -275,7 +283,9 @@ class polygon_operator(point_operator):
 
     ###############################################  
     def get_face_data(self, fid):
-        """ lookup and return the polygon indices and points or a single polygon """
+        """ lookup and return the polygon indices and points or a single polygon 
+            same as get_face_pts() , but this will get the indices and points
+        """
 
         tmp = []
 
@@ -288,12 +298,53 @@ class polygon_operator(point_operator):
 
         return [self.polygons[fid], tmp]
 
-    ###############################################  
-    def get_face_normal(self, fid):
-        """ UNFINISHED """
-        tmp = self.get_face_pts(fid) 
+    def three_vec3_to_normal(self, v1, v2, v3):
+        """ take 3 vec3 objects and return a face normal """
 
-        data = []
+        #secondary tweaks to the normal data 
+        scale     = 1
+        normalize = False  #make each face normal unit length 
+
+        # calculate the face normal  
+        a = v1 - v2;b = v1 - v3;
+        if normalize:
+            f_nrml = a.cross(b).normal*scale
+        else:    
+            f_nrml = a.cross(b)*scale         
+        
+        return f_nrml 
+
+    ###############################################  
+    def get_face_normal(self, fid=None):
+        """ lookup a face and calulate a face normal for it  
+            only tested for 3 or 4 sided polygon 
+            also returns the center position of a face
+
+            returns ???
+        """
+
+        if fid == None:
+            print("## error - need a face id to get normal")
+            return None 
+
+
+        # create a vec3 for each vertex (3 or 4 sided polys)
+        v1=vec3();v2=vec3()
+        v3=vec3();v4=vec3()
+
+        tmp = self.get_face_data(fid) #returns [fidx, pts] 
+        f = tmp[0] #poly = face indices  
+
+        v1.insert( self.points[f[0]-1] )
+        v2.insert( self.points[f[1]-1] )
+        v3.insert( self.points[f[2]-1] )                
+        f_nrml = self.three_vec3_to_normal(v1, v2, v3)
+
+        # get the position of the face 
+        #fpos = self.poly_centroid([v1,v2,v3])
+
+        return f_nrml   
+
 
     ###############################################  
     def get_face_edges(self, fid):
@@ -351,10 +402,10 @@ class polygon_operator(point_operator):
         #ETC
         pass 
 
-    ###############################################   
+    ###############################################  
+    """ 
+    # replaced by poly_centroid
     def triangle_centroid(self, triangle):
-        """ get 3D center of object (average XYZ point) """
-
         # all 3 x coordinates 
         x1 = triangle[0][0]
         x2 = triangle[1][0]
@@ -376,7 +427,7 @@ class polygon_operator(point_operator):
         z= (z1+z2+z3)/3
 
         return [x,y,z]
-
+    """  
 
     ###############################################   
     def poly_centroid(self, pts):

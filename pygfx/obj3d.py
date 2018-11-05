@@ -1,5 +1,8 @@
 
+
 from pygfx.point_ops import polygon_operator
+from pygfx.math_ops import vec3 
+
 
 ###############################################
 
@@ -7,13 +10,6 @@ class object3d(polygon_operator):
 
     def __init__(self):
         super().__init__()  
-
-        self.face_normals    = []
-        #self.point_normals  = []
-
-        #self.point_colors   = []
-        #self.line_colors    = []
-
 
         #self.geom_history = []
  
@@ -192,9 +188,9 @@ class object3d(polygon_operator):
         return vectrx
 
     ############################################### 
-    def calc_face_normals(self, f_index=None):
-        """ iterate each vertex by face assignment and convert 
-            to vec3 
+    def calc_face_normals(self):
+        """ calculate the normals for each face of object
+            UNFINISHED - ONLY WORKS FOR 3 and four side polys  
         """
         
         vectrx = []
@@ -203,56 +199,15 @@ class object3d(polygon_operator):
         scale     = 1
         normalize = False  #make each face normal unit length 
 
-        out_face_normals = [] 
+        cache_face_normals = [] 
 
         # iterate each face and convert eart vertex into a vec3 
-        for f in self.polygons:
-            
-            f_nrml = None 
-
-            # create a vec3 for each vertex (3 or 4 sided polys)
-            v1=vec3();v2=vec3()
-            v3=vec3();v4=vec3()
-
-            # load each point into a pygfx.vec3 object 
-            # 3 sided polys
-            if len(f) == 3:
-                v1.insert( self.points[f[0]-1] )
-                v2.insert( self.points[f[1]-1] )
-                v3.insert( self.points[f[2]-1] )
-                 
-                #calculate the face normal  
-                a = v1 - v2;b = v1 - v3;
-                if normalize:
-                    f_nrml = a.cross(b).normal*scale
-                else:    
-                    f_nrml = a.cross(b)*scale 
-                #get the position of the face 
-                fpos = self.poly_centroid([v1,v2,v3])
-                out_face_normals.append( (f_nrml,fpos) ) #store vec3, position
-
-            # 4 sided polys     
-            if len(f) == 4:
-                v1.insert( self.points[f[0]-1] )
-                v2.insert( self.points[f[1]-1] )
-                v3.insert( self.points[f[2]-1] )                
-                #v4.insert( self.points[f[3]-1] )
-
-                #calculate the face normal  
-                a = v1 - v2;b = v1 - v3;
-                if normalize:
-                    f_nrml = a.cross(b).normal*scale
-                else:    
-                    f_nrml = a.cross(b)*scale  
-                #get the position of the face 
-                fpos = self.poly_centroid([v1,v2,v3])
-
-                out_face_normals.append( (f_nrml,fpos) ) #store vec3, position
-
-            #store it in object for later use 
+        for idx in range(self.numply):
+            f_nrml = get_face_normal(idx)
+            # store it in object for later use 
             self.face_normals.append(f_nrml) 
 
-        return out_face_normals
+        return cache_face_normals
 
     ############################################### 
     def test_vector_thingy(self, f_index=None):
@@ -353,9 +308,7 @@ class object3d(polygon_operator):
               ]
 
         n = self.numpts # add this number to the indexes in case of existing geom 
-
         plyidx = [(n+1,n+2)]
-
         #append points to internal 
         for p in pts:
             self.points.append(p)
@@ -363,20 +316,39 @@ class object3d(polygon_operator):
             self.polygons.append( vec )  
  
     ############################################### 
-    def vectorlist_to_obj(self, vecs):
+    
+    #def vectorlist_to_vec3(self, vecs, pos=None):
+    
+    #def vectorlist_to_vec3(self, vecs, pos=None):
+
+    def vectorlist_to_obj(self, vecs, pos=None):
         """ take a list of vectors and convert it to renderable geometry 
         
             vecs:
             - can be a list of single values (vec3)
               or a list 2 two values         (vec,position)
+                  -- you can also pass a POS seperately , like in case of a vec3 type 
 
         """
+        
+        if not isinstance(vecs, list):
+            print ("## error vectorlist_to_obj - only accepts list of vectors ")
+            return None         
 
         for v in vecs:
-            if len(v) == 1:
-                self.one_vec_to_obj(v) 
-            if len(v) == 2:
-                self.one_vec_to_obj(v[0], v[1])                 
+
+            # somehow this gets recursive if None - exit just in case 
+            if v == None:
+                return None 
+
+            if isinstance(v, vec3):
+                self.one_vec_to_obj( (v[0],v[1],v[2]), pos  ) 
+
+            if isinstance(v,tuple) or isinstance(v, list):    
+                if len(v) == 1:
+                    self.one_vec_to_obj(v, pos) 
+                if len(v) == 2:
+                    self.one_vec_to_obj(v[0], v[1])                 
                 
         # experiment to make a line bewteen each 2 points 
         #for i,v in enumerate(vecs):

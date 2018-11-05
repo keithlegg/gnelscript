@@ -203,7 +203,7 @@ m44.from_euler(0,45,0)
 ropr.render_matrix_obj( None , m44 ,     1,   100, 'custom_render.png' , obj      )
 """ 
 
-
+"""
 
 obj = object3d()
 #obj.prim_triangle(axis='z', pos=(0,0,0)) 
@@ -211,22 +211,24 @@ obj = object3d()
 
 obj.load_obj('objects/sphere.obj')
 
+
 obj2 = object3d()
+for i in range(obj.numpts):
 
-obj.show() 
+    edges  = obj.get_face_edges(i)  
+    normal = obj.get_face_normal(i)
+    pos    = obj.get_face_centroid(i) 
 
-print(obj.numply , obj.numpts )
-
-edges =  obj.get_face_edges(12)  
-print("## edges ", edges[1] )
-
-obj2.vectorlist_to_obj(edges[1])
+    obj2.vectorlist_to_obj(edges[1])
+    obj2.vectorlist_to_obj( [normal], pos)
 
 obj2.save_obj("edges.obj")
 
+
 ropr = simple_render()
-ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
+ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
 ropr.save_image('simply_render.png')
+"""
 
 #print( obj.calc_circle() )
 
@@ -261,20 +263,48 @@ ropr.save_image('my3d.png')
 
 
 def circle_with_cube_all_pts():
-	""" make a circle with a rotated cube at each point """
-	obj = object3d()
-	obj.prim_circle(axis='z', pos=(0,0,0), spokes=42) 
-	ctr = obj.get_face_centroid(0)
-	obj.triangulate(force=True)
-	pts = obj.get_face_pts(0) 
-	ct = 0
-	for pt in pts:
-	    tmp = object3d()
-	    tmp.prim_cube(size=.05, pos=pt, rot=(ct,ct,ct))
-	    ct += 10
-	    obj.insert(tmp)  
-	obj.save_obj("cubey.obj")
+    """ make a circle with a rotated cube at each point """
+    obj = object3d()
+    obj.prim_circle(axis='z', pos=(0,0,0), spokes=42) 
+    ctr = obj.get_face_centroid(0)
+    obj.triangulate(force=True)
+    pts = obj.get_face_pts(0) 
+    ct = 0
+    for pt in pts:
+        tmp = object3d()
+        tmp.prim_cube(size=.05, pos=pt, rot=(ct,ct,ct))
+        ct += 10
+        obj.insert(tmp)  
+    obj.save_obj("cubey.obj")
 
 
 
+
+def load_obj_build_another_fromit(objectpath):
+    """ load an object, 
+        turn its normals into another object, 
+        render and save image and new object 
+    """
+
+    obj = object3d()
+    obj.load_obj(objectpath)
+
+    obj2 = object3d()
+    for i in range(obj.numpts):
+        edges  = obj.get_face_edges(i)  
+        normal = obj.get_face_normal(i)
+        pos    = obj.get_face_centroid(i) 
+
+        obj2.vectorlist_to_obj(edges[1])
+        obj2.vectorlist_to_obj( [normal], pos)
+
+    obj2.save_obj("edges.obj")
+
+    ropr = simple_render()
+    ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
+    ropr.save_image('simply_render.png')
+
+
+
+load_obj_build_another_fromit('objects/sphere.obj')
 
