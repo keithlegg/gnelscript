@@ -109,14 +109,11 @@ class object3d(polygon_operator):
 
         # if tuple or list assume its [polyidx, points]
         if isinstance(obj, tuple) or isinstance(obj, list):
-            self._insert_poly_idxs(obj[0])
-            self._insert_points(obj[1])
+            self.insert_polygons(obj[0], obj[1])
 
         if isinstance(obj, object3d):
-            # STUPID BUG ALERT, you have to do the indecies first
-            self._insert_poly_idxs(obj.polygons)
-            self._insert_points(obj.points)
-    
+            self.insert_polygons(obj.polygons, obj.points)
+
 
     ############################################### 
     def convert_pts_vec3(self):
@@ -323,10 +320,9 @@ class object3d(polygon_operator):
         if axis=='z':
             pts =[ (0,0,-size) , (0,0,size) ]
 
-        plyidx = (1,2)
+        poly = [(1,2)]
        
-        self._insert_poly_idxs(plyidx) 
-        self._insert_points(pts)
+        self.insert_polygons(poly, pts)
         self.rotate_pts( rot )
         self.xform_pts( pos )
 
@@ -341,10 +337,9 @@ class object3d(polygon_operator):
         if axis=='z':
             pts =  [(-size,0,0), (0,size,0), (size,0,0) ]
 
-        plyidx = (1,2,3)
+        poly = [(1,2,3)]
        
-        self._insert_poly_idxs(plyidx) 
-        self._insert_points(pts)
+        self.insert_polygons(poly, pts)
         self.rotate_pts( rot )
         self.xform_pts( pos )
         
@@ -361,10 +356,9 @@ class object3d(polygon_operator):
         if axis == 'z':
             pts = [(-size,-size,0), (-size,size,0), (size,size,0), (size,-size,0) ] #Z AXIS
 
-        plyidx    = (1,2,3,4)
+        poly    = [(1,2,3,4)]
        
-        self._insert_poly_idxs(plyidx) 
-        self._insert_points(pts)
+        self.insert_polygons(poly, pts)
         self.rotate_pts( rot )
         self.xform_pts( pos )
 
@@ -372,20 +366,17 @@ class object3d(polygon_operator):
     def prim_circle(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1, spokes = 9):
         """ UNFINSIHED single polygon operations  """    
 
-        pts    = []
-        plyidx = []
+        pts  = []
+        poly = []
 
         pts = self.calc_circle( pos, size, axis, True, spokes )
         
         #we add one because calc_circle_2d returns zero indexed data but OBJ is NOT zero indexed        
         for x in range(spokes):
-            plyidx.append(x+1) 
-
-        #print(len(pts))
-        #print(plyidx)
-
-        self._insert_poly_idxs(tuple(plyidx))
-        self._insert_points(pts)
+            poly.append(x+1) 
+        
+        print(poly)
+        self.insert_polygons([tuple(poly)], pts)
 
     ###############################################
 
@@ -489,7 +480,7 @@ class object3d(polygon_operator):
                (pos[0],       pos[1],        pos[2]+size)                
               ]
 
-        plyidx = [(1,2),
+        polys = [(1,2),
                   (3,4),
                   (5,6)
                  ]
@@ -500,8 +491,7 @@ class object3d(polygon_operator):
                  (0,0,255)                  
         ]
 
-        self._insert_poly_idxs(plyidx) 
-        self._insert_points(pts)  
+        self.insert_polygons(polys, pts) 
 
         self.rotate_pts( rot )
         self.xform_pts( pos )
@@ -548,7 +538,7 @@ class object3d(polygon_operator):
               ]
       
         
-        plyidx = [ (1,2),
+        polys = [ (1,2),
                    (3,4),
 
                    (5,6),
@@ -560,9 +550,7 @@ class object3d(polygon_operator):
                    (16,17,18,19)                   
                  ]
 
-
-        self._insert_poly_idxs(plyidx) 
-        self._insert_points(pts)
+        self.insert_polygons(polys, pts) 
         self.rotate_pts( rot )
         self.xform_pts( pos )
 
@@ -620,8 +608,7 @@ class object3d(polygon_operator):
             for i in range(18):
                 self.linecolors.append(linecolor)        
 
-        self._insert_poly_idxs(plybfr) 
-        self._insert_points(pts)
+        self.insert_polygons(plybfr, pts)
 
         self.rotate_pts( rot )
         if pivot == 'obj':

@@ -222,9 +222,9 @@ class polygon_operator(point_operator):
         self.face_normals    = []
 
         self.exprt_ply_idx   = 1 #obj is NOT zero indexed
-
+        self.exprt_pnt_idx   = 0 #pts ARE zero indexed (everything BUT .obj face idx's are)
+        
         #self.point_normals  = []
-
         #self.point_colors   = []
         #self.line_colors    = []
 
@@ -233,58 +233,26 @@ class polygon_operator(point_operator):
         self.linecolor  = (0,240,00)
         self.vtxcolor   = (0,240,00)
 
+
     ############################################### 
-    """
-    def _insert_points(self, pt_array, pass_array=None):
+    #def scan_shells(self, obj):
+    #    """ look for all the chunks of geometry that are not connected """
 
-        #if isinstance(pt_array, vec3):
-        #
-        #    self.points.extend(pt_array)
-        
-        if pass_array is None:
-            if isinstance(pt_array, tuple) or isinstance(pt_array, list):
-                self.points.extend(pt_array)
+    ###############################################  
+    #def poly_seperate(self, obj):
+    #    """ check for geometry that is not connected, if any found, break it off """
 
-        else:
-            if isinstance(pt_array, tuple) or isinstance(pt_array, list):
-                pass_array.extend(pt_array)            
-            
-        return pass_array
-    """
+    ###############################################  
+    #def get_edge_centroid(self, f_id , e_id):
+    #    pass
+    
     ############################################### 
-    """
-    def _insert_poly_idxs(self, idx_array, pass_array=None, pass_numpts=None):
-        n = 0
-        if pass_array is None:
-            #if any polygons are in memory, auto increment the face indices  
-            if self.numply>0:
-                n = self.numpts 
-            else:
-                n = 0
-        if pass_numpts is not None:
-            # DEBUG - I dont like this - consider a complete rewrite
-            # should add new polys to object or to an array in memory  
-            # also fix the bug that makes you need to load IDX before PTS 
-            n = pass_numpts 
+    #def get_obj_centroid(self):
+    #    pass
 
-            #not clever way of checking for single VS muliple polygon 
-            #if isinstance(idx_array[0], tuple) or isinstance(idx_array[0], list):
-            
-            if isinstance(idx_array[0], int):
-                #assume data is a single polygon if int VS iterable - shitty, i know.
-                idx_array = (idx_array)                 
-
-            for poly in idx_array:
-                plytmp = []      
-                for idx in poly:
-                    plytmp.append(int(idx)+n) #add the poly index to current count    
-                if pass_array is None:                            
-                    self.polygons.append( tuple(plytmp) ) 
-                else:
-                    pass_array.append( tuple(plytmp) ) 
-
-        return pass_array
-    """
+    ###############################################  
+    def scribe(self, str):
+        print(str)
 
     ############################################### 
     def _reindex_ply(self, f_idx, offset):
@@ -296,12 +264,9 @@ class polygon_operator(point_operator):
         return tuple(out_face)
 
     ############################################### 
-    def insert_polygons(self, plyids, points, reindex=True):
-        """  replace _insert_poly_idxs() and _insert_points() with a single tool 
-             insetad of two coupled functions, use one function with compound "raw" datatype 
-             [(poly idx), (points) ] 
-  
-             should be able to : 
+    def insert_polygons(self, plyids, points, autoincrement=True):
+        """  
+             DEBUG IDEAS TO WORK ON : 
                  - single polygons, multiple polygons 
                  - tuple, list, vector data for points 
                  - add to existing, or replace it all  
@@ -318,7 +283,7 @@ class polygon_operator(point_operator):
         for poly in plyids:
             plytmp = []      
             for idx in poly:
-                if reindex is True:
+                if autoincrement is True:
                     plytmp.append(idx+self.numpts) # add the poly index to current count    
                 else:
                     plytmp.append(idx)  
@@ -331,15 +296,6 @@ class polygon_operator(point_operator):
         #if pass_array is None:
         if isinstance(points, tuple) or isinstance(points, list):
             self.points.extend(points)
-
-
-
-    ############################################### 
-    #def scan_shells(self, obj):
-    #    """ look for all the chunks of geometry that are not connected """
-
-    #def poly_seperate(self, obj):
-    #    """ check for geometry that is not connected, if any found, break it off """
 
     ############################################### 
     def get_mean_z(self, triangle):
@@ -370,27 +326,27 @@ class polygon_operator(point_operator):
             specify a list of ids, or a range
         """
         out_poly = []
-        out_pts = []
-
-
-        # _insert_points( pt_array, pass_array=None):
-        # _insert_poly_idxs( idx_array, pass_array=None):
+        out_pts  = []
 
         self.exprt_ply_idx = 1 #reset this when exporting with reindex 
+        #self.exprt_pnt_idx = 1  
+
         if slice:
             # start-end id range 
             for i in range(slice[0], slice[1]):
                 #print(i)
                 tmp = self.get_face_data(i, reindex=reindex)
                 out_poly.append(tmp[0])
-                out_pts.append(tmp[1])
+                for pt in tmp[1]:
+                    out_pts.append(pt)
     
         if ids:
             # list of specific ids 
             for i in ids:
                  tmp = self.get_face_data(i, reindex=reindex)
                  out_poly.append(tmp[0])
-                 out_pts.append(tmp[1])                 
+                 for pt in tmp[1]:
+                    out_pts.append(pt)                
 
         return ( out_poly, out_pts )
 
@@ -419,25 +375,25 @@ class polygon_operator(point_operator):
 
         """
 
-        tmp = []
+        tmp_pts = []
 
         if fid<0 or fid > len(self.polygons)-1:
             print('# show_poly- bad face index : %s'%fid)
             return None
         
         reindex_id = [] 
-        
-        #ct = 1 #obj is NOT zero indexed
 
         for v_id in self.polygons[fid]:
             reindex_id.append(int(self.exprt_ply_idx ))
-            tmp.append(self.points[v_id-1])
+            tmp_pts.append(self.points[v_id-1])
             self.exprt_ply_idx +=1
 
         if reindex is False:
-            return (self.polygons[fid], tuple(tmp))
+            return (self.polygons[fid], tmp_pts)
         if reindex is True:
-            return (tuple(reindex_id), tuple(tmp))
+            return (tuple(reindex_id), tmp_pts)
+
+    ###############################################
 
     def three_vec3_to_normal(self, v1, v2, v3):
         """ take 3 vec3 objects and return a face normal """
@@ -507,32 +463,11 @@ class polygon_operator(point_operator):
 
         return [out_edge_ids, out_edge_pts]
 
-
-    ###############################################  
-    #def get_edge_centroid(self, f_id , e_id):
-    #    pass
-
     ###############################################        
     def get_face_centroid(self, fid):
         #print('### num faces ', len(self.polygons))
         pts = self.get_face_pts(fid)
         return self.poly_centroid(pts) 
-
-    ############################################### 
-    #def get_obj_centroid(self):
-    #    pass
-
-    ###############################################  
-    def show_poly(self, id):
-        """ lookup and return the constituent points of a polygon """
-        tmp = self.get_face_pts(id)   
-        data = []
-        data.append('\n############################')
-        data.append(str(tmp) )
-        data.append('############################\n')
-
-        for d in data:
-            print(d)
 
     ###############################################  
     def extrude_face(self, f_id):
@@ -614,10 +549,6 @@ class polygon_operator(point_operator):
         
         self.polygons = out
         #return out
-
-    ###############################################  
-    def scribe(self, str):
-        print(str)
 
     ###############################################  
     def apply_transforms(self):
@@ -782,9 +713,7 @@ class polygon_operator(point_operator):
             self.points = out_pts
             self.polygons = out_polys
         else:    
-            # STUPID BUG ALERT, you have to do the indecies first
-            self._insert_poly_idxs(out_polys)
-            self._insert_points(out_pts)
+            self.insert_polygons(out_polys, out_pts)
 
     ############################################### 
     def poly_loft(self, obj2, as_new_obj=True):
@@ -823,16 +752,11 @@ class polygon_operator(point_operator):
         #print(new_plys)
         #print(len(new_pts))
 
-        #self._insert_poly_idxs(obj2.polygons)
-        #self._insert_points(obj2.points)
-
         if as_new_obj:
             self.points   = new_pts
             self.polygons = new_plys
         else:    
-            # STUPID BUG ALERT, you have to do the indecies first
-            self._insert_poly_idxs(new_plys)
-            self._insert_points(new_pts)
+            self.insert_polygons(new_plys, new_pts)
 
     ############################################### 
     def triangulate(self, force=False, offset=(0,0,0)):
@@ -874,7 +798,9 @@ class polygon_operator(point_operator):
     ###############################################  
     
     def repair(self):
-        """ walk internal data and fix any bad data found  (empty point tuples, etc) """
+        """ UNFINISHED 
+            walk internal data and fix any bad data found  (empty point tuples, etc) 
+        """
 
         fix = []
 
@@ -962,6 +888,9 @@ class polygon_operator(point_operator):
                         #THIS NONSENSE IS TO CLEAN UP ERRANT SPACES IN FILE 
   
                         #VERTICIES 
+                        #DEBUG - PUT MORE ERROR CHECKING, I HAD SOME DATA DATA GET THROUGH 
+                        #EX: - v 1 2 3) (4,5,6)
+                        
                         if tok[0]=='v':
                             self.points.append( (float(tok[1]), float(tok[2]), float(tok[3]) ) ) 
 

@@ -57,28 +57,6 @@ obj2.save_obj("my_new_object.obj")
 
 
 
-def model_from_scratch(): 
-    """ build a new polygon object from points """ 
-
-    obj = object3d()
-
-    # pass one - you can do as many as you like
-    pts = [(1,1,1),(0,1,1),(-1,-1,1),(2,-2,1)]
-    polys = [(1,2,3,4) ]
-    obj.insert_polygons(polys, pts)
-
-    # pass two - add as many times as you want 
-    pts = [(0,-3,-1),(2,-2,1),(3,-1,1)]
-    polys = [(3,2,1) ]
-    obj.insert_polygons(polys, pts, reindex=True)
-
-    obj.show()
-
-
-    obj.save_obj("my_new_object.obj")
-
-model_from_scratch()
-
 
 #print( obj.get_face_data(1, reindex=True) ) 
 
@@ -106,13 +84,6 @@ model_from_scratch()
 
  
 
-"""
-obj = object3d() 
-obj.load_obj('objects/sphere2.obj')
-geom = obj.get_poly_geom( (0,5) )
-
-print( geom )
-"""
 
 
 
@@ -120,6 +91,30 @@ print( geom )
 
 
 #######################################################
+
+
+def slice_extract_and_makenew():
+
+    """ load two models, extract parts of them, weld them into a new model 
+        fekkin awesome mate!  
+    """
+    
+    obj = object3d() 
+    obj.load_obj('objects/sphere2.obj')
+    geom = obj.get_poly_geom( slice=(0,51) , ids=[100,120,105,53,55,73], reindex=True)
+
+
+    obj3 = object3d() 
+    obj3.load_obj('objects/monkey.obj')
+    geom2 = obj3.get_poly_geom( slice=(30,100) , ids=[101,105,148], reindex=True)
+
+
+    obj2 = object3d() 
+    # weld two models together 
+    obj2.insert_polygons(geom[0], geom[1]  ) 
+    obj2.insert_polygons(geom2[0], geom2[1]  )
+
+    obj2.save_obj('new.obj')
 
 
 
@@ -183,7 +178,6 @@ def object_primitives():
     #obj.save_obj("new_arrow.obj")
     #if do_flush:
     #    obj.flush()
-
 
 
 
@@ -276,28 +270,26 @@ def angle_between_vectors():
 
 
 
-"""
-#OLD WAY 
 
 def model_from_scratch(): 
-    # build a new polygon object from points 
+    """ build a new polygon object from points """ 
 
     obj = object3d()
 
     # pass one - you can do as many as you like
     pts = [(1,1,1),(0,1,1),(-1,-1,1),(2,-2,1)]
-    polys = [(1,2,3,4), (2,4,1)]
-    obj._insert_poly_idxs(polys) # bug alert - do indices before points 
-    obj._insert_points(pts)
+    polys = [(1,2,3,4) ]
+    obj.insert_polygons(polys, pts)
 
     # pass two - add as many times as you want 
     pts = [(0,-3,-1),(2,-2,1),(3,-1,1)]
-    polys = [(1,2,3)]
-    obj._insert_poly_idxs(polys) # bug alert - do indices before points
-    obj._insert_points(pts)
+    polys = [(3,2,1) ]
+    #reindex True  -  assume this is a new object to merge with old (default) 
+    #reindex False -  assume this is a continuation of past geometry 
+    obj.insert_polygons(polys, pts)
 
     obj.save_obj("my_new_object.obj")
-""" 
+
 
 
 
