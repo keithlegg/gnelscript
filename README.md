@@ -1,6 +1,6 @@
 # pyrender2
 
-Pure python Swiss Army Knife for 3D and 3D graphics. 
+"swiss army power tool" for 3D geometric data. 
 
 Procedural model, Render, composite images. 
 

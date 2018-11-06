@@ -42,56 +42,71 @@ ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj     
 """ 
 
 #######################################################
- 
 
- 
 """
 obj = object3d()
 obj.load_obj('objects/sphere.obj')
-# print( obj.get_face_data(1 ) ) 
-tmp =  obj.get_poly_geom( slice=(0,6), reindex=True ) 
-obj2 = object3d()
-obj2.insert_polygons(tmp[0], tmp[1])
-obj2.save_obj("my_new_object.obj")
+
+fid = 23
+print( obj.get_face_data(fid ) ) #reindex=True 
+print( obj.get_face_edges(fid ) ) #DEBUG - add reindex 
+print( obj.get_face_normal(fid ) )
+print( obj.get_face_centroid(fid ) )
 """
-
-
-
-
-#print( obj.get_face_data(1, reindex=True) ) 
-
-
-#raw = obj.get_poly_geom(ids=[1])
-
-#obj2 = object3d()
-#obj2.insert( raw ) 
-#obj2.save_obj('slice.obj')
-
-# for i in range(obj.numpts):
-# 
-#     edges  = obj.get_face_edges(i)  
-#     normal = obj.get_face_normal(i)
-#     pos    = obj.get_face_centroid(i) 
-# 
-#     obj2.vectorlist_to_obj(edges[1])
-#     obj2.vectorlist_to_obj( [normal], pos)
-
-#obj2.save_obj("edges.obj")
-
-#ropr = simple_render()
-#ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
-#ropr.save_image('simply_render.png')
-
  
 
+def visualize_edges_as_little_arrows(obj1, obj2, slice): 
+    """ UNFINISHED! """
+    pass
+
+def copy_obj_rotate_to_each_face(obj1, obj2, slice): 
+    """ UNFINISHED! """
+    pass
+
+
+def extrude_single_face(fid): 
+    """ UNFINISHED! """
+    obj = object3d()
+    obj.load_obj('objects/sphere.obj')
+
+    print( obj.get_face_data(fid ) ) #reindex=True 
+    print( obj.get_face_edges(fid ) ) #DEBUG - add reindex 
+    print( obj.get_face_normal(fid ) )
+    print( obj.get_face_centroid(fid ) )
+     
+#extrude_face(23)
 
 
 
+def extrude_single_edge(fid): 
+    """ UNFINISHED! """
+    obj = object3d()
+    obj.load_obj('objects/sphere.obj')
 
+    print( obj.get_face_data(fid ) ) #reindex=True 
+    print( obj.get_face_edges(fid ) ) #DEBUG - add reindex 
+    print( obj.get_face_normal(fid ) )
+    print( obj.get_face_centroid(fid ) )
+
+
+
+def triangulate_test():
+    """ UNFINISHED - 
+        test stacks of operations, 
+        repeating this ame op over , etc 
+    """
+    obj = object3d()
+    obj.prim_circle() 
+    obj.radial_triangulate_obj( offset=None)#as_new_obj=False
+    #obj.radial_triangulate_obj()
+    obj.save_obj('triangulated.obj')
 
 
 #######################################################
-
+#######################################################
+#######################################################
+#######################################################
+#these are all tested-ish 
 
 def slice_extract_and_makenew():
 
@@ -293,6 +308,8 @@ def model_from_scratch():
 
 
 
+
+
 def circle_with_cube_all_pts():
     """ make a circle with a rotated cube at each point """
     obj = object3d()
@@ -360,7 +377,6 @@ def load_obj_build_another_from_normals(objectpath):
     ropr = simple_render()
     ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
     ropr.save_image('simply_render.png')
-
 
 
 

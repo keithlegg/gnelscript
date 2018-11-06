@@ -235,6 +235,9 @@ class polygon_operator(point_operator):
 
 
     ############################################### 
+    #def weld_edges(self, obj):
+
+    ############################################### 
     #def scan_shells(self, obj):
     #    """ look for all the chunks of geometry that are not connected """
 
@@ -353,7 +356,10 @@ class polygon_operator(point_operator):
 
     ###############################################  
     def get_face_pts(self, fid):
-        """ lookup and return the points of a polygon in this object """
+        """ lookup and return the points of a polygon in this object 
+            for fancier features look at get_face_data() 
+            
+        """
 
         tmp = []
 
@@ -372,7 +378,8 @@ class polygon_operator(point_operator):
             same as get_face_pts() , but this will get the indices and points
 
             reindex = reorder the indices, effectively making a new object 
-
+                    if you reindex , set self.exprt_ply_idx to 1 first 
+                    jankey, but it works 
         """
 
         tmp_pts = []
@@ -424,7 +431,6 @@ class polygon_operator(point_operator):
             print("## error - need a face id to get normal")
             return None 
 
-
         # create a vec3 for each vertex (3 or 4 sided polys)
         v1=vec3();v2=vec3()
         v3=vec3();v4=vec3()
@@ -437,14 +443,11 @@ class polygon_operator(point_operator):
         v3.insert( self.points[f[2]-1] )                
         f_nrml = self.three_vec3_to_normal(v1, v2, v3)
 
-        # get the position of the face 
-        #fpos = self.poly_centroid([v1,v2,v3])
-
         return f_nrml   
 
 
     ###############################################  
-    def get_face_edges(self, fid):
+    def get_face_edges(self, fid, reindex=False):
         """ UNTESTED 
             return [[VTX_IDS], [VTX_PTS]]
         """
@@ -458,14 +461,18 @@ class polygon_operator(point_operator):
         # iterate by two and connect to new radial center   
         # thanks to pythons negative index, this works a treat  
         for i in range(len(poly)):
-            out_edge_ids.append( (poly[i-1], poly[i] ) ) 
+            if reindex is False:
+                out_edge_ids.append( (poly[i-1], poly[i] ) ) 
+            if reindex is True:
+                #out_edge_ids.append( (poly[i-1], poly[i] ) )            
+                pass
+
             out_edge_pts.append( (self.points[poly[i-1]-1], self.points[poly[i]-1] ) ) 
 
         return [out_edge_ids, out_edge_pts]
 
     ###############################################        
     def get_face_centroid(self, fid):
-        #print('### num faces ', len(self.polygons))
         pts = self.get_face_pts(fid)
         return self.poly_centroid(pts) 
 
@@ -888,9 +895,6 @@ class polygon_operator(point_operator):
                         #THIS NONSENSE IS TO CLEAN UP ERRANT SPACES IN FILE 
   
                         #VERTICIES 
-                        #DEBUG - PUT MORE ERROR CHECKING, I HAD SOME DATA DATA GET THROUGH 
-                        #EX: - v 1 2 3) (4,5,6)
-                        
                         if tok[0]=='v':
                             self.points.append( (float(tok[1]), float(tok[2]), float(tok[3]) ) ) 
 
@@ -937,8 +941,12 @@ class polygon_operator(point_operator):
 
         buf.append("# Created by Magic Mirror render toy.")
         buf.append("# Keith Legg - December 2015.\n\n")        
+        buf.append("# version2   - November 2018.\n\n")
 
         buf.append('\n#these define the vertecies')
+
+        #DEBUG - PUT MORE ERROR CHECKING ON VERTS, I HAD SOME BAD DATA GET THROUGH 
+        #EX: - v 1 2 3) (4,5,6)
         for p in self.points:
              buf.append('v %s %s %s'%( p[0], p[1], p[2]) ) #x y z components 
         
