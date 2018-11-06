@@ -4,7 +4,7 @@ import os, sys, math
 
 from PIL import Image, ImageOps
 
-from pygfx.point_ops import point_operator_2d
+from pygfx.point_ops_2d import point_operator_2d
 
 
 

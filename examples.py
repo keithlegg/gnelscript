@@ -7,9 +7,6 @@ from pygfx.obj3d import  *
 
 
 
-
-
-
 #######################################################
 # test of new vec4 type 
 
@@ -47,38 +44,146 @@ ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj     
 #######################################################
  
 
+ 
 """
-
 obj = object3d()
-#obj.prim_triangle(axis='z', pos=(0,0,0)) 
-#obj.prim_circle(axis='z', pos=(0,0,0), spokes=42) 
-
 obj.load_obj('objects/sphere.obj')
-
-
+# print( obj.get_face_data(1 ) ) 
+tmp =  obj.get_poly_geom( slice=(0,6), reindex=True ) 
 obj2 = object3d()
-for i in range(obj.numpts):
-
-    edges  = obj.get_face_edges(i)  
-    normal = obj.get_face_normal(i)
-    pos    = obj.get_face_centroid(i) 
-
-    obj2.vectorlist_to_obj(edges[1])
-    obj2.vectorlist_to_obj( [normal], pos)
-
-obj2.save_obj("edges.obj")
-
-
-ropr = simple_render()
-ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
-ropr.save_image('simply_render.png')
+obj2.insert_polygons(tmp[0], tmp[1])
+obj2.save_obj("my_new_object.obj")
 """
+
+
+
+def model_from_scratch(): 
+    """ build a new polygon object from points """ 
+
+    obj = object3d()
+
+    # pass one - you can do as many as you like
+    pts = [(1,1,1),(0,1,1),(-1,-1,1),(2,-2,1)]
+    polys = [(1,2,3,4) ]
+    obj.insert_polygons(polys, pts)
+
+    # pass two - add as many times as you want 
+    pts = [(0,-3,-1),(2,-2,1),(3,-1,1)]
+    polys = [(3,2,1) ]
+    obj.insert_polygons(polys, pts, reindex=True)
+
+    obj.show()
+
+
+    obj.save_obj("my_new_object.obj")
+
+model_from_scratch()
+
+
+#print( obj.get_face_data(1, reindex=True) ) 
+
+
+#raw = obj.get_poly_geom(ids=[1])
+
+#obj2 = object3d()
+#obj2.insert( raw ) 
+#obj2.save_obj('slice.obj')
+
+# for i in range(obj.numpts):
+# 
+#     edges  = obj.get_face_edges(i)  
+#     normal = obj.get_face_normal(i)
+#     pos    = obj.get_face_centroid(i) 
+# 
+#     obj2.vectorlist_to_obj(edges[1])
+#     obj2.vectorlist_to_obj( [normal], pos)
+
+#obj2.save_obj("edges.obj")
+
+#ropr = simple_render()
+#ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
+#ropr.save_image('simply_render.png')
+
+ 
+
+"""
+obj = object3d() 
+obj.load_obj('objects/sphere2.obj')
+geom = obj.get_poly_geom( (0,5) )
+
+print( geom )
+"""
+
 
 
 
 
 
 #######################################################
+
+
+
+def object_primitives():
+    """ demo various built in primitive objects """
+
+    obj = object3d() 
+
+    position = (0,0,0)
+    rotation = (0,0,0)
+    size = 1 
+
+    do_flush = False
+
+    obj.prim_line( pos=position, rot=rotation, size=size)
+    obj.save_obj("new_line.obj")
+    if do_flush:
+        obj.flush()
+
+    obj.prim_triangle( pos=position, rot=rotation, size=size)
+    obj.save_obj("new_triangle.obj")
+    if do_flush:
+        obj.flush()
+
+    obj.prim_quad( pos=position, rot=rotation, size=size)
+    obj.save_obj("new_quad.obj")
+    if do_flush:
+        obj.flush()
+
+    obj.prim_circle( pos=position, rot=rotation, size=size)
+    obj.save_obj("new_circle.obj")
+    if do_flush:
+        obj.flush()
+
+    obj.prim_sphere( pos=position, rot=rotation, size=size)
+    obj.save_obj("new_sphere.obj")
+    if do_flush:
+        obj.flush()
+
+    obj.prim_cone( pos=position, rot=rotation, size=size)
+    obj.save_obj("new_cone.obj")
+    if do_flush:
+        obj.flush()
+
+    obj.prim_sphere( pos=position, rot=rotation, size=size)
+    obj.save_obj("new_sphere.obj")
+    if do_flush:
+        obj.flush()
+
+    obj.prim_locator( pos=position, rot=rotation, size=size)
+    obj.save_obj("new_locator.obj")
+    if do_flush:
+        obj.flush()
+
+    obj.prim_locator_xyz( pos=position, rot=rotation, size=size)
+    obj.save_obj("new_locator_xyz.obj")
+    if do_flush:
+        obj.flush()
+
+    #obj.prim_arrow( pos=position, rot=rotation, size=size)
+    #obj.save_obj("new_arrow.obj")
+    #if do_flush:
+    #    obj.flush()
+
 
 
 
@@ -171,9 +276,11 @@ def angle_between_vectors():
 
 
 
+"""
+#OLD WAY 
 
 def model_from_scratch(): 
-    """ build a new polygon object from points """ 
+    # build a new polygon object from points 
 
     obj = object3d()
 
@@ -190,7 +297,7 @@ def model_from_scratch():
     obj._insert_points(pts)
 
     obj.save_obj("my_new_object.obj")
- 
+""" 
 
 
 

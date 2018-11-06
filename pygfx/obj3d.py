@@ -1,4 +1,6 @@
 
+import math 
+
 
 from pygfx.point_ops import polygon_operator
 from pygfx.math_ops import vec3 
@@ -36,15 +38,6 @@ class object3d(polygon_operator):
         new.points   = self.points
         new.polygons = self.polygons  
         return new
-
-    ############################################### 
-    def _reindex_ply(self, f_idx, offset):
-        """ take a tuple of face indexes and re-index to offset+value""" 
-
-        out_face = [] 
-        for i in f_idx:
-           out_face.append(i+offset)
-        return tuple(out_face)
 
     ############################################### 
 
@@ -113,57 +106,16 @@ class object3d(polygon_operator):
     def insert(self, obj):
         """ insert an objects geometry into this object 
         """
-        
+
+        # if tuple or list assume its [polyidx, points]
+        if isinstance(obj, tuple) or isinstance(obj, list):
+            self._insert_poly_idxs(obj[0])
+            self._insert_points(obj[1])
+
         if isinstance(obj, object3d):
             # STUPID BUG ALERT, you have to do the indecies first
             self._insert_poly_idxs(obj.polygons)
             self._insert_points(obj.points)
-
-
-    ############################################### 
-    def _insert_points(self, pt_array):
-        """ append points to internal """
-
-        #print("insert points count got called ", len(pt_array) )
-
-        #for p in pt_array:
-        self.points.extend(pt_array)
-
-    ############################################### 
-    def _insert_poly_idxs(self, idx_array):
-        """ 
-            if idx_array is a tuple, assume its a single polygon
-
-            if idx_array is a list, assume it is a list of tuples
-            representing multiple polygons
-        """
-        
-        #print("insert polygon count got called ", idx_array, type(idx_array) )
-
-        # add this to the indexes, so they get added "on top" of existing polygons 
-        n_ply = self.numply
-
-        #if any polygons are loaded, auto increment the face indecies  
-        if n_ply>0:
-            n = self.numpts 
-        else:
-            n = 0
-
-        # single polygon 
-        if isinstance(idx_array, tuple):
-            plytmp = []      
-            for x in idx_array:
-                plytmp.append(x+n) #add the poly index to current count            
-            self.polygons.append( tuple(plytmp) )   
-
-        # list of multiple polygons 
-        if isinstance(idx_array, list):
-            for tup in idx_array:
-                
-                plytmp = []      
-                for x in tup:
-                    plytmp.append(x+n) #add the poly index to current count            
-                self.polygons.append( tuple(plytmp) ) 
     
 
     ############################################### 
@@ -454,9 +406,12 @@ class object3d(polygon_operator):
 
 
     ############################################### 
-    def prim_sphere(self, pos=(0,0,0), rot=(0,0,0), radius=1):
+    def prim_sphere(self, pos=(0,0,0), rot=(0,0,0), size=1 ):
         
         #UNFINISHED 
+
+        #radius is called size for uniformity in ARGS 
+        radius = size
 
         #icosahedron  - from http://www.songho.ca/opengl/gl_sphere.html 
 

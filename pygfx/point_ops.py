@@ -220,6 +220,9 @@ class polygon_operator(point_operator):
         self.points          = []    # list of tuples of XYZ points per vertex         -  [(x,y,z), (x,y,z)]  
         self.polygons        = []    # list of tuples for 2 or more vertex connections -  [(1,2,5,8) , (1,2)] 
         self.face_normals    = []
+
+        self.exprt_ply_idx   = 1 #obj is NOT zero indexed
+
         #self.point_normals  = []
 
         #self.point_colors   = []
@@ -229,6 +232,114 @@ class polygon_operator(point_operator):
         self.linecolors = None #iterable of colors for lines 
         self.linecolor  = (0,240,00)
         self.vtxcolor   = (0,240,00)
+
+    ############################################### 
+    """
+    def _insert_points(self, pt_array, pass_array=None):
+
+        #if isinstance(pt_array, vec3):
+        #
+        #    self.points.extend(pt_array)
+        
+        if pass_array is None:
+            if isinstance(pt_array, tuple) or isinstance(pt_array, list):
+                self.points.extend(pt_array)
+
+        else:
+            if isinstance(pt_array, tuple) or isinstance(pt_array, list):
+                pass_array.extend(pt_array)            
+            
+        return pass_array
+    """
+    ############################################### 
+    """
+    def _insert_poly_idxs(self, idx_array, pass_array=None, pass_numpts=None):
+        n = 0
+        if pass_array is None:
+            #if any polygons are in memory, auto increment the face indices  
+            if self.numply>0:
+                n = self.numpts 
+            else:
+                n = 0
+        if pass_numpts is not None:
+            # DEBUG - I dont like this - consider a complete rewrite
+            # should add new polys to object or to an array in memory  
+            # also fix the bug that makes you need to load IDX before PTS 
+            n = pass_numpts 
+
+            #not clever way of checking for single VS muliple polygon 
+            #if isinstance(idx_array[0], tuple) or isinstance(idx_array[0], list):
+            
+            if isinstance(idx_array[0], int):
+                #assume data is a single polygon if int VS iterable - shitty, i know.
+                idx_array = (idx_array)                 
+
+            for poly in idx_array:
+                plytmp = []      
+                for idx in poly:
+                    plytmp.append(int(idx)+n) #add the poly index to current count    
+                if pass_array is None:                            
+                    self.polygons.append( tuple(plytmp) ) 
+                else:
+                    pass_array.append( tuple(plytmp) ) 
+
+        return pass_array
+    """
+
+    ############################################### 
+    def _reindex_ply(self, f_idx, offset):
+        """ take a tuple of face indexes and re-index to offset+value""" 
+
+        out_face = [] 
+        for i in f_idx:
+           out_face.append(i+offset)
+        return tuple(out_face)
+
+    ############################################### 
+    def insert_polygons(self, plyids, points, reindex=True):
+        """  replace _insert_poly_idxs() and _insert_points() with a single tool 
+             insetad of two coupled functions, use one function with compound "raw" datatype 
+             [(poly idx), (points) ] 
+  
+             should be able to : 
+                 - single polygons, multiple polygons 
+                 - tuple, list, vector data for points 
+                 - add to existing, or replace it all  
+                 - operate on an external array, or internal object polygons 
+
+        """
+
+        #if isinstance(points, vec3):
+        #    self.points.extend(points)
+
+        #########
+        # add poly idx  - indexing and reindexing becomes a thing. 
+
+        for poly in plyids:
+            plytmp = []      
+            for idx in poly:
+                if reindex is True:
+                    plytmp.append(idx+self.numpts) # add the poly index to current count    
+                else:
+                    plytmp.append(idx)  
+
+            self.polygons.append( tuple(plytmp) ) 
+
+        #########        
+        # add points - easy peasy, just use extend 
+
+        #if pass_array is None:
+        if isinstance(points, tuple) or isinstance(points, list):
+            self.points.extend(points)
+
+
+
+    ############################################### 
+    #def scan_shells(self, obj):
+    #    """ look for all the chunks of geometry that are not connected """
+
+    #def poly_seperate(self, obj):
+    #    """ check for geometry that is not connected, if any found, break it off """
 
     ############################################### 
     def get_mean_z(self, triangle):
@@ -250,20 +361,38 @@ class polygon_operator(point_operator):
             print(p)
 
     ###############################################  
-    def get_poly_geom(self, slice=None, ids=None):
-        """ UNFINISHED  
+    def get_poly_geom(self, slice=None, ids=None, reindex=False):
+        """ 
+            slice - tuple of (start,end)  
+            ids   - list of single ids 
+            
             get one or more faces as a new object 
             specify a list of ids, or a range
         """
+        out_poly = []
+        out_pts = []
 
-        if ids:
-            # list of specific ids 
-            pass 
- 
+
+        # _insert_points( pt_array, pass_array=None):
+        # _insert_poly_idxs( idx_array, pass_array=None):
+
+        self.exprt_ply_idx = 1 #reset this when exporting with reindex 
         if slice:
             # start-end id range 
-            pass 
+            for i in range(slice[0], slice[1]):
+                #print(i)
+                tmp = self.get_face_data(i, reindex=reindex)
+                out_poly.append(tmp[0])
+                out_pts.append(tmp[1])
+    
+        if ids:
+            # list of specific ids 
+            for i in ids:
+                 tmp = self.get_face_data(i, reindex=reindex)
+                 out_poly.append(tmp[0])
+                 out_pts.append(tmp[1])                 
 
+        return ( out_poly, out_pts )
 
 
     ###############################################  
@@ -282,9 +411,12 @@ class polygon_operator(point_operator):
         return tmp
 
     ###############################################  
-    def get_face_data(self, fid):
+    def get_face_data(self, fid,  reindex=False):
         """ lookup and return the polygon indices and points or a single polygon 
             same as get_face_pts() , but this will get the indices and points
+
+            reindex = reorder the indices, effectively making a new object 
+
         """
 
         tmp = []
@@ -292,11 +424,20 @@ class polygon_operator(point_operator):
         if fid<0 or fid > len(self.polygons)-1:
             print('# show_poly- bad face index : %s'%fid)
             return None
+        
+        reindex_id = [] 
+        
+        #ct = 1 #obj is NOT zero indexed
 
         for v_id in self.polygons[fid]:
+            reindex_id.append(int(self.exprt_ply_idx ))
             tmp.append(self.points[v_id-1])
+            self.exprt_ply_idx +=1
 
-        return [self.polygons[fid], tmp]
+        if reindex is False:
+            return (self.polygons[fid], tuple(tmp))
+        if reindex is True:
+            return (tuple(reindex_id), tuple(tmp))
 
     def three_vec3_to_normal(self, v1, v2, v3):
         """ take 3 vec3 objects and return a face normal """
@@ -686,7 +827,7 @@ class polygon_operator(point_operator):
         #self._insert_points(obj2.points)
 
         if as_new_obj:
-            self.points = new_pts
+            self.points   = new_pts
             self.polygons = new_plys
         else:    
             # STUPID BUG ALERT, you have to do the indecies first
@@ -899,351 +1040,4 @@ class polygon_operator(point_operator):
         fobj.write(output)
         fobj.close()
 
-###############################################
 
-class point_operator_2d(object):
-    def __init__(self):
-        self.mu   = mu()
-
-    """
-    def rotate_points_shifted(self, points, oldpivot, newpivot, angle, doOffset=False, doRound=False):
-        #old 2d rotate function  
-        rotated_fids =  self.batch_rotate_pts( points, oldpivot, angle , doRound)
-
-        deltax = newpivot[0]-oldpivot[0]
-        deltay = newpivot[1]-oldpivot[1]
-
-        newfids = []
-        for pt in rotated_fids:
-            if not doOffset:
-                newfids.append( (pt[0]+deltax, pt[1]+deltay) )
-            if doOffset:
-                newfids.append( (pt[0]+(deltax+doOffset[0]), pt[1]+(deltay+doOffset[1])  ) )
-
-        return newfids 
-    """
-
-    def calc_line(self, x1, y1, x2, y2):        
-        """ bresenham's algorithm 
-            from http://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm
-        """
-        x1 = int(x1);y1 = int(y1)
-        x2 = int(x2);y2 = int(y2)
-
-        points = []
-        issteep = abs(y2-y1) > abs(x2-x1)
-        if issteep:
-            x1, y1 = y1, x1
-            x2, y2 = y2, x2
-        rev = False
-        if x1 > x2:
-            x1, x2 = x2, x1
-            y1, y2 = y2, y1
-            rev = True
-        deltax = x2 - x1
-        deltay = abs(y2-y1)
-        error = int(deltax / 2)
-        y = y1
-        ystep = None
-        if y1 < y2:
-            ystep = 1
-        else:
-            ystep = -1
-        for x in range(x1, x2 + 1):
-            if issteep:
-                points.append((y, x))
-            else:
-                points.append((x, y))
-            error -= deltay
-            if error < 0:
-                y += ystep
-                error += deltax
-        # Reverse the list if the coordinates were reversed
-        if rev:
-            points.reverse()
-        return points
-
-    def aggregate_extents(self, points, offset=False):
-        """ needs at least three points to work 
-            take any number of points - (3 or more tuples of (x,y) ),  and find the min/max of all of them as a whole
-        """
-       
-        minx = points[0][0];maxx = 0
-        miny = points[0][1];maxy = 0
-        if not offset:
-            for p in points:
-                if p[0]<=minx:
-                    minx = p[0]
-                if p[0]>=maxx:
-                    maxx = p[0]
-                if p[1]<=miny:
-                    miny = p[1]
-                if p[1]>=maxy:
-                    maxy = p[1]
-        if offset:
-            for p in points:
-                if p[0]<=minx:
-                    minx = p[0]-offset
-                if p[0]>=maxx:
-                    maxx = p[0]+offset
-                if p[1]<=miny:
-                    miny = p[1]-offset
-                if p[1]>=maxy:
-                    maxy = p[1]+offset
-
-        return [minx, miny, maxx, maxy ]
-        
-    def rotate_point_2d(self, point, pivot, angle, doRound=False):
-        """ helper to rotate a single point in 2 dimensions """
-        
-        x1 = point[0] - pivot[0]  #x
-        y1 = point[1] - pivot[1]  #y  
-
-        dtr = self.dtr
-
-        a = x1 * math.cos(dtr(angle)) - y1 * math.sin(dtr(angle))
-        b = x1 * math.sin(dtr(angle)) + y1 * math.cos(dtr(angle))
-                
-        if not doRound:
-            return (a + pivot[0], b + pivot[1]);
-        if doRound:
-            return ( round(a + pivot[0]), round(b + pivot[1]) );
-
-    def batch_transform_pts_2d(self, pts, new_coord, doround=False):
-        """ UNTESTED ? - takes a list of tuples and returns a shifted list of tuples , based on a tuple of (x,y) shift"""
-
-        out = []
-        for pt in pts:
-            if not doround:
-                out.append( (pt[0]+ new_coord[0], pt[1]+ new_coord[1] ) ) 
-            if doround:
-                out.append( ( int(pt[0]+ new_coord[0]), int(pt[1]+ new_coord[1]) ) )         
-        return out
-
-    def batch_rotate_pts_2d(self, pts, pivot, angle, doround=False):
-        out = []
-        for pt in pts:
-            out.append( self.rotate_point_2d(pt, pivot, angle, doround) )
-        return out
-
-    def calc_circle_2d(self, x_orig, y_orig, dia, periodic=True, spokes=23):
-        """ spokes = num spokes """
-
-        plot_x = 0;plot_y = 0;
-        out = []
-        
-        degs = 360/spokes
-        dit = 0
-        
-        dtr = self.mu.dtr
-
-        for i in range(spokes):
-            plot_x = x_orig + (math.sin(dtr(dit))*dia) 
-            plot_y = y_orig + (math.cos(dtr(dit))*dia) 
-            out.append( (plot_x, plot_y))
-             
-            dit+=degs
-        
-        if periodic:
-             out.append( out[0] )
-
-        return out
-
-
-    def pt_offset_to_line( self, vector, pt): # x3,y3 is the point
-        """
-           given a vector and a point, return a vector between them 
-           (you can get the length of that to calculate distance)
-        """
-        x1 = vector[0][0] ; y1 = vector[0][1]
-        x2 = vector[1][0] ; y2 = vector[1][1]
-        x3 = pt[0]        ; y3 = pt[1]
-
-        px = x2-x1
-        py = y2-y1
-        
-        notzero = px*px + py*py
-        u =  ((x3 - x1) * px + (y3 - y1) * py) / float(notzero)
-
-        if u > 1:
-            u = 1
-        elif u < 0:
-            u = 0
-
-        x = x1 + u * px
-        y = y1 + u * py
-        dx = x - x3
-        dy = y - y3
-
-        return [ pt , (pt[0]+dx, pt[1]+dy) ]
-        
-        ###################
-        #if you want to get distance
-        #return math.sqrt(dx*dx + dy*dy)
-
-    def extract_pt_vector(self, vector, offset):
-        """
-          given a vector [(x,y), (x,y)] and an offset - return a point (x,y)
-
-          same as vector class project pt along a vector - even beyond its extent
-        """
-
-        a=(vector[0][0], vector[0][1])
-        b=(vector[1][0], vector[1][1])
-        
-        nX = b[0] - a[0];nY = b[1] - a[1]
-        distX = pow( (a[0] - b[0] ) , 2.0 ) 
-        distY = pow( (a[1] - b[1] ) , 2.0 ) 
-        vecLength = math.sqrt(distX + distY )
-        # normalized vector  
-        calcX = nX / vecLength
-        calcY = nY / vecLength
-        # project point along vector with offset (can use negative too)
-        ptX = b[0] + (calcX * offset)
-        ptY = b[1] + (calcY * offset)
-        return (ptX, ptY)
-
-    def locate_pt_along(self, x1, y1, x2, y2, num):
-        """ taken from my old 3d character rigging code (with the Z axis removed)
-            this was used to place vertebra along a spine
-        """
-
-        pts_created = []
-        fpos=(x1, y1)
-        spos=(x2, y2)
-         
-        for n in range(num):
-            npos = [2]
-            npos[0]    =spos[0]+(((fpos[0]-spos[0])/(num+1))*(n+1))
-            npos.append(spos[1]+(((fpos[1]-spos[1])/(num+1))*(n+1)) )
-            pts_created.append( (npos[0], npos[1]) )
-        return pts_created
-
-    def calc_mid(self, pt1, pt2, num=1, doround=False):
-        """ get the midpoint of a 2d vector """
-
-        out = self.locate_pt_along( pt1[0], pt1[1], pt2[0], pt2[1], num )
-        if doround:
-            return ( int(out[0][0]), int(out[0][1]) )
-        if not doround:
-            return ( out[0][0], out[0][1] )
-                
-    def old_calc_theta_vert(self, bot_xy, top_xy):
-        try:
-            a = bot_xy[1]-top_xy[1]  
-            o = bot_xy[0]-top_xy[0]
-            #if a==0 or o ==0:
-            #    r = self.rtd(math.atan(o)) 
-            #else:
-            r = self.rtd(math.atan(o/a)) 
-            return r
-        except:
-            print('error calc angle - div by 0?') 
-            return None 
-
-    def calc_theta_vert(self, start_xy, end_xy, corner, mode='relative'):
-        """
-           convert a 2 point line segment into a meaningful rotation value in degrees
-           outputs a 0-360(?) degree rotation with 0/360 facing left from center , 180 right from center
-           converts the line into a right triangle, calculates theta,
-               absolute mode - projects the angle into a quadrant of a 0-360 degree circle
-               relative mode - number of degrees of current rotation to get back to a normal page orientation
-
-            instead of attempting more complex math, the rotation is filtered though a series of steps 
-            that use the corner fiducial as a variable to determine which end is proper +Y axis.
-            There are 4 cases, positive and negative (i.e.  rotated to the left , or the right for each of the 4 orintations) 
-            the four states represent four page orientations (i.e.  up, down left,right)   
-        """
-
-
-        #get corner to build a right triangle
-        a_x = end_xy[0]-start_xy[0]  
-        a_y = end_xy[1]-start_xy[1]
-
-        r = 0
-        #relative offset (depending on order of start-end)
-        if a_x != 0 and a_y !=0:
-            r = ( self.rtd(math.atan(a_x/a_y))  )
-
-        #make it positive
-        if r <0:
-            r = -r
-
-        ################################
-        ### if you want absolute rotation - "projected" into a circle to get 0-360
-        #this is with 0/360 pointing to the left of center
-        #DEBUG - ABSOLUTE MODE IS UNFINISHED/UNTESTED 
-        if mode=='absolute':
-            #this works with positive rotation ??debug            
-            if end_xy[1]<start_xy[1]:
-                if end_xy[0]<start_xy[0]:
-                    r+=270
-                if end_xy[0]>start_xy[0]:
-                    r+=180       
-            if end_xy[1]>start_xy[1]:
-                  if end_xy[0]>start_xy[0]:
-                    r+=90  
-
-        ################################
-        ###  if you want relative offset 
-        if mode=='relative':        
-            isnegative = False
-            #first we need to determine if offset is positive or negative 
-            if corner=='bl':
-                if end_xy[0]<start_xy[0]:
-                    isnegative = True
-            if corner=='tr':
-                if end_xy[0]>start_xy[0]:
-                    isnegative = True            
-            if corner=='br' :
-                if end_xy[1]>start_xy[1]:
-                    isnegative = True
-            if corner== 'tl':
-                if end_xy[1]<start_xy[1]:
-                    isnegative = True
-
-            #deal with positive rotation 
-            if not isnegative:
-                if end_xy[1]<start_xy[1]:
-                    if end_xy[0]<start_xy[0]:
-                        r=180-r
-                    if end_xy[0]>start_xy[0]:
-                        r=r+180       
-                if end_xy[1]>start_xy[1]:
-                      if end_xy[0]<start_xy[0]:
-                        r=r  
-                      if end_xy[0]>start_xy[0]:
-                        r=360-r  
-
-            #deal with negative rotation
-            if isnegative:
-                if end_xy[1]<start_xy[1]:
-                    if end_xy[0]<start_xy[0]:
-                        r=180-r
-                    if end_xy[0]>start_xy[0]:
-                        r=r+180       
-                if end_xy[1]>start_xy[1]:
-                    if end_xy[0]<start_xy[0]:
-                        r=r   
-                    if end_xy[0]>start_xy[0]:
-                        r=360-r  
-
-        #####
-        if r == 0 or r == -0:
-            """
-              at this point we are done - unless the rotation came back as 0 or -0.
-              why does it come back zero you may ask? because it uses a right triangle to calculate the theta - if the page is 
-              too perfect it gets a line instead of a triangle and we cant form an anlge from it. In that case we fall back on 
-              the self.corner to calculate the rotation.
-            """
-            #if it is zero - we can safely assume page is axis aligned - therefore we simply look at self.corner and Bob's yer uncle.
-            if corner=='tl':
-                r  = -90
-            if corner=='tr':
-                r  = 0                
-            if corner=='br':
-                r  = 90                
-            if corner=='bl':       
-                r = 180  
-                                                           
-        return r
