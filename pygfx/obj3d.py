@@ -103,16 +103,24 @@ class object3d(polygon_operator):
     ############################################### 
 
 
-    def insert(self, obj):
+    def insert(self, obj, replace=False):
         """ insert an objects geometry into this object 
         """
 
         # if tuple or list assume its [polyidx, points]
         if isinstance(obj, tuple) or isinstance(obj, list):
-            self.insert_polygons(obj[0], obj[1])
+            if replace is True:
+                self.points=obj[0]
+                self.polygons=obj[1]                 
+            else:
+                self.insert_polygons(obj[0], obj[1])
 
         if isinstance(obj, object3d):
-            self.insert_polygons(obj.polygons, obj.points)
+            if replace is True:
+                self.points=obj.points
+                self.polygons=obj.polygons                 
+            else:
+                self.insert_polygons(obj.polygons, obj.points)
 
 
     ############################################### 
@@ -378,22 +386,39 @@ class object3d(polygon_operator):
         print(poly)
         self.insert_polygons([tuple(poly)], pts)
 
+    ###############################################  
+    def prim_cylinder(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1, spokes = 9):
+        pass
+        
+
     ###############################################
 
     def prim_cone(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
-        ## """ Not done yet - this makes a cone """
+        """ first prim tool to use other tools and prims 
+            made so we can make an arrow prim 
+            yeehaw!
+        """
 
-        spokes = 8
-        #circpts = self.calc_circle(0, 0, size, spokes, False)   #2D data
-        ## self.points = self.cvt_2d_to_3d(circpts)            #converted to 3D
-        ## tmp = []
-        ## for x in range(spokes):
-        ##     tmp.append(x)
-        ## tmp.append(0) #make periodic - insert start at end to close the cicle
-        ## self.polygons = [tuple(tmp)]
+        objtmp = object3d()
+        objtmp.prim_circle(axis=axis, size=size)
         
-        self.rotate_pts( rot )
-        self.xform_pts( pos )
+        tiplen = size*2
+
+        if axis=='x':
+            oset = (tiplen,0,0)
+        if axis=='y':
+            oset = (0,tiplen,0)            
+        if axis=='z':
+            oset = (0,0,tiplen) 
+
+        objtmp.radial_triangulate_face(0, offset=oset )
+        self.insert(objtmp)
+
+
+    ###############################################  
+    def prim_3d_arrow(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1, spokes = 5):
+        """ UNFINSIHED single polygon operations  """   
+        self.prim_cone( axis=axis, pos=pos, size=size)
 
 
     ############################################### 
@@ -555,7 +580,7 @@ class object3d(polygon_operator):
         self.xform_pts( pos )
 
     ###############################################  
-    def prim_arrow(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1, spokes = 5):
+    def prim_line_arrow(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1):
         """ UNFINSIHED single polygon operations  """   
         pass
 

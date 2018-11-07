@@ -53,16 +53,29 @@ print( obj.get_face_edges(fid ) ) #DEBUG - add reindex
 print( obj.get_face_normal(fid ) )
 print( obj.get_face_centroid(fid ) )
 """
- 
 
+
+
+
+
+def loft_test():
+    obj = object3d()    
+    obj.prim_circle() 
+
+
+################################################
+
+
+"""
+    IDEAS 
+def dagops_l_system_extrude():
+def time_based_simulation():
+def time_based_simulation_bresenham():
+def time_based_simulation_fft():
+def time_based_simulation_quaternion_slerp():
 def visualize_edges_as_little_arrows(obj1, obj2, slice): 
-    """ UNFINISHED! """
-    pass
-
 def copy_obj_rotate_to_each_face(obj1, obj2, slice): 
-    """ UNFINISHED! """
-    pass
-
+"""
 
 def extrude_single_face(fid): 
     """ UNFINISHED! """
@@ -102,6 +115,23 @@ def triangulate_test():
     obj.save_obj('triangulated.obj')
 
 
+
+def multi_face_triangulate_offset():
+    """ broken - DEBUG """
+    
+    obj = object3d()
+    obj.load_obj('objects/sphere.obj')
+
+    nrmls = []
+    for i,p in enumerate(obj.points):
+        nrmls.append( (i, obj.get_face_normal(i)*3) )
+    for n in nrmls[1:4]:
+        print(n[0])
+        obj.radial_triangulate_face(n[0], offset=n[1] )
+
+
+    obj.save_obj("durrian.obj")
+
 #######################################################
 #######################################################
 #######################################################
@@ -116,12 +146,12 @@ def slice_extract_and_makenew():
     
     obj = object3d() 
     obj.load_obj('objects/sphere2.obj')
-    geom = obj.get_poly_geom( slice=(0,51) , ids=[100,120,105,53,55,73], reindex=True)
+    geom = obj.extract_poly_geom( slice=(0,51) , ids=[100,120,105,53,55,73], reindex=True)
 
 
     obj3 = object3d() 
     obj3.load_obj('objects/monkey.obj')
-    geom2 = obj3.get_poly_geom( slice=(30,100) , ids=[101,105,148], reindex=True)
+    geom2 = obj3.extract_poly_geom( slice=(30,100) , ids=[101,105,148], reindex=True)
 
 
     obj2 = object3d() 

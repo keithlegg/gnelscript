@@ -320,7 +320,68 @@ class polygon_operator(point_operator):
             print(p)
 
     ###############################################  
-    def get_poly_geom(self, slice=None, ids=None, reindex=False):
+    #def select_by_location(self, reindex=False):
+
+
+    ###############################################  
+    def sub_select(self, slice=None, ids=None, reindex=False):
+        """ quick select chunks to feed into other tools: 
+
+            IN:
+                points, edges, faces 
+
+            OUT:
+                vec3, points, etc
+             
+            TOOLS: 
+                extract,
+                duplicate,
+                move,
+                rotate,
+                scale, 
+
+                .... any and all others   
+        """
+        pass
+
+    ############################################### 
+
+    """
+    def duplicate_poly_geom(self, slice=None, ids=None, reindex=False, offset=(0,0,0) ):
+        ##    same as extract_poly_geom, but it will COPY chunks of geometry 
+        ##    into another position in the same shell 
+        ##    
+        ##    slice - tuple of (start,end)  
+        ##    ids   - list of single ids 
+        ##    
+        ##    get one or more faces as a new object 
+        ##    specify a list of ids, or a range
+        out_poly = []
+        out_pts  = []
+
+        self.exprt_ply_idx = 1 # reset this when exporting with reindex 
+
+        if slice:
+            # start-end id range 
+            for i in range(slice[0], slice[1]):
+                #print(i)
+                tmp = self.get_face_data(i, reindex=reindex)
+                #out_poly.append(tmp[0])
+                #for pt in tmp[1]:
+                #    out_pts.append(pt)
+    
+        if ids:
+            # list of specific ids 
+            for i in ids:
+                 tmp = self.get_face_data(i, reindex=reindex)
+                 #out_poly.append(tmp[0])
+                 #for pt in tmp[1]:
+                 #   out_pts.append(pt)                
+
+        return ( out_poly, out_pts )
+    """
+    ###############################################  
+    def extract_poly_geom(self, slice=None, ids=None, reindex=False):
         """ 
             slice - tuple of (start,end)  
             ids   - list of single ids 
@@ -419,12 +480,12 @@ class polygon_operator(point_operator):
         return f_nrml 
 
     ###############################################  
-    def get_face_normal(self, fid=None):
+    def get_face_normal(self, fid=None ):
         """ lookup a face and calulate a face normal for it  
             only tested for 3 or 4 sided polygon 
             also returns the center position of a face
 
-            returns ???
+            returns vec3 type 
         """
 
         if fid == None:
@@ -443,8 +504,7 @@ class polygon_operator(point_operator):
         v3.insert( self.points[f[2]-1] )                
         f_nrml = self.three_vec3_to_normal(v1, v2, v3)
 
-        return f_nrml   
-
+        return f_nrml 
 
     ###############################################  
     def get_face_edges(self, fid, reindex=False):
@@ -471,11 +531,6 @@ class polygon_operator(point_operator):
 
         return [out_edge_ids, out_edge_pts]
 
-    ###############################################        
-    def get_face_centroid(self, fid):
-        pts = self.get_face_pts(fid)
-        return self.poly_centroid(pts) 
-
     ###############################################  
     def extrude_face(self, f_id):
         """ UNFINISHED """
@@ -485,32 +540,10 @@ class polygon_operator(point_operator):
         #ETC
         pass 
 
-    ###############################################  
-    """ 
-    # replaced by poly_centroid
-    def triangle_centroid(self, triangle):
-        # all 3 x coordinates 
-        x1 = triangle[0][0]
-        x2 = triangle[1][0]
-        x3 = triangle[2][0]  
-
-        # all 3 y coordinates         
-        y1 = triangle[0][1]
-        y2 = triangle[1][1]
-        y3 = triangle[2][1]
-        
-        # all 3 z coordinates 
-        z1 = triangle[0][2]
-        z2 = triangle[1][2]
-        z3 = triangle[2][2]
-        
-        #average them 
-        x= (x1+x2+x3)/3
-        y= (y1+y2+y3)/3
-        z= (z1+z2+z3)/3
-
-        return [x,y,z]
-    """  
+    ###############################################        
+    def get_face_centroid(self, fid):
+        pts = self.get_face_pts(fid)
+        return self.poly_centroid(pts) 
 
     ###############################################   
     def poly_centroid(self, pts):
@@ -633,7 +666,7 @@ class polygon_operator(point_operator):
         self.points = tmp
 
     ############################################### 
-    def radial_triangulate_face(self, offset=None ):
+    def radial_triangulate_face(self, fid, offset=None, as_new_obj=False ):
         """ put a vertex at the center of polygon 
             then form triangles in a circle 
             for N sided polygons 
@@ -645,6 +678,13 @@ class polygon_operator(point_operator):
         """
         out_polys = []
         out_pts   = []
+
+        if fid >= len(self.polygons):
+            print('## error radial_triangulate_face - bad face index ')
+            return None 
+
+        tmp = self.get_face_data(fid)
+        poly = tmp[0]
 
         fac_pts = []
         for ptidx in poly:
@@ -672,6 +712,11 @@ class polygon_operator(point_operator):
         for i in range(int(len(poly))):
             out_polys.append( (1, poly[i-1]+1, poly[i]+1 ) ) 
         
+        if as_new_obj:
+            self.points   = out_pts
+            self.polygons = out_polys
+        else:    
+            self.insert_polygons(out_polys, out_pts)
 
     ############################################### 
     def radial_triangulate_obj(self, as_new_obj=False, offset=None ):
