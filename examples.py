@@ -63,6 +63,29 @@ def loft_test():
     obj.prim_circle() 
 
 
+
+def test_copysop():
+    obj = object3d() 
+    obj.prim_circle(axis='y') 
+    #copy_sop( slice=None, ids=None, reindex=False, offset=(0,0,0), num=1):
+    obj.copy_sop(ids=[0], offset=(0,2,0), num=4)
+    obj.save_obj('stax.obj')
+
+    obj.load_obj('stax.obj')
+    obj.rotate_pts((180,45,0))
+    obj.save_obj('stax2.obj')
+
+
+test_copysop()
+
+
+"""
+obj = object3d()
+obj.load_obj('objects/sphere.obj')
+obj.rotate_pts((45,45,45))
+obj.save_obj('stax2_thereturn.obj')
+"""
+
 ################################################
 
 
@@ -146,12 +169,12 @@ def slice_extract_and_makenew():
     
     obj = object3d() 
     obj.load_obj('objects/sphere2.obj')
-    geom = obj.extract_poly_geom( slice=(0,51) , ids=[100,120,105,53,55,73], reindex=True)
+    geom = obj.sub_select_geom( slice=(0,51) , ids=[100,120,105,53,55,73], reindex=True)
 
 
     obj3 = object3d() 
     obj3.load_obj('objects/monkey.obj')
-    geom2 = obj3.extract_poly_geom( slice=(30,100) , ids=[101,105,148], reindex=True)
+    geom2 = obj3.sub_select_geom( slice=(30,100) , ids=[101,105,148], reindex=True)
 
 
     obj2 = object3d() 

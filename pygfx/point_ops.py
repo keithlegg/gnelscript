@@ -26,6 +26,14 @@ class point_operator(object):
         self.vec2     = vec2()     
         self.vec3     = vec3()      
 
+
+    def flush(self):
+        self.points       = [] # inherited
+        self.polygons     = [] # inherited     
+        self.face_normals = []  
+
+
+
     def tuple_pop(self, listTuples, tup):
         """ take a list of tuples, remove one by filtering it out and return the rest back """
         out = []
@@ -253,6 +261,7 @@ class polygon_operator(point_operator):
     #def get_obj_centroid(self):
     #    pass
 
+
     ###############################################  
     def scribe(self, str):
         print(str)
@@ -265,6 +274,24 @@ class polygon_operator(point_operator):
         for i in f_idx:
            out_face.append(i+offset)
         return tuple(out_face)
+
+    ###############################################
+
+    def three_vec3_to_normal(self, v1, v2, v3):
+        """ take 3 vec3 objects and return a face normal """
+
+        #secondary tweaks to the normal data 
+        scale     = 1
+        normalize = False  #make each face normal unit length 
+
+        # calculate the face normal  
+        a = v1 - v2;b = v1 - v3;
+        if normalize:
+            f_nrml = a.cross(b).normal*scale
+        else:    
+            f_nrml = a.cross(b)*scale         
+        
+        return f_nrml 
 
     ############################################### 
     def insert_polygons(self, plyids, points, autoincrement=True):
@@ -307,6 +334,15 @@ class polygon_operator(point_operator):
         z3 = triangle[2][2]
         return (z1+z2+z3)/3
 
+    ###############################################  
+    def extrude_face(self, f_id):
+        """ UNFINISHED """
+        #edges = self.get_face_edges
+        #for e in edge:
+        #    build_poly(e)
+        #ETC
+        pass 
+
     ###############################################     
     def calc_bbox(self, object=None, fids=None ):
         """ UNFINISHED  
@@ -320,12 +356,49 @@ class polygon_operator(point_operator):
             print(p)
 
     ###############################################  
-    #def select_by_location(self, reindex=False):
+    def select_by_location(self, reindex=False):
+        """ UNFINISHED
+            select by angle 
+            direction to other things 
+            select by distance to other objects, points , etc 
+
+        """
+        pass
+
+    ###############################################  
+    def copy_sop(self, slice=None, ids=None, reindex=False, offset=(0,1,0), rot=(0,0,0), num=2):
+        """ UNFINISHED - mimmic the copy SOP in Houdini 
+             
+            offset normal would be slick           
+        """
+        geom = self.sub_select_geom( slice=slice, ids=ids, reindex=True )
+        
+        print("geom is ", geom[1] )
+
+        amtx = offset[0]
+        amty = offset[1]
+        amtz = offset[2]
+
+        amt_rx = rot[0]
+        amt_ry = rot[1]
+        amt_rz = rot[2]
+
+        for i in range(num):
+            ox = amtx * i  
+            oy = amty * i
+            oz = amtz * i
+            newpts = self.xform_pts((ox,oy,oz), geom[1] )
+            self.insert_polygons(geom[0], newpts  ) 
+
 
 
     ###############################################  
-    def sub_select(self, slice=None, ids=None, reindex=False):
-        """ quick select chunks to feed into other tools: 
+    def sub_select_geom(self, slice=None, ids=None, reindex=False):
+        """ 
+            slice - tuple of (start,end)  
+            ids   - list of single ids 
+
+            quick select chunks to feed into other tools: 
 
             IN:
                 points, edges, faces 
@@ -340,55 +413,13 @@ class polygon_operator(point_operator):
                 rotate,
                 scale, 
 
-                .... any and all others   
-        """
-        pass
+                .... any and all others              
 
-    ############################################### 
-
-    """
-    def duplicate_poly_geom(self, slice=None, ids=None, reindex=False, offset=(0,0,0) ):
-        ##    same as extract_poly_geom, but it will COPY chunks of geometry 
-        ##    into another position in the same shell 
-        ##    
-        ##    slice - tuple of (start,end)  
-        ##    ids   - list of single ids 
-        ##    
-        ##    get one or more faces as a new object 
-        ##    specify a list of ids, or a range
-        out_poly = []
-        out_pts  = []
-
-        self.exprt_ply_idx = 1 # reset this when exporting with reindex 
-
-        if slice:
-            # start-end id range 
-            for i in range(slice[0], slice[1]):
-                #print(i)
-                tmp = self.get_face_data(i, reindex=reindex)
-                #out_poly.append(tmp[0])
-                #for pt in tmp[1]:
-                #    out_pts.append(pt)
-    
-        if ids:
-            # list of specific ids 
-            for i in ids:
-                 tmp = self.get_face_data(i, reindex=reindex)
-                 #out_poly.append(tmp[0])
-                 #for pt in tmp[1]:
-                 #   out_pts.append(pt)                
-
-        return ( out_poly, out_pts )
-    """
-    ###############################################  
-    def extract_poly_geom(self, slice=None, ids=None, reindex=False):
-        """ 
-            slice - tuple of (start,end)  
-            ids   - list of single ids 
             
             get one or more faces as a new object 
             specify a list of ids, or a range
         """
+       
         out_poly = []
         out_pts  = []
 
@@ -398,7 +429,6 @@ class polygon_operator(point_operator):
         if slice:
             # start-end id range 
             for i in range(slice[0], slice[1]):
-                #print(i)
                 tmp = self.get_face_data(i, reindex=reindex)
                 out_poly.append(tmp[0])
                 for pt in tmp[1]:
@@ -461,24 +491,6 @@ class polygon_operator(point_operator):
         if reindex is True:
             return (tuple(reindex_id), tmp_pts)
 
-    ###############################################
-
-    def three_vec3_to_normal(self, v1, v2, v3):
-        """ take 3 vec3 objects and return a face normal """
-
-        #secondary tweaks to the normal data 
-        scale     = 1
-        normalize = False  #make each face normal unit length 
-
-        # calculate the face normal  
-        a = v1 - v2;b = v1 - v3;
-        if normalize:
-            f_nrml = a.cross(b).normal*scale
-        else:    
-            f_nrml = a.cross(b)*scale         
-        
-        return f_nrml 
-
     ###############################################  
     def get_face_normal(self, fid=None ):
         """ lookup a face and calulate a face normal for it  
@@ -531,15 +543,6 @@ class polygon_operator(point_operator):
 
         return [out_edge_ids, out_edge_pts]
 
-    ###############################################  
-    def extrude_face(self, f_id):
-        """ UNFINISHED """
-        #edges = self.get_face_edges
-        #for e in edge:
-        #    build_poly(e)
-        #ETC
-        pass 
-
     ###############################################        
     def get_face_centroid(self, fid):
         pts = self.get_face_pts(fid)
@@ -561,7 +564,6 @@ class polygon_operator(point_operator):
         y = sum(ptsy)/len(ptsy)
         z = sum(ptsz)/len(ptsz)
         return [x,y,z]
-
 
     ###############################################  
     def z_sort(self, reverse=False):
@@ -591,52 +593,56 @@ class polygon_operator(point_operator):
         #return out
 
     ###############################################  
-    def apply_transforms(self):
-        """ update the point data to reflect internal matricies """
+    def apply_transforms(self, m44, points=None):
+        """ batch multiply a group of points by a matrix
+             - can be used for scale, transform, rotate and more
+
+             if no points are specified, assume we want to operate on all   
+         """
+
+        if points is None:
+            pts_op = self.points
+        else:
+            pts_op = points 
 
         tmp_buffer = []
-        for pvec in self.points:  
-            tmp_buffer.append( self.m44 * pvec )
-        self.points= tmp_buffer
-        
+        for pvec in pts_op:  
+            tmp_buffer.append( m44 * pvec )
+
+        if points is None:
+            self.points = tmp_buffer
+        else:
+            return pts_op
+
     ###############################################  
-    def move_pts(self, offset=(0,0,0)):
-        """ transform POINTS not object - actually changes geometry"""
+    def scale_pts(self, amt, points=None):
+        """ UNFINISHED
+            transform points without a matrix 
+        """        
         shifted = []
         for pt in self.points:
-            shifted.append( (pt[0]+offset[0], pt[1]+offset[1], pt[2]+offset[2] )  ) 
+            shifted.append( (pt[0]*amt[0], pt[1]*amt[1], pt[2]*amt[2] )  ) 
         self.points = shifted
 
     ###############################################  
-    def scale_pts(self, offset=(0,0,0)):
-        """ transform POINTS not object - actually changes geometry"""        
-        shifted = []
-        for pt in self.points:
-            shifted.append( (pt[0]*offset[0], pt[1]*offset[1], pt[2]*offset[2] )  ) 
-        self.points = shifted
-
-    ###############################################  
-    def rotate_pts(self, rot=(0,0,0) ):
-        """ 
-            transform POINTS not object - actually changes geometry        
-            derived from pointgen2d method rotate_mat4 
-            this simply rotates a 4X4 matrix to be attached to a 3D object
-        """
+    def rotate_pts(self, rot, points=None):
         
-        #self.repair()#may fix or find problems 
+        #self.repair() # may fix or find problems 
 
-        rx=rot[0];ry=rot[1];rz=rot[2];
+        rx=rot[0]
+        ry=rot[1]
+        rz=rot[2]
 
         dtr = self.mu.dtr
 
-        #build rotationY (see diagram above) 
+        # build rotationY (see diagram above) 
         y_matrix =  self.m44.identity
         y_matrix[0]  =  math.cos(dtr( ry ))
         y_matrix[2]  = -math.sin(dtr( ry ))
         y_matrix[8]  =  math.sin(dtr( ry ))
         y_matrix[10] =  math.cos(dtr( ry ))
               
-        #build rotationZ (see diagram above) 
+        # build rotationZ (see diagram above) 
         z_matrix    =  self.m44.identity
         z_matrix[0] =  math.cos(dtr( rz ))
         z_matrix[1] =  math.sin(dtr( rz ))
@@ -644,7 +650,7 @@ class polygon_operator(point_operator):
         z_matrix[5] =  math.cos(dtr( rz ))
         tmp_matr = y_matrix * z_matrix
 
-        #build rotationX (see diagram above) 
+        # build rotationX (see diagram above) 
         x_matrix =  self.m44.identity
         x_matrix[5]  =   math.cos(dtr( rx )) 
         x_matrix[6]  =   math.sin(dtr( rx )) 
@@ -652,18 +658,30 @@ class polygon_operator(point_operator):
         x_matrix[10] =   math.cos(dtr( rx ))
         self.m44 = x_matrix * tmp_matr   
         
-        self.apply_transforms()
+        if points is None:
+            self.apply_transforms(self.m44)
+        else:
+            return self.apply_transforms(self.m44, points=points)
 
     ############################################### 
-    def xform_pts(self, amt=(0,0,0)):
-        """ shift points without using a matrix """
+    def xform_pts(self, pos, points=None):
+        """ shift points without using a matrix 
+            if no points are specified - apply to whole object 
+        """
+
         tmp = []
-        for pt in self.points:  
-            x = pt[0]+ amt[0]
-            y = pt[1]+ amt[1]
-            z = pt[2]+ amt[2]
+
+        if points is None:
+            points = self.points
+
+        for pt in points:  
+            x = pt[0]+ pos[0]
+            y = pt[1]+ pos[1]
+            z = pt[2]+ pos[2]
             tmp.append( (x,y,z) )
-        self.points = tmp
+        
+        #self.points = tmp
+        return tmp 
 
     ############################################### 
     def radial_triangulate_face(self, fid, offset=None, as_new_obj=False ):
@@ -907,14 +925,21 @@ class polygon_operator(point_operator):
     ############################################### 
 
     #load/dump numbered point caches and reload - very powerful idea!
-    def load_obj(self, filename):
+    def load_obj(self, filename, doflush=True):
         """ 
             DEBUG - DOES NOT CLEAR BUFFERS FIRST!!
             so if you load two models, the points - polygons will be merged and have bad topology
 
             load a wavefront OBJ file into model's point/poly memory 
             you can save shape or cache data 
+
+
+            doflush clears out all memory 
+            if you dont flush it will attempt to fuse existing geometry with loaded 
         """
+
+        #if doflush is True:
+        #    self.flush() 
 
         if os.path.lexists(filename) == 0:
             self.scribe("%s DOES NOT EXIST !! "%filename )

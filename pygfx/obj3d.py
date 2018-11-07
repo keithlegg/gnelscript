@@ -19,17 +19,11 @@ class object3d(polygon_operator):
         self.pos       = [0,0,0]
         self.scale     = [1,1,1]
 
-
-    ############################################### 
-
-    def flush(self):
-        self.points       = [] # inherited
-        self.polygons     = [] # inherited     
-        self.face_normals = []  
-
+    def reset(self):
         self.rot          = [0,0,0]
         self.pos          = [0,0,0]
         self.scale        = [1,1,1]
+
 
     ############################################### 
 
@@ -379,11 +373,10 @@ class object3d(polygon_operator):
 
         pts = self.calc_circle( pos, size, axis, True, spokes )
         
-        #we add one because calc_circle_2d returns zero indexed data but OBJ is NOT zero indexed        
+        # we add one because calc_circle_2d returns zero indexed data but OBJ is NOT zero indexed        
         for x in range(spokes):
             poly.append(x+1) 
-        
-        print(poly)
+
         self.insert_polygons([tuple(poly)], pts)
 
     ###############################################  
