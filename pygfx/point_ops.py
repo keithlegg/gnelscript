@@ -26,14 +26,6 @@ class point_operator(object):
         self.vec2     = vec2()     
         self.vec3     = vec3()      
 
-
-    def flush(self):
-        self.points       = [] # inherited
-        self.polygons     = [] # inherited     
-        self.face_normals = []  
-
-
-
     def tuple_pop(self, listTuples, tup):
         """ take a list of tuples, remove one by filtering it out and return the rest back """
         out = []
@@ -225,22 +217,33 @@ class polygon_operator(point_operator):
     def __init__(self):
         super().__init__()  
 
+        # geometry properties 
         self.points          = []    # list of tuples of XYZ points per vertex         -  [(x,y,z), (x,y,z)]  
         self.polygons        = []    # list of tuples for 2 or more vertex connections -  [(1,2,5,8) , (1,2)] 
         self.face_normals    = []
-
-        self.exprt_ply_idx   = 1 #obj is NOT zero indexed
-        self.exprt_pnt_idx   = 0 #pts ARE zero indexed (everything BUT .obj face idx's are)
-        
         #self.point_normals  = []
         #self.point_colors   = []
         #self.line_colors    = []
 
-        #render properties
-        self.linecolors = None #iterable of colors for lines 
+        # render properties embedded in geometry 
+        self.linecolors = None       # iterable of colors for lines 
         self.linecolor  = (0,240,00)
         self.vtxcolor   = (0,240,00)
 
+        # "unavoidable side effect" variables 
+        self.exprt_ply_idx   = 1     # obj is NOT zero indexed
+        #self.exprt_pnt_idx   = 0    # pts ARE zero indexed (everything BUT .obj face idx's are)
+
+
+    def flush(self):
+        """ set all geometry to a clean state """
+
+        self.points       = [] 
+        self.polygons     = []      
+        self.face_normals = []  
+
+        self.exprt_ply_idx   = 1 #obj is NOT zero indexed
+        #self.exprt_pnt_idx   = 0 #pts ARE zero indexed (everything BUT .obj face idx's are)
 
     ############################################### 
     #def weld_edges(self, obj):
@@ -390,11 +393,11 @@ class polygon_operator(point_operator):
             newpts = self.xform_pts((ox,oy,oz), geom[1] )
             self.insert_polygons(geom[0], newpts  ) 
 
-
-
     ###############################################  
     def sub_select_geom(self, slice=None, ids=None, reindex=False):
         """ 
+            UNTESTED - make work with xform_pts, rotate_pts, scale_pts 
+
             slice - tuple of (start,end)  
             ids   - list of single ids 
 
@@ -593,12 +596,13 @@ class polygon_operator(point_operator):
         #return out
 
     ###############################################  
+    """
     def apply_transforms(self, m44, points=None):
-        """ batch multiply a group of points by a matrix
-             - can be used for scale, transform, rotate and more
-
-             if no points are specified, assume we want to operate on all   
-         """
+        ## batch multiply a group of points by a matrix
+        ##     - can be used for scale, transform, rotate and more
+        ##     if no points are specified, assume we want to operate on all   
+        
+        pts_op = [] 
 
         if points is None:
             pts_op = self.points
@@ -606,14 +610,14 @@ class polygon_operator(point_operator):
             pts_op = points 
 
         tmp_buffer = []
-        for pvec in pts_op:  
-            tmp_buffer.append( m44 * pvec )
+        for pt in pts_op:  
+            tmp_buffer.append( m44 * pt )
 
         if points is None:
             self.points = tmp_buffer
         else:
             return pts_op
-
+    """
     ###############################################  
     def scale_pts(self, amt, points=None):
         """ UNFINISHED
@@ -656,12 +660,28 @@ class polygon_operator(point_operator):
         x_matrix[6]  =   math.sin(dtr( rx )) 
         x_matrix[9]  =  -math.sin(dtr( rx ))
         x_matrix[10] =   math.cos(dtr( rx ))
-        self.m44 = x_matrix * tmp_matr   
-        
+
+        rot_matrix = self.m44.identity
+        rot_matrix = x_matrix * tmp_matr   
+       
+        ################################################
+
+        ## cleanup the "apply transforms mess"
+        ## do this for now, until I get it straightened out 
+        tmp_buffer = [] 
         if points is None:
-            self.apply_transforms(self.m44)
+            pts_in = self.points
         else:
-            return self.apply_transforms(self.m44, points=points)
+            pts_in = points
+
+        # apply the transform here
+        for pt in pts_in:  
+            tmp_buffer.append( rot_matrix * pt )
+
+        if points is None: 
+            self.points = tmp_buffer
+        else:    
+            return tmp_buffer
 
     ############################################### 
     def xform_pts(self, pos, points=None):
@@ -1010,26 +1030,31 @@ class polygon_operator(point_operator):
         buf = [] #array of strings to be written out as the OBJ file
 
         buf.append("# Created by Magic Mirror render toy.")
-        buf.append("# Keith Legg - December 2015.\n\n")        
-        buf.append("# version2   - November 2018.\n\n")
+        buf.append("# Keith Legg - December 2015.")        
+        buf.append("# version2   - November 2018.\n")
 
-        buf.append('\n#these define the vertecies')
+        buf.append('\n# Define the vertecies')
 
         #DEBUG - PUT MORE ERROR CHECKING ON VERTS, I HAD SOME BAD DATA GET THROUGH 
         #EX: - v 1 2 3) (4,5,6)
         for p in self.points:
              buf.append('v %s %s %s'%( p[0], p[1], p[2]) ) #x y z components 
         
-        buf.append('\n#these define the polygon geometry')
+        buf.append('\n# Define the polygon geometry')
+        buf.append('# No UV or normals at this time')
         for ply in self.polygons:
             plybuf = ''
             for f in ply:
                 #plybuf = plybuf +(' %s'%str(int(f)+1) ) #add one because OBJ is NOT zero indexed
                 plybuf = plybuf +(' %s'%str(int(f)) ) #add one because OBJ is NOT zero indexed
 
-            if as_lines:#save as lines
+            if as_lines:
+                # save as lines
                 buf.append('l %s'%plybuf)
-            else:#save as polygons 
+            else:
+                # save as polygons 
+                # format for f command is : f position_id/texture_coordinates_id/normal_id 
+                # for now we leave off slashes and leave other two blank   
                 buf.append('f %s'%plybuf)
  
         buf.append('\n')

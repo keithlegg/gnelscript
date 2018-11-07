@@ -64,27 +64,47 @@ def loft_test():
 
 
 
-def test_copysop():
-    obj = object3d() 
-    obj.prim_circle(axis='y') 
-    #copy_sop( slice=None, ids=None, reindex=False, offset=(0,0,0), num=1):
-    obj.copy_sop(ids=[0], offset=(0,2,0), num=4)
-    obj.save_obj('stax.obj')
 
-    obj.load_obj('stax.obj')
-    obj.rotate_pts((180,45,0))
-    obj.save_obj('stax2.obj')
+def test_rotate_points():
+    obj = object3d()
+    obj.load_obj('objects/monkey.obj')
+    #pts = [(2,2,2), (4,4,4), (8,8,8)]
+    pts2 = obj.rotate_pts((45,45,45) )
+    #print(pts2)
+    obj.save_obj('foo.obj')
 
 
-test_copysop()
+
+def modify_a_subselect():
+    """ UNFINSIHED ! """
+
+    obj = object3d()
+    obj.load_obj('objects/sphere.obj')
+    geom = obj.sub_select_geom( slice=[1,200]  , reindex=True )
+    newpts = obj.rotate_pts((45,45,45), points=geom[1])
+
+    obj2 = object3d() 
+    obj2.insert_polygons(geom[0], newpts  )      
+    obj2.save_obj('sphere_modify.obj')
+
+modify_a_subselect()
 
 
-"""
-obj = object3d()
-obj.load_obj('objects/sphere.obj')
-obj.rotate_pts((45,45,45))
-obj.save_obj('stax2_thereturn.obj')
-"""
+
+def modify_part_of_an_object():
+    """ UNFINSIHED ! """
+
+    obj = object3d()
+    obj.load_obj('objects/sphere.obj')
+
+    geom = obj.sub_select_geom( slice=(10,50), reindex=True )
+    newpts = obj.rotate_pts((45,45,45), points=geom[1])
+
+    obj2 = object3d() 
+    obj2.insert_polygons(geom[0], newpts  )      
+    obj2.save_obj('sphere_modify.obj')
+
+
 
 ################################################
 
@@ -155,11 +175,74 @@ def multi_face_triangulate_offset():
 
     obj.save_obj("durrian.obj")
 
+
+
+def circle_with_cube_all_pts():
+    """ BROKEN - FIX THIS 
+        make a circle with a rotated cube at each point 
+    """
+
+    obj = object3d()
+    obj.prim_circle(axis='z', pos=(0,0,0), spokes=42) 
+    ctr = obj.get_face_centroid(0)
+    obj.triangulate(force=True)
+    pts = obj.get_face_pts(0) 
+    ct = 0
+    for pt in pts:
+        tmp = object3d()
+        tmp.prim_cube(size=.05, pos=pt, rot=(ct,ct,ct), pivot='world')
+        ct += 10
+        obj.insert(tmp)  
+    obj.save_obj("cubey.obj")
+
 #######################################################
 #######################################################
 #######################################################
 #######################################################
 #these are all tested-ish 
+
+
+def build_perspective_matrix():
+    #debug - NOT WORKING!  Work In Progress 
+
+    obj = object3d()
+    obj.prim_cube()
+    #obj.scale_pts((3,3,30))
+    obj.rotate_pts((30,30,30))
+    ropr = simple_render()
+    #                          fov, aspect, znear, zfar)
+    #mx = m44.buildPerspProjMat( 200, 1, 1, 100)
+    ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
+    ropr.save_image('simple_render.png')
+
+
+
+def pass_matrix_to_render():
+    """ use a 3X3 or 4X4 matrix to adjust a render 
+        attempt to "visualize" a matrix 
+    """
+
+    obj = object3d()
+    obj.prim_cube()
+    ropr = simple_render()
+    m44 = matrix44()
+    m44.from_euler(45,45,0)
+    ropr.render_matrix_obj( None, m44, 3, 100, 'custom_render.png' , obj      )
+
+
+
+
+
+
+
+
+def test_copysop():
+    obj = object3d() 
+    obj.prim_circle(axis='y') 
+    #copy_sop( slice=None, ids=None, reindex=False, offset=(0,0,0), num=1):
+    obj.copy_sop(ids=[0], offset=(0,2,0), num=4)
+    obj.save_obj('stax.obj')
+
 
 def slice_extract_and_makenew():
 
@@ -248,37 +331,6 @@ def object_primitives():
     #    obj.flush()
 
 
-
-def build_perspective_matrix():
-    #debug - NOT WORKING!  Work In Progress 
-
-    obj = object3d()
-    obj.prim_cube()
-    #obj.scale_pts((3,3,30))
-    obj.rotate_pts((30,30,30))
-    ropr = simple_render()
-    #                          fov, aspect, znear, zfar)
-    #mx = m44.buildPerspProjMat( 200, 1, 1, 100)
-    ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
-    ropr.save_image('simple_render.png')
-
-
-
-def pass_matrix_to_render():
-    """ use a 3X3 or 4X4 matrix to adjust a render 
-        attempt to "visualize" a matrix 
-    """
-
-    obj = object3d()
-    obj.prim_cube()
-    ropr = simple_render()
-    m44 = matrix44()
-    m44.from_euler(45,45,0)
-    ropr.render_matrix_obj( None, m44, 3, 100, 'custom_render.png' , obj      )
-
-
-
-
 def three_renderers():
     """ example of the 3 main ways to render  
             - single object 
@@ -358,25 +410,6 @@ def model_from_scratch():
 
     obj.save_obj("my_new_object.obj")
 
-
-
-
-
-
-def circle_with_cube_all_pts():
-    """ make a circle with a rotated cube at each point """
-    obj = object3d()
-    obj.prim_circle(axis='z', pos=(0,0,0), spokes=42) 
-    ctr = obj.get_face_centroid(0)
-    obj.triangulate(force=True)
-    pts = obj.get_face_pts(0) 
-    ct = 0
-    for pt in pts:
-        tmp = object3d()
-        tmp.prim_cube(size=.05, pos=pt, rot=(ct,ct,ct))
-        ct += 10
-        obj.insert(tmp)  
-    obj.save_obj("cubey.obj")
 
 
 

@@ -578,11 +578,11 @@ class object3d(polygon_operator):
         pass
 
     ############################################### 
-    def prim_cube(self, linecolor=None, pos=(0,0,0), rot=(0,0,0), size=1):
+    def prim_cube(self, linecolor=None, pos=(0,0,0), rot=(0,0,0), size=1, pivot='obj'):
         """ single polygon operations (that can be stacked togteher ?) """
         pts = [];plybfr = []
                 
-        pivot = 'obj' #make object at origin, then move VS make in place       
+        # pivot = 'obj' #make object at origin, then move VS make in place       
         
         if pivot == 'world':  
             """ build it in place - making the pivot point at world zero """
