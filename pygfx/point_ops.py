@@ -420,9 +420,9 @@ class polygon_operator(point_operator):
         """ UNFINISHED """
 
         geom  = self.sub_select_geom(ids=[f_id] , reindex=True)
-        nrmls = self.get_face_normal(fid=f_id) 
+        nrmls = self.get_face_normal(fid=f_id, unitlen=True) 
 
-        nrmls = nrmls * 5 
+        nrmls = nrmls * 1 
         #s_edges = self.get_face_edges(f_id) 
         s_edges = self.get_geom_edges(geom)  
 

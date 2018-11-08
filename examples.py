@@ -58,9 +58,17 @@ print( obj.get_face_centroid(fid ) )
 
 def test_extrude():
     obj = object3d()
-    obj.load('objects/sphere.obj')
+    obj.load('objects/monkey.obj')
     #obj.load('objects/kube.obj')
     obj.extrude_face(3)
+
+    obj.extrude_face(6)
+
+    obj.extrude_face(9)
+
+    obj.extrude_face(12)
+
+    obj.extrude_face(16)
 
     obj.save('extrudez.obj')
 
