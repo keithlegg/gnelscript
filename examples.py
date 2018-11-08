@@ -43,9 +43,10 @@ ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj     
 
 #######################################################
 
-"""
+
+""" 
 obj = object3d()
-obj.load_obj('objects/sphere.obj')
+obj.load('objects/sphere.obj')
 
 fid = 23
 print( obj.get_face_data(fid ) ) #reindex=True 
@@ -53,6 +54,57 @@ print( obj.get_face_edges(fid ) ) #DEBUG - add reindex
 print( obj.get_face_normal(fid ) )
 print( obj.get_face_centroid(fid ) )
 """
+
+ 
+
+
+
+def grab_all_pts():
+    obj = object3d()
+    #obj.load('objects/sphere.obj')
+    obj.load('objects/kube.obj')
+
+    all_pts = obj.points
+    plyidx1 =  obj.get_pt_ids([0,1,2])  
+    plyidx2 =  obj.get_pt_ids([3,5])
+
+    obj2 = object3d() 
+    obj2.points = all_pts
+
+    #obj2.insert_polygons( gr1, all_pts   ) 
+    #gr3 = obj2.xform_pts((2,2,2), gr2 )
+
+    obj2.polygons.extend(plyidx1)
+    obj2.polygons.extend(plyidx2)
+
+    obj2.save('kube_modify.obj')
+
+
+
+
+
+
+def modify_a_subselect():
+    """ UNFINSIHED ! """
+
+    obj = object3d()
+    #obj.load('objects/sphere.obj')
+    obj.load('kube.obj')
+
+    geom = obj.sub_select_geom( slice=[1,5]  , reindex=True )
+    newpts = obj.rotate_pts((45,45,45), points=geom[1])
+
+    print(geom)
+    geom2 = obj.sub_select_geom( slice=[5,6]  , reindex=True )
+    #newpts2 = obj.rotate_pts((-45,0,45), points=geom2[1])
+
+    obj2 = object3d() 
+    #obj2.insert_polygons(geom[0], newpts  )      
+    obj2.insert_polygons(geom2[0], geom2[1], asnewgeom=False  ) 
+    # obj2.insert_polygons(geom2[0], newpts2  , asnewgeom=False) 
+    obj2.save('kube_modify.obj')
+
+
 
 
 
@@ -67,27 +119,11 @@ def loft_test():
 
 def test_rotate_points():
     obj = object3d()
-    obj.load_obj('objects/monkey.obj')
+    obj.load('objects/monkey.obj')
     #pts = [(2,2,2), (4,4,4), (8,8,8)]
     pts2 = obj.rotate_pts((45,45,45) )
     #print(pts2)
-    obj.save_obj('foo.obj')
-
-
-
-def modify_a_subselect():
-    """ UNFINSIHED ! """
-
-    obj = object3d()
-    obj.load_obj('objects/sphere.obj')
-    geom = obj.sub_select_geom( slice=[1,200]  , reindex=True )
-    newpts = obj.rotate_pts((45,45,45), points=geom[1])
-
-    obj2 = object3d() 
-    obj2.insert_polygons(geom[0], newpts  )      
-    obj2.save_obj('sphere_modify.obj')
-
-modify_a_subselect()
+    obj.save('foo.obj')
 
 
 
@@ -95,14 +131,14 @@ def modify_part_of_an_object():
     """ UNFINSIHED ! """
 
     obj = object3d()
-    obj.load_obj('objects/sphere.obj')
+    obj.load('objects/sphere.obj')
 
     geom = obj.sub_select_geom( slice=(10,50), reindex=True )
     newpts = obj.rotate_pts((45,45,45), points=geom[1])
 
     obj2 = object3d() 
     obj2.insert_polygons(geom[0], newpts  )      
-    obj2.save_obj('sphere_modify.obj')
+    obj2.save('sphere_modify.obj')
 
 
 
@@ -123,7 +159,7 @@ def copy_obj_rotate_to_each_face(obj1, obj2, slice):
 def extrude_single_face(fid): 
     """ UNFINISHED! """
     obj = object3d()
-    obj.load_obj('objects/sphere.obj')
+    obj.load('objects/sphere.obj')
 
     print( obj.get_face_data(fid ) ) #reindex=True 
     print( obj.get_face_edges(fid ) ) #DEBUG - add reindex 
@@ -137,7 +173,7 @@ def extrude_single_face(fid):
 def extrude_single_edge(fid): 
     """ UNFINISHED! """
     obj = object3d()
-    obj.load_obj('objects/sphere.obj')
+    obj.load('objects/sphere.obj')
 
     print( obj.get_face_data(fid ) ) #reindex=True 
     print( obj.get_face_edges(fid ) ) #DEBUG - add reindex 
@@ -155,7 +191,7 @@ def triangulate_test():
     obj.prim_circle() 
     obj.radial_triangulate_obj( offset=None)#as_new_obj=False
     #obj.radial_triangulate_obj()
-    obj.save_obj('triangulated.obj')
+    obj.save('triangulated.obj')
 
 
 
@@ -163,7 +199,7 @@ def multi_face_triangulate_offset():
     """ broken - DEBUG """
     
     obj = object3d()
-    obj.load_obj('objects/sphere.obj')
+    obj.load('objects/sphere.obj')
 
     nrmls = []
     for i,p in enumerate(obj.points):
@@ -173,7 +209,7 @@ def multi_face_triangulate_offset():
         obj.radial_triangulate_face(n[0], offset=n[1] )
 
 
-    obj.save_obj("durrian.obj")
+    obj.save("durrian.obj")
 
 
 
@@ -193,7 +229,7 @@ def circle_with_cube_all_pts():
         tmp.prim_cube(size=.05, pos=pt, rot=(ct,ct,ct), pivot='world')
         ct += 10
         obj.insert(tmp)  
-    obj.save_obj("cubey.obj")
+    obj.save("cubey.obj")
 
 #######################################################
 #######################################################
@@ -233,39 +269,45 @@ def pass_matrix_to_render():
 
 
 
-
-
-
 def test_copysop():
+    """ copy SOP is a subselect, copy and transform 
+        optional loop and increment 
+    """
     obj = object3d() 
-    obj.prim_circle(axis='y') 
+    #obj.prim_circle(axis='y') 
+    obj.load('objects/sphere.obj')
     #copy_sop( slice=None, ids=None, reindex=False, offset=(0,0,0), num=1):
-    obj.copy_sop(ids=[0], offset=(0,2,0), num=4)
-    obj.save_obj('stax.obj')
+    obj.copy_sop(slice=(1,50), offset=(0,2,0), num=5)
+    obj.save('stax.obj')
+
+test_copysop() 
 
 
 def slice_extract_and_makenew():
+    """ load two models, extract parts of them using the subselect tool 
+        subselect grabs polys and points at the same time, with option to reindex
+         
+        reindex effectively makes a new object 
 
-    """ load two models, extract parts of them, weld them into a new model 
+        weld them into a new model 
         fekkin awesome mate!  
     """
     
     obj = object3d() 
-    obj.load_obj('objects/sphere2.obj')
+    obj.load('objects/sphere2.obj')
     geom = obj.sub_select_geom( slice=(0,51) , ids=[100,120,105,53,55,73], reindex=True)
 
 
     obj3 = object3d() 
-    obj3.load_obj('objects/monkey.obj')
+    obj3.load('objects/monkey.obj')
     geom2 = obj3.sub_select_geom( slice=(30,100) , ids=[101,105,148], reindex=True)
-
 
     obj2 = object3d() 
     # weld two models together 
     obj2.insert_polygons(geom[0], geom[1]  ) 
     obj2.insert_polygons(geom2[0], geom2[1]  )
 
-    obj2.save_obj('new.obj')
+    obj2.save('new.obj')
 
 
 
@@ -281,52 +323,52 @@ def object_primitives():
     do_flush = False
 
     obj.prim_line( pos=position, rot=rotation, size=size)
-    obj.save_obj("new_line.obj")
+    obj.save("new_line.obj")
     if do_flush:
         obj.flush()
 
     obj.prim_triangle( pos=position, rot=rotation, size=size)
-    obj.save_obj("new_triangle.obj")
+    obj.save("new_triangle.obj")
     if do_flush:
         obj.flush()
 
     obj.prim_quad( pos=position, rot=rotation, size=size)
-    obj.save_obj("new_quad.obj")
+    obj.save("new_quad.obj")
     if do_flush:
         obj.flush()
 
     obj.prim_circle( pos=position, rot=rotation, size=size)
-    obj.save_obj("new_circle.obj")
+    obj.save("new_circle.obj")
     if do_flush:
         obj.flush()
 
     obj.prim_sphere( pos=position, rot=rotation, size=size)
-    obj.save_obj("new_sphere.obj")
+    obj.save("new_sphere.obj")
     if do_flush:
         obj.flush()
 
     obj.prim_cone( pos=position, rot=rotation, size=size)
-    obj.save_obj("new_cone.obj")
+    obj.save("new_cone.obj")
     if do_flush:
         obj.flush()
 
     obj.prim_sphere( pos=position, rot=rotation, size=size)
-    obj.save_obj("new_sphere.obj")
+    obj.save("new_sphere.obj")
     if do_flush:
         obj.flush()
 
     obj.prim_locator( pos=position, rot=rotation, size=size)
-    obj.save_obj("new_locator.obj")
+    obj.save("new_locator.obj")
     if do_flush:
         obj.flush()
 
     obj.prim_locator_xyz( pos=position, rot=rotation, size=size)
-    obj.save_obj("new_locator_xyz.obj")
+    obj.save("new_locator_xyz.obj")
     if do_flush:
         obj.flush()
 
     #obj.prim_arrow( pos=position, rot=rotation, size=size)
-    #obj.save_obj("new_arrow.obj")
+    #obj.save("new_arrow.obj")
     #if do_flush:
     #    obj.flush()
 
@@ -339,7 +381,7 @@ def three_renderers():
      """
 
     obj = object3d()
-    obj.load_obj('objects/sphere2.obj')
+    obj.load('objects/sphere2.obj')
     obj.triangulate() 
 
     ropr = simple_render()
@@ -391,63 +433,16 @@ def angle_between_vectors():
 
 
 
-def model_from_scratch(): 
-    """ build a new polygon object from points """ 
-
-    obj = object3d()
-
-    # pass one - you can do as many as you like
-    pts = [(1,1,1),(0,1,1),(-1,-1,1),(2,-2,1)]
-    polys = [(1,2,3,4) ]
-    obj.insert_polygons(polys, pts)
-
-    # pass two - add as many times as you want 
-    pts = [(0,-3,-1),(2,-2,1),(3,-1,1)]
-    polys = [(3,2,1) ]
-    #reindex True  -  assume this is a new object to merge with old (default) 
-    #reindex False -  assume this is a continuation of past geometry 
-    obj.insert_polygons(polys, pts)
-
-    obj.save_obj("my_new_object.obj")
-
-
-
-
-
-def load_obj_build_another_from_it(objectpath):
+def load_build_another_from_normals(objectpath):
     """ load an object, 
-        turn its normals into another object, 
+        turn its normals into another line object, 
         render and save image and new object 
 
-        load_obj_build_another_from_it('objects/sphere.obj')
-        
+        load_build_another_from_normals('objects/sphere.obj')
     """
 
     obj = object3d()
-    obj.load_obj(objectpath)
-
-    obj2 = object3d()
-
-    obj2.save_obj("edges.obj")
-
-    ropr = simple_render()
-    ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
-    ropr.save_image('simply_render.png')
-
-
-
-
-def load_obj_build_another_from_normals(objectpath):
-    """ load an object, 
-        turn its normals into another object, 
-        render and save image and new object 
-
-        load_obj_build_another_from_normals('objects/sphere.obj')
-
-    """
-
-    obj = object3d()
-    obj.load_obj(objectpath)
+    obj.load(objectpath)
 
     obj2 = object3d()
     for i in range(obj.numpts):
@@ -458,7 +453,7 @@ def load_obj_build_another_from_normals(objectpath):
         obj2.vectorlist_to_obj(edges[1])
         obj2.vectorlist_to_obj( [normal], pos)
 
-    obj2.save_obj("edges.obj")
+    obj2.save("edges.obj")
 
     ropr = simple_render()
     ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
@@ -466,4 +461,49 @@ def load_obj_build_another_from_normals(objectpath):
 
 
 
+
+def model_from_scratch(): 
+    """ build a new polygon object from points """ 
+
+    obj = object3d()
+
+    #add new geom and auto increment the ids
+    pts = [(1,1,1),(0,1,1),(-1,-1,1),(2,-2,1)]
+    polys = [(1,2,3,4) ]
+    obj.insert_polygons(polys, pts) 
+
+    #add new geom and auto increment the ids
+    pts = [(0,-3,-1),(2,-2,1),(3,-1,1)]
+    polys = [(3,2,1) ]
+    obj.insert_polygons(polys, pts)
+
+    #add polys without new points 
+    obj.insert_polygons( [(1,2,3,4,5,6,7),(1,7,2)], None, asnewgeom=False)
+
+    obj.save("my_new_object.obj")
+
+
+
+def extract_by_hack():
+    """ *slightly* higher level than raw geom 
+        use the lookup util to get the pt ids by face index 
+
+    """
+    obj = object3d()
+    obj.load('objects/kube.obj')
+
+    #mirror all points with out thinking about it 
+    all_pts = obj.points
+
+    #extract two chunks of poly ids 
+    poly1 =  obj.get_pt_ids([0,1,2])  
+    poly2 =  obj.get_pt_ids([3,5])
+
+    #make a new object and dump data into it
+    obj2 = object3d() 
+    obj2.points = all_pts
+    obj2.polygons.extend(poly1)
+    obj2.polygons.extend(poly2)
+
+    obj2.save('kube_modify.obj')
 

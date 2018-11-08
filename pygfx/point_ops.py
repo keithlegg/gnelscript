@@ -264,41 +264,97 @@ class polygon_operator(point_operator):
     #def get_obj_centroid(self):
     #    pass
 
-
     ###############################################  
+    ###############################################  
+    ###############################################  
+    # stupid little helpers, knick knacks, tin toys 
+
     def scribe(self, str):
         print(str)
 
+    ###############################################     
+    def calc_bbox(self, object=None, fids=None ):
+        """ UNFINISHED  
+            get the boudning area of an object or face(s)
+        """
+        maxx = 0
+        maxy = 0
+        maxz = 0
+        
+        for p in self.points:
+            print(p)
+
     ############################################### 
     def _reindex_ply(self, f_idx, offset):
-        """ take a tuple of face indexes and re-index to offset+value""" 
+        """ UNTESTED 
+            take a tuple of face indexes and re-index to offset+value
+            not used yet, but may be a good thing to have 
+        """ 
 
         out_face = [] 
         for i in f_idx:
            out_face.append(i+offset)
         return tuple(out_face)
 
+    ############################################### 
+    def get_mean_z(self, triangle):
+        z1 = triangle[0][2]
+        z2 = triangle[1][2]
+        z3 = triangle[2][2]
+        return (z1+z2+z3)/3
+
+
+    ###############################################  
+    def cvt_2d_to_3d(self, points):
+        """ convert 2d points into 3d by adding an empty z axis """
+
+        newpts = []
+        for pt in points:
+            newpts.append( (pt[0], pt[1], 0)   )
+        return newpts
+
+
+    ############################################### 
+    def locate_pt_along3d(self, x1, y1, z1, x2, y2, z2, num):
+        """
+            given two 3D points, return a series of N number connecting points in 3D 
+        """
+
+        pts_created = []
+        fpos=(x1, y1, z1)
+        spos=(x2, y2, z2)
+         
+        for n in range(num):
+            npos = [3]
+
+            npos[0]     = spos[0]+(((fpos[0]-spos[0])/(num+1))*(n+1))
+            npos.append(  spos[1]+(((fpos[1]-spos[1])/(num+1))*(n+1))  )
+            npos.append(  spos[2]+(((fpos[2]-spos[2])/(num+1))*(n+1))  )
+
+            pts_created.append( (npos[0], npos[1], npos[2]) )
+        return pts_created
+
+    ###############################################
+    ###############################################
     ###############################################
 
-    def three_vec3_to_normal(self, v1, v2, v3):
+    def three_vec3_to_normal(self, v1, v2, v3, unitlen=False):
         """ take 3 vec3 objects and return a face normal """
-
-        #secondary tweaks to the normal data 
-        scale     = 1
-        normalize = False  #make each face normal unit length 
 
         # calculate the face normal  
         a = v1 - v2;b = v1 - v3;
-        if normalize:
-            f_nrml = a.cross(b).normal*scale
+        if unitlen:
+            f_nrml = a.cross(b).normal
         else:    
-            f_nrml = a.cross(b)*scale         
+            f_nrml = a.cross(b)          
         
         return f_nrml 
 
     ############################################### 
-    def insert_polygons(self, plyids, points, autoincrement=True):
+    def insert_polygons(self, plyids, points, asnewgeom=True):
         """  
+             Insert NEW geometry into this object
+
              DEBUG IDEAS TO WORK ON : 
                  - single polygons, multiple polygons 
                  - tuple, list, vector data for points 
@@ -316,7 +372,11 @@ class polygon_operator(point_operator):
         for poly in plyids:
             plytmp = []      
             for idx in poly:
-                if autoincrement is True:
+                if not isinstance(idx, int):
+                    print('## insert_polygons, bad data for index ')
+                    return None 
+
+                if asnewgeom is True:
                     plytmp.append(idx+self.numpts) # add the poly index to current count    
                 else:
                     plytmp.append(idx)  
@@ -325,17 +385,12 @@ class polygon_operator(point_operator):
 
         #########        
         # add points - easy peasy, just use extend 
+        # if not new geom, only work with existing points
+        if asnewgeom is True:
+            if isinstance(points, tuple) or isinstance(points, list):
+                self.points.extend(points)
 
-        #if pass_array is None:
-        if isinstance(points, tuple) or isinstance(points, list):
-            self.points.extend(points)
 
-    ############################################### 
-    def get_mean_z(self, triangle):
-        z1 = triangle[0][2]
-        z2 = triangle[1][2]
-        z3 = triangle[2][2]
-        return (z1+z2+z3)/3
 
     ###############################################  
     def extrude_face(self, f_id):
@@ -345,18 +400,6 @@ class polygon_operator(point_operator):
         #    build_poly(e)
         #ETC
         pass 
-
-    ###############################################     
-    def calc_bbox(self, object=None, fids=None ):
-        """ UNFINISHED  
-            get the boudning area of an object or face(s)
-        """
-        maxx = 0
-        maxy = 0
-        maxz = 0
-        
-        for p in self.points:
-            print(p)
 
     ###############################################  
     def select_by_location(self, reindex=False):
@@ -372,26 +415,26 @@ class polygon_operator(point_operator):
     def copy_sop(self, slice=None, ids=None, reindex=False, offset=(0,1,0), rot=(0,0,0), num=2):
         """ UNFINISHED - mimmic the copy SOP in Houdini 
              
-            offset normal would be slick           
+            offset normal per face would be slick           
         """
-        geom = self.sub_select_geom( slice=slice, ids=ids, reindex=True )
-        
-        print("geom is ", geom[1] )
+        geom     = self.sub_select_geom( slice=slice, ids=ids, reindex=True )
+        tmpnrmls = self.get_face_normal(fid=ids) 
 
-        amtx = offset[0]
-        amty = offset[1]
-        amtz = offset[2]
-
-        amt_rx = rot[0]
-        amt_ry = rot[1]
-        amt_rz = rot[2]
+        scale_per = 5 #normal vector magnitude 
 
         for i in range(num):
-            ox = amtx * i  
-            oy = amty * i
-            oz = amtz * i
-            newpts = self.xform_pts((ox,oy,oz), geom[1] )
-            self.insert_polygons(geom[0], newpts  ) 
+            for j in range(len(tmpnrmls)):
+                f_nrml = tmpnrmls[j]*scale_per
+                amtx = f_nrml[0]
+                amty = f_nrml[1]
+                amtz = f_nrml[2]
+
+                ox = amtx * i  
+                oy = amty * i
+                oz = amtz * i
+
+                newpts = self.xform_pts((ox,oy,oz), geom[1] )
+                self.insert_polygons(geom[0], newpts  ) 
 
     ###############################################  
     def sub_select_geom(self, slice=None, ids=None, reindex=False):
@@ -449,6 +492,23 @@ class polygon_operator(point_operator):
 
 
     ###############################################  
+    def get_pt_ids(self, fids=None):
+        """ lookup polygons - list of indices 
+            get the index of points for a face from a list of ids  
+        """
+        out_poly = [] 
+        for i in fids:
+             tmp = self.get_face_data(i, reindex=False)
+             if tmp:
+                 out_poly.append(tmp[0])
+             if tmp == None:
+                print('## error looking up face ids for ID %s '%i)
+                return None
+        
+        return out_poly 
+
+
+    ###############################################  
     def get_face_pts(self, fid):
         """ lookup and return the points of a polygon in this object 
             for fancier features look at get_face_data() 
@@ -495,31 +555,44 @@ class polygon_operator(point_operator):
             return (tuple(reindex_id), tmp_pts)
 
     ###############################################  
-    def get_face_normal(self, fid=None ):
-        """ lookup a face and calulate a face normal for it  
+    def get_face_normal(self, fid=None, unitlen=False ):
+        """ lookup a face(s) and calculate a face normal(s) for it  
             only tested for 3 or 4 sided polygon 
             also returns the center position of a face
 
             returns vec3 type 
+
+            the need for a standard slice, fid lookup is very apparent 
         """
 
         if fid == None:
-            print("## error - need a face id to get normal")
+            print("## error - need face id(s) to get normal")
             return None 
 
-        # create a vec3 for each vertex (3 or 4 sided polys)
-        v1=vec3();v2=vec3()
-        v3=vec3();v4=vec3()
+        if isinstance(fid, int):
+            fids = [fid]
+        if isinstance(fid,list):
+            fids = fid
+ 
+        out = []
 
-        tmp = self.get_face_data(fid) #returns [fidx, pts] 
-        f = tmp[0] #poly = face indices  
+        for f in fids:    
+            # create a vec3 for each vertex (3 or 4 sided polys)
+            v1=vec3();v2=vec3()
+            v3=vec3();v4=vec3()
 
-        v1.insert( self.points[f[0]-1] )
-        v2.insert( self.points[f[1]-1] )
-        v3.insert( self.points[f[2]-1] )                
-        f_nrml = self.three_vec3_to_normal(v1, v2, v3)
+            tmp = self.get_face_data(f) #returns [fidx, pts] 
+            f = tmp[0] #poly = face indices  
 
-        return f_nrml 
+            v1.insert( self.points[f[0]-1] )
+            v2.insert( self.points[f[1]-1] )
+            v3.insert( self.points[f[2]-1] )                
+            out.append( self.three_vec3_to_normal(v1, v2, v3, unitlen=unitlen) )
+
+        if isinstance(fid, int):
+            return out[0]
+        else:
+            return out   
 
     ###############################################  
     def get_face_edges(self, fid, reindex=False):
@@ -884,9 +957,11 @@ class polygon_operator(point_operator):
                 self.polygons = out_polys
 
 
-
     ###############################################  
-    
+    ############################################### 
+    ############################################### 
+    #file IO / mesh analysis, etc 
+
     def repair(self):
         """ UNFINISHED 
             walk internal data and fix any bad data found  (empty point tuples, etc) 
@@ -911,41 +986,10 @@ class polygon_operator(point_operator):
                 fix.append( pt )
         self.points = fix
 
-    ###############################################  
-    def cvt_2d_to_3d(self, points):
-        """ convert 2d points into 3d by adding an empty z axis """
-
-        newpts = []
-        for pt in points:
-            newpts.append( (pt[0], pt[1], 0)   )
-        return newpts
-
-    ############################################### 
-    def locate_pt_along3d(self, x1, y1, z1, x2, y2, z2, num):
-        """
-            overloaded method for 3D 
-            given two 3D points, return a series of N number connecting points in 3D 
-        """
-
-        pts_created = []
-        fpos=(x1, y1, z1)
-        spos=(x2, y2, z2)
-         
-        for n in range(num):
-            npos = [3]
-
-            npos[0]     = spos[0]+(((fpos[0]-spos[0])/(num+1))*(n+1))
-            npos.append(  spos[1]+(((fpos[1]-spos[1])/(num+1))*(n+1))  )
-            npos.append(  spos[2]+(((fpos[2]-spos[2])/(num+1))*(n+1))  )
-
-            pts_created.append( (npos[0], npos[1], npos[2]) )
-        return pts_created
-
-
     ############################################### 
 
     #load/dump numbered point caches and reload - very powerful idea!
-    def load_obj(self, filename, doflush=True):
+    def load(self, filename, doflush=True):
         """ 
             DEBUG - DOES NOT CLEAR BUFFERS FIRST!!
             so if you load two models, the points - polygons will be merged and have bad topology
@@ -1017,7 +1061,7 @@ class polygon_operator(point_operator):
 
     ###############################################  
 
-    def save_obj(self, filename, as_lines=False):
+    def save(self, filename, as_lines=False):
         """ format the data so blender (or anything else) can read it  
             this will save points and polygons as a wavefront OBJ file 
             you can save shape or cache data. 
@@ -1033,7 +1077,7 @@ class polygon_operator(point_operator):
         buf.append("# Keith Legg - December 2015.")        
         buf.append("# version2   - November 2018.\n")
 
-        buf.append('\n# Define the vertecies')
+        buf.append('\n# Define the vertices')
 
         #DEBUG - PUT MORE ERROR CHECKING ON VERTS, I HAD SOME BAD DATA GET THROUGH 
         #EX: - v 1 2 3) (4,5,6)

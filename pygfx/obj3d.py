@@ -135,7 +135,7 @@ class object3d(polygon_operator):
         
         #tmp = object3d()
         #tmp.vectorlist_to_obj(vectrx)
-        #tmp.save_obj('vtx_vectrz.obj')
+        #tmp.save('vtx_vectrz.obj')
         return vectrx
 
     ############################################### 
@@ -214,7 +214,7 @@ class object3d(polygon_operator):
         
         #tmp = object3d()
         #tmp.vectorlist_to_obj(vectrx)
-        #tmp.save_obj('vtx_vectrz.obj')
+        #tmp.save('vtx_vectrz.obj')
         #return vectrx
         return out_face_normals
 

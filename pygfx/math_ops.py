@@ -967,6 +967,140 @@ class spherical(object):
     #def cartesian_to_polar(self, vec3):
     #   return type(spherical)()
 
+"""
+############################################################
+
+############################################################
+global proc matrixRotate( string $which )
+# Applies a Rotation Transformation to the specified Matrix ("A", "B" or "C").
+# The rotation value and unit is derived from the current UI settings.
+# Note: The rotation matrices used may seem Transposed to those typically
+#    documented, but they are correct for this implementation within Maya,
+#    specifically in regard to the Acquire and Apply functions (above).
+    string $form = getMatrixForm( $which );
+    
+    float $fRotate = `floatField -q -value matrixRotate`;
+    float $rotate = $fRotate;
+    int $unit = `radioButtonGrp -q -select matrixRotateUnit`;
+    int $axis = `radioButtonGrp -q -select matrixRotateAxis`;
+    string $sAxis[3] = { "X", "Y", "Z" };
+    float $kRADIAN = 57.295779513082320876798154814105;
+    matrix $aMatrix[4][4] = << 1, 0, 0, 0;  0, 1, 0, 0;  0, 0, 1, 0;  0, 0, 0, 1 >>;
+    matrix $rMatrix[4][4] = << 1, 0, 0, 0;  0, 1, 0, 0;  0, 0, 1, 0;  0, 0, 0, 1 >>;
+    
+    if ( $unit == 1 )       // must convert to degrees
+        $rotate = $fRotate / $kRADIAN;
+        
+    float $cos = `cos $rotate`;
+    float $sin = `sin $rotate`;
+        
+    switch ( $axis )
+    {
+        case 1:     // X axis
+            $rMatrix = << 1, 0, 0, 0;  0, $cos, $sin, 0;  0, -$sin, $cos, 0;  0, 0, 0, 1 >>;
+            break;
+            
+        case 2:     // Y axis
+            $rMatrix = << $cos, 0, -$sin, 0;  0, 1, 0, 0;  $sin, 0, $cos, 0;  0, 0, 0, 1 >>;
+            break;
+            
+        case 3:     // Z axis
+            $rMatrix = << $cos, $sin, 0, 0;  -$sin, $cos, 0, 0;  0, 0, 1, 0;  0, 0, 0, 1 >>;
+            break;
+    }
+    
+    $aMatrix = getMatrix( $which );
+    $rMatrix = multiplyMatrix( $aMatrix, $rMatrix );
+    
+    populateMatrix( "C", $rMatrix, ( "Rotate Matrix A " + $fRotate + ( $unit == 1 ? " deg" : " rad" ) + " on " + $sAxis[$axis-1] ) );
+   
+
+############################################################
+
+proc matrix multiplyMatrix( matrix $aMatrix, matrix $bMatrix )
+# Returns a matrix which is the product of multiplying $aMatrix and $bMatrix.
+# Note: As matrices in this script are always square (3×3 or 4×4) no error-checking
+#   is supplied to assert that the sizes of the two matrices are applicable for
+#   multiplication.
+
+    matrix $cMatrix[4][4] = << 0, 0, 0, 0;  0, 0, 0, 0;  0, 0, 0, 0;  0, 0, 0, 0 >>;
+
+    for ( $i = 0; $i < 4; $i++ )
+    {
+        for ( $j = 0; $j < 4; $j++ )
+        {
+            for ( $k = 0; $k < 4; $k++ )
+            {
+                $cMatrix[$i][$j] = $cMatrix[$i][$j] + ( $aMatrix[$i][$k] * $bMatrix[$k][$j] );
+            }
+        }
+    }
+    return $cMatrix;
+
+
+############################################################
+
+matrix inverse( matrix $aMatrix, int $size )
+# Returns a matrix which is the Inverse of $aMatrix.
+# The $size of the input matrix must be specified (3 or 4).
+
+    matrix $iMatrix[4][4] = << 0, 0, 0, 0;  0, 0, 0, 0;  0, 0, 0, 0;  0, 0, 0, 0 >>;
+    
+    float $determinant = determinant( $aMatrix, $size );
+    
+    if ( $determinant != 0.0 )
+        $iMatrix = ( 1 / determinant( $aMatrix, $size ) ) * adjoint( $aMatrix, $size );
+    
+    return $iMatrix;
+
+#############################################################
+
+matrix adjoint( matrix $aMatrix, int $size )
+# Returns a matrix which is the Adjoint of $aMatrix.
+# The $size of the input matrix must be specified (3 or 4).
+
+    matrix $cMatrix[4][4] = << 0, 0, 0, 0;  0, 0, 0, 0;  0, 0, 0, 0;  0, 0, 0, 0 >>;
+    
+    int $detSize = ( $size - 1 );
+
+    if ( $size > 2 )
+    {
+        // Cofactor of top-left 3×3 matrix
+        $cMatrix[0][0] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 1, 1 ), $detSize );
+        $cMatrix[0][1] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 1, 2 ), $detSize );
+        $cMatrix[0][2] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 1, 3 ), $detSize );
+
+        $cMatrix[1][0] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 2, 1 ), $detSize );
+        $cMatrix[1][1] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 2, 2 ), $detSize );
+        $cMatrix[1][2] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 2, 3 ), $detSize );
+
+        $cMatrix[2][0] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 3, 1 ), $detSize );
+        $cMatrix[2][1] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 3, 2 ), $detSize );
+        $cMatrix[2][2] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 3, 3 ), $detSize );
+    }
+
+    if ( $size > 3 )
+    {
+        // Cofactor of 4th column
+        $cMatrix[0][3] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 1, 4 ), $detSize );
+
+        $cMatrix[1][3] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 2, 4 ), $detSize );
+
+        $cMatrix[2][3] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 3, 4 ), $detSize );
+
+        // Cofactor of 4th row
+        $cMatrix[3][0] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 4, 1 ), $detSize );
+        $cMatrix[3][1] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 4, 2 ), $detSize );
+        $cMatrix[3][2] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 4, 3 ), $detSize );
+        $cMatrix[3][3] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 4, 4 ), $detSize );
+    }
+    
+    // Adjoint is TRANSPOSE of matrix containing cofactors
+    $cMatrix = transpose( $cMatrix, $size );
+    
+    return $cMatrix;
+
+"""
 ###############################################
 class matrix33(object):
     """ 3X3 matrix from pure python 

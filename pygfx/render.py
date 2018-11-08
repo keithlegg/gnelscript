@@ -97,7 +97,7 @@ class render3d(object):
 
         #project rotated points into screen space  
         for ply in object3d.polygons:
-            num_idx = len(ply) #walk array of indeces to vertecies
+            num_idx = len(ply) #walk array of indeces to vertices
             for pt in range(num_idx):
 
                 if pt<num_idx-1:
@@ -585,7 +585,7 @@ class simple_render(object):
 
         #project rotated lines into screen space  
         for ply in object3d.polygons:
-            num_idx = len(ply) #walk array of indeces to vertecies
+            num_idx = len(ply) #walk array of indeces to vertices
             for pt in range(num_idx):
 
                 if pt<num_idx-1:
