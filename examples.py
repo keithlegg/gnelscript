@@ -55,8 +55,33 @@ print( obj.get_face_normal(fid ) )
 print( obj.get_face_centroid(fid ) )
 """
 
- 
 
+def test_extrude():
+    obj = object3d()
+    obj.load('objects/sphere.obj')
+    #obj.load('objects/kube.obj')
+    obj.extrude_face(3)
+
+    obj.save('extrudez.obj')
+
+test_extrude()
+
+
+def loft_test():
+    obj = object3d()    
+    obj.prim_circle() 
+
+
+def test_copysop():
+    """ copy SOP is a subselect, copy and transform 
+        optional loop and increment 
+    """
+    obj = object3d() 
+    #obj.prim_circle(axis='y') 
+    obj.load('objects/sphere.obj')
+    #copy_sop( slice=None, ids=None, reindex=False, offset=(0,0,0), num=1):
+    obj.copy_sop(slice=(1,50), offset=(0,2,0), num=5)
+    obj.save('stax.obj')
 
 
 def grab_all_pts():
@@ -110,9 +135,7 @@ def modify_a_subselect():
 
 
 
-def loft_test():
-    obj = object3d()    
-    obj.prim_circle() 
+
 
 
 
@@ -269,18 +292,10 @@ def pass_matrix_to_render():
 
 
 
-def test_copysop():
-    """ copy SOP is a subselect, copy and transform 
-        optional loop and increment 
-    """
-    obj = object3d() 
-    #obj.prim_circle(axis='y') 
-    obj.load('objects/sphere.obj')
-    #copy_sop( slice=None, ids=None, reindex=False, offset=(0,0,0), num=1):
-    obj.copy_sop(slice=(1,50), offset=(0,2,0), num=5)
-    obj.save('stax.obj')
 
-test_copysop() 
+
+
+
 
 
 def slice_extract_and_makenew():

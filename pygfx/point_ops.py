@@ -354,21 +354,13 @@ class polygon_operator(point_operator):
     def insert_polygons(self, plyids, points, asnewgeom=True):
         """  
              Insert NEW geometry into this object
-
-             DEBUG IDEAS TO WORK ON : 
-                 - single polygons, multiple polygons 
-                 - tuple, list, vector data for points 
-                 - add to existing, or replace it all  
-                 - operate on an external array, or internal object polygons 
-
         """
 
         #if isinstance(points, vec3):
         #    self.points.extend(points)
-
-        #########
-        # add poly idx  - indexing and reindexing becomes a thing. 
-
+        
+        ######### 
+        # append polygons 
         for poly in plyids:
             plytmp = []      
             for idx in poly:
@@ -384,22 +376,77 @@ class polygon_operator(point_operator):
             self.polygons.append( tuple(plytmp) ) 
 
         #########        
-        # add points - easy peasy, just use extend 
-        # if not new geom, only work with existing points
+        # append points,  only if new geom - just use python extend 
         if asnewgeom is True:
             if isinstance(points, tuple) or isinstance(points, list):
                 self.points.extend(points)
 
 
+    ###############################################  
+    def get_geom_edges(self, geom ):
+        out_edge_ids = []
+        out_edge_pts = []
+
+        for p in geom[0]:
+            for i in p:
+                # iterate by two and store segments
+                out_edge_ids.append((  p[i-2]           ,p[i-1]              )) # poly index
+                out_edge_pts.append((  geom[1][p[i-1]-2], geom[1][p[i-1]-1]  )) # point index
+
+        return [out_edge_ids, out_edge_pts]
+
+    ###############################################  
+    def get_face_edges(self, fid, reindex=False):
+        """ UNTESTED 
+            return [[VTX_IDS], [VTX_PTS]]
+        """
+        tmp = self.get_face_data(fid)  # [poly idx, pt data] 
+
+        out_edge_pts = []
+        out_edge_ids = []
+
+        poly = tmp[0]
+
+        # iterate by two and connect to new radial center   
+        # thanks to pythons negative index, this works a treat  
+        for i in range(len(poly)):
+            out_edge_ids.append( (poly[i-1], poly[i] ) ) 
+            out_edge_pts.append( (self.points[poly[i-1]-1], self.points[poly[i]-1] ) ) 
+
+        return [out_edge_ids, out_edge_pts]
 
     ###############################################  
     def extrude_face(self, f_id):
         """ UNFINISHED """
-        #edges = self.get_face_edges
-        #for e in edge:
-        #    build_poly(e)
-        #ETC
-        pass 
+
+        geom  = self.sub_select_geom(ids=[f_id] , reindex=True)
+        nrmls = self.get_face_normal(fid=f_id) 
+
+        nrmls = nrmls * 5 
+        #s_edges = self.get_face_edges(f_id) 
+        s_edges = self.get_geom_edges(geom)  
+
+
+        moved = self.xform_pts( nrmls, geom[1])
+        e_edges = self.get_geom_edges([geom[0],moved]) 
+
+        
+        for w in e_edges[0]:
+            for i in w:
+                wall_poly = []
+                wall_poly.extend(s_edges[1][i-1]) 
+                wall_poly.extend(e_edges[1][i-1])                 
+                
+                #print('## wall1 ',i,  s_edges[1][i-1])
+                #print('## wall2 ',i,  e_edges[1][i-1])
+                print( wall_poly )
+
+                self.insert_polygons( [(1,2,4,3)], wall_poly, asnewgeom=True) 
+
+
+        #transformed face along normal 
+        self.insert_polygons(geom[0], moved, asnewgeom=True) 
+
 
     ###############################################  
     def select_by_location(self, reindex=False):
@@ -562,7 +609,7 @@ class polygon_operator(point_operator):
 
             returns vec3 type 
 
-            the need for a standard slice, fid lookup is very apparent 
+            DEBUG - the need for a standardized interface for slice, fid lookup is very apparent 
         """
 
         if fid == None:
@@ -594,30 +641,8 @@ class polygon_operator(point_operator):
         else:
             return out   
 
-    ###############################################  
-    def get_face_edges(self, fid, reindex=False):
-        """ UNTESTED 
-            return [[VTX_IDS], [VTX_PTS]]
-        """
-        tmp = self.get_face_data(fid)  # [poly idx, pt data] 
 
-        out_edge_pts = []
-        out_edge_ids = []
 
-        poly = tmp[0]
-
-        # iterate by two and connect to new radial center   
-        # thanks to pythons negative index, this works a treat  
-        for i in range(len(poly)):
-            if reindex is False:
-                out_edge_ids.append( (poly[i-1], poly[i] ) ) 
-            if reindex is True:
-                #out_edge_ids.append( (poly[i-1], poly[i] ) )            
-                pass
-
-            out_edge_pts.append( (self.points[poly[i-1]-1], self.points[poly[i]-1] ) ) 
-
-        return [out_edge_ids, out_edge_pts]
 
     ###############################################        
     def get_face_centroid(self, fid):
