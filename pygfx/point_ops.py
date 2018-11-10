@@ -451,9 +451,8 @@ class polygon_operator(point_operator):
         return [out_edge_ids, out_edge_pts]
 
     ###############################################  
-    def extrude_face(self, f_id, distance=.1):
-        """ UNFINISHED """
-
+    def extrude_face(self, f_id, distance):
+ 
         geom  = self.sub_select_geom(ids=[f_id] , reindex=True)
         nrmls = self.get_face_normal(fid=f_id, unitlen=True) 
 
@@ -463,21 +462,15 @@ class polygon_operator(point_operator):
         moved = self.xform_pts( nrmls, geom[1])
         e_edges = self.get_geom_edges([geom[0],moved]) 
 
-        
+        # wall polygons 
+        # iterate one set of edges assuming they both have the same number 
         for w in e_edges[0]:
-            for i in w:
-                wall_poly = []
-                wall_poly.extend(s_edges[1][i-1]) 
-                wall_poly.extend(e_edges[1][i-1])                 
-                
-                #print('## wall1 ',i,  s_edges[1][i-1])
-                #print('## wall2 ',i,  e_edges[1][i-1])
-                #print( wall_poly )
+            wall_poly = []
+            wall_poly.extend(s_edges[1][w[0]-1]) # bottom half of quad polygon 
+            wall_poly.extend(e_edges[1][w[0]-1]) # top half of quad polygon                  
+            self.insert_polygons( [(1,2,4,3)], wall_poly, asnew_shell=True) 
 
-                self.insert_polygons( [(1,2,4,3)], wall_poly, asnew_shell=True) 
-
-
-        #transformed face along normal 
+        # transformed face along normal (cap polygon) 
         self.insert_polygons(geom[0], moved, asnew_shell=True) 
 
     ###############################################  
@@ -568,6 +561,7 @@ class polygon_operator(point_operator):
             # list of specific ids 
             for i in ids:
                  tmp = self.get_face_geom(i, reindex=reindex)
+                 
                  out_poly.append(tmp[0][0])
                  for pt in tmp[1]:
                     out_pts.append(pt)                
@@ -685,9 +679,9 @@ class polygon_operator(point_operator):
        
         
         # validate inputs 
-        #if fid<0 :
-        #    print('# get_face_geom- bad face index : %s'%fid)
-        #    return None
+        if fid<1 or fid > self.numply:
+            print('# get_face_geom- bad face index : %s'%fid)
+            return None
 
         # decide what the input is, fallback on self  
         if geom is None:

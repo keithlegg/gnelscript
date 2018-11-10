@@ -44,36 +44,50 @@ ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj     
 
 
 
-
-
-
-
-
-
-
-
-
-#######################################################
-
-
-
-def test_indices_pass_geom(): 
+def test_geom_operator_pass_inout(): 
     obj = object3d()
     obj.load('objects/kube.obj')
 
-    fid = 3
+    fid = 1
+
+    # reindex (sphere has 40+ polygons)
     geom  = obj.get_face_geom(fid, reindex=True )
+ 
+    # dont reindex now, test "pass through"
     geom2 = obj.get_face_geom(1,  geom=geom ) 
     geom3 =  obj.get_face_geom(1,  geom=geom2 )
 
 
-    if obj.verify(geom3):
-        print('## geom - object passes all checks ')     
-        obj.inspect(geom3)
+    #run the output through a verify and inspect     
+    #if obj.verify(geom3):
+    #    print('## geom - object passes all checks ')     
+    #    obj.inspect(geom3)
+   
+    print(geom) 
+    
+#test_geom_operator_pass_inout() 
+
+
+
+def test_extrude():
+    obj = object3d()
+    
+    #obj.load('objects/kube.obj')
+    obj.load('objects/monkey.obj')
+
+    for i in range(1,len(obj.polygons) ):    
+        obj.extrude_face(i, 10/i)
+
+    obj.save('extrudez.obj')
+
 
 
 #######################################################
- 
+
+
+#API  
+#get_face_geom
+
 
 
 # insert_polygons
@@ -93,14 +107,7 @@ def test_indices_pass_geom():
 
 
 
-def test_extrude():
-    obj = object3d()
-    obj.load('objects/monkey.obj')
-    #obj.load('objects/kube.obj')
-    for i in range(len(obj.polygons)-1):    
-        obj.extrude_face(i)
 
-    obj.save('extrudez.obj')
 
 
 
@@ -316,6 +323,7 @@ def build_perspective_matrix():
     ropr.save_image('simple_render.png')
 
 
+#####################################################
 
 def pass_matrix_to_render():
     """ use a 3X3 or 4X4 matrix to adjust a render 
@@ -335,7 +343,7 @@ def pass_matrix_to_render():
 
 
 
-
+#####################################################
 
 
 
@@ -367,7 +375,7 @@ def slice_extract_and_makenew():
 
 
 
-
+#####################################################
 
 def object_primitives():
     """ demo various built in primitive objects """
@@ -431,7 +439,7 @@ def object_primitives():
     #    obj.flush()
 
 
-
+#####################################################
 
 def three_renderers():
     """ example of the 3 main ways to render  
@@ -484,6 +492,8 @@ def three_renderers():
 
 
 
+#####################################################
+
 def angle_between_vectors():
     v1 = vec3(1, 0, 0)
     v2 = vec3(0, 1, 0)
@@ -499,7 +509,7 @@ def angle_between_vectors():
 
 
 
-
+#####################################################
 
 def model_obj_from_scratch(): 
     """ build a new polygon object from points directly into an object """ 
@@ -526,7 +536,7 @@ def model_obj_from_scratch():
 
 
 
-
+#####################################################
 
 def model_geom_from_scratch(): 
     """ build a new polygon object in memory from points 
@@ -560,7 +570,7 @@ def model_geom_from_scratch():
     obj.save("my_new_object.obj")
 
 
-
+#####################################################
 
 def extract_by_hack():
     """ *slightly* higher level than raw geom 
@@ -592,7 +602,7 @@ def extract_by_hack():
 
 
 
-
+#####################################################
 
 def load_build_another_from_normals(objectpath):
     """ load an object, 
@@ -621,4 +631,8 @@ def load_build_another_from_normals(objectpath):
     ropr = simple_render()
     ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
     ropr.save_image('simply_render.png')
+
+
+#####################################################
+
 
