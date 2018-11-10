@@ -44,41 +44,54 @@ ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj     
 
 
 
-def test_geom_operator_pass_inout(): 
-    obj = object3d()
-    obj.load('objects/kube.obj')
 
-    fid = 1
-
-    # reindex (sphere has 40+ polygons)
-    geom  = obj.get_face_geom(fid, reindex=True )
- 
-    # dont reindex now, test "pass through"
-    geom2 = obj.get_face_geom(1,  geom=geom ) 
-    geom3 =  obj.get_face_geom(1,  geom=geom2 )
+#####################################################
 
 
-    #run the output through a verify and inspect     
-    #if obj.verify(geom3):
-    #    print('## geom - object passes all checks ')     
-    #    obj.inspect(geom3)
-   
-    print(geom) 
+
+def slice_extract_and_makenew():
+    """ load two models, extract parts of them using the subselect tool 
+        subselect grabs polys and points at the same time, with option to reindex
+         
+        reindex effectively makes a new object 
+
+        weld them into a new model 
+        fekkin awesome mate!  
+    """
     
-#test_geom_operator_pass_inout() 
+    obj = object3d() 
+    obj.load('objects/sphere2.obj')
+    geom = obj.sub_select_geom( slice=(1,50), ids=[53,55,73], reindex=True)
+
+    obj3 = object3d() 
+    obj3.load('objects/monkey.obj')
+    geom2 = obj3.sub_select_geom( slice=(3,100) , ids=[101,105,148], reindex=True)
+
+
+    obj2 = object3d() 
+    ## weld two models together 
+    obj2.insert_polygons(geom[0], geom[1]  ) 
+    obj2.insert_polygons(geom2[0], geom2[1]  )
+
+    obj2.save('new.obj')
 
 
 
-def test_extrude():
-    obj = object3d()
-    
-    #obj.load('objects/kube.obj')
-    obj.load('objects/monkey.obj')
+obj = object3d() 
+obj.load('objects/kube.obj')
+geom = obj.sub_select_geom( ids=[1,3,3,3,3,5,6], reindex=True)
 
-    for i in range(1,len(obj.polygons) ):    
-        obj.extrude_face(i, 10/i)
+print(geom[0])
 
-    obj.save('extrudez.obj')
+#obj2 = object3d()
+#obj2.insert(geom)
+#obj2.save('subsel.obj')
+
+
+# sub_select_geom
+
+
+
 
 
 
@@ -343,36 +356,6 @@ def pass_matrix_to_render():
 
 
 
-#####################################################
-
-
-
-def slice_extract_and_makenew():
-    """ load two models, extract parts of them using the subselect tool 
-        subselect grabs polys and points at the same time, with option to reindex
-         
-        reindex effectively makes a new object 
-
-        weld them into a new model 
-        fekkin awesome mate!  
-    """
-    
-    obj = object3d() 
-    obj.load('objects/sphere2.obj')
-    geom = obj.sub_select_geom( slice=(0,50) , ids=[100,120,105,53,55,73], reindex=True)
-
-    obj3 = object3d() 
-    obj3.load('objects/monkey.obj')
-    geom2 = obj3.sub_select_geom( slice=(30,100) , ids=[101,105,148], reindex=True)
-
-
-    obj2 = object3d() 
-    ## weld two models together 
-    obj2.insert_polygons(geom[0], geom[1]  ) 
-    obj2.insert_polygons(geom2[0], geom2[1]  )
-
-    obj2.save('new.obj')
-
 
 
 #####################################################
@@ -534,7 +517,31 @@ def model_obj_from_scratch():
     obj.save("my_new_object.obj")
 
 
+#####################################################
+def test_geom_operator_pass_inout(): 
+    """ test of get face """
 
+    obj = object3d()
+    obj.load('objects/kube.obj')
+
+    fid = 1
+
+    # reindex (sphere has 40+ polygons)
+    geom  = obj.get_face_geom(fid, reindex=True )
+ 
+    # dont reindex now, test "pass through"
+    geom2 = obj.get_face_geom(1,  geom=geom ) 
+    geom3 = obj.get_face_geom(1,  geom=geom2 )
+
+
+    #run the output through a verify and inspect     
+    #if obj.verify(geom3):
+    #    print('## geom - object passes all checks ')     
+    #    obj.inspect(geom3)
+   
+    print(geom) 
+    
+ 
 
 #####################################################
 
@@ -617,7 +624,6 @@ def load_build_another_from_normals(objectpath):
 
     obj2 = object3d()
 
-    #print('######### ', obj.numpts )
     for i in range(obj.numpts):
         edges  = obj.get_face_edges(i)  
         normal = obj.get_face_normal(i)
@@ -636,3 +642,19 @@ def load_build_another_from_normals(objectpath):
 #####################################################
 
 
+def test_extrude():
+    obj = object3d()
+    
+    #obj.load('objects/kube.obj')
+    obj.load('objects/monkey.obj')
+    #obj.load('objects/teapot.obj')
+   
+    tenths = int(obj.numply/10)
+    ct = 1
+    for i in range(1,len(obj.polygons) ):   
+        if i % tenths == 0:
+            print('%%%s0 processed.'%ct) 
+            ct+=1
+        obj.extrude_face(i, 10/i)
+
+    obj.save('extrudez.obj')

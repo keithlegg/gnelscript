@@ -4,14 +4,18 @@ import os
 import math 
 
 
-import numpy as np  
+
 
 
 from pygfx.math_ops import math_util as mu
-from pygfx.math_ops import vec2  
-from pygfx.math_ops import vec3  
-from pygfx.math_ops import matrix33 
-from pygfx.math_ops import matrix44
+from pygfx.math_ops import NUMPY_IS_LOADED, matrix33, matrix44, vec2, vec3  
+
+
+if NUMPY_IS_LOADED:
+    print(' ## debug - loading numpy module in point ops. ')
+    import numpy as np  
+else:
+    print(' ## debug - numpy module disabled in point ops. ')
 
 
 class point_operator(object):
@@ -511,29 +515,20 @@ class polygon_operator(point_operator):
     ###############################################  
     def sub_select_geom(self, slice=None, ids=None, reindex=False):
         """ 
-            UNTESTED - make work with xform_pts, rotate_pts, scale_pts 
+            make work with xform_pts, rotate_pts, scale_pts 
+
+            # DEBUG - This works for now, but... 
+            # the only way to do this right is make get_face_geom() smarter
+            # it needs to understand slicing, and not select the same points twice while iterating faces 
+            # for example, do a subselect on a cube IDS 1-6 to see what I mean 
+            # it will give you 24 points instead of 8 
+
 
             slice - tuple of (start,end)  
             ids   - list of single ids 
 
-            quick select chunks to feed into other tools: 
-
-            IN:
-                points, edges, faces 
-
-            OUT:
-                vec3, points, etc
-             
-            TOOLS: 
-                extract,
-                duplicate,
-                move,
-                rotate,
-                scale, 
-
-                .... any and all others              
-
-            
+            quick select chunks of geometry to feed into other tools: 
+   
             get one or more faces as a new object 
             specify a list of ids, or a range
         """
@@ -548,23 +543,46 @@ class polygon_operator(point_operator):
         # other function can auto increment, thus allowing polygons reordering in chunks 
         self.exprt_ply_idx = 1
 
+        pids = []
+  
+        # block the same face ID from being selected twice
+        # there may be cases where you WANT it twice 
+        optimize = True  
 
-        if slice:
-            # start-end id range 
-            for i in range(slice[0], slice[1]):
-                tmp = self.get_face_geom(i, reindex=reindex)
-                out_poly.append(tmp[0][0])
-                for pt in tmp[1]:
-                    out_pts.append(pt)
-    
+        ####
+        # insert list of individual ids first 
         if ids:
-            # list of specific ids 
-            for i in ids:
-                 tmp = self.get_face_geom(i, reindex=reindex)
-                 
-                 out_poly.append(tmp[0][0])
-                 for pt in tmp[1]:
-                    out_pts.append(pt)                
+            if optimize:
+                for i in ids:
+                    if i not in pids:
+                        pids.append(i)
+            else: 
+                pids.extend(ids)            
+        #### 
+        # then do the slice
+        if slice:
+            tids = []
+            # insert slice IDs (start-end range) 
+            for i in range(slice[0], slice[1]+1):
+                if optimize:
+                    if i not in pids:
+                        tids.append(i)
+                else: 
+                    tids.append(i)
+      
+            pids.extend(tids)
+
+        #print('## debug, test of optimize  ', pids) 
+
+        for i in pids:
+         
+            # DEBUG - This works for now, but... 
+            # the only way to do this right is make get_face_geom() smarter
+            # it needs to have slicing and not select the same thing twice 
+            geom = self.get_face_geom(i, reindex=reindex)
+            out_poly.append(geom[0][0])
+            for pt in geom[1]:
+                out_pts.append(pt)               
 
         return ( out_poly, out_pts )
 
@@ -683,7 +701,7 @@ class polygon_operator(point_operator):
             print('# get_face_geom- bad face index : %s'%fid)
             return None
 
-        # decide what the input is, fallback on self  
+        # decide what the input is, fallback on self.poly/self.points  
         if geom is None:
             polygr  = self.polygons
             pointgr = self.points

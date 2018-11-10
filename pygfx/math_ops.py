@@ -5,8 +5,15 @@ import itertools
 import math
 import os
 
-import numpy as np             #for testing - remove later 
-from numpy.linalg import inv
+#kill switch for numpy integration 
+NUMPY_IS_LOADED = True 
+
+if NUMPY_IS_LOADED:
+    print(' ## debug - loading numpy module. ')
+    import numpy as np             #for testing - remove later 
+    from numpy.linalg import inv
+else:
+    print(' ## debug - numpy module disabled. ')
 
 
 DEG_TO_RAD = 0.0174532925 # degree = radian * (180 / PI) # PI = 3.14159265
@@ -396,10 +403,11 @@ class vec3(object):
     def copy(self, vtype=None):
         if vtype is None:
             return type(self)(self.x,self.y,self.z)
-        if vtype is 'numpy':
-            return np.array( (self.x,self.y,self.z) )
         if vtype is 'tuple':
             return ( (self.x,self.y,self.z) )
+        if NUMPY_IS_LOADED:    
+            if vtype is 'numpy':
+                return np.array( (self.x,self.y,self.z) )
 
     @property
     def length(self):
@@ -449,7 +457,10 @@ class vec3(object):
     @property
     def np_normal(self):
         """ unit vector of the vector using numpy """
-        return self.as_np / np.linalg.norm(self.as_np)
+        if NUMPY_IS_LOADED:
+            return self.as_np / np.linalg.norm(self.as_np)
+        else:
+            pass 
 
     def look_at(self):
         """
@@ -1188,20 +1199,21 @@ class matrix33(object):
        
         if isinstance(iterable, matrix33):
             self.m = iterable.m
-
-        #numpy ND array 
-        if isinstance(iterable, np.ndarray):
-            out = [];idx=0
-            for row in iterable:
-                for col in row:
-                    self.m[idx] = col
-                    idx+=1
         
         #serialized simple array
         if isinstance(iterable, list) or isinstance(iterable, tuple):
             for idx,i in enumerate(iterable):
                 if idx <= 9:
                      self.m[idx] = iterable[idx] 
+
+        if NUMPY_IS_LOADED:
+            #numpy ND array 
+            if isinstance(iterable, np.ndarray):
+                out = [];idx=0
+                for row in iterable:
+                    for col in row:
+                        self.m[idx] = col
+                        idx+=1
 
     def copy(self, mtype=None):
         """ create a copy of this matrix - can be same type or a numpy.ndarray """
@@ -1211,12 +1223,13 @@ class matrix33(object):
                 self.m[3] , self.m[4] , self.m[5] ,
                 self.m[6] , self.m[7] , self.m[8]
             )
-        
-        if mtype == 'numpy':
-            return np.array(([self.m[0] , self.m[1] , self.m[2]] ,
-                             [self.m[3] , self.m[4] , self.m[5]] ,
-                             [self.m[6] , self.m[7] , self.m[8]])
-                           )
+
+        if NUMPY_IS_LOADED:
+            if mtype == 'numpy':
+                return np.array(([self.m[0] , self.m[1] , self.m[2]] ,
+                                 [self.m[3] , self.m[4] , self.m[5]] ,
+                                 [self.m[6] , self.m[7] , self.m[8]])
+                               )
 
     @property
     def transpose(self):
@@ -1592,19 +1605,20 @@ class matrix44(object):
         if isinstance(iterable, matrix44):
             self.m = iterable.m
 
-         #numpy ND array 
-        if isinstance(iterable, np.ndarray):
-            out = [];idx=0
-            for row in iterable:
-                for col in row:
-                    self.m[idx] = col
-                    idx+=1
-
         #serialized simple array
         if isinstance(iterable, list) or isinstance(iterable, tuple):
             for idx,i in enumerate(iterable):
                 if idx <= 16:
                      self.m[idx] = iterable[idx] 
+
+        if NUMPY_IS_LOADED:
+             #numpy ND array 
+            if isinstance(iterable, np.ndarray):
+                out = [];idx=0
+                for row in iterable:
+                    for col in row:
+                        self.m[idx] = col
+                        idx+=1
 
     #@property
     def copy(self, mtype=None):
@@ -1617,13 +1631,14 @@ class matrix44(object):
                 self.m[12], self.m[13], self.m[14], self.m[15]
             )
 
-        if mtype == 'numpy':
-            return np.array((
-                [self.m[0] , self.m[1] , self.m[2] , self.m[3]  ],
-                [self.m[4] , self.m[5] , self.m[6] , self.m[7]  ],
-                [self.m[8] , self.m[9] , self.m[10], self.m[11] ],
-                [self.m[12], self.m[13], self.m[14], self.m[15] ]
-            ))               
+        if NUMPY_IS_LOADED:
+            if mtype == 'numpy':
+                return np.array((
+                    [self.m[0] , self.m[1] , self.m[2] , self.m[3]  ],
+                    [self.m[4] , self.m[5] , self.m[6] , self.m[7]  ],
+                    [self.m[8] , self.m[9] , self.m[10], self.m[11] ],
+                    [self.m[12], self.m[13], self.m[14], self.m[15] ]
+                ))               
 
     @property
     def transpose(self):
