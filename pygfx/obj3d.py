@@ -96,9 +96,9 @@ class object3d(polygon_operator):
 
     ############################################### 
 
-
     def insert(self, obj, replace=False):
         """ insert an objects geometry into this object 
+            
         """
 
         # if tuple or list assume its [polyidx, points]

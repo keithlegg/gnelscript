@@ -41,38 +41,97 @@ ropr = simple_render()
 ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj      )
 """ 
 
+
+
+
+def load_build_another_from_normals(objectpath):
+    """ load an object, 
+        turn its normals into another line object, 
+        render and save image and new object 
+
+        load_build_another_from_normals('objects/sphere.obj')
+    """
+
+    obj = object3d()
+    obj.load(objectpath)
+
+    obj2 = object3d()
+    for i in range(obj.numpts):
+        edges  = obj.get_face_edges(i)  
+        #normal = obj.get_face_normal(i)
+        #pos    = obj.get_face_centroid(i) 
+
+        #obj2.vectorlist_to_obj(edges[1])
+        #obj2.vectorlist_to_obj( [normal], pos)
+
+
+    #obj2.save("edges.obj")
+
+    #ropr = simple_render()
+    #ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
+    #ropr.save_image('simply_render.png')
+
+
+#load_build_another_from_normals('objects/sphere.obj')
+
+
+
+
+
+
+
+
+
+
 #######################################################
 
 
-""" 
-obj = object3d()
-obj.load('objects/sphere.obj')
 
-fid = 23
-print( obj.get_face_data(fid ) ) #reindex=True 
-print( obj.get_face_edges(fid ) ) #DEBUG - add reindex 
-print( obj.get_face_normal(fid ) )
-print( obj.get_face_centroid(fid ) )
-"""
+def test_indices_pass_geom(): 
+    obj = object3d()
+    obj.load('objects/kube.obj')
+
+    fid = 3
+    geom  = obj.get_face_geom(fid, reindex=True )
+    geom2 = obj.get_face_geom(1,  geom=geom ) 
+    geom3 =  obj.get_face_geom(1,  geom=geom2 )
+
+
+    if obj.verify(geom3):
+        print('## geom - object passes all checks ')     
+        obj.inspect(geom3)
+
+
+#######################################################
+ 
+
+
+# insert_polygons
+
+# get_geom_edges
+
+# get_face_edges
+
+# sub_select_geom
+
+# get_face_edges2
+
+# extrude_face
+
+
+
+
 
 
 def test_extrude():
     obj = object3d()
     obj.load('objects/monkey.obj')
     #obj.load('objects/kube.obj')
-    obj.extrude_face(3)
-
-    obj.extrude_face(6)
-
-    obj.extrude_face(9)
-
-    obj.extrude_face(12)
-
-    obj.extrude_face(16)
+    for i in range(len(obj.polygons)-1):    
+        obj.extrude_face(i)
 
     obj.save('extrudez.obj')
 
-test_extrude()
 
 
 def loft_test():
@@ -133,8 +192,8 @@ def modify_a_subselect():
 
     obj2 = object3d() 
     #obj2.insert_polygons(geom[0], newpts  )      
-    obj2.insert_polygons(geom2[0], geom2[1], asnewgeom=False  ) 
-    # obj2.insert_polygons(geom2[0], newpts2  , asnewgeom=False) 
+    obj2.insert_polygons(geom2[0], geom2[1], asnew_shell=False  ) 
+    # obj2.insert_polygons(geom2[0], newpts2  , asnew_shell=False) 
     obj2.save('kube_modify.obj')
 
 
@@ -192,12 +251,12 @@ def extrude_single_face(fid):
     obj = object3d()
     obj.load('objects/sphere.obj')
 
-    print( obj.get_face_data(fid ) ) #reindex=True 
+    print( obj.get_face_geom(fid ) ) #reindex=True 
     print( obj.get_face_edges(fid ) ) #DEBUG - add reindex 
     print( obj.get_face_normal(fid ) )
     print( obj.get_face_centroid(fid ) )
-     
-#extrude_face(23)
+   
+
 
 
 
@@ -206,7 +265,7 @@ def extrude_single_edge(fid):
     obj = object3d()
     obj.load('objects/sphere.obj')
 
-    print( obj.get_face_data(fid ) ) #reindex=True 
+    print( obj.get_face_geom(fid ) ) #reindex=True 
     print( obj.get_face_edges(fid ) ) #DEBUG - add reindex 
     print( obj.get_face_normal(fid ) )
     print( obj.get_face_centroid(fid ) )
@@ -318,20 +377,22 @@ def slice_extract_and_makenew():
     
     obj = object3d() 
     obj.load('objects/sphere2.obj')
-    geom = obj.sub_select_geom( slice=(0,51) , ids=[100,120,105,53,55,73], reindex=True)
-
+    geom = obj.sub_select_geom( slice=(0,50) , ids=[100,120,105,53,55,73], reindex=True)
 
     obj3 = object3d() 
     obj3.load('objects/monkey.obj')
     geom2 = obj3.sub_select_geom( slice=(30,100) , ids=[101,105,148], reindex=True)
 
+
     obj2 = object3d() 
-    # weld two models together 
+    ## weld two models together 
     obj2.insert_polygons(geom[0], geom[1]  ) 
     obj2.insert_polygons(geom2[0], geom2[1]  )
 
     obj2.save('new.obj')
 
+
+slice_extract_and_makenew() 
 
 
 def object_primitives():
@@ -370,11 +431,6 @@ def object_primitives():
     if do_flush:
         obj.flush()
 
-    obj.prim_cone( pos=position, rot=rotation, size=size)
-    obj.save("new_cone.obj")
-    if do_flush:
-        obj.flush()
-
     obj.prim_sphere( pos=position, rot=rotation, size=size)
     obj.save("new_sphere.obj")
     if do_flush:
@@ -390,10 +446,17 @@ def object_primitives():
     if do_flush:
         obj.flush()
 
+    obj.prim_cone( pos=position, rot=rotation, size=size)
+    obj.save("new_cone.obj")
+    if do_flush:
+        obj.flush()
+
     #obj.prim_arrow( pos=position, rot=rotation, size=size)
     #obj.save("new_arrow.obj")
     #if do_flush:
     #    obj.flush()
+
+
 
 
 def three_renderers():
@@ -404,7 +467,10 @@ def three_renderers():
      """
 
     obj = object3d()
-    obj.load('objects/sphere2.obj')
+    #obj.load('objects/sphere2.obj')
+    obj.load('extrudez.obj')
+
+    obj.rotate_pts((20,170,170))
     obj.triangulate() 
 
     ropr = simple_render()
@@ -424,8 +490,9 @@ def three_renderers():
     ####
 
     # render single object 
-    #ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
-
+    ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
+    ropr.save_image('simple_render.png')
+    
     ####
 
     ##  render multiple objects
@@ -438,10 +505,8 @@ def three_renderers():
 
     ####
     ## scanline render 
-    ropr.scanline(obj, render_scale) 
-
-    ropr.save_image('simple_render.png')
-
+    #ropr.scanline(obj, render_scale) 
+    #ropr.save_image('simple_render.png')
 
 
 
@@ -456,54 +521,70 @@ def angle_between_vectors():
 
 
 
-def load_build_another_from_normals(objectpath):
-    """ load an object, 
-        turn its normals into another line object, 
-        render and save image and new object 
-
-        load_build_another_from_normals('objects/sphere.obj')
-    """
-
-    obj = object3d()
-    obj.load(objectpath)
-
-    obj2 = object3d()
-    for i in range(obj.numpts):
-        edges  = obj.get_face_edges(i)  
-        normal = obj.get_face_normal(i)
-        pos    = obj.get_face_centroid(i) 
-
-        obj2.vectorlist_to_obj(edges[1])
-        obj2.vectorlist_to_obj( [normal], pos)
-
-    obj2.save("edges.obj")
-
-    ropr = simple_render()
-    ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
-    ropr.save_image('simply_render.png')
 
 
 
 
-def model_from_scratch(): 
-    """ build a new polygon object from points """ 
+
+
+def model_obj_from_scratch(): 
+    """ build a new polygon object from points directly into an object """ 
 
     obj = object3d()
 
     #add new geom and auto increment the ids
-    pts = [(1,1,1),(0,1,1),(-1,-1,1),(2,-2,1)]
     polys = [(1,2,3,4) ]
-    obj.insert_polygons(polys, pts) 
+    pts = [(1,1,1),(0,1,1),(-1,-1,1),(2,-2,1)]
+    obj.insert_polygons([], pts) 
 
     #add new geom and auto increment the ids
     pts = [(0,-3,-1),(2,-2,1),(3,-1,1)]
-    polys = [(3,2,1) ]
-    obj.insert_polygons(polys, pts)
+    obj.insert_polygons([], pts)
 
-    #add polys without new points 
-    obj.insert_polygons( [(1,2,3,4,5,6,7),(1,7,2)], None, asnewgeom=False)
+    #add polys without new points into same "shell"
+    obj.insert_polygons( [(1,2,3,4,5,6,7),(1,7,2)], None, asnew_shell=False)
+    
+    #add new polygon in a new "shell" 
+    obj.insert_polygons( [(1,2,3,4)], [(3,3,3), (3,-4,5), (-4,-2.5,3.1), (6.2,-2.7,8)], asnew_shell=True)
 
     obj.save("my_new_object.obj")
+
+
+
+
+
+
+def model_geom_from_scratch(): 
+    """ build a new polygon object in memory from points 
+        then insert it into an object and export  
+    """ 
+
+    geom  = [[],[]]
+    geom2 = [[],[]]
+
+    obj = object3d()
+
+    #add new geom and auto increment the ids
+    polys = [(1,2,3), (2,3,4) ]
+    pts = [(1,1,1),(0,1,1),(-1,-1,1),(2,-2,1)]
+    # if you pass geom it will work in memory like a C pointer  
+    geom = obj.insert_polygons(polys, pts, geom=geom) 
+
+ 
+    polys = [(1,2,3,4) ]
+    pts = [(4,-4.3,-3),(1.5,-2.5,-2.1),(-2,2,-4),(4,-4.2,1)]
+    # if you pass geom it will work in memory like a C pointer  
+    geom2 = obj.insert_polygons(polys, pts, geom=geom2) 
+
+    # use insert to add geom to object 
+    obj.insert(geom) 
+    obj.insert(geom2) 
+ 
+    # see what we have done, or not done 
+    obj.show() 
+
+    obj.save("my_new_object.obj")
+
 
 
 
@@ -519,14 +600,20 @@ def extract_by_hack():
     all_pts = obj.points
 
     #extract two chunks of poly ids 
-    poly1 =  obj.get_pt_ids([0,1,2])  
-    poly2 =  obj.get_pt_ids([3,5])
+    polygr1 =  obj.get_pt_ids([0,1,2])  
+    polygr2 =  obj.get_pt_ids([3,5])
 
     #make a new object and dump data into it
     obj2 = object3d() 
-    obj2.points = all_pts
-    obj2.polygons.extend(poly1)
-    obj2.polygons.extend(poly2)
+    obj2.points = all_pts  #move all points over - DEBUG add a clean func to remove unused
+
+    for ply in polygr1:
+        obj2.polygons.extend(ply)
+
+    for ply in polygr2:
+        obj2.polygons.extend(ply)        
+
 
     obj2.save('kube_modify.obj')
+
 

@@ -8,6 +8,9 @@ from pygfx.point_ops import PointOperator
 
 
 
+# def import WKT()
+
+
 #############################################################
 
 def arc_to_degree(NS, degrees, minutes, seconds, EW):
