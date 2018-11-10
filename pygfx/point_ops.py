@@ -11,11 +11,15 @@ from pygfx.math_ops import math_util as mu
 from pygfx.math_ops import NUMPY_IS_LOADED, matrix33, matrix44, vec2, vec3  
 
 
+
+
 if NUMPY_IS_LOADED:
-    print(' ## debug - loading numpy module in point ops. ')
+    # print(' ## debug - loading numpy module in point ops. ')
     import numpy as np  
 else:
     print(' ## debug - numpy module disabled in point ops. ')
+
+
 
 
 class point_operator(object):

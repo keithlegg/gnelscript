@@ -5,15 +5,19 @@ import itertools
 import math
 import os
 
+
+
 #kill switch for numpy integration 
 NUMPY_IS_LOADED = True 
 
 if NUMPY_IS_LOADED:
-    print(' ## debug - loading numpy module. ')
+    # print(' ## debug - loading numpy module. ')
     import numpy as np             #for testing - remove later 
     from numpy.linalg import inv
 else:
     print(' ## debug - numpy module disabled. ')
+
+
 
 
 DEG_TO_RAD = 0.0174532925 # degree = radian * (180 / PI) # PI = 3.14159265
@@ -1169,17 +1173,19 @@ class matrix33(object):
         o = a[0]* ((a[4]*a[8])-(a[5]*a[7])) - a[1]*((a[3]*a[8])-(a[5]*a[6])) +  a[2]*((a[3]*a[7])-(a[4]*a[6]))
         return o
 
+
     def np_inverse(self, mtype='numpy'):
         """ seems to work, but I am not convinced """
-        a = self.copy(mtype='numpy')
-        b = inv(a)
-        if mtype=='numpy':
-            return b 
-        if mtype=='m33':    
-            c = matrix33()
-            c.insert(b)
-            return c
-        #print('## inverse \n\n', self  , ' \n\n', c , ' \n\n',  self*c )
+        if NUMPY_IS_LOADED:        
+            a = self.copy(mtype='numpy')
+            b = inv(a)
+            if mtype=='numpy':
+                return b 
+            if mtype=='m33':    
+                c = matrix33()
+                c.insert(b)
+                return c
+            #print('## inverse \n\n', self  , ' \n\n', c , ' \n\n',  self*c )
 
     def serialize(self, inarray):
         """ serialize this array into a list 
@@ -1572,14 +1578,15 @@ class matrix44(object):
 
     def np_inverse(self, mtype='numpy'):
         """ untested """
-        a = self.copy(mtype='numpy')
-        b = inv(a)
-        if mtype=='numpy':
-            return b 
-        if mtype=='m44':    
-            c = matrix44()
-            c.insert(b)
-            return c
+        if NUMPY_IS_LOADED:
+            a = self.copy(mtype='numpy')
+            b = inv(a)
+            if mtype=='numpy':
+                return b 
+            if mtype=='m44':    
+                c = matrix44()
+                c.insert(b)
+                return c
 
 
     #@property
