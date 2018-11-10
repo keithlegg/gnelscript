@@ -237,7 +237,7 @@ class polygon_operator(point_operator):
         self.vtxcolor   = (0,240,00)
 
         # "unavoidable side effect" variables 
-        #self.exprt_ply_idx   = 1     # obj is NOT zero indexed
+        self.exprt_ply_idx   = 1     # obj is NOT zero indexed
         #self.exprt_pnt_idx   = 0    # pts ARE zero indexed (everything BUT .obj face idx's are)
 
 
@@ -399,25 +399,23 @@ class polygon_operator(point_operator):
             return geom
 
     ###############################################  
-    def get_geom_edges(self, fid, geom ):
+    def get_geom_edges(self, geom ):
+        """ only works on a single polygon geom object 
+            DEBUG - make work with multiple 
+        """
+
         out_edge_ids = []
         out_edge_pts = []
-
-        print( '## geom size ', len(geom), len(geom[0]), len(geom[1]) )
-
-
-        ply = geom[0][fid-1]
-            
-        print('### poly ',  ply  )
+         
+        ply = geom[0][0]
 
         for idx in ply:
-            # iterate by two and store segments
-            #out_edge_ids.append([(  ply[idx-2]           ,ply[idx-1]              )]) # poly index
-            #out_edge_pts.append([(  geom[1][ply[idx-1]-2], geom[1][ply[idx-1]-1]  )]) # point index
-            
-            print(type(ply))
+            #print('### POLY DATA   ', ply , type(ply) )
+            #print('### POINTS LEN  ', ply , type(geom[1]) )
 
-            print(  ply[int(idx-1)]  ) 
+            # iterate by two and store segments
+            out_edge_ids.append((  ply[idx-2]           ,ply[idx-1]              )) # poly index
+            out_edge_pts.append((  geom[1][ply[idx-1]-2], geom[1][ply[idx-1]-1]  )) # point index
 
         return [out_edge_ids, out_edge_pts]
 
@@ -427,10 +425,10 @@ class polygon_operator(point_operator):
             return [[VTX_IDS], [VTX_PTS]]
         """
         if geom is None:
-            geom = self.get_face_geom(fid)  # [poly idx, pt data] 
-   
-        print(  geom )    
-        #return self.get_geom_edges(fid, geom)
+            self.exprt_ply_idx = 1
+            geom = self.get_face_geom(fid, reindex=True)  # [[poly idx], [pt data]] 
+        return self.get_geom_edges(geom)
+
 
     ###############################################  
     def get_face_edges2(self, fid, reindex=False):
@@ -474,7 +472,7 @@ class polygon_operator(point_operator):
                 
                 #print('## wall1 ',i,  s_edges[1][i-1])
                 #print('## wall2 ',i,  e_edges[1][i-1])
-                print( wall_poly )
+                #print( wall_poly )
 
                 self.insert_polygons( [(1,2,4,3)], wall_poly, asnew_shell=True) 
 
@@ -675,12 +673,12 @@ class polygon_operator(point_operator):
 
     ###############################################  
     def get_face_geom(self, fid,  reindex=False, geom=None):
-        """ lookup and return the polygon indices and points or a single polygon 
-            same as get_face_pts() , but this will get the indices and points
+        """ lookup and return the polygon indices and points for a single polygon 
 
             reindex - if True  - renumber the new polygon indices startring at 1, 
                       if False - retain the oringial numbering 
 
+            geom - act on a geom obj passed in, or on self
         """
 
         tmp_pts = []
@@ -747,11 +745,11 @@ class polygon_operator(point_operator):
             v3=vec3();v4=vec3()
 
             tmp = self.get_face_geom(f) #returns [fidx, pts] 
-            f = tmp[0] #poly = face indices  
+            poly = tmp[0][0] #poly = face indices  
 
-            v1.insert( self.points[f[0]-1] )
-            v2.insert( self.points[f[1]-1] )
-            v3.insert( self.points[f[2]-1] )                
+            v1.insert( self.points[poly[0]-1] )
+            v2.insert( self.points[poly[1]-1] )
+            v3.insert( self.points[poly[2]-1] )                
             out.append( self.three_vec3_to_normal(v1, v2, v3, unitlen=unitlen) )
 
         if isinstance(fid, int):
@@ -935,7 +933,7 @@ class polygon_operator(point_operator):
             return None 
 
         tmp = self.get_face_geom(fid)
-        poly = tmp[0]
+        poly = tmp[0][0]
 
         fac_pts = []
         for ptidx in poly:

@@ -44,36 +44,6 @@ ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj     
 
 
 
-def load_build_another_from_normals(objectpath):
-    """ load an object, 
-        turn its normals into another line object, 
-        render and save image and new object 
-
-        load_build_another_from_normals('objects/sphere.obj')
-    """
-
-    obj = object3d()
-    obj.load(objectpath)
-
-    obj2 = object3d()
-    for i in range(obj.numpts):
-        edges  = obj.get_face_edges(i)  
-        #normal = obj.get_face_normal(i)
-        #pos    = obj.get_face_centroid(i) 
-
-        #obj2.vectorlist_to_obj(edges[1])
-        #obj2.vectorlist_to_obj( [normal], pos)
-
-
-    #obj2.save("edges.obj")
-
-    #ropr = simple_render()
-    #ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
-    #ropr.save_image('simply_render.png')
-
-
-#load_build_another_from_normals('objects/sphere.obj')
-
 
 
 
@@ -131,6 +101,7 @@ def test_extrude():
         obj.extrude_face(i)
 
     obj.save('extrudez.obj')
+
 
 
 
@@ -255,9 +226,9 @@ def extrude_single_face(fid):
     print( obj.get_face_edges(fid ) ) #DEBUG - add reindex 
     print( obj.get_face_normal(fid ) )
     print( obj.get_face_centroid(fid ) )
-   
+    
 
-
+#extrude_single_face(20)
 
 
 def extrude_single_edge(fid): 
@@ -320,6 +291,9 @@ def circle_with_cube_all_pts():
         ct += 10
         obj.insert(tmp)  
     obj.save("cubey.obj")
+
+
+
 
 #######################################################
 #######################################################
@@ -392,7 +366,7 @@ def slice_extract_and_makenew():
     obj2.save('new.obj')
 
 
-slice_extract_and_makenew() 
+
 
 
 def object_primitives():
@@ -616,4 +590,35 @@ def extract_by_hack():
 
     obj2.save('kube_modify.obj')
 
+
+
+
+
+def load_build_another_from_normals(objectpath):
+    """ load an object, 
+        turn its normals into another line object, 
+        render and save image and new object 
+
+        load_build_another_from_normals('objects/sphere.obj')
+    """
+
+    obj = object3d()
+    obj.load(objectpath)
+
+    obj2 = object3d()
+
+    #print('######### ', obj.numpts )
+    for i in range(obj.numpts):
+        edges  = obj.get_face_edges(i)  
+        normal = obj.get_face_normal(i)
+        pos    = obj.get_face_centroid(i) 
+
+        obj2.vectorlist_to_obj(edges[1])
+        obj2.vectorlist_to_obj( [normal], pos)
+
+    obj2.save("edges.obj")
+
+    ropr = simple_render()
+    ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
+    ropr.save_image('simply_render.png')
 
