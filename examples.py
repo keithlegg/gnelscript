@@ -51,21 +51,49 @@ ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj     
 
 
 
+def prim_arrow(axis='z'): 
+    
+    obj = object3d() 
+    #obj.prim_circle(axis=axis, spokes=4 , dia=.02)
+    #obj.extrude_face(1, distance=.75)
+    
+    dist = 1
+
+    if axis=='x':
+        #pos = (dist,0,0)
+        obj.prim_cone(axis=axis, pos=(2,0,0), rot=(0,0,0), dia=.1 )
+
+    if axis=='y':
+        #pos = (0,dist,0)
+        obj.prim_cone(axis=axis, pos=(0,2,0), rot=(0,0,0), dia=.1 )    
+    
+    if axis=='z':
+        #pos = (0,0,dist)
+        obj.prim_cone(axis=axis, pos=(0,0,2), rot=(0,0,0), dia=.1 ) 
+
+
+    obj.save("arrow.obj")
 
 
 
-#obj = object3d() 
-#obj.load('objects/kube.obj')
-#geom = obj.sub_select_geom( ids=[1,3,3,3,3,5,6], reindex=True)
-#print(geom[0])
+#prim_arrow('x') 
+
+def test_subsel_point_transform(): 
+    obj = object3d()
+    obj.load('objects/monkey.obj')
+
+    ptgrp = obj.get_pt_grp( slice=(1,200) )
+
+    rotated_pts = obj.rotate_pts((0,20,0), ptgrp)
+
+    obj.insert_pt_grp(rotated_pts)
+
+    obj.save('foo.obj')
 
 
-#obj2 = object3d()
-#obj2.insert(geom)
-#obj2.save('subsel.obj')
 
 
-# sub_select_geom
+
 
 
 
@@ -119,8 +147,6 @@ def test_copysop():
     #be cautious of large number of polys. It gets slow real quick!
     obj.copy_sop(slice=(1,10), offset=(0,2,0), num=5, distance=.75)
     obj.save('stax.obj')
-
-test_copysop() 
 
 
 
@@ -271,8 +297,8 @@ def multi_face_triangulate_offset():
         print(n[0])
         obj.radial_triangulate_face(n[0], offset=n[1] )
 
+    obj.save("durian_fruit.obj")
 
-    obj.save("durrian.obj")
 
 
 

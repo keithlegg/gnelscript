@@ -365,13 +365,16 @@ class object3d(polygon_operator):
         self.xform_pts( pos )
 
     ###############################################  
-    def prim_circle(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1, spokes = 9):
+    def prim_circle(self, axis='z', pos=(0,0,0), rot=(0,0,0), dia=1, spokes = 9):
         """ UNFINSIHED single polygon operations  """    
+
+        print('## debug prim circle ', axis , pos   )
 
         pts  = []
         poly = []
 
-        pts = self.calc_circle( pos, size, axis, True, spokes )
+        # calc_circle( pos=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
+        pts = self.calc_circle( dia=dia, axis=axis, periodic=True, spokes=spokes , pos=pos)
         
         # we add one because calc_circle_2d returns zero indexed data but OBJ is NOT zero indexed        
         for x in range(spokes):
@@ -380,31 +383,33 @@ class object3d(polygon_operator):
         self.insert_polygons([tuple(poly)], pts)
 
     ###############################################  
-    def prim_cylinder(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1, spokes = 9):
+    def prim_cylinder(self, axis='z', pos=(0,0,0), rot=(0,0,0), dia=1, spokes = 9):
         pass
         
 
     ###############################################
 
-    def prim_cone(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
+    def prim_cone(self, axis, pos , rot , dia=1):
         """ first prim tool to use other tools and prims 
             made so we can make an arrow prim 
             yeehaw!
         """
 
+        print("## debug pos cone ", pos )
+
         objtmp = object3d()
-        objtmp.prim_circle(axis=axis, size=size)
+        objtmp.prim_circle(axis=axis, rot=rot, pos=pos, dia=dia)
         
-        tiplen = size*2
+        tiplen = dia*2
 
         if axis=='x':
-            oset = (tiplen,0,0)
+            oset = (-tiplen,0,0)
         if axis=='y':
-            oset = (0,tiplen,0)            
+            oset = (0,-tiplen,0)            
         if axis=='z':
-            oset = (0,0,tiplen) 
+            oset = (0,0,-tiplen) 
 
-        objtmp.radial_triangulate_face(0, offset=oset )
+        objtmp.radial_triangulate_face(1, offset=oset )
         self.insert(objtmp)
 
 

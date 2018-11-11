@@ -140,16 +140,16 @@ class point_operator(object):
             out.append(  size  ) #south
         return out
 
-    def calc_circle(self, origin=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
+    def calc_circle(self, pos=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
         """ spokes = num spokes """
 
         px=0
         py=0
         pz=0 
 
-        ox = origin[0]
-        oy = origin[1]
-        oz = origin[2]
+        ox = pos[0]
+        oy = pos[1]
+        oz = pos[2]
 
         out = []
         
@@ -393,6 +393,47 @@ class polygon_operator(point_operator):
 
         return pids 
 
+    ###############################################  
+    def insert_pt_grp(self, ptgrp):
+        """ ptgrp is [ [id, pt], [id, pt] ]"""
+
+        out = []
+        for p in ptgrp:
+            self.points[p[0]] = p[1]
+        return out    
+
+    ###############################################  
+    def get_pt_grp(self, slice=None, ids=None):
+        """ get a point group, a list of points and IDS so 
+            we can process them and put them back 
+
+            data format [ [ID, point] ]
+
+        """
+
+        # do some fancy slice, id things here...
+
+        pids = self.sub_select( slice=slice, ids=ids)
+        
+        print('### DEBUG PIDS ARE ', pids )
+
+        out = []
+        for p in pids:
+            out.append( [p, self.points[p]] )
+        return out      
+        
+
+    ###############################################  
+    def get_face_group(self, slice=None, ids=None):
+        """ get a face group, a list of faces and IDS so 
+            we can process them and put them back 
+
+            data format [ [ID, face] ]
+
+        """
+
+        pass
+
     ############################################### 
     def insert_polygons(self, plyids, points, asnew_shell=True, geom=None):
         """  
@@ -565,38 +606,6 @@ class polygon_operator(point_operator):
 
 
     ###############################################  
-    def get_point_group(self, slice=None, ids=None):
-        """ get a point group, a list of points and IDS so 
-            we can process them and put them back 
-
-            data format [ [ID, point] ]
-
-        """
-
-        # do some fancy slice, id things here...
-
-        pids = self.sub_select( slice=slice, ids=ids)
-        
-        print('### DEBUG PIDS ARE ', pids )
-
-        out = []
-        for p in pids:
-            out.append( [p, self.points[p]] )
-        return out      
-        
-
-    ###############################################  
-    def get_face_group(self, slice=None, ids=None):
-        """ get a face group, a list of faces and IDS so 
-            we can process them and put them back 
-
-            data format [ [ID, face] ]
-
-        """
-
-        pass
-
-    ###############################################  
     def sub_select_geom(self, slice=None, ids=None, reindex=False):
         """ 
             make work with xform_pts, rotate_pts, scale_pts 
@@ -754,9 +763,9 @@ class polygon_operator(point_operator):
        
         
         # validate inputs 
-        if fid<1 or fid > self.numply:
-            print('# get_face_geom- bad face index : %s'%fid)
-            return None
+        #if fid<1 or fid > self.numply:
+        #    print('# get_face_geom- bad face index : %s'%fid)
+        #    return None
 
         # decide what the input is, fallback on self.poly/self.points  
         if geom is None:
@@ -909,7 +918,7 @@ class polygon_operator(point_operator):
         self.points = shifted
 
     ###############################################  
-    def rotate_pts(self, rot, points=None):
+    def rotate_pts(self, rot, ptgrp=None):
         
         #self.repair() # may fix or find problems 
 
@@ -948,20 +957,29 @@ class polygon_operator(point_operator):
 
         ## cleanup the "apply transforms mess"
         ## do this for now, until I get it straightened out 
+        pt_ids = []
+        pt_data = []
+
         tmp_buffer = [] 
-        if points is None:
-            pts_in = self.points
+        if ptgrp is None:
+            pt_data = self.points
         else:
-            pts_in = points
+            for pt in ptgrp:
+                pt_ids.append( pt[0])
+                pt_data.append(pt[1])
+
 
         # apply the transform here
-        for pt in pts_in:  
+        for pt in pt_data:  
             tmp_buffer.append( rot_matrix * pt )
 
-        if points is None: 
+        if ptgrp is None: 
             self.points = tmp_buffer
-        else:    
-            return tmp_buffer
+        else:
+            out = []
+            for i,p in enumerate(tmp_buffer):
+                out.append( [pt_ids[i],p ] ) 
+            return out
 
     ############################################### 
     def xform_pts(self, pos, points=None):
@@ -997,9 +1015,9 @@ class polygon_operator(point_operator):
         out_polys = []
         out_pts   = []
 
-        if fid >= len(self.polygons):
-            print('## error radial_triangulate_face - bad face index ')
-            return None 
+        #if fid >= len(self.polygons):
+        #    print('## error radial_triangulate_face - bad face index ')
+        #    return None 
 
         tmp = self.get_face_geom(fid)
         poly = tmp[0][0]
