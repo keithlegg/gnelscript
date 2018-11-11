@@ -358,6 +358,40 @@ class polygon_operator(point_operator):
             f_nrml = a.cross(b)          
         
         return f_nrml 
+    ############################################### 
+    def sub_select(self, slice=None, ids=None):
+        """ interface to get a list of IDS for whatever
+        """
+        pids = []
+  
+        # block the same face ID from being selected twice
+        # there may be cases where you WANT it twice 
+        optimize = True  
+
+        ####
+        # insert list of individual ids first 
+        if ids:
+            if optimize:
+                for i in ids:
+                    if i not in pids:
+                        pids.append(i)
+            else: 
+                pids.extend(ids)            
+        #### 
+        # then do the slice
+        if slice:
+            tids = []
+            # insert slice IDs (start-end range) 
+            for i in range(slice[0], slice[1]+1):
+                if optimize:
+                    if i not in pids:
+                        tids.append(i)
+                else: 
+                    tids.append(i)
+      
+            pids.extend(tids)
+
+        return pids 
 
     ############################################### 
     def insert_polygons(self, plyids, points, asnew_shell=True, geom=None):
@@ -492,29 +526,75 @@ class polygon_operator(point_operator):
         pass
 
     ###############################################  
-    def copy_sop(self, slice=None, ids=None, reindex=False, offset=(0,1,0), rot=(0,0,0), num=2):
-        """ UNFINISHED - mimmic the copy SOP in Houdini 
+    def copy_sop(self, slice=None, ids=None, reindex=False, offset=(0,1,0), rot=(0,0,0), num=2, distance=2):
+        """ UNFINISHED ,  mimmic the copy SOP in Houdini 
              
             offset normal per face would be slick           
         """
-        geom     = self.sub_select_geom( slice=slice, ids=ids, reindex=True )
-        tmpnrmls = self.get_face_normal(fid=ids) 
 
-        scale_per = 5 #normal vector magnitude 
+
+        pids = self.sub_select( slice=slice, ids=ids) 
+
+        geom     = self.sub_select_geom( ids=pids, reindex=True )
+        tmpnrmls = self.get_face_normal(fid=pids, unitlen=True) 
+
+        #print("#### DEBUG ", tmpnrmls , ids )
 
         for i in range(num):
             for j in range(len(tmpnrmls)):
-                f_nrml = tmpnrmls[j]*scale_per
+                
+                # experimental transform on surface normal  
+                f_nrml = tmpnrmls[j]*distance #normal vector * magnitude 
                 amtx = f_nrml[0]
                 amty = f_nrml[1]
                 amtz = f_nrml[2]
+
+                # amtx = offset[0]
+                # amty = offset[1]
+                # amtz = offset[2]
 
                 ox = amtx * i  
                 oy = amty * i
                 oz = amtz * i
 
                 newpts = self.xform_pts((ox,oy,oz), geom[1] )
+ 
+                ############# 
+                # DEBUG - this seems not right, grinds to a halt on 20+ polygons
                 self.insert_polygons(geom[0], newpts  ) 
+
+
+    ###############################################  
+    def get_point_group(self, slice=None, ids=None):
+        """ get a point group, a list of points and IDS so 
+            we can process them and put them back 
+
+            data format [ [ID, point] ]
+
+        """
+
+        # do some fancy slice, id things here...
+
+        pids = self.sub_select( slice=slice, ids=ids)
+        
+        print('### DEBUG PIDS ARE ', pids )
+
+        out = []
+        for p in pids:
+            out.append( [p, self.points[p]] )
+        return out      
+        
+
+    ###############################################  
+    def get_face_group(self, slice=None, ids=None):
+        """ get a face group, a list of faces and IDS so 
+            we can process them and put them back 
+
+            data format [ [ID, face] ]
+
+        """
+
+        pass
 
     ###############################################  
     def sub_select_geom(self, slice=None, ids=None, reindex=False):
@@ -547,34 +627,7 @@ class polygon_operator(point_operator):
         # other function can auto increment, thus allowing polygons reordering in chunks 
         self.exprt_ply_idx = 1
 
-        pids = []
-  
-        # block the same face ID from being selected twice
-        # there may be cases where you WANT it twice 
-        optimize = True  
-
-        ####
-        # insert list of individual ids first 
-        if ids:
-            if optimize:
-                for i in ids:
-                    if i not in pids:
-                        pids.append(i)
-            else: 
-                pids.extend(ids)            
-        #### 
-        # then do the slice
-        if slice:
-            tids = []
-            # insert slice IDs (start-end range) 
-            for i in range(slice[0], slice[1]+1):
-                if optimize:
-                    if i not in pids:
-                        tids.append(i)
-                else: 
-                    tids.append(i)
-      
-            pids.extend(tids)
+        pids = self.sub_select(slice=slice, ids=ids)
 
         #print('## debug, test of optimize  ', pids) 
 

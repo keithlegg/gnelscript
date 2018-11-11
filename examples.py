@@ -49,39 +49,16 @@ ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj     
 
 
 
-def slice_extract_and_makenew():
-    """ load two models, extract parts of them using the subselect tool 
-        subselect grabs polys and points at the same time, with option to reindex
-         
-        reindex effectively makes a new object 
-
-        weld them into a new model 
-        fekkin awesome mate!  
-    """
-    
-    obj = object3d() 
-    obj.load('objects/sphere2.obj')
-    geom = obj.sub_select_geom( slice=(1,50), ids=[53,55,73], reindex=True)
-
-    obj3 = object3d() 
-    obj3.load('objects/monkey.obj')
-    geom2 = obj3.sub_select_geom( slice=(3,100) , ids=[101,105,148], reindex=True)
-
-
-    obj2 = object3d() 
-    ## weld two models together 
-    obj2.insert_polygons(geom[0], geom[1]  ) 
-    obj2.insert_polygons(geom2[0], geom2[1]  )
-
-    obj2.save('new.obj')
 
 
 
-obj = object3d() 
-obj.load('objects/kube.obj')
-geom = obj.sub_select_geom( ids=[1,3,3,3,3,5,6], reindex=True)
 
-print(geom[0])
+
+#obj = object3d() 
+#obj.load('objects/kube.obj')
+#geom = obj.sub_select_geom( ids=[1,3,3,3,3,5,6], reindex=True)
+#print(geom[0])
+
 
 #obj2 = object3d()
 #obj2.insert(geom)
@@ -138,8 +115,13 @@ def test_copysop():
     #obj.prim_circle(axis='y') 
     obj.load('objects/sphere.obj')
     #copy_sop( slice=None, ids=None, reindex=False, offset=(0,0,0), num=1):
-    obj.copy_sop(slice=(1,50), offset=(0,2,0), num=5)
+
+    #be cautious of large number of polys. It gets slow real quick!
+    obj.copy_sop(slice=(1,10), offset=(0,2,0), num=5, distance=.75)
     obj.save('stax.obj')
+
+test_copysop() 
+
 
 
 def grab_all_pts():
@@ -542,6 +524,31 @@ def test_geom_operator_pass_inout():
     print(geom) 
     
  
+def slice_extract_and_makenew():
+    """ load two models, extract parts of them using the subselect tool 
+        subselect grabs polys and points at the same time, with option to reindex
+         
+        reindex effectively makes a new object 
+
+        weld them into a new model 
+        fekkin awesome mate!  
+    """
+    
+    obj = object3d() 
+    obj.load('objects/sphere2.obj')
+    geom = obj.sub_select_geom( slice=(1,50), ids=[53,55,73], reindex=True)
+
+    obj3 = object3d() 
+    obj3.load('objects/monkey.obj')
+    geom2 = obj3.sub_select_geom( slice=(3,100) , ids=[101,105,148], reindex=True)
+
+    obj2 = object3d() 
+    ## weld two models together 
+    obj2.insert_polygons(geom[0], geom[1]  ) 
+    obj2.insert_polygons(geom2[0], geom2[1]  )
+
+    obj2.save('new.obj')
+
 
 #####################################################
 
