@@ -51,50 +51,73 @@ ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj     
 
 
 
-def prim_arrow(axis='z'): 
+"""
+dia = .1
+
+obj = object3d()
+axis = 'y'
+pos = (.75,0,0)
+
+obj.prim_circle(axis=axis, pos=pos, dia=dia)
+
+tiplen = dia*2
+
+if axis=='x':
+    oset = (-tiplen,0,0)
+if axis=='y':
+    oset = (0,-tiplen,0)            
+if axis=='z':
+    oset = (0,0,-tiplen) 
+obj.radial_triangulate_face(1, offset=oset )
+
+
+obj2 = object3d()
+obj2.prim_circle(axis=axis, pos=pos, spokes=4 , dia=.02)
+obj2.extrude_face(1, distance=.75)
+#obj.insert(obj2)
+
+
+obj.save("kone.obj")
+"""
+
+
+
+"""
+obj = object3d()
+obj.load('objects/kube.obj')
+
+#geom = obj.sub_select_geom(slice=(1,5))
+ptgrp = obj.get_pt_grp()
+
+print( ptgrp ) 
+
+#obj.geom_to_ptgrp()
+"""
+
+
+
+def prim_arrow(axis): 
     
     obj = object3d() 
     #obj.prim_circle(axis=axis, spokes=4 , dia=.02)
     #obj.extrude_face(1, distance=.75)
     
-    dist = 1
-
+    dist = 3
     if axis=='x':
-        #pos = (dist,0,0)
-        obj.prim_cone(axis=axis, pos=(2,0,0), rot=(0,0,0), dia=.1 )
+        #posi=[dist,0,0]
+        obj.prim_cone(axis=axis, pos=[2,0,0], dia=.1 )
 
     if axis=='y':
-        #pos = (0,dist,0)
-        obj.prim_cone(axis=axis, pos=(0,2,0), rot=(0,0,0), dia=.1 )    
+        #posi = [0,dist,0]
+        obj.prim_cone(axis=axis, pos=[0,2,0], dia=.1 )    
     
     if axis=='z':
-        #pos = (0,0,dist)
-        obj.prim_cone(axis=axis, pos=(0,0,2), rot=(0,0,0), dia=.1 ) 
+        #posi = [0,0,dist]
+        obj.prim_cone(axis=axis, pos=[0,0,2], dia=.1 ) 
 
 
     obj.save("arrow.obj")
 
-
-
-#prim_arrow('x') 
-
-
-def test_subsel_point_transform(): 
-    obj = object3d()
-    obj.load('objects/monkey.obj')
-
-    ptgrp = obj.get_pt_grp( slice=(1,200) )
-
-    #xformed_pts = obj.rotate_pts((0,20,0), ptgrp)
-    #xformed_pts = obj.scale_pts(2.5, ptgrp)    
-    xformed_pts = obj.xform_pts( (5,5,5), ptgrp) 
-
-
-
-    print(xformed_pts)
-
-
-    obj.save('foo.obj')
 
 
 
@@ -381,59 +404,51 @@ def object_primitives():
     position = (0,0,0)
     rotation = (0,0,0)
     size = 1 
+    axis = 'y'
 
-    do_flush = False
+    do_flush = True
 
-    obj.prim_line( pos=position, rot=rotation, size=size)
+    obj.prim_line( axis=axis, pos=position, rot=rotation, size=size)
     obj.save("new_line.obj")
     if do_flush:
         obj.flush()
 
-    obj.prim_triangle( pos=position, rot=rotation, size=size)
+    obj.prim_triangle( axis=axis, pos=position, rot=rotation, size=size)
     obj.save("new_triangle.obj")
     if do_flush:
         obj.flush()
 
-    obj.prim_quad( pos=position, rot=rotation, size=size)
+    obj.prim_quad( axis=axis, pos=position, rot=rotation, size=size)
     obj.save("new_quad.obj")
     if do_flush:
         obj.flush()
 
-    obj.prim_circle( pos=position, rot=rotation, size=size)
+    obj.prim_circle( axis=axis, pos=position, dia=size) #rot=rotation
     obj.save("new_circle.obj")
     if do_flush:
         obj.flush()
 
-    obj.prim_sphere( pos=position, rot=rotation, size=size)
+    obj.prim_sphere(  pos=position, rot=rotation, size=size)
     obj.save("new_sphere.obj")
     if do_flush:
         obj.flush()
 
-    obj.prim_sphere( pos=position, rot=rotation, size=size)
-    obj.save("new_sphere.obj")
-    if do_flush:
-        obj.flush()
-
-    obj.prim_locator( pos=position, rot=rotation, size=size)
+    obj.prim_locator(  pos=position, rot=rotation, size=size)
     obj.save("new_locator.obj")
     if do_flush:
         obj.flush()
 
-    obj.prim_locator_xyz( pos=position, rot=rotation, size=size)
+    obj.prim_locator_xyz(  pos=position, rot=rotation, size=size)
     obj.save("new_locator_xyz.obj")
     if do_flush:
         obj.flush()
 
-    obj.prim_cone( pos=position, rot=rotation, size=size)
+    obj.prim_cone( axis=axis, pos=position, dia=size) #rot=rotation
     obj.save("new_cone.obj")
     if do_flush:
         obj.flush()
 
-    #obj.prim_arrow( pos=position, rot=rotation, size=size)
-    #obj.save("new_arrow.obj")
-    #if do_flush:
-    #    obj.flush()
-
+#object_primitives() 
 
 #####################################################
 
@@ -554,7 +569,43 @@ def test_geom_operator_pass_inout():
    
     print(geom) 
     
- 
+#####################################################
+
+def test_subsel_point_transform(): 
+    """ example of translate, rotate, scale of a point group """
+    obj = object3d()
+    obj.load('objects/monkey.obj')
+
+    ptgrp = obj.get_pt_grp( slice=(1,300) )
+    xformed_pts = obj.scale_pts(2.5, ptgrp=ptgrp)   
+
+    ptgrp = obj.get_pt_grp( slice=(1,300) )
+    xformed_pts = obj.rotate_pts((0,30,0),  ptgrp=ptgrp)
+
+    ptgrp = obj.get_pt_grp( slice=(1,100) )
+    xformed_pts = obj.xform_pts( (0,2,0),  ptgrp=ptgrp) 
+
+    obj.save('ptgrp.obj')
+
+
+def test_point_transform(): 
+    """ example of translate, rotate, scale of raw points """
+
+    obj = object3d()
+    obj.load('objects/monkey.obj')
+
+    obj.points = obj.scale_pts(1.5, pts=obj.points )   
+
+    obj.points = obj.rotate_pts((0,30,0), pts=obj.points ) 
+
+    obj.points = obj.xform_pts( (0,2,0),  pts=obj.points ) 
+
+    obj.save('ptgrp.obj')
+
+
+
+#####################################################
+     
 def slice_extract_and_makenew():
     """ load two models, extract parts of them using the subselect tool 
         subselect grabs polys and points at the same time, with option to reindex
@@ -696,3 +747,5 @@ def test_extrude():
         obj.extrude_face(i, 10/i)
 
     obj.save('extrudez.obj')
+
+    

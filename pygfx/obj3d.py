@@ -311,8 +311,13 @@ class object3d(polygon_operator):
     #        BUILTIN PRIMITIVE OBJECTS
     ###############################################  
     ###############################################  
-  
-    def prim_line(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
+ 
+    #def prim_cylinder(self, axis='z', pos=(0,0,0), rot=(0,0,0), dia=1, spokes = 9):
+    #    pass  
+    
+    ############################################### 
+
+    def prim_line(self, axis, pos, rot, size=1):
         """ 3d lines, 2 point polygons """
 
         if axis=='x':
@@ -325,11 +330,11 @@ class object3d(polygon_operator):
         poly = [(1,2)]
        
         self.insert_polygons(poly, pts)
-        self.rotate_pts( rot )
-        self.xform_pts( pos )
+        #self.rotate_pts( rot )
+        #self.xform_pts( pos )
 
     ###############################################  
-    def prim_triangle(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
+    def prim_triangle(self, axis, pos, rot, size=1):
         """ single polygon operations (that can be stacked together ?) """
 
         if axis=='x':
@@ -342,11 +347,11 @@ class object3d(polygon_operator):
         poly = [(1,2,3)]
        
         self.insert_polygons(poly, pts)
-        self.rotate_pts( rot )
-        self.xform_pts( pos )
+        #self.rotate_pts( rot )
+        #self.xform_pts( pos )
         
     ###############################################  
-    def prim_quad(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
+    def prim_quad(self, axis, pos, rot, size=1):
         """ single polygon operations (that can be stacked together ?) """
         
         if axis == 'x':
@@ -361,11 +366,11 @@ class object3d(polygon_operator):
         poly    = [(1,2,3,4)]
        
         self.insert_polygons(poly, pts)
-        self.rotate_pts( rot )
-        self.xform_pts( pos )
+        #self.rotate_pts( rot )
+        #self.xform_pts( pos )
 
     ###############################################  
-    def prim_circle(self, axis='z', pos=(0,0,0), rot=(0,0,0), dia=1, spokes = 9):
+    def prim_circle(self, axis, pos, dia=1, spokes=9):
         """ UNFINSIHED single polygon operations  """    
 
         print('## debug prim circle ', axis , pos   )
@@ -382,23 +387,17 @@ class object3d(polygon_operator):
 
         self.insert_polygons([tuple(poly)], pts)
 
-    ###############################################  
-    def prim_cylinder(self, axis='z', pos=(0,0,0), rot=(0,0,0), dia=1, spokes = 9):
-        pass
-        
-
     ###############################################
 
-    def prim_cone(self, axis, pos , rot , dia=1):
+    def prim_cone(self, axis, pos, dia=1):
         """ first prim tool to use other tools and prims 
             made so we can make an arrow prim 
-            yeehaw!
         """
 
         print("## debug pos cone ", pos )
 
-        objtmp = object3d()
-        objtmp.prim_circle(axis=axis, rot=rot, pos=pos, dia=dia)
+ 
+        self.prim_circle(axis=axis, pos=pos, dia=dia)
         
         tiplen = dia*2
 
@@ -409,18 +408,12 @@ class object3d(polygon_operator):
         if axis=='z':
             oset = (0,0,-tiplen) 
 
-        objtmp.radial_triangulate_face(1, offset=oset )
-        self.insert(objtmp)
+        self.radial_triangulate_face(1, offset=oset )
 
-
-    ###############################################  
-    def prim_3d_arrow(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1, spokes = 5):
-        """ UNFINSIHED single polygon operations  """   
-        self.prim_cone( axis=axis, pos=pos, size=size)
 
 
     ############################################### 
-    def prim_sphere(self, pos=(0,0,0), rot=(0,0,0), size=1 ):
+    def prim_sphere(self, pos, rot, size=1 ):
         
         #UNFINISHED 
 
@@ -484,12 +477,11 @@ class object3d(polygon_operator):
         #end caps
         #self.points.append( (fid,fid+1,fid+2) )
         
-
-        self.rotate_pts( rot )
-        self.xform_pts( pos )
+        #self.rotate_pts( rot )
+        #self.xform_pts( pos )
 
     ###############################################  
-    def prim_locator(self, pos=(0,0,0), rot=(0,0,0), size=1):
+    def prim_locator(self, pos, rot, size=1):
    
         pts = [
                # x axis indicator  
@@ -516,11 +508,11 @@ class object3d(polygon_operator):
 
         self.insert_polygons(polys, pts) 
 
-        self.rotate_pts( rot )
-        self.xform_pts( pos )
+        #self.rotate_pts( rot )
+        #self.xform_pts( pos )
 
     ###############################################  
-    def prim_locator_xyz(self, pos=(0,0,0), rot=(0,0,0), size=1):
+    def prim_locator_xyz(self, pos, rot, size=1):
        
         fs = size * .1  # font_size variable 
         fd = size * 1.1 # font distance (from origin)
@@ -574,16 +566,16 @@ class object3d(polygon_operator):
                  ]
 
         self.insert_polygons(polys, pts) 
-        self.rotate_pts( rot )
-        self.xform_pts( pos )
+        #self.rotate_pts( rot )
+        #self.xform_pts( pos )
 
     ###############################################  
-    def prim_line_arrow(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1):
+    def prim_line_arrow(self, axis, pos, rot, size=1):
         """ UNFINSIHED single polygon operations  """   
         pass
 
     ############################################### 
-    def prim_cube(self, linecolor=None, pos=(0,0,0), rot=(0,0,0), size=1, pivot='obj'):
+    def prim_cube(self, linecolor, pos, rot, size=1, pivot='obj'):
         """ single polygon operations (that can be stacked togteher ?) """
         pts = [];plybfr = []
                 
@@ -633,9 +625,9 @@ class object3d(polygon_operator):
 
         self.insert_polygons(plybfr, pts)
 
-        self.rotate_pts( rot )
-        if pivot == 'obj':
-            self.xform_pts( pos )
+        #self.rotate_pts( rot )
+        #if pivot == 'obj':
+        #    self.xform_pts( pos )
 
 
 

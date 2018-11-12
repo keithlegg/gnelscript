@@ -425,6 +425,14 @@ class polygon_operator(point_operator):
             pids.extend(tids)
 
         return pids 
+    ############################################### 
+
+    def geom_to_ptgrp(self, geom):
+        out = []
+        for i,g in enumerate(geom):
+            out.append( [1, g[1][i]] )
+        return out     
+
 
     ###############################################  
     def sub_select_geom(self, slice=None, ids=None, reindex=False):
@@ -668,7 +676,7 @@ class polygon_operator(point_operator):
         nrmls = nrmls * distance 
         #s_edges = self.get_face_edges(f_id) 
         s_edges = self.get_geom_edges(geom)  
-        moved = self.xform_pts( nrmls, geom[1])
+        moved = self.xform_pts( nrmls, pts=geom[1])
         e_edges = self.get_geom_edges([geom[0],moved]) 
 
         # wall polygons 
@@ -935,7 +943,29 @@ class polygon_operator(point_operator):
 
     ############################################### 
 
-    def apply_matrix_pts(self, ptgrp, m33=None, m44=None):
+    def apply_matrix_pts(self, pts, m33=None, m44=None):
+        """ batch mutliply points by a matrix 
+            used for translate, rotate, and scaling. 
+            
+            Can be used for many other experiments 
+
+        """
+      
+        tmp_buffer = [] 
+
+        # apply the transform here
+        for pt in pts:  
+
+            if m33 is not None:
+                tmp_buffer.append( m33 * pt )
+            if m44 is not None:
+                tmp_buffer.append( m44 * pt )
+
+        return tmp_buffer
+    
+    ############################################### 
+
+    def apply_matrix_ptgrp(self, ptgrp, m33=None, m44=None):
         """ batch mutliply a point group by a matrix 
             used for translate, rotate, and scaling. 
             
@@ -966,7 +996,7 @@ class polygon_operator(point_operator):
         return out
 
     ###############################################  
-    def scale_pts(self, amt, ptgrp=None):
+    def scale_pts(self, amt, pts=None, ptgrp=None ):
 
         # build a scale matrix 
 
@@ -981,14 +1011,20 @@ class polygon_operator(point_operator):
         # sc_m44[10] = amt        
 
         ################################################
-        if ptgrp is None:
-             # no args gets all the points of this object 
-             ptgrp = self.get_pt_grp()    
-        scaled = self.apply_matrix_pts(ptgrp, m33=sc_m33)  # m44=sc_m44
+        if pts and ptgrp is None: 
+            return self.apply_matrix_pts(pts, m33=sc_m33)  # m44=sc_m44 
+
+        if pts is None and ptgrp is None:
+            # no args gets all the points of this object 
+            ptgrp = self.get_pt_grp()    
+        
+        scaled = self.apply_matrix_ptgrp(ptgrp, m33=sc_m33)  # m44=sc_m44
         self.insert_pt_grp(scaled)
 
+        
+
     ###############################################  
-    def rotate_pts(self, rot, ptgrp=None):
+    def rotate_pts(self, rot, pts=None, ptgrp=None):
         #self.repair() # may fix or find problems 
 
         # construct a rotation matrix from euler angles 
@@ -1027,31 +1063,53 @@ class polygon_operator(point_operator):
         rot_matrix = x_matrix * tmp_matr   
        
         ################################################
-        if ptgrp is None:
-            # no args gets all the points of this object 
+        if pts is not None and ptgrp is None: 
+            return self.apply_matrix_pts(pts,  m44=rot_matrix)  
+
+        if pts is None and ptgrp is None:
             ptgrp = self.get_pt_grp()    
 
-        rotated = self.apply_matrix_pts(ptgrp, m44=rot_matrix) 
+        rotated = self.apply_matrix_ptgrp(ptgrp, m44=rot_matrix) 
         self.insert_pt_grp(rotated)
 
 
     ############################################### 
-    def xform_pts(self, pos, ptgrp=None):
+    def xform_pts(self, pos, pts=None, ptgrp=None):
         """ shift points without using a matrix 
             if no points are specified - apply to whole object 
         """
-        if ptgrp is None:
+
+        ################################################
+        if pts is not None and ptgrp is None: 
+            out = []
+            for pt in pts: 
+                x = pt[0] + pos[0]
+                y = pt[1] + pos[1]
+                z = pt[2] + pos[2]
+                out.append( (x,y,z) )
+            return out     
+
+
+        if pts is None and ptgrp is None: 
             # no args gets all the points of this object 
             ptgrp = self.get_pt_grp()    
 
-        tmp = [] 
-        for i,pt in enumerate(ptgrp):  
-            x = pt[1][0]+ pos[0]
-            y = pt[1][1]+ pos[1]
-            z = pt[1][2]+ pos[2]
-            tmp.append( [i,(x,y,z)] )
+        pt_ids  = []
+        pt_data = []
 
-        self.insert_pt_grp(tmp)
+        tmp_buffer = [] 
+        for ptg in ptgrp:
+            pt_ids.append(  ptg[0] )
+            pt_data.append( ptg[1] )
+        
+        for i,pt in enumerate(pt_data):  
+            x = pt[0] + pos[0]
+            y = pt[1] + pos[1]
+            z = pt[2] + pos[2]
+            tmp_buffer.append( [i+1,(x,y,z)] )
+            
+
+        self.insert_pt_grp(tmp_buffer)
 
 
     ############################################### 
