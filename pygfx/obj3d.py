@@ -220,7 +220,39 @@ class object3d(polygon_operator):
 
 
     ############################################### 
-    def one_vec_to_obj(self, r3, pos=None):
+    def one_vec_to_arrow(self, r3, pos=None):
+        """ single vector into a renderable 3D line 
+            
+            can be from world origin or from a point 
+
+        """
+        
+        # get the mag of the vector 
+
+        # build the geom for the model 
+
+        # create a matrix from the vec??
+
+        # multiply the obj by the matrix?
+
+
+        pts = [
+               (0    , 0    , 0    ),
+               (r3[0], r3[1], r3[2]), 
+              ]
+
+
+        ############                              
+        n = self.numpts # add this number to the indices in case of existing geom 
+        plyidx = [(n+1,n+2)]
+        #append points to internal 
+        for p in pts:
+            self.points.append(p)
+        for vec in plyidx:    
+            self.polygons.append( vec )  
+
+    ############################################### 
+    def one_vec_to_obj(self, r3, pos=None, arrowhead=False):
         """ single vector into a renderable 3D line 
             
             can be from world origin or from a point 
@@ -234,12 +266,19 @@ class object3d(polygon_operator):
                   ]
 
         if not pos:    
-            pts = [
-                   (0    , 0    , 0    ),
-                   (r3[0], r3[1], r3[2]), 
-                  ]
+            if arrowhead is False:
+                pts = [
+                       (0    , 0    , 0    ),
+                       (r3[0], r3[1], r3[2]), 
+                      ]
+            if arrowhead is True:
+                pts = [
+                       (0    , 0    , 0    ),
+                       (r3[0], r3[1], r3[2]), 
+                      ]
 
-        n = self.numpts # add this number to the indexes in case of existing geom 
+        ############                              
+        n = self.numpts # add this number to the indices in case of existing geom 
         plyidx = [(n+1,n+2)]
         #append points to internal 
         for p in pts:
@@ -267,11 +306,6 @@ class object3d(polygon_operator):
             self.polygons.append( vec )  
  
     ############################################### 
-    
-    #def vectorlist_to_vec3(self, vecs, pos=None):
-    
-    #def vectorlist_to_vec3(self, vecs, pos=None):
-
     def vectorlist_to_obj(self, vecs, pos=None):
         """ take a list of vectors and convert it to renderable geometry 
         

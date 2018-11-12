@@ -377,7 +377,6 @@ class polygon_operator(point_operator):
            out_face.append(i+offset)
         return tuple(out_face)
 
-
     ###############################################
     def three_vec3_to_normal(self, v1, v2, v3, unitlen=False):
         """ take 3 vec3 objects and return a face normal """
@@ -425,14 +424,13 @@ class polygon_operator(point_operator):
             pids.extend(tids)
 
         return pids 
-    ############################################### 
 
+    ############################################### 
     def geom_to_ptgrp(self, geom):
         out = []
         for i,g in enumerate(geom):
             out.append( [1, g[1][i]] )
         return out     
-
 
     ###############################################  
     def sub_select_geom(self, slice=None, ids=None, reindex=False):
@@ -517,7 +515,7 @@ class polygon_operator(point_operator):
     ###############################################  
     def insert_pt_grp(self, ptgrp):
         """ ptgrp is [ [id, pt], [id, pt] ]
-            this will over write internal geometry with point group geometry 
+            this will overwrite internal geometry with point group geometry 
 
         """
 
@@ -552,7 +550,6 @@ class polygon_operator(point_operator):
             for p in pids:
                 out.append( [p, self.points[p]] )
             return out      
-        
 
     ###############################################  
     def get_face_group(self, slice=None, ids=None):
@@ -598,7 +595,6 @@ class polygon_operator(point_operator):
             geom = self.get_face_geom(fid, reindex=True)  # [[poly idx], [pt data]] 
         return self.get_geom_edges(geom)
 
-
     ###############################################  
     def get_face_edges2(self, fid, reindex=False):
         """ UNTESTED 
@@ -618,7 +614,6 @@ class polygon_operator(point_operator):
             out_edge_pts.append( (self.points[poly[i-1]-1], self.points[poly[i]-1] ) ) 
 
         return [out_edge_ids, out_edge_pts]
-
 
     ############################################### 
     def insert_polygons(self, plyids, points, asnew_shell=True, geom=None):
@@ -737,9 +732,6 @@ class polygon_operator(point_operator):
                 ############# 
                 # DEBUG - this seems not right, grinds to a halt on 20+ polygons
                 self.insert_polygons(geom[0], newpts  ) 
-
-
-
 
     ###############################################  
     def inspect(self, geom):
@@ -942,7 +934,6 @@ class polygon_operator(point_operator):
         #return out
 
     ############################################### 
-
     def apply_matrix_pts(self, pts, m33=None, m44=None):
         """ batch mutliply points by a matrix 
             used for translate, rotate, and scaling. 
@@ -964,7 +955,6 @@ class polygon_operator(point_operator):
         return tmp_buffer
     
     ############################################### 
-
     def apply_matrix_ptgrp(self, ptgrp, m33=None, m44=None):
         """ batch mutliply a point group by a matrix 
             used for translate, rotate, and scaling. 
@@ -1021,8 +1011,6 @@ class polygon_operator(point_operator):
         scaled = self.apply_matrix_ptgrp(ptgrp, m33=sc_m33)  # m44=sc_m44
         self.insert_pt_grp(scaled)
 
-        
-
     ###############################################  
     def rotate_pts(self, rot, pts=None, ptgrp=None):
         #self.repair() # may fix or find problems 
@@ -1072,7 +1060,6 @@ class polygon_operator(point_operator):
         rotated = self.apply_matrix_ptgrp(ptgrp, m44=rot_matrix) 
         self.insert_pt_grp(rotated)
 
-
     ############################################### 
     def xform_pts(self, pos, pts=None, ptgrp=None):
         """ shift points without using a matrix 
@@ -1110,7 +1097,6 @@ class polygon_operator(point_operator):
             
 
         self.insert_pt_grp(tmp_buffer)
-
 
     ############################################### 
     def radial_triangulate_face(self, fid, offset=None, as_new_obj=False ):
@@ -1215,6 +1201,40 @@ class polygon_operator(point_operator):
             self.insert_polygons(out_polys, out_pts)
 
     ############################################### 
+    def triangulate(self, force=False, offset=(0,0,0)):
+        """ 
+            Only works on 3 or 4 sided polygons. 3 are passed unchanged, 4 are triangulated  
+            turn a quad into two triangles 
+            return a new 3d object (possibly with more new polygons, all triangles) 
+        """
+        out_polys = []
+
+        #print("### DEBUG TRIANGULATE CALLED ", len(self.polygons) )
+
+        if force is True:
+            self.radial_triangulate_obj(offset=offset)
+
+        else: 
+            for poly in self.polygons:
+                num_vtx = len(poly)
+
+                if num_vtx==3:
+                    out_polys.append(poly)
+
+                elif num_vtx==4:
+                    v1=poly[0];v2=poly[1];
+                    v3=poly[2];v4=poly[3]; 
+                    out_polys.append( (v1,v3,v4) ) 
+                    out_polys.append( (v1,v2,v3) )              
+     
+                else:
+                    print('# experimental N sided triangulation for %s sided poly '%num_vtx)
+                    self.radial_triangulate_obj(offset=(0,0,0))
+
+                # overwrite old data 
+                self.polygons = out_polys
+
+    ############################################### 
     def poly_loft(self, obj2, as_new_obj=True):
         """ assume two profiles have been passed in with identical polygon ordering 
             connect them togther with new side wall polygons 
@@ -1257,39 +1277,6 @@ class polygon_operator(point_operator):
         else:    
             self.insert_polygons(new_plys, new_pts)
 
-    ############################################### 
-    def triangulate(self, force=False, offset=(0,0,0)):
-        """ 
-            Only works on 3 or 4 sided polygons. 3 are passed unchanged, 4 are triangulated  
-            turn a quad into two triangles 
-            return a new 3d object (possibly with more new polygons, all triangles) 
-        """
-        out_polys = []
-
-        #print("### DEBUG TRIANGULATE CALLED ", len(self.polygons) )
-
-        if force is True:
-            self.radial_triangulate_obj(offset=offset)
-
-        else: 
-            for poly in self.polygons:
-                num_vtx = len(poly)
-
-                if num_vtx==3:
-                    out_polys.append(poly)
-
-                elif num_vtx==4:
-                    v1=poly[0];v2=poly[1];
-                    v3=poly[2];v4=poly[3]; 
-                    out_polys.append( (v1,v3,v4) ) 
-                    out_polys.append( (v1,v2,v3) )              
-     
-                else:
-                    print('# experimental N sided triangulation for %s sided poly '%num_vtx)
-                    self.radial_triangulate_obj(offset=(0,0,0))
-
-                # overwrite old data 
-                self.polygons = out_polys
 
     ###############################################  
     ############################################### 

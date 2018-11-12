@@ -14,6 +14,8 @@ if NUMPY_IS_LOADED:
     # print(' ## debug - loading numpy module. ')
     import numpy as np             #for testing - remove later 
     from numpy.linalg import inv
+    from scipy.linalg import expm
+
 else:
     print(' ## debug - numpy module disabled. ')
 
@@ -381,6 +383,15 @@ class vec3(object):
             self.y = item
         if key==2:
             self.z = item
+
+
+    def project_vec3(self):
+        """  UNFINISHED  
+
+        """
+
+        pass
+
 
     @property
     def as_np(self):
@@ -962,14 +973,16 @@ class spherical(object):
         if key==2:
             self.p = item
 
-    def sphr_to_cartesian(self):
+    def to_cartesian(self, deg_rad='rad'):
         """ from David Goulds book, page 14 """
         x = self.r * math.sin(self.p) * math.cos(self.t)
         y = self.r * math.sin(self.p) * math.sin(self.t)
-        z = self.r * math.cos(self.p)        
-        return type(vec3)(x,y,z)
-    
-    def cartesian_to_sphr(self, vec3):
+        z = self.r * math.cos(self.p)    
+        return (x,y,z)
+ 
+
+
+    def from_cartesian(self, vec3):
       
         #r = length( x y z )
         #p = tan -1 (length(x y), z) 
@@ -1173,7 +1186,6 @@ class matrix33(object):
         o = a[0]* ((a[4]*a[8])-(a[5]*a[7])) - a[1]*((a[3]*a[8])-(a[5]*a[6])) +  a[2]*((a[3]*a[7])-(a[4]*a[6]))
         return o
 
-
     def np_inverse(self, mtype='numpy'):
         """ seems to work, but I am not convinced """
         if NUMPY_IS_LOADED:        
@@ -1196,7 +1208,6 @@ class matrix33(object):
         for i in self.m:
             out.append(i)
         return out
-
 
     def insert(self, iterable):
         """ load the first 9 things we find into this matrix 
@@ -1286,7 +1297,6 @@ class matrix33(object):
         """
         pass
 
-
     def __add__(self, other):
         return type(self)(
             self.m[0]+n[0], self.m[1]+n[1], self.m[2]+n[2],
@@ -1338,7 +1348,6 @@ class matrix33(object):
                     self.m[6]*n[2]  + self.m[7]*n[5]  + self.m[8]*n[8]   
                    )
 
-
     def batch_mult_pts(self, pts):
         """ iterate a list of points and multiply them by this matrix """
 
@@ -1348,11 +1357,48 @@ class matrix33(object):
             tmp_buffer.append( self * pvec )
         return tmp_buffer
 
+    def from_vec3(self, vec3, angle):
+        """ UNTESTED - how do we get from a vector to a matrix?"""
+        theta = self.mu.dtr(angle)
+        #axis = vec3.normal
+        axis = vec3.as_np
+        #tmpm33 = self.identity
+        
+        tmpm33 = expm(np.cross(np.eye(3), axis / np.linalg.norm(axis) * theta)) 
+
+        return tmpm33
+
+
+    def align_two_vec3(self, a, b):
+        """  UNFINISHED !! 
+
+             https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
+       
+             ⎛cosθ −sinθ  0 ⎞
+          G= ⎜sinθ  cosθ  0 ⎟ 
+             ⎝0      0    1 ⎠
+
+             --------------------------------------------------------------
+             Given our unit vectors, we note that cosθ=A⋅B, and sinθ=||A×B||
+      
+             ⎛ A.B    -||A×B||    0 ⎞
+          G= ⎜||A×B||   A.B       0 ⎟ 
+             ⎝0          0        1 ⎠
+
+
+        """
+        theta = self.mu.dtr(angle)
+        #axis = vec3.normal
+        axis = vec3.as_np
+        #tmpm33 = self.identity
+        
+        tmpm33 = expm(np.cross(np.eye(3), axis / np.linalg.norm(axis) * theta)) 
+
+        return tmpm33
 
     def from_euler(self, xrot, yrot, zrot):
         """
             derived from the rotate_pts_3d function 
-
         """
         dtr = self.mu.dtr
 
@@ -1486,8 +1532,7 @@ class matrix44(object):
                 self.m[8] +n[8] , self.m[9]+n[9]  , self.m[10]+n[10], self.m[11]+n[11],
                 self.m[12]+n[12], self.m[13]+n[13], self.m[14]+n[14], self.m[15]+n[15]
                )
-   
-    
+       
     def __sub__(self, n):
         return type(self)(
                 self.m[0] -n[0] , self.m[1]-n[1]  , self.m[2]-n[2]  , self.m[3]-n[3]  , 
@@ -1588,7 +1633,6 @@ class matrix44(object):
                 c.insert(b)
                 return c
 
-
     #@property
     def test_index(self):
         """ fill matrix with incrementing number to see indices """
@@ -1596,7 +1640,6 @@ class matrix44(object):
         for i in range(16):
             tmp[i] = i
         return tmp
-
 
     def serialize(self, inarray):
         """ serialize this array into a list """
@@ -1655,7 +1698,6 @@ class matrix44(object):
             self.m[2], self.m[6], self.m[10], self.m[14],
             self.m[3], self.m[7], self.m[11], self.m[15]
         )
-
 
     @property
     def determinant(self):
@@ -1802,7 +1844,6 @@ class matrix44(object):
 
         ############ 
         return rotation_44.batch_mult_pts(points)
-
 
     def buildPerspProjMat(self, fov, aspect, znear, zfar):
         """
