@@ -78,18 +78,23 @@ def prim_arrow(axis='z'):
 
 #prim_arrow('x') 
 
+
 def test_subsel_point_transform(): 
     obj = object3d()
     obj.load('objects/monkey.obj')
 
     ptgrp = obj.get_pt_grp( slice=(1,200) )
 
-    rotated_pts = obj.rotate_pts((0,20,0), ptgrp)
+    #xformed_pts = obj.rotate_pts((0,20,0), ptgrp)
+    #xformed_pts = obj.scale_pts(2.5, ptgrp)    
+    xformed_pts = obj.xform_pts( (5,5,5), ptgrp) 
 
-    obj.insert_pt_grp(rotated_pts)
+
+
+    print(xformed_pts)
+
 
     obj.save('foo.obj')
-
 
 
 

@@ -24,7 +24,7 @@ else:
 
 class point_operator(object):
     """ what became of the original point generator 
-
+        deal with raw points, not geom, ptgrps, facgrps. JUST points 
     """
 
     def __init__(self):
@@ -90,6 +90,7 @@ class point_operator(object):
         tmpsort.sort()
         return tmpsort[0][1]
 
+    ############################################### 
     def calc_square_diag(self, tl, br):
         """ creates 4 coordinates representing an extent box from a diagonal coordinate pair """ 
         out =[]  
@@ -100,6 +101,7 @@ class point_operator(object):
 
         return out
 
+    ############################################### 
     def calc_square_pt(self, size, origin=None ):
         """ UNTESTED 
             DEBUG - this is unclamped  
@@ -120,7 +122,8 @@ class point_operator(object):
             out.append( (  size, -size)  )
             out.append( ( -size, -size)  )
         return out
-    
+
+    ###############################################     
     def calc_bbox_pt(self, size, origin=None ):
         """ DEBUG - this is unclamped!
             calc extents for a square (left, upper, right, and lower)
@@ -140,6 +143,7 @@ class point_operator(object):
             out.append(  size  ) #south
         return out
 
+    ############################################### 
     def calc_circle(self, pos=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
         """ spokes = num spokes """
 
@@ -178,7 +182,7 @@ class point_operator(object):
 
         return out
  
-
+    ############################################### 
     def sort_3_distances(self, mode, coords):
         """ take 3 XY points (triangle) and get the distances between all 3 
             return the sorted distances represented as two coordinate pairs
@@ -218,14 +222,73 @@ class point_operator(object):
                 tmp.append(y)
         return tmp
 
+
+    ############################################### 
+    def get_mean_z(self, triangle):
+        z1 = triangle[0][2]
+        z2 = triangle[1][2]
+        z3 = triangle[2][2]
+        return (z1+z2+z3)/3
+
+    ###############################################  
+    def cvt_2d_to_3d(self, points):
+        """ convert 2d points into 3d by adding an empty z axis """
+
+        newpts = []
+        for pt in points:
+            newpts.append( (pt[0], pt[1], 0)   )
+        return newpts
+
+
+    ############################################### 
+    def locate_pt_along3d(self, x1, y1, z1, x2, y2, z2, num):
+        """
+            given two 3D points, return a series of N number connecting points in 3D 
+        """
+
+        pts_created = []
+        fpos=(x1, y1, z1)
+        spos=(x2, y2, z2)
+         
+        for n in range(num):
+            npos = [3]
+
+            npos[0]     = spos[0]+(((fpos[0]-spos[0])/(num+1))*(n+1))
+            npos.append(  spos[1]+(((fpos[1]-spos[1])/(num+1))*(n+1))  )
+            npos.append(  spos[2]+(((fpos[2]-spos[2])/(num+1))*(n+1))  )
+
+            pts_created.append( (npos[0], npos[1], npos[2]) )
+        return pts_created
+
 ###############################################
 class polygon_operator(point_operator):
     """ polygon operator - should be called GEOM operator 
 
         3D model and tools to work on polygons 
-        WHY does this need to inherit from point op?? 
-        
+       
 
+        -------------------------------------------
+            Concepts 
+ 
+        SUBSELECT        = slice (start, end ), ids = [LIST OF PTS]
+
+        GEOM             = [ [], [] ]
+        GEOM             = [ [(poly),(poly),..], [(pt),(pt),(pt),(pt),... ] ]
+        GEOM (extended)  = [ [(poly),(poly),..], [(pt),(pt),(pt),(pt),... ] ]
+
+        PTGRP            = [ [ID,(PT)], [ID,(PT)] ]
+        PTGRP (extended) = [ [ID,(PT)], [ID,(PT)] ,   [COLOR], [NORMAL], [META] ]        
+
+        FACEGRP = [ [ID,(POLY)], [ID,(POLY)], .. ]
+
+        NAMING 
+
+        ids  = generic 
+        fac  = face, polygon 
+        fids = face ids 
+        pids = process ids 
+
+        -------------------------------------------
     """
 
     def __init__(self):
@@ -259,6 +322,10 @@ class polygon_operator(point_operator):
         self.exprt_ply_idx   = 1 #obj is NOT zero indexed
         #self.exprt_pnt_idx   = 0 #pts ARE zero indexed (everything BUT .obj face idx's are)
 
+
+    ############################################### 
+    #def grow_selection(self, ptgrp, facgrp, u_num, v_num):
+
     ############################################### 
     #def weld_edges(self, obj):
 
@@ -287,7 +354,7 @@ class polygon_operator(point_operator):
         print(str)
 
     ###############################################     
-    def calc_bbox(self, object=None, fids=None ):
+    def calc_bbox(self, prgrp=None, facgrp=None ):
         """ UNFINISHED  
             get the boudning area of an object or face(s)
         """
@@ -310,41 +377,6 @@ class polygon_operator(point_operator):
            out_face.append(i+offset)
         return tuple(out_face)
 
-    ############################################### 
-    def get_mean_z(self, triangle):
-        z1 = triangle[0][2]
-        z2 = triangle[1][2]
-        z3 = triangle[2][2]
-        return (z1+z2+z3)/3
-
-    ###############################################  
-    def cvt_2d_to_3d(self, points):
-        """ convert 2d points into 3d by adding an empty z axis """
-
-        newpts = []
-        for pt in points:
-            newpts.append( (pt[0], pt[1], 0)   )
-        return newpts
-
-    ############################################### 
-    def locate_pt_along3d(self, x1, y1, z1, x2, y2, z2, num):
-        """
-            given two 3D points, return a series of N number connecting points in 3D 
-        """
-
-        pts_created = []
-        fpos=(x1, y1, z1)
-        spos=(x2, y2, z2)
-         
-        for n in range(num):
-            npos = [3]
-
-            npos[0]     = spos[0]+(((fpos[0]-spos[0])/(num+1))*(n+1))
-            npos.append(  spos[1]+(((fpos[1]-spos[1])/(num+1))*(n+1))  )
-            npos.append(  spos[2]+(((fpos[2]-spos[2])/(num+1))*(n+1))  )
-
-            pts_created.append( (npos[0], npos[1], npos[2]) )
-        return pts_created
 
     ###############################################
     def three_vec3_to_normal(self, v1, v2, v3, unitlen=False):
@@ -358,6 +390,7 @@ class polygon_operator(point_operator):
             f_nrml = a.cross(b)          
         
         return f_nrml 
+
     ############################################### 
     def sub_select(self, slice=None, ids=None):
         """ interface to get a list of IDS for whatever
@@ -394,8 +427,91 @@ class polygon_operator(point_operator):
         return pids 
 
     ###############################################  
+    def sub_select_geom(self, slice=None, ids=None, reindex=False):
+        """ 
+            make work with xform_pts, rotate_pts, scale_pts 
+
+            # DEBUG - This works for now, but... 
+            # the only way to do this right is make get_face_geom() smarter
+            # it needs to understand slicing, and not select the same points twice while iterating faces 
+            # for example, do a subselect on a cube IDS 1-6 to see what I mean 
+            # it will give you 24 points instead of 8 
+
+
+            slice - tuple of (start,end)  
+            ids   - list of single ids 
+
+            quick select chunks of geometry to feed into other tools: 
+   
+            get one or more faces as a new object 
+            specify a list of ids, or a range
+        """
+       
+        out_poly = []
+        out_pts  = []
+
+        # reset this when exporting with reindex 
+        # it needs to be stored outside the function
+        # this allows multiple polygons to be exported with an incrementing "relative" index  
+        # relative, to each sub select 
+        # other function can auto increment, thus allowing polygons reordering in chunks 
+        self.exprt_ply_idx = 1
+
+        pids = self.sub_select(slice=slice, ids=ids)
+
+        #print('## debug, test of optimize  ', pids) 
+
+        for i in pids:
+         
+            # DEBUG - This works for now, but... 
+            # the only way to do this right is make get_face_geom() smarter
+            # it needs to have slicing and not select the same thing twice 
+            geom = self.get_face_geom(i, reindex=reindex)
+            out_poly.append(geom[0][0])
+            for pt in geom[1]:
+                out_pts.append(pt)               
+
+        return ( out_poly, out_pts )
+
+    ###############################################  
+    def get_pt_ids(self, fids=None):
+        """ lookup point indices from a listf of face IDs 
+        """
+        out_poly = [] 
+        for i in fids:
+             tmp = self.get_face_geom(i, reindex=False)
+             if tmp:
+                 out_poly.append(tmp[0])
+             if tmp == None:
+                print('## error looking up face ids for ID %s '%i)
+                return None
+        
+        return out_poly 
+
+    ###############################################  
+    def get_face_pts(self, fid):
+        """ lookup and return the point geometry of a face from a face ID
+            for fancier features look at get_face_geom() 
+            
+        """
+
+        tmp = []
+
+        if fid<0 or fid > len(self.polygons)-1:
+            print('# show_poly- bad face index : %s'%fid)
+            return None
+
+        for v_id in self.polygons[fid]:
+            tmp.append(self.points[v_id-1])
+
+        return tmp
+
+    ###############################################  
     def insert_pt_grp(self, ptgrp):
-        """ ptgrp is [ [id, pt], [id, pt] ]"""
+        """ ptgrp is [ [id, pt], [id, pt] ]
+            this will over write internal geometry with point group geometry 
+
+        """
 
         out = []
         for p in ptgrp:
@@ -404,23 +520,30 @@ class polygon_operator(point_operator):
 
     ###############################################  
     def get_pt_grp(self, slice=None, ids=None):
-        """ get a point group, a list of points and IDS so 
-            we can process them and put them back 
+        """ gets a point group, 
+            a point group is a list of  
 
-            data format [ [ID, point] ]
+            [ [ID, (X,Y,Z)], ... ] 
+            
+            we can process them and put them back where 
+            we found them in the model, allowing for modification of partial or whole objects 
+
 
         """
 
-        # do some fancy slice, id things here...
-
-        pids = self.sub_select( slice=slice, ids=ids)
-        
-        print('### DEBUG PIDS ARE ', pids )
-
         out = []
-        for p in pids:
-            out.append( [p, self.points[p]] )
-        return out      
+
+        if slice is None and ids is None:
+            for i,p in enumerate( self.points ):
+                out.append([i,p])  
+            return out
+
+        else:
+            pids = self.sub_select( slice=slice, ids=ids)
+
+            for p in pids:
+                out.append( [p, self.points[p]] )
+            return out      
         
 
     ###############################################  
@@ -431,55 +554,10 @@ class polygon_operator(point_operator):
             data format [ [ID, face] ]
 
         """
+        fids = self.sub_select( slice=slice, ids=ids)
+
 
         pass
-
-    ############################################### 
-    def insert_polygons(self, plyids, points, asnew_shell=True, geom=None):
-        """  
-             Insert NEW geometry into this object
-
-             asnew_shell  - reindex the points and append, else keep the same indices
-             geom         - geom to insert into, instead of object.polygons, object.points
-                            if true, will return the geom object when done 
-
-        """
-
-        #if isinstance(points, vec3):
-        #    self.points.extend(points)
-        
-        ######### 
-        # append polygons 
-        for poly in plyids:
-            plytmp = []      
-            for idx in poly:
-                if not isinstance(idx, int):
-                    print('## insert_polygons, bad data for index ')
-                    return None 
-
-                if asnew_shell is True:
-                    plytmp.append(idx+self.numpts) # add the poly index to current count    
-                else:
-                    plytmp.append(idx)  
-
-            # do the insert operation                    
-            if geom is None: 
-                self.polygons.append( tuple(plytmp) ) 
-            else:
-                geom[0].append( tuple(plytmp) )
-
-        #########        
-        # append points,  only if new geom - just use python extend 
-        if asnew_shell is True:
-            if isinstance(points, tuple) or isinstance(points, list):
-                # do the insert operation
-                if geom is None:
-                    self.points.extend(points)
-                else:
-                    geom[1].extend(points)
-        
-        if geom is not None:
-            return geom
 
     ###############################################  
     def get_geom_edges(self, geom ):
@@ -532,6 +610,54 @@ class polygon_operator(point_operator):
             out_edge_pts.append( (self.points[poly[i-1]-1], self.points[poly[i]-1] ) ) 
 
         return [out_edge_ids, out_edge_pts]
+
+
+    ############################################### 
+    def insert_polygons(self, plyids, points, asnew_shell=True, geom=None):
+        """  
+             Insert NEW geometry into this object
+
+             asnew_shell  - reindex the points and append, else keep the same indices
+             geom         - geom to insert into, instead of object.polygons, object.points
+                            if true, will return the geom object when done 
+
+        """
+
+        #if isinstance(points, vec3):
+        #    self.points.extend(points)
+        
+        ######### 
+        # append polygons 
+        for poly in plyids:
+            plytmp = []      
+            for idx in poly:
+                if not isinstance(idx, int):
+                    print('## insert_polygons, bad data for index ')
+                    return None 
+
+                if asnew_shell is True:
+                    plytmp.append(idx+self.numpts) # add the poly index to current count    
+                else:
+                    plytmp.append(idx)  
+
+            # do the insert operation                    
+            if geom is None: 
+                self.polygons.append( tuple(plytmp) ) 
+            else:
+                geom[0].append( tuple(plytmp) )
+
+        #########        
+        # append points,  only if new geom - just use python extend 
+        if asnew_shell is True:
+            if isinstance(points, tuple) or isinstance(points, list):
+                # do the insert operation
+                if geom is None:
+                    self.points.extend(points)
+                else:
+                    geom[1].extend(points)
+        
+        if geom is not None:
+            return geom
 
     ###############################################  
     def extrude_face(self, f_id, distance):
@@ -605,89 +731,12 @@ class polygon_operator(point_operator):
                 self.insert_polygons(geom[0], newpts  ) 
 
 
-    ###############################################  
-    def sub_select_geom(self, slice=None, ids=None, reindex=False):
-        """ 
-            make work with xform_pts, rotate_pts, scale_pts 
 
-            # DEBUG - This works for now, but... 
-            # the only way to do this right is make get_face_geom() smarter
-            # it needs to understand slicing, and not select the same points twice while iterating faces 
-            # for example, do a subselect on a cube IDS 1-6 to see what I mean 
-            # it will give you 24 points instead of 8 
-
-
-            slice - tuple of (start,end)  
-            ids   - list of single ids 
-
-            quick select chunks of geometry to feed into other tools: 
-   
-            get one or more faces as a new object 
-            specify a list of ids, or a range
-        """
-       
-        out_poly = []
-        out_pts  = []
-
-        # reset this when exporting with reindex 
-        # it needs to be stored outside the function
-        # this allows multiple polygons to be exported with an incrementing "relative" index  
-        # relative, to each sub select 
-        # other function can auto increment, thus allowing polygons reordering in chunks 
-        self.exprt_ply_idx = 1
-
-        pids = self.sub_select(slice=slice, ids=ids)
-
-        #print('## debug, test of optimize  ', pids) 
-
-        for i in pids:
-         
-            # DEBUG - This works for now, but... 
-            # the only way to do this right is make get_face_geom() smarter
-            # it needs to have slicing and not select the same thing twice 
-            geom = self.get_face_geom(i, reindex=reindex)
-            out_poly.append(geom[0][0])
-            for pt in geom[1]:
-                out_pts.append(pt)               
-
-        return ( out_poly, out_pts )
-
-    ###############################################  
-    def get_pt_ids(self, fids=None):
-        """ lookup polygons - list of indices 
-            get the index of points for a face from a list of ids  
-        """
-        out_poly = [] 
-        for i in fids:
-             tmp = self.get_face_geom(i, reindex=False)
-             if tmp:
-                 out_poly.append(tmp[0])
-             if tmp == None:
-                print('## error looking up face ids for ID %s '%i)
-                return None
-        
-        return out_poly 
-
-    ###############################################  
-    def get_face_pts(self, fid):
-        """ lookup and return the points of a polygon in this object 
-            for fancier features look at get_face_geom() 
-            
-        """
-
-        tmp = []
-
-        if fid<0 or fid > len(self.polygons)-1:
-            print('# show_poly- bad face index : %s'%fid)
-            return None
-
-        for v_id in self.polygons[fid]:
-            tmp.append(self.points[v_id-1])
-
-        return tmp
 
     ###############################################  
     def inspect(self, geom):
+        """ analyze a GEOM object and see how it is constructed """
+
         if geom == None:
             print('## inspect: error no geometry ')
             return None 
@@ -884,48 +933,72 @@ class polygon_operator(point_operator):
         self.polygons = out
         #return out
 
+    ############################################### 
+
+    def apply_matrix_pts(self, ptgrp, m33=None, m44=None):
+        """ batch mutliply a point group by a matrix 
+            used for translate, rotate, and scaling. 
+            
+            Can be used for many other experiments 
+
+        """
+      
+        pt_ids = []
+        pt_data = []
+
+        tmp_buffer = [] 
+        for pt in ptgrp:
+            #print('## debug apply matrix ', pt )
+
+            pt_ids.append( pt[0])
+            pt_data.append(pt[1])
+
+        # apply the transform here
+        for pt in pt_data:  
+            if m33 is not None:
+                tmp_buffer.append( m33 * pt )
+            if m44 is not None:
+                tmp_buffer.append( m44 * pt )
+
+        out = []
+        for i,p in enumerate(tmp_buffer):
+            out.append( [pt_ids[i],p ] ) 
+        return out
+
     ###############################################  
-    """
-    def apply_transforms(self, m44, points=None):
-        ## batch multiply a group of points by a matrix
-        ##     - can be used for scale, transform, rotate and more
-        ##     if no points are specified, assume we want to operate on all   
-        
-        pts_op = [] 
+    def scale_pts(self, amt, ptgrp=None):
 
-        if points is None:
-            pts_op = self.points
-        else:
-            pts_op = points 
+        # build a scale matrix 
 
-        tmp_buffer = []
-        for pt in pts_op:  
-            tmp_buffer.append( m44 * pt )
+        sc_m33 = self.m33.identity
+        sc_m33[0]  = amt
+        sc_m33[4]  = amt
+        sc_m33[8]  = amt    
 
-        if points is None:
-            self.points = tmp_buffer
-        else:
-            return pts_op
-    """
-    ###############################################  
-    def scale_pts(self, amt, points=None):
-        """ UNFINISHED
-            transform points without a matrix 
-        """        
-        shifted = []
-        for pt in self.points:
-            shifted.append( (pt[0]*amt[0], pt[1]*amt[1], pt[2]*amt[2] )  ) 
-        self.points = shifted
+        # sc_m44 = self.m44.identity
+        # sc_m44[0]  = amt
+        # sc_m44[5]  = amt
+        # sc_m44[10] = amt        
+
+        ################################################
+        if ptgrp is None:
+             # no args gets all the points of this object 
+             ptgrp = self.get_pt_grp()    
+        scaled = self.apply_matrix_pts(ptgrp, m33=sc_m33)  # m44=sc_m44
+        self.insert_pt_grp(scaled)
 
     ###############################################  
     def rotate_pts(self, rot, ptgrp=None):
-        
         #self.repair() # may fix or find problems 
+
+        # construct a rotation matrix from euler angles 
+        # angles are entered in degrees XYZ
 
         rx=rot[0]
         ry=rot[1]
         rz=rot[2]
 
+        # degree to radian function 
         dtr = self.mu.dtr
 
         # build rotationY (see diagram above) 
@@ -954,52 +1027,32 @@ class polygon_operator(point_operator):
         rot_matrix = x_matrix * tmp_matr   
        
         ################################################
-
-        ## cleanup the "apply transforms mess"
-        ## do this for now, until I get it straightened out 
-        pt_ids = []
-        pt_data = []
-
-        tmp_buffer = [] 
         if ptgrp is None:
-            pt_data = self.points
-        else:
-            for pt in ptgrp:
-                pt_ids.append( pt[0])
-                pt_data.append(pt[1])
+            # no args gets all the points of this object 
+            ptgrp = self.get_pt_grp()    
 
+        rotated = self.apply_matrix_pts(ptgrp, m44=rot_matrix) 
+        self.insert_pt_grp(rotated)
 
-        # apply the transform here
-        for pt in pt_data:  
-            tmp_buffer.append( rot_matrix * pt )
-
-        if ptgrp is None: 
-            self.points = tmp_buffer
-        else:
-            out = []
-            for i,p in enumerate(tmp_buffer):
-                out.append( [pt_ids[i],p ] ) 
-            return out
 
     ############################################### 
-    def xform_pts(self, pos, points=None):
+    def xform_pts(self, pos, ptgrp=None):
         """ shift points without using a matrix 
             if no points are specified - apply to whole object 
         """
+        if ptgrp is None:
+            # no args gets all the points of this object 
+            ptgrp = self.get_pt_grp()    
 
-        tmp = []
+        tmp = [] 
+        for i,pt in enumerate(ptgrp):  
+            x = pt[1][0]+ pos[0]
+            y = pt[1][1]+ pos[1]
+            z = pt[1][2]+ pos[2]
+            tmp.append( [i,(x,y,z)] )
 
-        if points is None:
-            points = self.points
+        self.insert_pt_grp(tmp)
 
-        for pt in points:  
-            x = pt[0]+ pos[0]
-            y = pt[1]+ pos[1]
-            z = pt[2]+ pos[2]
-            tmp.append( (x,y,z) )
-        
-        #self.points = tmp
-        return tmp 
 
     ############################################### 
     def radial_triangulate_face(self, fid, offset=None, as_new_obj=False ):
