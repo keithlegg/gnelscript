@@ -25,121 +25,6 @@ from pygfx.obj3d import  *
 
 
 
-# test of new vec4 type 
-
-"""
- 
-v3 = vec3(41,32,13)
-v4 = vec4()
-
-m44 = matrix44(1,3,4,5, 6,7,23,5, 6,3,23,3 ,5,6,7,8 )
-
-v4.from_vec3(v3)
-
-print( v4 )
- 
-"""
-
-# print( m44.np_inverse )
-# print(m44*v4)
-
-
-
-
-
-#######################################################
-# test of new quaternion type 
-
-""" 
-q1 = quaternion()
-m33 = matrix33()
-m33.from_euler(45,0,45)
-q1.from_m33(m33)
-m9 = q1.to_m33() 
-obj = object3d()
-obj.prim_cube()
-ropr = simple_render()
-ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj      )
-""" 
-
-
-
-
-
-#####################################################
-
-
-
-
-
-"""
-dia = .1
-
-obj = object3d()
-axis = 'y'
-pos = (.75,0,0)
-
-obj.prim_circle(axis=axis, pos=pos, dia=dia)
-
-tiplen = dia*2
-
-if axis=='x':
-    oset = (-tiplen,0,0)
-if axis=='y':
-    oset = (0,-tiplen,0)            
-if axis=='z':
-    oset = (0,0,-tiplen) 
-obj.radial_triangulate_face(1, offset=oset )
-
-
-obj2 = object3d()
-obj2.prim_circle(axis=axis, pos=pos, spokes=4 , dia=.02)
-obj2.extrude_face(1, distance=.75)
-#obj.insert(obj2)
-
-
-obj.save("kone.obj")
-"""
-
-
-
-""" 
-obj = object3d()
-
-
-obj.one_vec_to_obj( (5,5,5) ) 
-obj.one_vec_to_obj( (-2,.7,0) ) 
-
-obj.save('vecs.obj')
-
-"""
-
-
-
-
-
-def prim_arrow(axis): 
-    
-    obj = object3d() 
-    #obj.prim_circle(axis=axis, spokes=4 , dia=.02)
-    #obj.extrude_face(1, distance=.75)
-    
-    dist = 3
-    if axis=='x':
-        #posi=[dist,0,0]
-        obj.prim_cone(axis=axis, pos=[2,0,0], dia=.1 )
-
-    if axis=='y':
-        #posi = [0,dist,0]
-        obj.prim_cone(axis=axis, pos=[0,2,0], dia=.1 )    
-    
-    if axis=='z':
-        #posi = [0,0,dist]
-        obj.prim_cone(axis=axis, pos=[0,0,2], dia=.1 ) 
-
-
-    obj.save("arrow.obj")
-
 
 
 
@@ -171,18 +56,12 @@ def prim_arrow(axis):
 # extrude_face
 
 
+#######################################################
 
 
 
 
 
-
-
-
-
-def loft_test():
-    obj = object3d()    
-    obj.prim_circle() 
 
 
 def test_copysop():
@@ -200,53 +79,25 @@ def test_copysop():
 
 
 
-def grab_all_pts():
+def grab_some_pts():
     obj = object3d()
     #obj.load('objects/sphere.obj')
     obj.load('objects/kube.obj')
 
     all_pts = obj.points
-    plyidx1 =  obj.get_pt_ids([0,1,2])  
-    plyidx2 =  obj.get_pt_ids([3,5])
+    plyidx1 =  obj.get_pt_ids([1,2])  
+    plyidx2 =  obj.get_pt_ids([3,4,5])
 
     obj2 = object3d() 
     obj2.points = all_pts
-
-    #obj2.insert_polygons( gr1, all_pts   ) 
-    #gr3 = obj2.xform_pts((2,2,2), gr2 )
-
-    obj2.polygons.extend(plyidx1)
-    obj2.polygons.extend(plyidx2)
+    
+    for f in plyidx1:
+        obj2.polygons.extend(f)
+    for f in plyidx2:
+        obj2.polygons.extend(f)        
 
     obj2.save('kube_modify.obj')
-
-
-
-
-
-
-def modify_a_subselect():
-    """ UNFINSIHED ! """
-
-    obj = object3d()
-    #obj.load('objects/sphere.obj')
-    obj.load('kube.obj')
-
-    geom = obj.sub_select_geom( slice=[1,5]  , reindex=True )
-    newpts = obj.rotate_pts((45,45,45), points=geom[1])
-
-    print(geom)
-    geom2 = obj.sub_select_geom( slice=[5,6]  , reindex=True )
-    #newpts2 = obj.rotate_pts((-45,0,45), points=geom2[1])
-
-    obj2 = object3d() 
-    #obj2.insert_polygons(geom[0], newpts  )      
-    obj2.insert_polygons(geom2[0], geom2[1], asnew_shell=False  ) 
-    # obj2.insert_polygons(geom2[0], newpts2  , asnew_shell=False) 
-    obj2.save('kube_modify.obj')
-
-
-
+ 
 
 
 
@@ -371,27 +222,22 @@ def circle_with_cube_all_pts():
     obj.save("cubey.obj")
 
 
+#####################################################
 
 
-#######################################################
-#######################################################
-#######################################################
-#######################################################
-#these are all tested-ish 
-
-
-def build_perspective_matrix():
-    #debug - NOT WORKING!  Work In Progress 
-
+def spherical_to_point():
+    mu = math_util() 
     obj = object3d()
-    obj.prim_cube()
-    #obj.scale_pts((3,3,30))
-    obj.rotate_pts((30,30,30))
-    ropr = simple_render()
-    #                          fov, aspect, znear, zfar)
-    #mx = m44.buildPerspProjMat( 200, 1, 1, 100)
-    ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
-    ropr.save_image('simple_render.png')
+
+    for theta in range(-180,180,20):
+        print('## theta ', theta )
+        for phi in range(-180,180,20):        
+            sp = spherical(1.5, mu.dtr(theta), mu.dtr(phi) ) 
+            pt=  sp.to_cartesian() 
+            obj.prim_cube(pos=pt, size=.1, linecolor=(255,0,0), rot=(0,0,0), pivot='world')
+
+    obj.save('ball_of_cubes.obj') 
+
 
 
 #####################################################
@@ -402,17 +248,11 @@ def pass_matrix_to_render():
     """
 
     obj = object3d()
-    obj.prim_cube()
+    obj.prim_cube(pos=(0,0,0), rot=(0,0,0), linecolor=(255,0,0))
     ropr = simple_render()
     m44 = matrix44()
     m44.from_euler(45,45,0)
     ropr.render_matrix_obj( None, m44, 3, 100, 'custom_render.png' , obj      )
-
-
-
-
-
-
 
 
 
@@ -594,7 +434,9 @@ def test_geom_operator_pass_inout():
 #####################################################
 
 def test_subsel_point_transform(): 
-    """ example of translate, rotate, scale of a point group """
+    """ example of translate, rotate, scale of a point group 
+        translate tools work with "ptgroups", or raw points 
+    """
     obj = object3d()
     obj.load('objects/monkey.obj')
 
@@ -610,8 +452,13 @@ def test_subsel_point_transform():
     obj.save('ptgrp.obj')
 
 
+
+
+
 def test_point_transform(): 
-    """ example of translate, rotate, scale of raw points """
+    """ example of translate, rotate, scale of raw points 
+        translate tools work with "ptgroups", or raw points
+    """
 
     obj = object3d()
     obj.load('objects/monkey.obj')

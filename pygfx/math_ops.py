@@ -138,9 +138,6 @@ class math_util(object):
            print('normalize_vec3: divide by zero error.') 
            return [0,0,1]
 
-
-
-
 ###############################################
 class vec2(object):    
 
@@ -387,6 +384,11 @@ class vec3(object):
 
     def project_vec3(self):
         """  UNFINISHED  
+
+            from David Gould's book
+            Complete Maya Programing II 
+            page 32 
+        
 
         """
 
@@ -945,7 +947,24 @@ class quaternion(object):
 
 ###############################################
 class spherical(object):
-    """ untested -   polar and spherical coordinates """
+    """ UNTESTED -   polar and spherical coordinates 
+
+    # https://stackoverflow.com/questions/4116658/faster-numpy-cartesian-to-spherical-coordinate-conversion
+
+    def cart2sph(x,y,z):
+        XsqPlusYsq = x**2 + y**2
+        r = m.sqrt(XsqPlusYsq + z**2)               # r
+        elev = m.atan2(z,m.sqrt(XsqPlusYsq))     # theta
+        az = m.atan2(y,x)                           # phi
+        return r, elev, az
+
+    def cart2sphA(pts):
+        return np.array([cart2sph(x,y,z) for x,y,z in pts])
+
+    def appendSpherical(xyz):
+        np.hstack((xyz, cart2sphA(xyz)))
+
+    """
 
     def __init__(self,r=0,t=0,p=0):
         """ r = radius 
@@ -956,6 +975,9 @@ class spherical(object):
         self.r=r
         self.t=t
         self.p=p
+
+    def __repr__(self):
+        return '(%s, %s, %s)' % (self.r, self.p, self.t)
 
     def __getitem__(self, index):
         if index==0:
@@ -974,26 +996,63 @@ class spherical(object):
             self.p = item
 
     def to_cartesian(self, deg_rad='rad'):
-        """ from David Goulds book, page 14 """
+        """ from David Gould's book
+            Complete Maya Programing II 
+            page 14 
+        """
         x = self.r * math.sin(self.p) * math.cos(self.t)
         y = self.r * math.sin(self.p) * math.sin(self.t)
         z = self.r * math.cos(self.p)    
         return (x,y,z)
  
-
-
     def from_cartesian(self, vec3):
-      
-        #r = length( x y z )
-        #p = tan -1 (length(x y), z) 
-        #t = tan -1 (y,x)
-        #    return type(spherical)()        
+        """ UNTESTED 
+            from David Gould's book
+            Complete Maya Programing II 
+            page 14 
+
+            r = length( x y z )
+            p = tan-1 (length(x y), z)) 
+            t = tan-1 (y,x)
+        """        
+        if isinstance(vec3,tuple):
+            vec3 = vec3(vec3[0],vec3[1],vec3[2]) 
+
+        r = vec3.length  
+        p = math.atan( -1*math.sqrt(vec3[0]*vec3[0]+vec3[1]*vec3[1])*vec3[2]  ) 
+        t = math.atan( -1*(vec3[1]*vec3[0]))
+        print('### r %s p %s t %s '%(r,p,t))
+        self.r=r
+        self.t=t
+        self.p=p
+        #return type(self)(r,p,t)
+
+    def polar_to_cartesian(self):
+        """ UNTESTED
+            polar coordinates are spherical without the phi element 
+            from David Gould's book
+            Complete Maya Programing II 
+            page 13         
+        """ 
         pass
 
-    #def polar_to_cartesian(self):
-    #    pass
-    #def cartesian_to_polar(self, vec3):
-    #   return type(spherical)()
+    def cartesian_to_polar(self, vec3):
+        """ UNTESTED
+            polar coordinates are spherical without the phi element 
+            from David Gould's book
+            Complete Maya Programing II 
+            page 13         
+        """ 
+        if isinstance(vec3,tuple):
+            vec3 = vec3(vec3[0],vec3[1],0) #Z is ignored  
+
+        r = math.sqrt(vec3[0]*vec3[0] + vec3[1]*vec3[1])  
+        t = math.atan( vec3[1]*vec3[0] ) 
+
+        print('### cartesian to polar  r %s t %s '%(r,t))
+        self.r=r
+        self.t=t
+        self.p=0
 
 """
 ############################################################

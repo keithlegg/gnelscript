@@ -7,6 +7,23 @@ from pygfx.obj3d import  *
 
 
 
+
+
+#######################################################
+
+"""
+    IDEAS 
+def dagops_l_system_extrude():
+def time_based_simulation():
+def time_based_simulation_bresenham():
+def time_based_simulation_fft():
+def time_based_simulation_quaternion_slerp():
+def visualize_edges_as_little_arrows(obj1, obj2, slice): 
+def copy_obj_rotate_to_each_face(obj1, obj2, slice): 
+"""
+
+
+
 #######################################################
 # test of new vec4 type 
 
@@ -40,9 +57,6 @@ obj.prim_cube()
 ropr = simple_render()
 ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj      )
 """ 
-
-
-
 
 
 #####################################################
@@ -82,18 +96,47 @@ obj.save("kone.obj")
 
 
 
- 
+mu = math_util() 
+obj = object3d()
+
+       
+sp = spherical(1.73,-.95,-.78) 
 
 
-def speherical_to_point():
-    mu = math_util() 
+#cart = vec3(1,1,1)
+#sp.from_cartesian( cart )
+#print('### spherical ', sp)
 
-    sp = spherical(1.5, mu.dtr(10), mu.dtr(80) ) 
-    pt=  sp.to_cartesian() 
-    
+print( '##### to cartesian ', sp.to_cartesian() ) 
+
+
+#obj.prim_cube(pos=pt, size=.1, linecolor=(255,0,0), rot=(0,0,0), pivot='world')
+
+
+#obj.save('ball_of_cubes.obj') 
+
+
+
+
+
+
+def build_perspective_matrix():
+    #debug - NOT WORKING!  Work In Progress 
+
     obj = object3d()
-    obj.prim_cube(pos=pt, size=.2, linecolor=(255,0,0), rot=(0,0,0), pivot='world')
-    obj.save('ballz.obj') 
+    obj.prim_cube()
+    #obj.scale_pts((3,3,30))
+    obj.rotate_pts((30,30,30))
+    ropr = simple_render()
+    #                          fov, aspect, znear, zfar)
+    #mx = m44.buildPerspProjMat( 200, 1, 1, 100)
+    ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
+    ropr.save_image('simple_render.png')
+
+
+
+
+#######################################################
 
 
 
@@ -124,7 +167,7 @@ def rotate_matrix_to_vec():
 
 #rotate_matrix_to_vec() 
 
-
+#######################################################
 
 def prim_arrow(axis): 
     
@@ -152,34 +195,7 @@ def prim_arrow(axis):
 
 
 
-
-
-
-
-
-
 #######################################################
-
-
-#API  
-#get_face_geom
-
-
-
-# insert_polygons
-
-# get_geom_edges
-
-# get_face_edges
-
-# sub_select_geom
-
-# get_face_edges2
-
-# extrude_face
-
-
-
 
 
 
@@ -193,44 +209,7 @@ def loft_test():
     obj.prim_circle() 
 
 
-def test_copysop():
-    """ copy SOP is a subselect, copy and transform 
-        optional loop and increment 
-    """
-    obj = object3d() 
-    #obj.prim_circle(axis='y') 
-    obj.load('objects/sphere.obj')
-    #copy_sop( slice=None, ids=None, reindex=False, offset=(0,0,0), num=1):
-
-    #be cautious of large number of polys. It gets slow real quick!
-    obj.copy_sop(slice=(1,10), offset=(0,2,0), num=5, distance=.75)
-    obj.save('stax.obj')
-
-
-
-def grab_all_pts():
-    obj = object3d()
-    #obj.load('objects/sphere.obj')
-    obj.load('objects/kube.obj')
-
-    all_pts = obj.points
-    plyidx1 =  obj.get_pt_ids([0,1,2])  
-    plyidx2 =  obj.get_pt_ids([3,5])
-
-    obj2 = object3d() 
-    obj2.points = all_pts
-
-    #obj2.insert_polygons( gr1, all_pts   ) 
-    #gr3 = obj2.xform_pts((2,2,2), gr2 )
-
-    obj2.polygons.extend(plyidx1)
-    obj2.polygons.extend(plyidx2)
-
-    obj2.save('kube_modify.obj')
-
-
-
-
+#######################################################
 
 
 def modify_a_subselect():
@@ -241,7 +220,9 @@ def modify_a_subselect():
     obj.load('kube.obj')
 
     geom = obj.sub_select_geom( slice=[1,5]  , reindex=True )
-    newpts = obj.rotate_pts((45,45,45), points=geom[1])
+
+    # rotate_pts( rot, pts=None, ptgrp=None):
+    newpts = obj.rotate_pts(rot=(45,45,45), pts=geom[1])
 
     print(geom)
     geom2 = obj.sub_select_geom( slice=[5,6]  , reindex=True )
@@ -255,22 +236,7 @@ def modify_a_subselect():
 
 
 
-
-
-
-
-
-
-
-
-
-def test_rotate_points():
-    obj = object3d()
-    obj.load('objects/monkey.obj')
-    #pts = [(2,2,2), (4,4,4), (8,8,8)]
-    pts2 = obj.rotate_pts((45,45,45) )
-    #print(pts2)
-    obj.save('foo.obj')
+#######################################################
 
 
 
@@ -290,18 +256,6 @@ def modify_part_of_an_object():
 
 
 ################################################
-
-
-"""
-    IDEAS 
-def dagops_l_system_extrude():
-def time_based_simulation():
-def time_based_simulation_bresenham():
-def time_based_simulation_fft():
-def time_based_simulation_quaternion_slerp():
-def visualize_edges_as_little_arrows(obj1, obj2, slice): 
-def copy_obj_rotate_to_each_face(obj1, obj2, slice): 
-"""
 
 def extrude_single_face(fid): 
     """ UNFINISHED! """
