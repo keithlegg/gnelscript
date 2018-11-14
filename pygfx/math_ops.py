@@ -204,14 +204,15 @@ class vec2(object):
         """ dot product """
         return self.x * other.x + self.y * other.y
 
-    def distance_to(self, other, doRound=False):
+    def distance_to(self, other):
+        """ """
         val = math.hypot((self.x - other.x), (self.y - other.y))
-        if not doRound:        
-            return val
-        if doRound: 
-           return int(val)
+        return val
 
-    def project_pt(self, A, B, offset , doRound=False):
+    def project_pt(self, A, B, offset):
+        """ i forgot what this does.... hmm 
+            returns a vector that is .... 
+        """
         nX = B.x - A.x;nY = B.y - A.y
         distX = pow( (A.x - B.x ) , 2.0 ) 
         distY = pow( (A.y - B.y ) , 2.0 ) 
@@ -222,10 +223,8 @@ class vec2(object):
         # project point along vector with offset (can use negative too)
         ptX = B.x + (calcX * offset)
         ptY = B.y + (calcY * offset)
-        if not doRound:
-            return type(self)(ptX, ptY)
-        if doRound:
-            return type(self)(int(ptX), int(ptY) )
+        return type(self)(ptX, ptY)
+
 
     def intersect(self, v1s, v1e, v2s, v2e ):
         """ intersect 2 lines in 2D 
@@ -393,6 +392,16 @@ class vec3(object):
         """
 
         pass
+
+
+    def orthogonal_vec_from_pt(self, vecpt, unitvec, pt ):
+        """ UNTESTED 
+            make a line from a point to a line+point 
+        """
+        if NUMPY_IS_LOADED:        
+            return (vecpt-pt) - ( np.dot((vecpt-pt), unitvec) ) * unitvec
+        
+        return None 
 
 
     @property
@@ -1268,6 +1277,23 @@ class matrix33(object):
             out.append(i)
         return out
 
+
+    def from_np(self, np):
+        """ convert a numpy matrix to a matrix33 object
+        """
+        # return type(self)(
+        #     np[0][0] , np[1][0] , np[2][0] ,
+        #     np[0][1] , np[1][1] , np[2][1] ,
+        #     np[0][2] , np[1][2] , np[2][2]
+        # )
+
+        return type(self)(
+            np[0][0] , np[0][1] , np[0][2] ,
+            np[1][0] , np[1][1] , np[1][2] ,
+            np[2][0] , np[2][1] , np[2][2]
+        )
+
+
     def insert(self, iterable):
         """ load the first 9 things we find into this matrix 
             accepts numpy.ndarray, list, and tuple 
@@ -1417,15 +1443,23 @@ class matrix33(object):
         return tmp_buffer
 
     def from_vec3(self, vec3, angle):
-        """ UNTESTED - how do we get from a vector to a matrix?"""
+        """ UNTESTED build a 3X3 matrix that will rotate around a vector 
+  
+            vec3 = the vector for an axis of rotation
+            angle - angle in degrees to rotate 
+
+        """
+        
         theta = self.mu.dtr(angle)
         #axis = vec3.normal
         axis = vec3.as_np
         #tmpm33 = self.identity
-        
-        tmpm33 = expm(np.cross(np.eye(3), axis / np.linalg.norm(axis) * theta)) 
 
-        return tmpm33
+        if NUMPY_IS_LOADED:
+            tmpm33 = expm(np.cross(np.eye(3), axis / np.linalg.norm(axis) * theta)) 
+            return self.from_np(tmpm33)
+        else:
+            return None 
 
 
     def align_two_vec3(self, a, b):
@@ -1453,7 +1487,7 @@ class matrix33(object):
         
         tmpm33 = expm(np.cross(np.eye(3), axis / np.linalg.norm(axis) * theta)) 
 
-        return tmpm33
+        return self.from_np(tmpm33)
 
     def from_euler(self, xrot, yrot, zrot):
         """

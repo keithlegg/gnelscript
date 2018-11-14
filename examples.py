@@ -95,13 +95,10 @@ obj.save("kone.obj")
 """
 
 
-
+"""
 mu = math_util() 
 obj = object3d()
-
-       
 sp = spherical(1.73,-.95,-.78) 
-
 
 #cart = vec3(1,1,1)
 #sp.from_cartesian( cart )
@@ -109,13 +106,31 @@ sp = spherical(1.73,-.95,-.78)
 
 print( '##### to cartesian ', sp.to_cartesian() ) 
 
-
 #obj.prim_cube(pos=pt, size=.1, linecolor=(255,0,0), rot=(0,0,0), pivot='world')
 
-
 #obj.save('ball_of_cubes.obj') 
+"""
 
 
+def build_orthogonal_vector():
+    """ UNTESTED , BROKEN? """
+    obj = object3d()
+    
+    x = vec3() #container for commands
+
+    pt1 = vec3(-1,1,1)
+    obj.prim_cube(pos=pt1,size=.05,linecolor=(255,0,0),rot=(0,0,0),pivot='world')
+
+    pt2 = vec3(0,0,5)
+    obj.prim_cube(pos=pt2,size=.1,linecolor=(255,0,0),rot=(0,0,0),pivot='world')    
+    unitvec = vec3(0,5,0).normal
+    obj.one_vec_to_obj( unitvec , pos=pt2) 
+
+    #   orthogonal_vec_from_pt(self, vecpt, unitvec, pt ):
+    d= x.orthogonal_vec_from_pt(pt2, unitvec, pt1)
+    obj.one_vec_to_obj( d , pos=pt1)  
+
+    obj.save('vectorDaCleaner.obj')
 
 
 
@@ -136,36 +151,8 @@ def build_perspective_matrix():
 
 
 
-#######################################################
 
 
-
-
-def rotate_matrix_to_vec():
-    obj = object3d()
-
-    obj.one_vec_to_obj( (0,55,0) ) 
-    #obj.rotate_pts( (45,0,0))
-
-    # get the points for this object 
-    ptgrp = obj.get_pt_grp()    
-
-    # contruct a matrix to transform them 
-    rotated_m33 = matrix33()
-
-    m = rotated_m33.from_vec3( vec3(1,0,0) , 45) 
-    
-    
-
-    """
-    # apply the matrix to the points in the model 
-    rotated_points = obj.apply_matrix_ptgrp(ptgrp, m33=rotated_m33) 
-    obj.insert_pt_grp(rotated_points)
-    obj.one_vec_to_obj( (0,1,0) )     
-    obj.save('vectorDaCleaner.obj')
-    """
-
-#rotate_matrix_to_vec() 
 
 #######################################################
 
@@ -289,7 +276,7 @@ def triangulate_test():
         repeating this ame op over , etc 
     """
     obj = object3d()
-    obj.prim_circle() 
+    obj.prim_circle(axis='y', pos=(0,0,0), spokes=124) 
     obj.radial_triangulate_obj( offset=None)#as_new_obj=False
     #obj.radial_triangulate_obj()
     obj.save('triangulated.obj')
@@ -333,4 +320,25 @@ def circle_with_cube_all_pts():
     obj.save("cubey.obj")
 
 
+
+
+def rotate_around_vec():
+    obj = object3d()
+
+    #add first vector that will be rotated Y axis
+    obj.one_vec_to_obj( (0,1,0) ) 
+    ptgrp = obj.get_pt_grp()    
+
+    # contruct a matrix to transform them 
+    rotated_m33 = matrix33()
+    m = rotated_m33.from_vec3( vec3(1,0,0) , -45) 
+    #rotated_m33.from_euler(90,0,0)
+    
+    # apply the matrix to the points in the model 
+    rotated_points = obj.apply_matrix_ptgrp(ptgrp, m33=m) 
+    obj.insert_pt_grp(rotated_points)
+
+    #add second vector to compare X axis *2 
+    obj.one_vec_to_obj( (2,0,0) )     
+    obj.save('vectorDaCleaner.obj')
 
