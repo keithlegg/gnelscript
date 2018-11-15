@@ -393,16 +393,18 @@ class vec3(object):
 
         pass
 
-
-    def orthogonal_vec_from_pt(self, vecpt, unitvec, pt ):
-        """ UNTESTED 
-            make a line from a point to a line+point 
+    def vector_between_points(self, pt1 , pt2):
+        """ given 2 points in 3D, create a 3D vector 
+            representing the offset between them 
         """
+        
+        pass
+
+ 
+    def orthogonal_vec_from_pt(self, vecpt, unitvec, pt ):
         if NUMPY_IS_LOADED:        
             return (vecpt-pt) - ( np.dot((vecpt-pt), unitvec) ) * unitvec
-        
         return None 
-
 
     @property
     def as_np(self):

@@ -112,25 +112,93 @@ print( '##### to cartesian ', sp.to_cartesian() )
 """
 
 
-def build_orthogonal_vector():
-    """ UNTESTED , BROKEN? """
-    obj = object3d()
-    
-    x = vec3() #container for commands
 
+def lighting_test():
+    obj = object3d()
+    obj.load('objects/sphere2.obj')
+
+    obj.triangulate() 
+
+    ropr = simple_render()
+
+    render_linecolor = (255,0,255)
+    render_scale = 200 
+
+    ####
+
+    ## # some render properties you can tweak 
+    ## ropr.SHOW_EDGES = False
+    ## ropr.SHOW_FACE_CENTER = False
+    ## ropr.COLOR_MODE = 'normal'
+    ## ropr.COLOR_MODE = 'flat'
+    ropr.COLOR_MODE = 'lighted'
+    ## ropr.SHOW_EDGES = True 
+
+
+    ## scanline render 
+    ropr.scanline(obj, render_scale) 
+    ropr.save_image('simple_render.png')
+
+
+
+lighting_test() 
+
+
+
+def offset_between_2vecs():
+    obj = object3d()
+    com = vec3() #container for commands
+    
+    a = vec3(2, 0, 2)  
+    b = vec3(3, 0, 3)  
+
+    c = b - a
+    print("## offset is ",  c) 
+
+
+
+
+def extrude_single_edge(fid): 
+    """ UNFINISHED! """
+    obj = object3d()
+    obj.load('objects/sphere.obj')
+
+    print( obj.get_face_geom(fid ) ) #reindex=True 
+    print( obj.get_face_edges(fid ) ) #DEBUG - add reindex 
+    print( obj.get_face_normal(fid ) )
+    print( obj.get_face_centroid(fid ) )
+
+
+
+def build_orthogonal_vector():
+    obj = object3d()
+    com = vec3() #container for commands
+
+    # the point we are "looking" from 
     pt1 = vec3(-1,1,1)
     obj.prim_cube(pos=pt1,size=.05,linecolor=(255,0,0),rot=(0,0,0),pivot='world')
 
-    pt2 = vec3(0,0,5)
+    # the point of the line origin
+    pt2 = vec3(-2,.3,.9)
     obj.prim_cube(pos=pt2,size=.1,linecolor=(255,0,0),rot=(0,0,0),pivot='world')    
-    unitvec = vec3(0,5,0).normal
-    obj.one_vec_to_obj( unitvec , pos=pt2) 
+    
+    # the line, needs to be normalized for the math to work  
+    display_unitvec = vec3(0,5,0)
+    unitvec = display_unitvec.normal
+    
+    #render it as full size, not unit length 
+    obj.one_vec_to_obj( display_unitvec , pos=pt2) 
+    #make a negative version as well, to really get the idea of the size 
+    display_unitvec = display_unitvec * -1
+    obj.one_vec_to_obj( display_unitvec , pos=pt2) 
 
-    #   orthogonal_vec_from_pt(self, vecpt, unitvec, pt ):
-    d= x.orthogonal_vec_from_pt(pt2, unitvec, pt1)
+    d= com.orthogonal_vec_from_pt(pt2, unitvec, pt1)
     obj.one_vec_to_obj( d , pos=pt1)  
 
-    obj.save('vectorDaCleaner.obj')
+    obj.save('perpendicular.obj')
+
+
+
 
 
 
@@ -258,15 +326,7 @@ def extrude_single_face(fid):
 #extrude_single_face(20)
 
 
-def extrude_single_edge(fid): 
-    """ UNFINISHED! """
-    obj = object3d()
-    obj.load('objects/sphere.obj')
 
-    print( obj.get_face_geom(fid ) ) #reindex=True 
-    print( obj.get_face_edges(fid ) ) #DEBUG - add reindex 
-    print( obj.get_face_normal(fid ) )
-    print( obj.get_face_centroid(fid ) )
 
 
 
@@ -307,18 +367,17 @@ def circle_with_cube_all_pts():
     """
 
     obj = object3d()
-    obj.prim_circle(axis='z', pos=(0,0,0), spokes=42) 
+    obj.prim_circle(axis='z', pos=(0,0,0), spokes=22) 
     ctr = obj.get_face_centroid(0)
     obj.triangulate(force=True)
     pts = obj.get_face_pts(0) 
     ct = 0
     for pt in pts:
         tmp = object3d()
-        tmp.prim_cube(size=.05, pos=pt, rot=(ct,ct,ct), pivot='world')
+        tmp.prim_cube(linecolor=(255,0,0), size=.05, pos=pt, rot=(ct,ct,ct), pivot='world')
         ct += 10
         obj.insert(tmp)  
-    obj.save("cubey.obj")
-
+    obj.save("cube_pts.obj")
 
 
 
@@ -329,7 +388,7 @@ def rotate_around_vec():
     obj.one_vec_to_obj( (0,1,0) ) 
     ptgrp = obj.get_pt_grp()    
 
-    # contruct a matrix to transform them 
+    # construct a matrix to transform them 
     rotated_m33 = matrix33()
     m = rotated_m33.from_vec3( vec3(1,0,0) , -45) 
     #rotated_m33.from_euler(90,0,0)

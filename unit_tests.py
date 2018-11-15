@@ -29,12 +29,6 @@ from pygfx.obj3d import  *
 
 
 
-
-
-
-
-
-
 #######################################################
 
 
@@ -61,9 +55,6 @@ from pygfx.obj3d import  *
 
 
 
-
-
-
 def test_copysop():
     """ copy SOP is a subselect, copy and transform 
         optional loop and increment 
@@ -78,33 +69,7 @@ def test_copysop():
     obj.save('stax.obj')
 
 
-
-def grab_some_pts():
-    obj = object3d()
-    #obj.load('objects/sphere.obj')
-    obj.load('objects/kube.obj')
-
-    all_pts = obj.points
-    plyidx1 =  obj.get_pt_ids([1,2])  
-    plyidx2 =  obj.get_pt_ids([3,4,5])
-
-    obj2 = object3d() 
-    obj2.points = all_pts
-    
-    for f in plyidx1:
-        obj2.polygons.extend(f)
-    for f in plyidx2:
-        obj2.polygons.extend(f)        
-
-    obj2.save('kube_modify.obj')
- 
-
-
-
-
-
-
-
+#####################################################
 
 
 def test_rotate_points():
@@ -117,60 +82,25 @@ def test_rotate_points():
 
 
 
+#####################################################
+
 def modify_part_of_an_object():
-    """ UNFINSIHED ! """
+    """ extract a slice of polygons
+        spatially trasform them
+        insert result into a new object  
+    """
 
     obj = object3d()
     obj.load('objects/sphere.obj')
 
     geom = obj.sub_select_geom( slice=(10,50), reindex=True )
-    newpts = obj.rotate_pts((45,45,45), points=geom[1])
+    newpts = obj.rotate_pts((45,45,45), pts=geom[1])
 
     obj2 = object3d() 
     obj2.insert_polygons(geom[0], newpts  )      
     obj2.save('sphere_modify.obj')
 
-
-
-################################################
-
-
-"""
-    IDEAS 
-def dagops_l_system_extrude():
-def time_based_simulation():
-def time_based_simulation_bresenham():
-def time_based_simulation_fft():
-def time_based_simulation_quaternion_slerp():
-def visualize_edges_as_little_arrows(obj1, obj2, slice): 
-def copy_obj_rotate_to_each_face(obj1, obj2, slice): 
-"""
-
-def extrude_single_face(fid): 
-    """ UNFINISHED! """
-    obj = object3d()
-    obj.load('objects/sphere.obj')
-
-    print( obj.get_face_geom(fid ) ) #reindex=True 
-    print( obj.get_face_edges(fid ) ) #DEBUG - add reindex 
-    print( obj.get_face_normal(fid ) )
-    print( obj.get_face_centroid(fid ) )
-    
-
-#extrude_single_face(20)
-
-
-def extrude_single_edge(fid): 
-    """ UNFINISHED! """
-    obj = object3d()
-    obj.load('objects/sphere.obj')
-
-    print( obj.get_face_geom(fid ) ) #reindex=True 
-    print( obj.get_face_edges(fid ) ) #DEBUG - add reindex 
-    print( obj.get_face_normal(fid ) )
-    print( obj.get_face_centroid(fid ) )
-
-
+#####################################################
 
 def triangulate_test():
     """ UNFINISHED - 
@@ -183,7 +113,7 @@ def triangulate_test():
     #obj.radial_triangulate_obj()
     obj.save('triangulated.obj')
 
-
+#####################################################
 
 def multi_face_triangulate_offset():
     """ broken - DEBUG """
@@ -200,7 +130,7 @@ def multi_face_triangulate_offset():
 
     obj.save("durian_fruit.obj")
 
-
+#####################################################
 
 
 def circle_with_cube_all_pts():
@@ -453,7 +383,7 @@ def test_subsel_point_transform():
 
 
 
-
+#####################################################
 
 def test_point_transform(): 
     """ example of translate, rotate, scale of raw points 
@@ -534,31 +464,29 @@ def model_geom_from_scratch():
 
     obj.save("my_new_object.obj")
 
-
 #####################################################
 
-def extract_by_hack():
+def extract_by_copy_hack():
     """ *slightly* higher level than raw geom 
         use the lookup util to get the pt ids by face index 
-
     """
+
     obj = object3d()
     obj.load('objects/kube.obj')
 
-    #mirror all points with out thinking about it 
+    # duplicate all points with out thinking about it 
     all_pts = obj.points
 
-    #extract two chunks of poly ids 
+    # extract two chunks of poly ids 
     polygr1 =  obj.get_pt_ids([0,1,2])  
     polygr2 =  obj.get_pt_ids([3,5])
 
-    #make a new object and dump data into it
+    # make a new object and dump data into it
     obj2 = object3d() 
     obj2.points = all_pts  #move all points over - DEBUG add a clean func to remove unused
 
     for ply in polygr1:
         obj2.polygons.extend(ply)
-
     for ply in polygr2:
         obj2.polygons.extend(ply)        
 
@@ -600,12 +528,9 @@ def load_build_another_from_normals(objectpath):
 #####################################################
 
 
-def test_extrude():
+def face_extrude():
     obj = object3d()
-    
-    #obj.load('objects/kube.obj')
     obj.load('objects/monkey.obj')
-    #obj.load('objects/teapot.obj')
    
     tenths = int(obj.numply/10)
     ct = 1

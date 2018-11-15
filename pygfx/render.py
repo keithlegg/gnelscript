@@ -638,7 +638,7 @@ class simple_render(object):
         #obj.triangulate() 
 
         n_plys = len(obj.polygons)
-        obj.z_sort(reverse=True) #works-ish 
+        obj.z_sort(reverse=True) # works-ish 
           
         polydata.append( obj.points       )
         polydata.append( obj.polygons     )
@@ -646,6 +646,28 @@ class simple_render(object):
 
         print('## num points %s; num polygons %s; num normals %s '%(len(obj.points) , len(obj.polygons), len(obj.face_normals) ) )
         return polydata
+    
+    ## ## ## ## ## 
+    def simple_lighting_model(self, facepoly, lightpos):
+        """
+            to calculate lighting of a face 
+
+            - get the vector from the centroid to the light source 
+            - get the angle between face normal and previous vector 
+            - the steeper the angle, the darker the color 
+
+                return an RGB color from (0-255)  
+        """
+        
+        print(" polygon face is   ", facepoly )
+        print(" light position is ", lightpos )
+
+        #a = vec3(2, 0, 2)  
+        #b = vec3(3, 0, 3)  
+        #c = b - a
+
+        return (128,0,0)
+
 
     ## ## ## ## ##  
     def scanline(self, obj, scale=200):
@@ -654,7 +676,7 @@ class simple_render(object):
         """
         vecmath = vec2()     # use for math operations
 
-        polydata = self.sort_polys(obj) #pre process polys before rendering 
+        polydata = self.sort_polys(obj) #pre-process polys before rendering 
 
 
         output = self.fb 
@@ -711,7 +733,7 @@ class simple_render(object):
                 if self.COLOR_MODE=='normal':    
                     obj.calc_face_normals()
 
-                    #print( polydata[2] )
+                    
 
                     n2 = polydata[2][idx-1]
                     n2 = vec3(n2[0],n2[1],n2[2])
@@ -733,6 +755,25 @@ class simple_render(object):
                 
                 if self.COLOR_MODE=='flat':                 
                     facecolor = (100,100,100 )
+                
+                if self.COLOR_MODE=='lighted':  
+                    """ light or dark depending on angle to a point (light) 
+                         -- once that works add:
+                              light intesity 
+                              light color 
+                              multiple lights 
+
+                    """ 
+                    lightpos = (5,5,5) # position of light 
+
+                    light_ply = []
+                    for idx in ply:
+                        #print('########### precalced normal ', self.po)
+                        light_ply.append( polydata[0][idx-1] )
+
+                    facecolor = self.simple_lighting_model(light_ply,lightpos) 
+
+
 
                 ##########
                 # define the scanline geometry, iterate each horizontal line of image

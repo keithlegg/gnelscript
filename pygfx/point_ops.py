@@ -337,13 +337,6 @@ class polygon_operator(point_operator):
     #def poly_seperate(self, obj):
     #    """ check for geometry that is not connected, if any found, break it off """
 
-    ###############################################  
-    #def get_edge_centroid(self, f_id , e_id):
-    #    pass
-    
-    ############################################### 
-    #def get_obj_centroid(self):
-    #    pass
 
     ###############################################  
     ###############################################  
@@ -364,6 +357,15 @@ class polygon_operator(point_operator):
         
         for p in self.points:
             print(p)
+
+    ###############################################  
+    #def get_edge_centroid(self, f_id , e_id):
+    #    pass
+    
+    ############################################### 
+    #def get_obj_centroid(self, prgrp=None, facgrp=None):
+    #    pass
+
 
     ############################################### 
     def _reindex_ply(self, f_idx, offset):
@@ -427,6 +429,9 @@ class polygon_operator(point_operator):
 
     ############################################### 
     def geom_to_ptgrp(self, geom):
+        """ convert one weird data type into another 
+        """
+
         out = []
         for i,g in enumerate(geom):
             out.append( [1, g[1][i]] )
@@ -619,10 +624,14 @@ class polygon_operator(point_operator):
     def insert_polygons(self, plyids, points, asnew_shell=True, geom=None):
         """  
              Insert NEW geometry into this object
+             
+             you can do it with the paired "plyids" + "points", or a geom object
+             A geom object is very similar in a self contained flat data object. 
 
-             asnew_shell  - reindex the points and append, else keep the same indices
-             geom         - geom to insert into, instead of object.polygons, object.points
-                            if true, will return the geom object when done 
+             plyids, points  - use these or geom, but not both at same time 
+             asnew_shell     - reindex the points and append, else keep the same indices
+             geom            - geom to insert into, instead of object.polygons, object.points
+                               if true, will return the geom object when done 
 
         """
 
