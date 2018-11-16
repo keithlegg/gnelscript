@@ -852,6 +852,17 @@ class polygon_operator(point_operator):
             return [[polygr[fid-1]]     , tmp_pts]
         if reindex is True:
             return [[tuple(reindex_id)] , tmp_pts]
+    ###############################################  
+    def calc_tripoly_normal(self, three_pts, unitlen):
+        # create a vec3 from 3 points (3 or 4 sided polys)
+        v1=vec3();v2=vec3()
+        v3=vec3();v4=vec3()
+
+        v1.insert( three_pts[0] )
+        v2.insert( three_pts[1] )
+        v3.insert( three_pts[2] )  
+
+        return self.three_vec3_to_normal(v1, v2, v3, unitlen=unitlen)
 
     ###############################################  
     def get_face_normal(self, fid=None, unitlen=False ):
@@ -876,17 +887,17 @@ class polygon_operator(point_operator):
         out = []
 
         for f in fids:    
-            # create a vec3 for each vertex (3 or 4 sided polys)
-            v1=vec3();v2=vec3()
-            v3=vec3();v4=vec3()
+
 
             tmp = self.get_face_geom(f) #returns [fidx, pts] 
             poly = tmp[0][0] #poly = face indices  
 
-            v1.insert( self.points[poly[0]-1] )
-            v2.insert( self.points[poly[1]-1] )
-            v3.insert( self.points[poly[2]-1] )                
-            out.append( self.three_vec3_to_normal(v1, v2, v3, unitlen=unitlen) )
+            nrmlvec = self.calc_tripoly_normal( (self.points[poly[0]-1],
+                                                 self.points[poly[1]-1],
+                                                 self.points[poly[2]-1]),
+                                                 unitlen )
+              
+            out.append( nrmlvec )
 
         if isinstance(fid, int):
             return out[0]

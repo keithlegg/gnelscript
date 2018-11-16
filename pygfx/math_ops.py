@@ -393,12 +393,23 @@ class vec3(object):
 
         pass
 
-    def vector_between_points(self, pt1 , pt2):
+
+    def between(self, pt2):
         """ given 2 points in 3D, create a 3D vector 
             representing the offset between them 
+
+            doesnt get much easier than this, just subtract 
+
         """
-        
-        pass
+   
+        #if isinstance(pt1, tuple):
+        #    pt1 = vec3( pt1[0], pt1[1], pt1[2]) 
+
+
+        if isinstance(pt2, tuple):
+            pt2 = vec3( pt2[0], pt2[1], pt2[2])
+
+        return pt2 - self
 
  
     def orthogonal_vec_from_pt(self, vecpt, unitvec, pt ):
@@ -548,9 +559,11 @@ class vec3(object):
 
             FAILS WHEN 0 or 180 ?
         """
-        o = math.acos( self.dot(other) / (self.length*other.length) ) 
-        return o 
-
+        try:
+            o = math.acos( self.dot(other) / (self.length*other.length) ) 
+            return o 
+        except:
+            return 0
 
     def vector_mean(self, p_vecs, mode='vec3'):
         """ 

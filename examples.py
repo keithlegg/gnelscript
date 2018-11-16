@@ -115,8 +115,11 @@ print( '##### to cartesian ', sp.to_cartesian() )
 
 def lighting_test():
     obj = object3d()
-    obj.load('objects/sphere2.obj')
-
+    obj.load('objects/monkey.obj')
+    #obj.load('objects/sphere2.obj')
+    #obj.prim_quad(axis='z',  pos=(0,0,0), rot=(0,0,0)) 
+    obj.points = obj.rotate_pts((-10,180,180),pts=obj.points)
+    
     obj.triangulate() 
 
     ropr = simple_render()
@@ -128,15 +131,19 @@ def lighting_test():
 
     ## # some render properties you can tweak 
     ## ropr.SHOW_EDGES = False
-    ## ropr.SHOW_FACE_CENTER = False
-    ## ropr.COLOR_MODE = 'normal'
+    ropr.SHOW_FACE_CENTER = False
+
     ## ropr.COLOR_MODE = 'flat'
+
+    ropr.SHOW_EDGES = False 
+
+    #ropr.COLOR_MODE = 'normal'
+
     ropr.COLOR_MODE = 'lighted'
-    ## ropr.SHOW_EDGES = True 
 
 
     ## scanline render 
-    ropr.scanline(obj, render_scale) 
+    ropr.scanline(obj, render_scale, lightpos=(0,10,0) ) 
     ropr.save_image('simple_render.png')
 
 
@@ -152,9 +159,9 @@ def offset_between_2vecs():
     a = vec3(2, 0, 2)  
     b = vec3(3, 0, 3)  
 
-    c = b - a
-    print("## offset is ",  c) 
+    c = a.between(b)
 
+    print("## offsetz is ",  c) 
 
 
 

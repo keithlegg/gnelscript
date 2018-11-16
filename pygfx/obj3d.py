@@ -155,6 +155,7 @@ class object3d(polygon_operator):
         # iterate each face and convert eart vertex into a vec3 
         for idx in range(self.numply):
             f_nrml = self.get_face_normal(idx)
+            #print('############ ', f_nrml)
             # store it in object for later use 
             self.face_normals.append(f_nrml) 
 

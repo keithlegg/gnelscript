@@ -647,30 +647,8 @@ class simple_render(object):
         print('## num points %s; num polygons %s; num normals %s '%(len(obj.points) , len(obj.polygons), len(obj.face_normals) ) )
         return polydata
     
-    ## ## ## ## ## 
-    def simple_lighting_model(self, facepoly, lightpos):
-        """
-            to calculate lighting of a face 
-
-            - get the vector from the centroid to the light source 
-            - get the angle between face normal and previous vector 
-            - the steeper the angle, the darker the color 
-
-                return an RGB color from (0-255)  
-        """
-        
-        print(" polygon face is   ", facepoly )
-        print(" light position is ", lightpos )
-
-        #a = vec3(2, 0, 2)  
-        #b = vec3(3, 0, 3)  
-        #c = b - a
-
-        return (128,0,0)
-
-
     ## ## ## ## ##  
-    def scanline(self, obj, scale=200):
+    def scanline(self, obj, scale=200, lightpos=(0,10,0) ):
         """ 
             polydata = [ points[], polygons[], normals[] ]
         """
@@ -732,12 +710,9 @@ class simple_render(object):
                     
                 if self.COLOR_MODE=='normal':    
                     obj.calc_face_normals()
-
-                    
-
                     n2 = polydata[2][idx-1]
                     n2 = vec3(n2[0],n2[1],n2[2])
-                    n2 = (  n2.angle_between( vec3(0,1,0)) ) 
+                    n2 = (  n2.angle_between( vec3(0,0,1)) ) 
                     angle  = mu().rtd(n2 )
                     
                     #print(' angle flee ! ', angle)
@@ -764,15 +739,29 @@ class simple_render(object):
                               multiple lights 
 
                     """ 
-                    lightpos = (5,5,5) # position of light 
+                    if isinstance(lightpos, tuple):
+                        lightpos = vec3(lightpos[0],lightpos[1],lightpos[2])   
 
                     light_ply = []
                     for idx in ply:
-                        #print('########### precalced normal ', self.po)
                         light_ply.append( polydata[0][idx-1] )
 
-                    facecolor = self.simple_lighting_model(light_ply,lightpos) 
+                    #obj.calc_face_normals()
+                    com = vec3()
+                    nrml =  obj.calc_tripoly_normal( light_ply, True) 
+                    
+                    vec_to_light = nrml.between(lightpos) 
+                    light_angle = (  nrml.angle_between( vec_to_light ) )
+                    
 
+                    angle  = int(mu().rtd(light_angle ))
+
+                    
+                    # print('##  angle between light and face is %s '% angle)                      
+                    
+                    #facecolor = output.normal_to_color( (n2,n2,n2) )
+                    #facecolor = self.simple_lighting_model(light_ply,lightpos) 
+                    facecolor = (angle,angle,angle)
 
 
                 ##########
