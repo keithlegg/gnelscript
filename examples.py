@@ -113,7 +113,17 @@ print( '##### to cartesian ', sp.to_cartesian() )
 
 
 
-def lighting_test():
+def lighting_test( lightpos, fnum):
+    """ run the scanline render with a lighting model 
+        lighting model shades the polygons based on angle to a point
+        the point becomes a cheap lighting simulation 
+
+        #to run : 
+
+           lighting_test( (0,10, 10), 1 )
+
+    """
+
     obj = object3d()
     obj.load('objects/monkey.obj')
     #obj.load('objects/sphere2.obj')
@@ -127,32 +137,58 @@ def lighting_test():
     render_linecolor = (255,0,255)
     render_scale = 200 
 
-    ####
-
     ## # some render properties you can tweak 
     ## ropr.SHOW_EDGES = False
     ropr.SHOW_FACE_CENTER = False
-
     ## ropr.COLOR_MODE = 'flat'
-
     ropr.SHOW_EDGES = False 
 
     #ropr.COLOR_MODE = 'normal'
-
     ropr.COLOR_MODE = 'lighted'
 
-
+    #################
     ## scanline render 
-    ropr.scanline(obj, render_scale, lightpos=(0,10,0) ) 
-    ropr.save_image('simple_render.png')
+    ropr.scanline(obj, render_scale, lightpos=lightpos ) 
+    ropr.save_image('simple_render_%s.png'%fnum)
+
+    #################
+    obj2 = object3d() 
+    # visualize the light and vectors to it 
+    obj2.prim_cube(pos=lightpos,size=.05,linecolor=(255,0,0),rot=(0,0,0),pivot='world')
+    
+    for v in  ropr.lighting_vectors:   #( [nrml, vec_to_light, angle] ) 
+        # obj2.one_vec_to_obj( v[0] )  #unit length face normal, from world origin 
+        obj2.one_vec_to_obj( v[1] ) # vector from face center to light 
+
+    obj2.save('render_info.obj')
 
 
+# lighting_test( (0, 10, -10), 1 )
 
-lighting_test() 
 
+def animate_light_in_spherical_coords():
+    """ generate some 3d positions in a spherical coordinates 
+        and call the renderer in a loop with a rotating light 
+        slow, but it works 
+    """
+
+    mu = math_util() 
+    obj = object3d()
+
+    fnum = 0
+    for theta in range(-180,180,30):
+        print('## theta ', theta )
+        for phi in range(-180,180,30):        
+            sp = spherical(1.5, mu.dtr(theta), mu.dtr(phi) ) 
+            pt=  sp.to_cartesian() 
+           
+            lighting_test(pt,fnum)
+            fnum+=1 
 
 
 def offset_between_2vecs():
+    """ create a vector representing offset between two points """
+
     obj = object3d()
     com = vec3() #container for commands
     
@@ -174,35 +210,6 @@ def extrude_single_edge(fid):
     print( obj.get_face_edges(fid ) ) #DEBUG - add reindex 
     print( obj.get_face_normal(fid ) )
     print( obj.get_face_centroid(fid ) )
-
-
-
-def build_orthogonal_vector():
-    obj = object3d()
-    com = vec3() #container for commands
-
-    # the point we are "looking" from 
-    pt1 = vec3(-1,1,1)
-    obj.prim_cube(pos=pt1,size=.05,linecolor=(255,0,0),rot=(0,0,0),pivot='world')
-
-    # the point of the line origin
-    pt2 = vec3(-2,.3,.9)
-    obj.prim_cube(pos=pt2,size=.1,linecolor=(255,0,0),rot=(0,0,0),pivot='world')    
-    
-    # the line, needs to be normalized for the math to work  
-    display_unitvec = vec3(0,5,0)
-    unitvec = display_unitvec.normal
-    
-    #render it as full size, not unit length 
-    obj.one_vec_to_obj( display_unitvec , pos=pt2) 
-    #make a negative version as well, to really get the idea of the size 
-    display_unitvec = display_unitvec * -1
-    obj.one_vec_to_obj( display_unitvec , pos=pt2) 
-
-    d= com.orthogonal_vec_from_pt(pt2, unitvec, pt1)
-    obj.one_vec_to_obj( d , pos=pt1)  
-
-    obj.save('perpendicular.obj')
 
 
 

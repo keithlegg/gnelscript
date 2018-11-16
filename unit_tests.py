@@ -309,6 +309,32 @@ def angle_between_vectors():
 
 
 
+def build_orthogonal_vector():
+    obj = object3d()
+    com = vec3() #container for commands
+
+    # the point we are "looking" from 
+    pt1 = vec3(-1,1,1)
+    obj.prim_cube(pos=pt1,size=.05,linecolor=(255,0,0),rot=(0,0,0),pivot='world')
+
+    # the point of the line origin
+    pt2 = vec3(-2,.3,.9)
+    obj.prim_cube(pos=pt2,size=.1,linecolor=(255,0,0),rot=(0,0,0),pivot='world')    
+    
+    # the line, needs to be normalized for the math to work  
+    display_unitvec = vec3(0,5,0)
+    unitvec = display_unitvec.normal
+    
+    #render it as full size, not unit length 
+    obj.one_vec_to_obj( display_unitvec , pos=pt2) 
+    #make a negative version as well, to really get the idea of the size 
+    display_unitvec = display_unitvec * -1
+    obj.one_vec_to_obj( display_unitvec , pos=pt2) 
+
+    d= com.orthogonal_vec_from_pt(pt2, unitvec, pt1)
+    obj.one_vec_to_obj( d , pos=pt1)  
+
+    obj.save('perpendicular.obj')
 
 
 

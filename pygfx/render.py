@@ -201,8 +201,8 @@ class simple_render(object):
             self.res = [framebuffer.res_x, framebuffer.res_y]
 
 
-        self.render_objects = [] #list of object3d's 
-
+        self.render_objects = []   # list of object3d's 
+        self.lighting_vectors = [] # data about lighting - to visualize upstream from here
 
         ###############################################
         # renderer properties 
@@ -746,21 +746,27 @@ class simple_render(object):
                     for idx in ply:
                         light_ply.append( polydata[0][idx-1] )
 
-                    #obj.calc_face_normals()
-                    com = vec3()
+                    # build the face normal 
                     nrml =  obj.calc_tripoly_normal( light_ply, True) 
                     
-                    vec_to_light = nrml.between(lightpos) 
+                    #build a vector between normal and light 
+                    vec_to_light = lightpos.between(nrml) 
+
+                    # calculate the angle between face and light vectors 
+                    # treating the 3D light position as a vector
                     light_angle = (  nrml.angle_between( vec_to_light ) )
                     
-
                     angle  = int(mu().rtd(light_angle ))
-
                     
                     # print('##  angle between light and face is %s '% angle)                      
                     
-                    #facecolor = output.normal_to_color( (n2,n2,n2) )
-                    #facecolor = self.simple_lighting_model(light_ply,lightpos) 
+                    # get the center of face to move light vector to 
+                    f_cntr = obj.poly_centroid(light_ply)
+
+                    # store so we can play with later  
+                    self.lighting_vectors.append( [nrml, vec_to_light+f_cntr, angle] ) 
+
+                    # this is a terrible way to do it, but it looks pretty good for a first try
                     facecolor = (angle,angle,angle)
 
 
