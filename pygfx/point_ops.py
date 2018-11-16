@@ -887,8 +887,6 @@ class polygon_operator(point_operator):
         out = []
 
         for f in fids:    
-
-
             tmp = self.get_face_geom(f) #returns [fidx, pts] 
             poly = tmp[0][0] #poly = face indices  
 

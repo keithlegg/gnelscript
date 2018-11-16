@@ -715,8 +715,6 @@ class simple_render(object):
                     n2 = (  n2.angle_between( vec3(0,0,1)) ) 
                     angle  = mu().rtd(n2 )
                     
-                    #print(' angle flee ! ', angle)
-
                     #facecolor = output.normal_to_color( (n2,n2,n2) )
                     if angle > 160:
                         facecolor = ( 255,0,0 )
@@ -742,33 +740,33 @@ class simple_render(object):
                     if isinstance(lightpos, tuple):
                         lightpos = vec3(lightpos[0],lightpos[1],lightpos[2])   
 
-                    light_ply = []
-                    for idx in ply:
-                        light_ply.append( polydata[0][idx-1] )
+                    #light_ply = []
+                    #for idx in ply:
+                    #    light_ply.append( polydata[0][idx-1] )
+
+                    #polydata[0][idx-1]
+                    
+                    # get the center of face to move light vector to 
+                    f_cntr = obj.poly_centroid(drwply)
+                    fcntr = vec3(f_cntr[0],f_cntr[1],f_cntr[2])
 
                     # build the face normal 
-                    nrml =  obj.calc_tripoly_normal( light_ply, True) 
+                    nrml =  obj.calc_tripoly_normal( drwply, True) 
                     
                     #build a vector between normal and light 
-                    vec_to_light = lightpos.between(nrml) 
-
+                    vec_to_light = fcntr.between(lightpos) 
+   
                     # calculate the angle between face and light vectors 
                     # treating the 3D light position as a vector
                     light_angle = (  nrml.angle_between( vec_to_light ) )
                     
                     angle  = int(mu().rtd(light_angle ))
-                    
-                    # print('##  angle between light and face is %s '% angle)                      
-                    
-                    # get the center of face to move light vector to 
-                    f_cntr = obj.poly_centroid(light_ply)
-
-                    # store so we can play with later  
-                    self.lighting_vectors.append( [nrml, vec_to_light+f_cntr, angle] ) 
-
+    
                     # this is a terrible way to do it, but it looks pretty good for a first try
                     facecolor = (angle,angle,angle)
 
+                    # # store so we can play with later  
+                    self.lighting_vectors.append( [fcntr, nrml, vec_to_light, angle] )  
 
                 ##########
                 # define the scanline geometry, iterate each horizontal line of image

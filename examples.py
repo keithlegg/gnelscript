@@ -125,8 +125,8 @@ def lighting_test( lightpos, fnum):
     """
 
     obj = object3d()
-    obj.load('objects/monkey.obj')
-    #obj.load('objects/sphere2.obj')
+    #obj.load('objects/monkey.obj')
+    obj.load('objects/sphere2.obj')
     #obj.prim_quad(axis='z',  pos=(0,0,0), rot=(0,0,0)) 
     obj.points = obj.rotate_pts((-10,180,180),pts=obj.points)
     
@@ -156,14 +156,16 @@ def lighting_test( lightpos, fnum):
     # visualize the light and vectors to it 
     obj2.prim_cube(pos=lightpos,size=.05,linecolor=(255,0,0),rot=(0,0,0),pivot='world')
     
+    # lighting_vectors.append( [fcntr, nrml, vec_to_light, angle] )  
+
     for v in  ropr.lighting_vectors:   #( [nrml, vec_to_light, angle] ) 
-        # obj2.one_vec_to_obj( v[0] )  #unit length face normal, from world origin 
-        obj2.one_vec_to_obj( v[1] ) # vector from face center to light 
+        obj2.one_vec_to_obj( v[0] , pos=v[0])  # unit length face normal, from world origin 
+        #obj2.one_vec_to_obj( v[2] , pos=v[0] ) # vector from face center to light 
 
     obj2.save('render_info.obj')
 
 
-# lighting_test( (0, 10, -10), 1 )
+#lighting_test( (0, 10, -10), 1 )
 
 
 def animate_light_in_spherical_coords():

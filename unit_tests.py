@@ -523,6 +523,45 @@ def extract_by_copy_hack():
 
 #####################################################
 
+
+def model_geom_from_scratch_calc_normals(): 
+
+    obj   = object3d() # container for 3D object 
+    geom  = [[],[]]    # container for some random geometry (optional)
+
+    # add new geom  
+    polys = [(1,2,3,4) ]  #if you reverse the indexing, the normal inverts   
+    pts   = [ (1,1,0), (1,-1,0), (-1,-1,0), (-1,1,0) ]
+
+    # if you pass a geom container it will populate it 
+    # instead of putting the geometry into the object  
+    geom = obj.insert_polygons(polys, pts, geom=geom) 
+    # use insert to add geom to object 
+    obj.insert(geom) 
+
+    # get the data from face ID with helper functions 
+    # normal    = obj.get_face_normal(0)
+    # centroid  = obj.get_face_centroid(0) 
+
+    # ... or calculate them yourself.  
+    normal   = obj.calc_tripoly_normal(pts[0:3], True)
+    centroid = obj.poly_centroid(pts[0:3]) 
+
+    # see what we have done, or not done 
+    # obj.show() 
+    obj.save("new_geom.obj")
+
+    #######################
+    obj2 = object3d()
+    obj2.vectorlist_to_obj([normal.normal]) #, pos=centroid)
+    obj2.save("new_normal.obj")
+
+
+#model_geom_from_scratch_calc_normals() 
+
+
+#####################################################
+
 def load_build_another_from_normals(objectpath):
     """ load an object, 
         turn its normals into another line object, 
@@ -541,8 +580,10 @@ def load_build_another_from_normals(objectpath):
         normal = obj.get_face_normal(i)
         pos    = obj.get_face_centroid(i) 
 
+        #obj2.vectorlist_to_obj(edges[1])
+        #obj2.vectorlist_to_obj( [normal], pos)
+
         obj2.vectorlist_to_obj(edges[1])
-        obj2.vectorlist_to_obj( [normal], pos)
 
     obj2.save("edges.obj")
 
@@ -551,6 +592,7 @@ def load_build_another_from_normals(objectpath):
     ropr.save_image('simply_render.png')
 
 
+#load_build_another_from_normals('objects/sphere.obj')
 #####################################################
 
 
