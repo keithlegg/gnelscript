@@ -324,23 +324,7 @@ def circle_with_cube_all_pts():
 
 
 
-def rotate_around_vec():
-    obj = object3d()
 
-    #add first vector that will be rotated Y axis
-    obj.one_vec_to_obj( (0,1,0) ) 
-    ptgrp = obj.get_pt_grp()    
 
-    # construct a matrix to transform them 
-    rotated_m33 = matrix33()
-    m = rotated_m33.from_vec3( vec3(1,0,0) , -45) 
-    #rotated_m33.from_euler(90,0,0)
-    
-    # apply the matrix to the points in the model 
-    rotated_points = obj.apply_matrix_ptgrp(ptgrp, m33=m) 
-    obj.insert_pt_grp(rotated_points)
 
-    #add second vector to compare X axis *2 
-    obj.one_vec_to_obj( (2,0,0) )     
-    obj.save('vectorDaCleaner.obj')
 

@@ -258,6 +258,8 @@ class point_operator(object):
             pts_created.append( (npos[0], npos[1], npos[2]) )
         return pts_created
 
+
+
 ###############################################
 class polygon_operator(point_operator):
     """ polygon operator - should be called GEOM operator 
@@ -313,6 +315,39 @@ class polygon_operator(point_operator):
     def scribe(self, str):
         print(str)
 
+    ###############################################  
+    def z_sort(self, reverse=False):
+        """ return a sorted list of polygons by average Z coordinate 
+            lowest z value is (closest?) to camera 
+            this is pretty much a crappy hack for the renderer 
+            
+            DEBUG!
+                it gives the appearance of faces not being on top of each other
+                Will be replaced by a visible faces algorithm someday 
+                Be aware, the rendered renders EVERY polygon even when they are not seen
+        """
+        out = [];tmp = []
+
+        #build a list of [mean z, [points, polygon] ]
+        #sort by mean z value, and return the sorted list 
+        for p in self.polygons:
+            tri = []
+            for idx in p:
+                tri.append(self.points[idx-1])
+            mean = self.triangle_mean_z(tri)
+            tmp.append( (mean, p) )
+        
+        if reverse:
+            tmp.sort(reverse=True)
+        else:
+            tmp.sort()
+
+        for t in tmp:
+            out.append(t[1])    
+        
+        self.polygons = out
+        #return out
+
     ###############################################          
     def flush(self):
         """ set all geometry to a clean state """
@@ -325,7 +360,7 @@ class polygon_operator(point_operator):
         #self.exprt_pnt_idx   = 0 #pts ARE zero indexed (everything BUT .obj face idx's are)
 
     ###############################################  
-    def inspect(self, geom):
+    def inspect_geom(self, geom):
         """ analyze a GEOM object and see how it is constructed """
 
         if geom == None:
@@ -340,7 +375,7 @@ class polygon_operator(point_operator):
             print (' poly %s is type %s and has %s items '% (i,type(poly), len(poly)) )
 
     ###############################################  
-    def verify(self, geom):
+    def verify_geom(self, geom):
         """ check that indices are within range for data 
             
             WELL FORMED GEOM IS: 
@@ -436,6 +471,37 @@ class polygon_operator(point_operator):
            out_face.append(i+offset)
         return tuple(out_face)
 
+    ###############################################   
+    def centroid_pts(self, pts):
+        """ get 3D center of a list of points 
+            (average of a list of XYZ points) 
+        """
+
+        ptsx = []
+        ptsy = []
+        ptsz = []
+        for pt in pts:
+            ptsx.append(pt[0])
+            ptsy.append(pt[1])
+            ptsz.append(pt[2])            
+        #average them 
+        x = sum(ptsx)/len(ptsx)
+        y = sum(ptsy)/len(ptsy)
+        z = sum(ptsz)/len(ptsz)
+        return [x,y,z]
+
+    ###############################################  
+    def calc_tripoly_normal(self, three_pts, unitlen):
+        # create a vec3 from 3 points (3 or 4 sided polys)
+        v1=vec3();v2=vec3()
+        v3=vec3();v4=vec3()
+
+        v1.insert( three_pts[0] )
+        v2.insert( three_pts[1] )
+        v3.insert( three_pts[2] )  
+
+        return self.three_vec3_to_normal(v1, v2, v3, unitlen=unitlen)
+
     ###############################################
     def three_vec3_to_normal(self, v1, v2, v3, unitlen=False):
         """ take 3 vec3 objects and return a face normal """
@@ -450,6 +516,19 @@ class polygon_operator(point_operator):
         return f_nrml 
 
     ############################################### 
+    ############################################### 
+    # selection and inspection tools
+ 
+    def select_by_location(self, reindex=False):
+        """ UNFINISHED
+            select by angle 
+            direction to other things 
+            select by distance to other objects, points , etc 
+
+        """
+        pass
+
+    ###############################################         
     def sub_select(self, slice=None, ids=None):
         """ interface to get a list of IDS for whatever
             this is simply a fast way to genrate a bunch of sequential numbers 
@@ -691,7 +770,7 @@ class polygon_operator(point_operator):
         reindex_id = [] 
 
         # print('## $$$$ fid %s data %s '% ( fid,   polygr[fid-1]) ) 
-        if self.verify([polygr,pointgr]) is False:
+        if self.verify_geom([polygr,pointgr]) is False:
             return None 
 
         for v_id in polygr[fid-1]:
@@ -754,25 +833,6 @@ class polygon_operator(point_operator):
         pts = self.get_face_pts(fid)
         return self.centroid_pts(pts) 
 
-    ###############################################   
-    def centroid_pts(self, pts):
-        """ get 3D center of a list of points 
-            (average of a list of XYZ points) 
-        """
-
-        ptsx = []
-        ptsy = []
-        ptsz = []
-        for pt in pts:
-            ptsx.append(pt[0])
-            ptsy.append(pt[1])
-            ptsz.append(pt[2])            
-        #average them 
-        x = sum(ptsx)/len(ptsx)
-        y = sum(ptsy)/len(ptsy)
-        z = sum(ptsz)/len(ptsz)
-        return [x,y,z]
-
     ###############################################  
     """
     def get_face_edges2(self, fid, reindex=False):
@@ -792,171 +852,8 @@ class polygon_operator(point_operator):
         return [out_edge_ids, out_edge_pts]
     """
     ############################################### 
-    def insert_polygons(self, plyids, points, asnew_shell=True, geom=None):
-        """  
-             Insert NEW geometry into this object
-             
-             you can do it with the paired "plyids" + "points", or a geom object
-             A geom object is very similar in a self contained flat data object. 
-
-             plyids, points  - use these or geom, but not both at same time 
-             asnew_shell     - reindex the points and append, else keep the same indices
-             geom            - geom to insert into, instead of object.polygons, object.points
-                               if true, will return the geom object when done 
-
-        """
-
-        #if isinstance(points, vec3):
-        #    self.points.extend(points)
-        
-        ######### 
-        # append polygons 
-        for poly in plyids:
-            plytmp = []      
-            for idx in poly:
-                if not isinstance(idx, int):
-                    print('## insert_polygons, bad data for index ')
-                    return None 
-
-                if asnew_shell is True:
-                    plytmp.append(idx+self.numpts) # add the poly index to current count    
-                else:
-                    plytmp.append(idx)  
-
-            # do the insert operation                    
-            if geom is None: 
-                self.polygons.append( tuple(plytmp) ) 
-            else:
-                geom[0].append( tuple(plytmp) )
-
-        #########        
-        # append points,  only if new geom - just use python extend 
-        if asnew_shell is True:
-            if isinstance(points, tuple) or isinstance(points, list):
-                # do the insert operation
-                if geom is None:
-                    self.points.extend(points)
-                else:
-                    geom[1].extend(points)
-        
-        if geom is not None:
-            return geom
-
-    ###############################################  
-    def extrude_face(self, f_id, distance):
- 
-        geom  = self.sub_select_geom(ids=[f_id] , reindex=True)
-        nrmls = self.get_face_normal(fid=f_id, unitlen=True) 
-
-        nrmls = nrmls * distance 
-        #s_edges = self.get_face_edges(f_id) 
-        s_edges = self.get_geom_edges(geom)  
-        moved = self.xform_pts( nrmls, pts=geom[1])
-        e_edges = self.get_geom_edges([geom[0],moved]) 
-
-        # wall polygons 
-        # iterate one set of edges assuming they both have the same number 
-        for w in e_edges[0]:
-            wall_poly = []
-            wall_poly.extend(s_edges[1][w[0]-1]) # bottom half of quad polygon 
-            wall_poly.extend(e_edges[1][w[0]-1]) # top half of quad polygon                  
-            self.insert_polygons( [(1,2,4,3)], wall_poly, asnew_shell=True) 
-
-        # transformed face along normal (cap polygon) 
-        self.insert_polygons(geom[0], moved, asnew_shell=True) 
-
-    ###############################################  
-    def select_by_location(self, reindex=False):
-        """ UNFINISHED
-            select by angle 
-            direction to other things 
-            select by distance to other objects, points , etc 
-
-        """
-        pass
-
-    ###############################################  
-    def copy_sop(self, slice=None, ids=None, reindex=False, offset=(0,1,0), rot=(0,0,0), num=2, distance=2):
-        """ UNFINISHED ,  mimmic the copy SOP in Houdini 
-             
-            offset normal per face would be slick           
-        """
-
-
-        pids = self.sub_select( slice=slice, ids=ids) 
-
-        geom     = self.sub_select_geom( ids=pids, reindex=True )
-        tmpnrmls = self.get_face_normal(fid=pids, unitlen=True) 
-
-        #print("#### DEBUG ", tmpnrmls , ids )
-
-        for i in range(num):
-            for j in range(len(tmpnrmls)):
-                
-                # experimental transform on surface normal  
-                f_nrml = tmpnrmls[j]*distance #normal vector * magnitude 
-                amtx = f_nrml[0]
-                amty = f_nrml[1]
-                amtz = f_nrml[2]
-
-                # amtx = offset[0]
-                # amty = offset[1]
-                # amtz = offset[2]
-
-                ox = amtx * i  
-                oy = amty * i
-                oz = amtz * i
-
-                newpts = self.xform_pts((ox,oy,oz), geom[1] )
- 
-                ############# 
-                # DEBUG - this seems not right, grinds to a halt on 20+ polygons
-                self.insert_polygons(geom[0], newpts  ) 
-    
-    ###############################################  
-    def calc_tripoly_normal(self, three_pts, unitlen):
-        # create a vec3 from 3 points (3 or 4 sided polys)
-        v1=vec3();v2=vec3()
-        v3=vec3();v4=vec3()
-
-        v1.insert( three_pts[0] )
-        v2.insert( three_pts[1] )
-        v3.insert( three_pts[2] )  
-
-        return self.three_vec3_to_normal(v1, v2, v3, unitlen=unitlen)
-
-    ###############################################  
-    def z_sort(self, reverse=False):
-        """ return a sorted list of polygons by average Z coordinate 
-            lowest z value is (closest?) to camera 
-            this is pretty much a crappy hack for the renderer 
-            
-            DEBUG!
-                it gives the appearance of faces not being on top of each other
-                Will be replaced by a visible faces algorithm someday 
-                Be aware, the rendered renders EVERY polygon even when they are not seen
-        """
-        out = [];tmp = []
-
-        #build a list of [mean z, [points, polygon] ]
-        #sort by mean z value, and return the sorted list 
-        for p in self.polygons:
-            tri = []
-            for idx in p:
-                tri.append(self.points[idx-1])
-            mean = self.triangle_mean_z(tri)
-            tmp.append( (mean, p) )
-        
-        if reverse:
-            tmp.sort(reverse=True)
-        else:
-            tmp.sort()
-
-        for t in tmp:
-            out.append(t[1])    
-        
-        self.polygons = out
-        #return out
+    ############################################### 
+    # operators that modify geometry data and/or build new geom 
 
     ############################################### 
     def apply_matrix_pts(self, pts, m33=None, m44=None):
@@ -1088,6 +985,118 @@ class polygon_operator(point_operator):
 
         rotated = self.apply_matrix_ptgrp(ptgrp, m44=rot_matrix) 
         self.insert_pt_grp(rotated)
+
+    ###############################################          
+    def insert_polygons(self, plyids, points, asnew_shell=True, geom=None):
+        """  
+             Insert NEW geometry into this object
+             
+             you can do it with the paired "plyids" + "points", or a geom object
+             A geom object is very similar in a self contained flat data object. 
+
+             plyids, points  - use these or geom, but not both at same time 
+             asnew_shell     - reindex the points and append, else keep the same indices
+             geom            - geom to insert into, instead of object.polygons, object.points
+                               if true, will return the geom object when done 
+
+        """
+
+        #if isinstance(points, vec3):
+        #    self.points.extend(points)
+        
+        ######### 
+        # append polygons 
+        for poly in plyids:
+            plytmp = []      
+            for idx in poly:
+                if not isinstance(idx, int):
+                    print('## insert_polygons, bad data for index ')
+                    return None 
+
+                if asnew_shell is True:
+                    plytmp.append(idx+self.numpts) # add the poly index to current count    
+                else:
+                    plytmp.append(idx)  
+
+            # do the insert operation                    
+            if geom is None: 
+                self.polygons.append( tuple(plytmp) ) 
+            else:
+                geom[0].append( tuple(plytmp) )
+
+        #########        
+        # append points,  only if new geom - just use python extend 
+        if asnew_shell is True:
+            if isinstance(points, tuple) or isinstance(points, list):
+                # do the insert operation
+                if geom is None:
+                    self.points.extend(points)
+                else:
+                    geom[1].extend(points)
+        
+        if geom is not None:
+            return geom
+
+    ###############################################  
+    def extrude_face(self, f_id, distance):
+ 
+        geom  = self.sub_select_geom(ids=[f_id] , reindex=True)
+        nrmls = self.get_face_normal(fid=f_id, unitlen=True) 
+
+        nrmls = nrmls * distance 
+        #s_edges = self.get_face_edges(f_id) 
+        s_edges = self.get_geom_edges(geom)  
+        moved = self.xform_pts( nrmls, pts=geom[1])
+        e_edges = self.get_geom_edges([geom[0],moved]) 
+
+        # wall polygons 
+        # iterate one set of edges assuming they both have the same number 
+        for w in e_edges[0]:
+            wall_poly = []
+            wall_poly.extend(s_edges[1][w[0]-1]) # bottom half of quad polygon 
+            wall_poly.extend(e_edges[1][w[0]-1]) # top half of quad polygon                  
+            self.insert_polygons( [(1,2,4,3)], wall_poly, asnew_shell=True) 
+
+        # transformed face along normal (cap polygon) 
+        self.insert_polygons(geom[0], moved, asnew_shell=True) 
+
+    ###############################################  
+    def copy_sop(self, slice=None, ids=None, reindex=False, offset=(0,1,0), rot=(0,0,0), num=2, distance=2):
+        """ UNFINISHED ,  mimmic the copy SOP in Houdini 
+             
+            offset normal per face would be slick           
+        """
+
+
+        pids = self.sub_select( slice=slice, ids=ids) 
+
+        geom     = self.sub_select_geom( ids=pids, reindex=True )
+        tmpnrmls = self.get_face_normal(fid=pids, unitlen=True) 
+
+        #print("#### DEBUG ", tmpnrmls , ids )
+
+        for i in range(num):
+            for j in range(len(tmpnrmls)):
+                
+                # experimental transform on surface normal  
+                f_nrml = tmpnrmls[j]*distance #normal vector * magnitude 
+                amtx = f_nrml[0]
+                amty = f_nrml[1]
+                amtz = f_nrml[2]
+
+                # amtx = offset[0]
+                # amty = offset[1]
+                # amtz = offset[2]
+
+                ox = amtx * i  
+                oy = amty * i
+                oz = amtz * i
+
+                newpts = self.xform_pts((ox,oy,oz), geom[1] )
+ 
+                ############# 
+                # DEBUG - this seems not right, grinds to a halt on 20+ polygons
+                self.insert_polygons(geom[0], newpts  ) 
 
     ############################################### 
     def xform_pts(self, pos, pts=None, ptgrp=None):

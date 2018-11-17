@@ -6,8 +6,6 @@ from pygfx.math_ops import  *
 from pygfx.obj3d import  *
 
 
-
-
 #######################################################
 """
      "UNIT TESTS" are just examples that got put into long term storage.
@@ -20,37 +18,7 @@ from pygfx.obj3d import  *
 
 
 
-
-
-
-
-
-
-
-
-
 #######################################################
-
-
-#API  
-#get_face_geom
-
-
-
-# insert_polygons
-
-# get_geom_edges
-
-# get_face_edges
-
-# sub_select_geom
-
-# get_face_edges2
-
-# extrude_face
-
-
-
 def lighting_test( lightpos, fnum):
     """ run the scanline render with a lighting model 
         lighting model shades the polygons based on angle to a point
@@ -61,12 +29,14 @@ def lighting_test( lightpos, fnum):
            lighting_test( (0,10, 10), 1 )
 
     """
+    save_lighting_data_as_objects = True 
 
     obj = object3d()
-    #obj.load('objects/monkey.obj')
-    obj.load('objects/sphere.obj')
+    obj.load('objects/monkey.obj')
+    
+    #obj.load('objects/sphere.obj')
     #obj.prim_quad(axis='z',  pos=(0,0,0), rot=(0,0,0)) 
-    obj.points = obj.rotate_pts((-10,180,180),pts=obj.points)
+    #obj.points = obj.rotate_pts((-10,180,180),pts=obj.points)
     
     obj.triangulate() 
 
@@ -77,6 +47,7 @@ def lighting_test( lightpos, fnum):
 
     #################
     # some render properties you can tweak 
+    
     ## ropr.SHOW_EDGES = False
     ropr.SHOW_FACE_CENTER = False
     ## ropr.COLOR_MODE = 'flat'
@@ -89,18 +60,38 @@ def lighting_test( lightpos, fnum):
     ropr.scanline(obj, render_scale, lightpos=lightpos ) 
     ropr.save_image('simple_render_%s.png'%fnum)
 
-    #################
-    obj2 = object3d() 
-    # visualize the light and vectors to it 
-    obj2.prim_cube(pos=lightpos,size=.05,linecolor=(255,0,0),rot=(0,0,0),pivot='world')
-    
-    # lighting_vectors.append( [fcntr, nrml, vec_to_light, angle] )  
+    #################    
+    """ this is cool! 
+        we can take the data generated during the render process 
+        and dump it back out to a 3D object to verify it is working 
+        how we think it should be. 
 
-    for v in  ropr.lighting_vectors:   #( [nrml, vec_to_light, angle] ) 
-        obj2.one_vec_to_obj( v[0] , pos=v[0])  # unit length face normal, from world origin 
-        #obj2.one_vec_to_obj( v[2] , pos=v[0] ) # vector from face center to light 
+    """
+    if save_lighting_data_as_objects:
 
-    # obj2.save('render_info.obj')
+        #keep a copy of the triangulated mesh for reference 
+        obj.save('triangulated_mesh.obj')
+
+        # do a dump of the lighting data vectors as an OBJ file 
+        obj2 = object3d() 
+        obj2.prim_cube(pos=lightpos,size=.05,linecolor=(255,0,0),rot=(0,0,0),pivot='world')
+        
+        LV = ropr.lighting_vectors
+
+        print( "## debug size of lighting vectors is %s "%len( LV ) ) 
+        # lighting_vectors format is [face_id, fcntr, nrml, vec_to_light, angle] 
+        for v in  LV:    
+            obj2.one_vec_to_obj( v[3] , pos=v[1] ) # vector from face center to light 
+        obj2.save('light_to_face_vectors.obj')
+        
+        obj2.flush() 
+
+        for v in  LV:    
+            obj2.one_vec_to_obj( v[2] , pos=v[1])  # unit length face normal, from world origin 
+        obj2.save('face_normal_vectors.obj')
+
+
+#lighting_test( (0,10, 10), 1 )
 
 
 def animate_light_in_spherical_coords():
@@ -123,10 +114,6 @@ def animate_light_in_spherical_coords():
             fnum+=1 
 
 #######################################################
-
-
-
-
 def test_copysop():
     """ copy SOP is a subselect, copy and transform the result
         ala Houdini 
@@ -139,12 +126,21 @@ def test_copysop():
     obj.copy_sop(slice=(1,10), offset=(0,2,0), num=5, distance=.75)
     obj.save('stax.obj')
 
-
-
 #####################################################
-
-
 def test_rotate_points():
+    """ simple example to use one of the 3 standard transform tools 
+        
+        the 3 tools are:
+            xfrom_pts , rotate_pts, scale_pts 
+
+        rotate and scale use matrices internally
+        transform uses simple addition 
+
+        the transform tools can be used on 
+             a point group
+             a list of points
+             the whole object (as a pointgroup)
+    """
     obj = object3d()
     obj.load('objects/monkey.obj')
     #pts = [(2,2,2), (4,4,4), (8,8,8)]
@@ -152,10 +148,7 @@ def test_rotate_points():
     #print(pts2)
     obj.save('foo.obj')
 
-
-
 #####################################################
-
 def modify_part_of_an_object():
     """ extract a slice of polygons
         spatially trasform them
@@ -173,7 +166,6 @@ def modify_part_of_an_object():
     obj2.save('sphere_modify.obj')
 
 #####################################################
-
 def triangulate_test():
     """ UNFINISHED - 
         test stacks of operations, 
@@ -186,7 +178,6 @@ def triangulate_test():
     obj.save('triangulated.obj')
 
 #####################################################
-
 def multi_face_triangulate_offset():
     """ broken - DEBUG """
     
@@ -203,8 +194,6 @@ def multi_face_triangulate_offset():
     obj.save("durian_fruit.obj")
 
 #####################################################
-
-
 def circle_with_cube_all_pts():
     """ BROKEN - FIX THIS 
         make a circle with a rotated cube at each point 
@@ -223,10 +212,7 @@ def circle_with_cube_all_pts():
         obj.insert(tmp)  
     obj.save("cubey.obj")
 
-
 #####################################################
-
-
 def spherical_to_point():
     mu = math_util() 
     obj = object3d()
@@ -240,10 +226,7 @@ def spherical_to_point():
 
     obj.save('ball_of_cubes.obj') 
 
-
-
 #####################################################
-
 def pass_matrix_to_render():
     """ use a 3X3 or 4X4 matrix to adjust a render 
         attempt to "visualize" a matrix 
@@ -256,10 +239,7 @@ def pass_matrix_to_render():
     m44.from_euler(45,45,0)
     ropr.render_matrix_obj( None, m44, 3, 100, 'custom_render.png' , obj      )
 
-
-
 #####################################################
-
 def object_primitives():
     """ demo various built in primitive objects """
 
@@ -311,11 +291,8 @@ def object_primitives():
     obj.save("new_cone.obj")
     if do_flush:
         obj.flush()
-
 #object_primitives() 
-
 #####################################################
-
 def three_renderers():
     """ example of the 3 main ways to render  
             - single object 
@@ -365,10 +342,7 @@ def three_renderers():
     #ropr.scanline(obj, render_scale) 
     #ropr.save_image('simple_render.png')
 
-
-
 #####################################################
-
 def angle_between_vectors():
     v1 = vec3(1, 0, 0)
     v2 = vec3(0, 1, 0)
@@ -377,10 +351,7 @@ def angle_between_vectors():
     print( mu.rtd(v2.angle_between(v1))        ) 
     print( mu.rtd(v3.np_angle_between(v1, v2)) )
 
-
-
-
-
+#####################################################
 def build_orthogonal_vector():
     obj = object3d()
     com = vec3() #container for commands
@@ -408,11 +379,6 @@ def build_orthogonal_vector():
 
     obj.save('perpendicular.obj')
 
-
-
-
-
-
 #####################################################
 def test_geom_operator_pass_inout(): 
     """ test of get face 
@@ -434,15 +400,13 @@ def test_geom_operator_pass_inout():
 
 
     #run the output through a verify and inspect     
-    #if obj.verify(geom3):
+    #if obj.verify_geom(geom3):
     #    print('## geom - object passes all checks ')     
-    #    obj.inspect(geom3)
+    #    obj.inspect_geom(geom3)
    
     print(geom) 
 
-
 #####################################################
-
 def test_subsel_point_transform(): 
     """ example of translate, rotate, scale of a point group 
         translate tools work with "ptgroups", or raw points 
@@ -461,11 +425,7 @@ def test_subsel_point_transform():
 
     obj.save('ptgrp.obj')
 
-
-
-
 #####################################################
-
 def test_point_transform(): 
     """ example of translate, rotate, scale of raw points 
         translate tools work with "ptgroups", or raw points
@@ -482,11 +442,7 @@ def test_point_transform():
 
     obj.save('ptgrp.obj')
 
-
-
-
 #####################################################
-     
 def slice_extract_and_makenew():
     """ load two models, extract parts of them using the subselect tool 
         subselect grabs polys and points at the same time, with option to reindex
@@ -512,9 +468,7 @@ def slice_extract_and_makenew():
 
     obj2.save('new.obj')
 
-
 #####################################################
-
 def model_geom_from_scratch(): 
     """ build a new polygon object in memory from points 
         then insert it into an object and export  
@@ -547,7 +501,6 @@ def model_geom_from_scratch():
     obj.save("my_new_object.obj")
 
 #####################################################
-
 def extract_by_copy_hack():
     """ *slightly* higher level than raw geom 
         use the lookup util to get the pt ids by face index 
@@ -575,11 +528,7 @@ def extract_by_copy_hack():
 
     obj2.save('kube_modify.obj')
 
-
-
-
 #####################################################
-
 def model_obj_from_scratch(): 
     """ build a new polygon object from points directly into an object """ 
 
@@ -602,10 +551,7 @@ def model_obj_from_scratch():
 
     obj.save("my_new_object.obj")
 
-
 #####################################################
-
-
 def model_geom_from_scratch_calc_normals(): 
 
     obj   = object3d() # container for 3D object 
@@ -638,12 +584,9 @@ def model_geom_from_scratch_calc_normals():
     obj2.vectorlist_to_obj([normal.normal]) #, pos=centroid)
     obj2.save("new_normal.obj")
 
-
 #model_geom_from_scratch_calc_normals() 
 
-
 #####################################################
-
 def load_build_another_from_normals(objectpath):
     """ load an object, 
         turn its normals into another line object, 
@@ -673,14 +616,14 @@ def load_build_another_from_normals(objectpath):
     ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
     ropr.save_image('simply_render.png')
 
-
-#load_build_another_from_normals('objects/sphere.obj')
-
 #####################################################
-
-
-
 def face_extrude():
+    """ brure force test of face extrude 
+        extrudes all faces in a polygon object 
+        also will display a cheapo test "progress bar"
+        because it can be slow 
+    """
+
     obj = object3d()
     obj.load('objects/monkey.obj')
    
@@ -693,6 +636,30 @@ def face_extrude():
         obj.extrude_face(i, 10/i)
 
     obj.save('extrudez.obj')
+#####################################################
+def rotate_around_vec():
+    """ test of function to generate a matrix 
+        that will rotate around a vector 
 
+        see also matrix.from_euler()
 
+    """
 
+    obj = object3d()
+
+    #add first vector that will be rotated Y axis
+    obj.one_vec_to_obj( (0,1,0) ) 
+    ptgrp = obj.get_pt_grp()    
+
+    # construct a matrix to transform them 
+    rotated_m33 = matrix33()
+    m = rotated_m33.from_vec3( vec3(1,0,0) , -45) 
+    
+    
+    # apply the matrix to the points in the model 
+    rotated_points = obj.apply_matrix_ptgrp(ptgrp, m33=m) 
+    obj.insert_pt_grp(rotated_points)
+
+    #add second vector to compare X axis *2 
+    obj.one_vec_to_obj( (2,0,0) )     
+    obj.save('vectorDaCleaner.obj')

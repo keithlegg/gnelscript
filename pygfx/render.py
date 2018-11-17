@@ -673,7 +673,7 @@ class simple_render(object):
 
         ###############################################
          
-        cnt = 0
+        fac_id = 0 #iterate so we can track face id 
 
         for ply in polydata[1]:
             num_idx = len(ply) # number of vertices per poly 
@@ -686,7 +686,6 @@ class simple_render(object):
 
                 for pt in range(num_idx):
                     idx = int(ply[pt])  
-                    #print('########### precalced normal ', self.po)
                     drwply.append( polydata[0][idx-1] )
 
                 #build up line data for three sides of triangle
@@ -708,8 +707,14 @@ class simple_render(object):
                 ##########                ##########   
                 #add some color to the polygons here  
                     
-                if self.COLOR_MODE=='normal':    
-                    obj.calc_face_normals()
+                if self.COLOR_MODE=='normal':  
+                    # DEBUG 
+                    # this whole thing seems broken
+                    # it would be better to calc the normal while we have the face ! 
+                    
+                    """
+                    # obj.calc_face_normals()
+
                     n2 = polydata[2][idx-1]
                     n2 = vec3(n2[0],n2[1],n2[2])
                     n2 = (  n2.angle_between( vec3(0,0,1)) ) 
@@ -720,7 +725,9 @@ class simple_render(object):
                         facecolor = ( 255,0,0 )
                     else:    
                         facecolor = ( 0,0,255 )
-             
+                    """
+                    facecolor = (128,0,0)
+
                 if self.COLOR_MODE=='zdepth':                 
                     #COLOR BY Z DISTANCE FROM CAMERA
                     zgrad = int(drwply[0][2]*200)
@@ -738,35 +745,33 @@ class simple_render(object):
 
                     """ 
                     if isinstance(lightpos, tuple):
+                        # store position of "light" in a vec3 object 
+                        # it is a position, not a vector but this allows the tools to be used on it 
                         lightpos = vec3(lightpos[0],lightpos[1],lightpos[2])   
-
-                    #light_ply = []
-                    #for idx in ply:
-                    #    light_ply.append( polydata[0][idx-1] )
-
-                    #polydata[0][idx-1]
                     
                     # get the center of face to move light vector to 
                     f_cntr = obj.centroid_pts(drwply)
-                    fcntr = vec3(f_cntr[0],f_cntr[1],f_cntr[2])
-
-                    # build the face normal 
-                    nrml =  obj.calc_tripoly_normal( drwply, True) 
                     
-                    #build a vector between normal and light 
+                    # put face centroid point into a vec3 object 
+                    fcntr = vec3(f_cntr[0],f_cntr[1],f_cntr[2])
+                    
+                    # build the face normal vector
+                    nrml =  obj.calc_tripoly_normal( drwply, unitlen=False) 
+                    
+                    # build a vector between face center and light position  
                     vec_to_light = fcntr.between(lightpos) 
-   
+     
+                    #--------
                     # calculate the angle between face and light vectors 
                     # treating the 3D light position as a vector
                     light_angle = (  nrml.angle_between( vec_to_light ) )
-                    
                     angle  = int(mu().rtd(light_angle ))
-    
                     # this is a terrible way to do it, but it looks pretty good for a first try
                     facecolor = (angle,angle,angle)
 
-                    # # store so we can play with later  
-                    self.lighting_vectors.append( [fcntr, nrml, vec_to_light, angle] )  
+                    #--------
+                    # store lighting vectors that were calulated so we can play with them later  
+                    self.lighting_vectors.append( [fac_id, fcntr, nrml, vec_to_light, angle] )  
 
                 ##########
                 # define the scanline geometry, iterate each horizontal line of image
@@ -819,6 +824,8 @@ class simple_render(object):
                     output.connect_the_dots( l2, (0,255,0), 1) 
                     output.connect_the_dots( l3, (0,255,0), 1)                 
 
+                fac_id += 1 #step the face id 
+                
         ## ## ## ## ##   
         #output.save_file('scanlinez_.png') 
 
