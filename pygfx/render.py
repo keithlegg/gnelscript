@@ -672,8 +672,6 @@ class simple_render(object):
         #output.vert_line( res_x/2, (255,0,255) ) 
 
         ###############################################
-         
-        fac_id = 0 #iterate so we can track face id 
 
         for ply in polydata[1]:
             num_idx = len(ply) # number of vertices per poly 
@@ -771,7 +769,7 @@ class simple_render(object):
 
                     #--------
                     # store lighting vectors that were calulated so we can play with them later  
-                    self.lighting_vectors.append( [fac_id, fcntr, nrml, vec_to_light, angle] )  
+                    self.lighting_vectors.append( [fcntr, nrml, vec_to_light, angle, ply ] )  
 
                 ##########
                 # define the scanline geometry, iterate each horizontal line of image
@@ -823,8 +821,6 @@ class simple_render(object):
                     output.connect_the_dots( l1, (0,255,0), 1) 
                     output.connect_the_dots( l2, (0,255,0), 1) 
                     output.connect_the_dots( l3, (0,255,0), 1)                 
-
-                fac_id += 1 #step the face id 
                 
         ## ## ## ## ##   
         #output.save_file('scanlinez_.png') 

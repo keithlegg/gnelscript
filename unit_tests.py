@@ -19,7 +19,7 @@ from pygfx.obj3d import  *
 
 
 #######################################################
-def lighting_test( lightpos, fnum):
+def lighting_test( lightpos, fnum=1):
     """ run the scanline render with a lighting model 
         lighting model shades the polygons based on angle to a point
         the point becomes a cheap lighting simulation 
@@ -47,7 +47,7 @@ def lighting_test( lightpos, fnum):
 
     #################
     # some render properties you can tweak 
-    
+
     ## ropr.SHOW_EDGES = False
     ropr.SHOW_FACE_CENTER = False
     ## ropr.COLOR_MODE = 'flat'
@@ -78,20 +78,43 @@ def lighting_test( lightpos, fnum):
         
         LV = ropr.lighting_vectors
 
-        print( "## debug size of lighting vectors is %s "%len( LV ) ) 
-        # lighting_vectors format is [face_id, fcntr, nrml, vec_to_light, angle] 
+        # print( "## debug size of lighting vectors is %s "%len( LV ) ) 
+
+        # lighting_vectors format is:
+        # fcntr,   nrml,   vec_to_light,   angle,  poly (polygon_indices)     
+
+        #----
         for v in  LV:    
-            obj2.one_vec_to_obj( v[3] , pos=v[1] ) # vector from face center to light 
+            # vector from face center to light
+            obj2.one_vec_to_obj( v[2] , pos=v[0] )  
         obj2.save('light_to_face_vectors.obj')
-        
         obj2.flush() 
 
-        for v in  LV:    
-            obj2.one_vec_to_obj( v[2] , pos=v[1])  # unit length face normal, from world origin 
+        #----
+        for v in  LV:  
+            # unit length face normal, from world origin   
+            obj2.one_vec_to_obj( v[1] , pos=v[0])  
         obj2.save('face_normal_vectors.obj')
+        obj2.flush() 
+
+        #----
+        # experiment to extract the parts of the model that are facing the light 
+        # it works!!
+        threshold = 75  #angle to determine which face to keep or not 
+
+        points = []
+        polys  = []
+        for v in  LV:  
+            if v[3]<threshold:  
+                polys.append(  v[4] ) 
+
+        obj2.insert_polygons(polys, obj.points) 
+        obj2.save('visible_faces.obj')
+        obj2.flush() 
 
 
-#lighting_test( (0,10, 10), 1 )
+
+#lighting_test( (10,-3, 0) )
 
 
 def animate_light_in_spherical_coords():
