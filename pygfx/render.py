@@ -747,7 +747,7 @@ class simple_render(object):
                     #polydata[0][idx-1]
                     
                     # get the center of face to move light vector to 
-                    f_cntr = obj.poly_centroid(drwply)
+                    f_cntr = obj.centroid_pts(drwply)
                     fcntr = vec3(f_cntr[0],f_cntr[1],f_cntr[2])
 
                     # build the face normal 
@@ -809,7 +809,7 @@ class simple_render(object):
 
                 if self.SHOW_FACE_CENTER:
                     #draw face normal 
-                    cn =  obj.poly_centroid(drwply) 
+                    cn =  obj.centroid_pts(drwply) 
                     cntr_pt = ( (cn[0]*scale)+center[0], (cn[1]*scale)+center[1] ) 
                     output.draw_fill_circle( cntr_pt[0], cntr_pt[1], 2, (255,255,20) )
 

@@ -222,9 +222,8 @@ class point_operator(object):
                 tmp.append(y)
         return tmp
 
-
     ############################################### 
-    def get_mean_z(self, triangle):
+    def triangle_mean_z(self, triangle):
         z1 = triangle[0][2]
         z2 = triangle[1][2]
         z3 = triangle[2][2]
@@ -238,7 +237,6 @@ class point_operator(object):
         for pt in points:
             newpts.append( (pt[0], pt[1], 0)   )
         return newpts
-
 
     ############################################### 
     def locate_pt_along3d(self, x1, y1, z1, x2, y2, z2, num):
@@ -311,7 +309,11 @@ class polygon_operator(point_operator):
         self.exprt_ply_idx   = 1     # obj is NOT zero indexed
         #self.exprt_pnt_idx   = 0    # pts ARE zero indexed (everything BUT .obj face idx's are)
 
+    ###############################################  
+    def scribe(self, str):
+        print(str)
 
+    ###############################################          
     def flush(self):
         """ set all geometry to a clean state """
 
@@ -322,6 +324,70 @@ class polygon_operator(point_operator):
         self.exprt_ply_idx   = 1 #obj is NOT zero indexed
         #self.exprt_pnt_idx   = 0 #pts ARE zero indexed (everything BUT .obj face idx's are)
 
+    ###############################################  
+    def inspect(self, geom):
+        """ analyze a GEOM object and see how it is constructed """
+
+        if geom == None:
+            print('## inspect: error no geometry ')
+            return None 
+
+        print('## geom has %s top level items '%len(geom) )
+        print('## geom has %s polygons        '%len(geom[0]) )
+        print('## geom has %s points          '%len(geom[1]) )
+
+        for i, poly in enumerate(geom[0]):
+            print (' poly %s is type %s and has %s items '% (i,type(poly), len(poly)) )
+
+    ###############################################  
+    def verify(self, geom):
+        """ check that indices are within range for data 
+            
+            WELL FORMED GEOM IS: 
+
+            [ 
+                [(FIDS), (FIDS)], 
+                [(PT),(PT),(PT)] 
+            ]
+ 
+        """
+        
+        verbose = True
+
+        if geom is None:
+            if verbose:
+                print('## debug verify geom is none ')
+            return False 
+
+        if not isinstance(geom[0],list) and not isinstance(geom[0],tuple):
+            if verbose:
+                print('## debug verify - bad data type first top elements ')
+                print( type(geom[0]) ) 
+            return False 
+
+        if not isinstance(geom[1],list) and not isinstance(geom[1],tuple):
+            if verbose:
+                print('## debug verify - bad data type first top elements ')
+                print( type(geom[1]) ) 
+            return False 
+
+        if geom[0] is None or geom[1] is None:
+            if verbose:
+                print('## debug verify geom element is none ')
+            return False 
+
+        if len(geom)!=2:
+            if verbose:
+                print('## debug verify geom does not have 2 items ')            
+            return False 
+ 
+        for ply in geom[0]:
+            for pid in ply:
+                if int(pid)>len(geom[1]):
+                    if verbose:
+                        print('## debug verify geom contains invalid index ')    
+                    return False       
+        return True 
 
     ############################################### 
     #def grow_selection(self, ptgrp, facgrp, u_num, v_num):
@@ -336,15 +402,6 @@ class polygon_operator(point_operator):
     ###############################################  
     #def poly_seperate(self, obj):
     #    """ check for geometry that is not connected, if any found, break it off """
-
-
-    ###############################################  
-    ###############################################  
-    ###############################################  
-    # stupid little helpers, knick knacks, tin toys 
-
-    def scribe(self, str):
-        print(str)
 
     ###############################################     
     def calc_bbox(self, prgrp=None, facgrp=None ):
@@ -366,10 +423,10 @@ class polygon_operator(point_operator):
     #def get_obj_centroid(self, prgrp=None, facgrp=None):
     #    pass
 
-
     ############################################### 
     def _reindex_ply(self, f_idx, offset):
-        """ UNTESTED 
+        """ only used with obj.append() 
+
             take a tuple of face indexes and re-index to offset+value
             not used yet, but may be a good thing to have 
         """ 
@@ -395,6 +452,8 @@ class polygon_operator(point_operator):
     ############################################### 
     def sub_select(self, slice=None, ids=None):
         """ interface to get a list of IDS for whatever
+            this is simply a fast way to genrate a bunch of sequential numbers 
+            mostly for indexing a punch of things like faces, etc 
         """
         pids = []
   
@@ -486,7 +545,7 @@ class polygon_operator(point_operator):
 
     ###############################################  
     def get_pt_ids(self, fids=None):
-        """ lookup point indices from a listf of face IDs 
+        """ lookup point indices (poly) from a list of face IDs 
         """
         out_poly = [] 
         for i in fids:
@@ -535,10 +594,11 @@ class polygon_operator(point_operator):
             a point group is a list of  
 
             [ [ID, (X,Y,Z)], ... ] 
-            
+
             we can process them and put them back where 
             we found them in the model, allowing for modification of partial or whole objects 
 
+            if nothing is specified, get all the points from self
 
         """
 
@@ -558,7 +618,8 @@ class polygon_operator(point_operator):
 
     ###############################################  
     def get_face_group(self, slice=None, ids=None):
-        """ get a face group, a list of faces and IDS so 
+        """ UNFINISHED 
+            get a face group, a list of faces and IDS so 
             we can process them and put them back 
 
             data format [ [ID, face] ]
@@ -601,10 +662,120 @@ class polygon_operator(point_operator):
         return self.get_geom_edges(geom)
 
     ###############################################  
-    def get_face_edges2(self, fid, reindex=False):
-        """ UNTESTED 
-            return [[VTX_IDS], [VTX_PTS]]
+    def get_face_geom(self, fid,  reindex=False, geom=None):
+        """ lookup and return the polygon indices and points for a single polygon 
+
+            reindex - if True  - renumber the new polygon indices startring at 1, 
+                      if False - retain the oringial numbering 
+
+            geom - act on a geom obj passed in, or on self
         """
+
+        tmp_pts = []
+       
+        
+        # validate inputs 
+        #if fid<1 or fid > self.numply:
+        #    print('# get_face_geom- bad face index : %s'%fid)
+        #    return None
+
+        # decide what the input is, fallback on self.poly/self.points  
+        if geom is None:
+            polygr  = self.polygons
+            pointgr = self.points
+        else:
+            polygr  = geom[0]  #faces and polys common indexed    
+            pointgr = geom[1]        
+
+        # get the data we want         
+        reindex_id = [] 
+
+        # print('## $$$$ fid %s data %s '% ( fid,   polygr[fid-1]) ) 
+        if self.verify([polygr,pointgr]) is False:
+            return None 
+
+        for v_id in polygr[fid-1]:
+            # keep a count of points stored to use as new index
+            reindex_id.append(int(self.exprt_ply_idx ))
+            # store points that are indexed in geom 
+            tmp_pts.append(pointgr[v_id-1]) #data is NOT zero index but all else IS 
+            self.exprt_ply_idx +=1
+
+        # geom is always [ [(poly),..], [(point),(point),...]  ]
+        if reindex is False:
+            return [[polygr[fid-1]]     , tmp_pts]
+        if reindex is True:
+            return [[tuple(reindex_id)] , tmp_pts]
+
+    ###############################################  
+    def get_face_normal(self, fid=None, unitlen=False ):
+        """ lookup a face(s) and calculate a face normal(s) for it  
+            only tested for 3 or 4 sided polygon 
+            also returns the center position of a face
+
+            returns vec3 type 
+
+            DEBUG - the need for a standardized interface for slice, fid lookup is very apparent 
+        """
+
+        if fid == None:
+            print("## error - need face id(s) to get normal")
+            return None 
+
+        if isinstance(fid, int):
+            fids = [fid]
+        if isinstance(fid,list):
+            fids = fid
+ 
+        out = []
+
+        for f in fids:    
+            tmp = self.get_face_geom(f) #returns [fidx, pts] 
+            poly = tmp[0][0] #poly = face indices  
+
+            nrmlvec = self.calc_tripoly_normal( (self.points[poly[0]-1],
+                                                 self.points[poly[1]-1],
+                                                 self.points[poly[2]-1]),
+                                                 unitlen )
+              
+            out.append( nrmlvec )
+
+        if isinstance(fid, int):
+            return out[0]
+        else:
+            return out   
+
+    ###############################################        
+    def get_face_centroid(self, fid):
+        """ lookup a face by id, return a 3d point representing the center
+            wont work on nasty concave bad topology
+            if the face is roundish, symetical, etc, it will work okay 
+        """
+        pts = self.get_face_pts(fid)
+        return self.centroid_pts(pts) 
+
+    ###############################################   
+    def centroid_pts(self, pts):
+        """ get 3D center of a list of points 
+            (average of a list of XYZ points) 
+        """
+
+        ptsx = []
+        ptsy = []
+        ptsz = []
+        for pt in pts:
+            ptsx.append(pt[0])
+            ptsy.append(pt[1])
+            ptsz.append(pt[2])            
+        #average them 
+        x = sum(ptsx)/len(ptsx)
+        y = sum(ptsy)/len(ptsy)
+        z = sum(ptsz)/len(ptsz)
+        return [x,y,z]
+
+    ###############################################  
+    """
+    def get_face_edges2(self, fid, reindex=False):
         tmp = self.get_face_geom(fid)  # [poly idx, pt data] 
 
         out_edge_pts = []
@@ -619,7 +790,7 @@ class polygon_operator(point_operator):
             out_edge_pts.append( (self.points[poly[i-1]-1], self.points[poly[i]-1] ) ) 
 
         return [out_edge_ids, out_edge_pts]
-
+    """
     ############################################### 
     def insert_polygons(self, plyids, points, asnew_shell=True, geom=None):
         """  
@@ -741,117 +912,7 @@ class polygon_operator(point_operator):
                 ############# 
                 # DEBUG - this seems not right, grinds to a halt on 20+ polygons
                 self.insert_polygons(geom[0], newpts  ) 
-
-    ###############################################  
-    def inspect(self, geom):
-        """ analyze a GEOM object and see how it is constructed """
-
-        if geom == None:
-            print('## inspect: error no geometry ')
-            return None 
-
-        print('## geom has %s top level items '%len(geom) )
-        print('## geom has %s polygons        '%len(geom[0]) )
-        print('## geom has %s points          '%len(geom[1]) )
-
-        for i, poly in enumerate(geom[0]):
-            print (' poly %s is type %s and has %s items '% (i,type(poly), len(poly)) )
-
-    ###############################################  
-    def verify(self, geom):
-        """ check that indices are within range for data 
-            
-            WELL FORMED GEOM IS: 
-
-            [ 
-                [(FIDS), (FIDS)], 
-                [(PT),(PT),(PT)] 
-            ]
- 
-        """
-        
-        verbose = True
-
-        if geom is None:
-            if verbose:
-                print('## debug verify geom is none ')
-            return False 
-
-        if not isinstance(geom[0],list) and not isinstance(geom[0],tuple):
-            if verbose:
-                print('## debug verify - bad data type first top elements ')
-                print( type(geom[0]) ) 
-            return False 
-
-        if not isinstance(geom[1],list) and not isinstance(geom[1],tuple):
-            if verbose:
-                print('## debug verify - bad data type first top elements ')
-                print( type(geom[1]) ) 
-            return False 
-
-        if geom[0] is None or geom[1] is None:
-            if verbose:
-                print('## debug verify geom element is none ')
-            return False 
-
-        if len(geom)!=2:
-            if verbose:
-                print('## debug verify geom does not have 2 items ')            
-            return False 
- 
-        for ply in geom[0]:
-            for pid in ply:
-                if int(pid)>len(geom[1]):
-                    if verbose:
-                        print('## debug verify geom contains invalid index ')    
-                    return False       
-        return True 
-
-    ###############################################  
-    def get_face_geom(self, fid,  reindex=False, geom=None):
-        """ lookup and return the polygon indices and points for a single polygon 
-
-            reindex - if True  - renumber the new polygon indices startring at 1, 
-                      if False - retain the oringial numbering 
-
-            geom - act on a geom obj passed in, or on self
-        """
-
-        tmp_pts = []
-       
-        
-        # validate inputs 
-        #if fid<1 or fid > self.numply:
-        #    print('# get_face_geom- bad face index : %s'%fid)
-        #    return None
-
-        # decide what the input is, fallback on self.poly/self.points  
-        if geom is None:
-            polygr  = self.polygons
-            pointgr = self.points
-        else:
-            polygr  = geom[0]  #faces and polys common indexed    
-            pointgr = geom[1]        
-
-        # get the data we want         
-        reindex_id = [] 
-
-        # print('## $$$$ fid %s data %s '% ( fid,   polygr[fid-1]) ) 
-        if self.verify([polygr,pointgr]) is False:
-            return None 
-
-        for v_id in polygr[fid-1]:
-            # keep a count of points stored to use as new index
-            reindex_id.append(int(self.exprt_ply_idx ))
-            # store points that are indexed in geom 
-            tmp_pts.append(pointgr[v_id-1]) #data is NOT zero index but all else IS 
-            self.exprt_ply_idx +=1
-
-        # geom is always [ [(poly),..], [(point),(point),...]  ]
-        if reindex is False:
-            return [[polygr[fid-1]]     , tmp_pts]
-        if reindex is True:
-            return [[tuple(reindex_id)] , tmp_pts]
+    
     ###############################################  
     def calc_tripoly_normal(self, three_pts, unitlen):
         # create a vec3 from 3 points (3 or 4 sided polys)
@@ -865,69 +926,15 @@ class polygon_operator(point_operator):
         return self.three_vec3_to_normal(v1, v2, v3, unitlen=unitlen)
 
     ###############################################  
-    def get_face_normal(self, fid=None, unitlen=False ):
-        """ lookup a face(s) and calculate a face normal(s) for it  
-            only tested for 3 or 4 sided polygon 
-            also returns the center position of a face
-
-            returns vec3 type 
-
-            DEBUG - the need for a standardized interface for slice, fid lookup is very apparent 
-        """
-
-        if fid == None:
-            print("## error - need face id(s) to get normal")
-            return None 
-
-        if isinstance(fid, int):
-            fids = [fid]
-        if isinstance(fid,list):
-            fids = fid
- 
-        out = []
-
-        for f in fids:    
-            tmp = self.get_face_geom(f) #returns [fidx, pts] 
-            poly = tmp[0][0] #poly = face indices  
-
-            nrmlvec = self.calc_tripoly_normal( (self.points[poly[0]-1],
-                                                 self.points[poly[1]-1],
-                                                 self.points[poly[2]-1]),
-                                                 unitlen )
-              
-            out.append( nrmlvec )
-
-        if isinstance(fid, int):
-            return out[0]
-        else:
-            return out   
-
-    ###############################################        
-    def get_face_centroid(self, fid):
-        pts = self.get_face_pts(fid)
-        return self.poly_centroid(pts) 
-
-    ###############################################   
-    def poly_centroid(self, pts):
-        """ get 3D center of object (average XYZ point) """
-
-        ptsx = []
-        ptsy = []
-        ptsz = []
-        for pt in pts:
-            ptsx.append(pt[0])
-            ptsy.append(pt[1])
-            ptsz.append(pt[2])            
-        #average them 
-        x = sum(ptsx)/len(ptsx)
-        y = sum(ptsy)/len(ptsy)
-        z = sum(ptsz)/len(ptsz)
-        return [x,y,z]
-
-    ###############################################  
     def z_sort(self, reverse=False):
         """ return a sorted list of polygons by average Z coordinate 
             lowest z value is (closest?) to camera 
+            this is pretty much a crappy hack for the renderer 
+            
+            DEBUG!
+                it gives the appearance of faces not being on top of each other
+                Will be replaced by a visible faces algorithm someday 
+                Be aware, the rendered renders EVERY polygon even when they are not seen
         """
         out = [];tmp = []
 
@@ -937,7 +944,7 @@ class polygon_operator(point_operator):
             tri = []
             for idx in p:
                 tri.append(self.points[idx-1])
-            mean = self.get_mean_z(tri)
+            mean = self.triangle_mean_z(tri)
             tmp.append( (mean, p) )
         
         if reverse:
@@ -956,7 +963,7 @@ class polygon_operator(point_operator):
         """ batch mutliply points by a matrix 
             used for translate, rotate, and scaling. 
             
-            Can be used for many other experiments 
+            Can be used for many other things as well.  
 
         """
       
@@ -974,11 +981,10 @@ class polygon_operator(point_operator):
     
     ############################################### 
     def apply_matrix_ptgrp(self, ptgrp, m33=None, m44=None):
-        """ batch mutliply a point group by a matrix 
-            used for translate, rotate, and scaling. 
-            
-            Can be used for many other experiments 
+        """ same as apply_matrix_pts() but for point groups 
 
+            batch mutliply a point group by a matrix 
+            used for translate, rotate, and scaling. 
         """
       
         pt_ids = []
@@ -1031,8 +1037,12 @@ class polygon_operator(point_operator):
 
     ###############################################  
     def rotate_pts(self, rot, pts=None, ptgrp=None):
-        #self.repair() # may fix or find problems 
+        """  
+            rotate some points with a matrix
+            works on a pointgroup, or a list of points 
+            if none specified, apply to entire object (self.points)
 
+        """
         # construct a rotation matrix from euler angles 
         # angles are entered in degrees XYZ
 
@@ -1072,6 +1082,7 @@ class polygon_operator(point_operator):
         if pts is not None and ptgrp is None: 
             return self.apply_matrix_pts(pts,  m44=rot_matrix)  
 
+        #if niether is specified, apply to whole object 
         if pts is None and ptgrp is None:
             ptgrp = self.get_pt_grp()    
 
@@ -1145,7 +1156,7 @@ class polygon_operator(point_operator):
 
         # calculate the center of each polygon
         # this will be added as a new point, center of radial mesh      
-        fac_ctr = self.poly_centroid(fac_pts)
+        fac_ctr = self.centroid_pts(fac_pts)
         
         # offset is a spatial transform of the radial center point
         #DEBUG TODO - option to move along face normal!!  
@@ -1194,7 +1205,7 @@ class polygon_operator(point_operator):
 
             # calculate the center of each polygon
             # this will be added as a new point, center of radial mesh      
-            fac_ctr = self.poly_centroid(fac_pts)
+            fac_ctr = self.centroid_pts(fac_pts)
             
             # offset is a spatial transform of the radial center point
             #DEBUG TODO - option to move along face normal!!  
@@ -1254,7 +1265,8 @@ class polygon_operator(point_operator):
 
     ############################################### 
     def poly_loft(self, obj2, as_new_obj=True):
-        """ assume two profiles have been passed in with identical polygon ordering 
+        """ UNFINISHED 
+            assume two profiles have been passed in with identical polygon ordering 
             connect them togther with new side wall polygons 
         """
         print("### debug begin loft op ")
@@ -1295,9 +1307,7 @@ class polygon_operator(point_operator):
         else:    
             self.insert_polygons(new_plys, new_pts)
 
-
     ###############################################  
-    ############################################### 
     ############################################### 
     #file IO / mesh analysis, etc 
 

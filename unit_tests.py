@@ -50,23 +50,95 @@ from pygfx.obj3d import  *
 # extrude_face
 
 
+
+def lighting_test( lightpos, fnum):
+    """ run the scanline render with a lighting model 
+        lighting model shades the polygons based on angle to a point
+        the point becomes a cheap lighting simulation 
+
+        #to run : 
+
+           lighting_test( (0,10, 10), 1 )
+
+    """
+
+    obj = object3d()
+    #obj.load('objects/monkey.obj')
+    obj.load('objects/sphere.obj')
+    #obj.prim_quad(axis='z',  pos=(0,0,0), rot=(0,0,0)) 
+    obj.points = obj.rotate_pts((-10,180,180),pts=obj.points)
+    
+    obj.triangulate() 
+
+    ropr = simple_render()
+
+    render_linecolor = (255,0,255)
+    render_scale = 200 
+
+    #################
+    # some render properties you can tweak 
+    ## ropr.SHOW_EDGES = False
+    ropr.SHOW_FACE_CENTER = False
+    ## ropr.COLOR_MODE = 'flat'
+    ropr.SHOW_EDGES = False 
+    #ropr.COLOR_MODE = 'normal'
+    ropr.COLOR_MODE = 'lighted'
+
+    #################
+    ## scanline render 
+    ropr.scanline(obj, render_scale, lightpos=lightpos ) 
+    ropr.save_image('simple_render_%s.png'%fnum)
+
+    #################
+    obj2 = object3d() 
+    # visualize the light and vectors to it 
+    obj2.prim_cube(pos=lightpos,size=.05,linecolor=(255,0,0),rot=(0,0,0),pivot='world')
+    
+    # lighting_vectors.append( [fcntr, nrml, vec_to_light, angle] )  
+
+    for v in  ropr.lighting_vectors:   #( [nrml, vec_to_light, angle] ) 
+        obj2.one_vec_to_obj( v[0] , pos=v[0])  # unit length face normal, from world origin 
+        #obj2.one_vec_to_obj( v[2] , pos=v[0] ) # vector from face center to light 
+
+    # obj2.save('render_info.obj')
+
+
+def animate_light_in_spherical_coords():
+    """ generate some 3d positions in a spherical coordinates 
+        and call the renderer in a loop with a rotating light 
+        slow, but it works 
+    """
+
+    mu = math_util() 
+    obj = object3d()
+
+    fnum = 0
+    for theta in range(-180,180,30):
+        print('## theta ', theta )
+        for phi in range(-180,180,30):        
+            sp = spherical(1.5, mu.dtr(theta), mu.dtr(phi) ) 
+            pt=  sp.to_cartesian() 
+           
+            lighting_test(pt,fnum)
+            fnum+=1 
+
 #######################################################
 
 
 
 
 def test_copysop():
-    """ copy SOP is a subselect, copy and transform 
+    """ copy SOP is a subselect, copy and transform the result
+        ala Houdini 
         optional loop and increment 
     """
     obj = object3d() 
-    #obj.prim_circle(axis='y') 
     obj.load('objects/sphere.obj')
-    #copy_sop( slice=None, ids=None, reindex=False, offset=(0,0,0), num=1):
 
     #be cautious of large number of polys. It gets slow real quick!
     obj.copy_sop(slice=(1,10), offset=(0,2,0), num=5, distance=.75)
     obj.save('stax.obj')
+
 
 
 #####################################################
@@ -338,34 +410,15 @@ def build_orthogonal_vector():
 
 
 
-#####################################################
 
-def model_obj_from_scratch(): 
-    """ build a new polygon object from points directly into an object """ 
-
-    obj = object3d()
-
-    #add new geom and auto increment the ids
-    polys = [(1,2,3,4) ]
-    pts = [(1,1,1),(0,1,1),(-1,-1,1),(2,-2,1)]
-    obj.insert_polygons([], pts) 
-
-    #add new geom and auto increment the ids
-    pts = [(0,-3,-1),(2,-2,1),(3,-1,1)]
-    obj.insert_polygons([], pts)
-
-    #add polys without new points into same "shell"
-    obj.insert_polygons( [(1,2,3,4,5,6,7),(1,7,2)], None, asnew_shell=False)
-    
-    #add new polygon in a new "shell" 
-    obj.insert_polygons( [(1,2,3,4)], [(3,3,3), (3,-4,5), (-4,-2.5,3.1), (6.2,-2.7,8)], asnew_shell=True)
-
-    obj.save("my_new_object.obj")
 
 
 #####################################################
 def test_geom_operator_pass_inout(): 
-    """ test of get face """
+    """ test of get face 
+        the output of one pass is used as the input of the next 
+        this is a test to ensure the function doesnt corrupt anything  
+    """
 
     obj = object3d()
     obj.load('objects/kube.obj')
@@ -386,7 +439,8 @@ def test_geom_operator_pass_inout():
     #    obj.inspect(geom3)
    
     print(geom) 
-    
+
+
 #####################################################
 
 def test_subsel_point_transform(): 
@@ -409,6 +463,7 @@ def test_subsel_point_transform():
 
 
 
+
 #####################################################
 
 def test_point_transform(): 
@@ -426,6 +481,7 @@ def test_point_transform():
     obj.points = obj.xform_pts( (0,2,0),  pts=obj.points ) 
 
     obj.save('ptgrp.obj')
+
 
 
 
@@ -521,6 +577,32 @@ def extract_by_copy_hack():
 
 
 
+
+#####################################################
+
+def model_obj_from_scratch(): 
+    """ build a new polygon object from points directly into an object """ 
+
+    obj = object3d()
+
+    #add new geom and auto increment the ids
+    polys = [(1,2,3,4) ]
+    pts = [(1,1,1),(0,1,1),(-1,-1,1),(2,-2,1)]
+    obj.insert_polygons([], pts) 
+
+    #add new geom and auto increment the ids
+    pts = [(0,-3,-1),(2,-2,1),(3,-1,1)]
+    obj.insert_polygons([], pts)
+
+    #add polys without new points into same "shell"
+    obj.insert_polygons( [(1,2,3,4,5,6,7),(1,7,2)], None, asnew_shell=False)
+    
+    #add new polygon in a new "shell" 
+    obj.insert_polygons( [(1,2,3,4)], [(3,3,3), (3,-4,5), (-4,-2.5,3.1), (6.2,-2.7,8)], asnew_shell=True)
+
+    obj.save("my_new_object.obj")
+
+
 #####################################################
 
 
@@ -545,7 +627,7 @@ def model_geom_from_scratch_calc_normals():
 
     # ... or calculate them yourself.  
     normal   = obj.calc_tripoly_normal(pts[0:3], True)
-    centroid = obj.poly_centroid(pts[0:3]) 
+    centroid = obj.centroid_pts(pts[0:3]) 
 
     # see what we have done, or not done 
     # obj.show() 
@@ -593,7 +675,9 @@ def load_build_another_from_normals(objectpath):
 
 
 #load_build_another_from_normals('objects/sphere.obj')
+
 #####################################################
+
 
 
 def face_extrude():
@@ -609,4 +693,6 @@ def face_extrude():
         obj.extrude_face(i, 10/i)
 
     obj.save('extrudez.obj')
+
+
 

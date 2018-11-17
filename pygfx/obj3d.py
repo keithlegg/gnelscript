@@ -24,9 +24,7 @@ class object3d(polygon_operator):
         self.pos          = [0,0,0]
         self.scale        = [1,1,1]
 
-
     ############################################### 
-
     def copy(self):
         new = type(self)()
         new.points   = self.points
@@ -34,7 +32,27 @@ class object3d(polygon_operator):
         return new
 
     ############################################### 
+    def insert(self, obj, replace=False):
+        """ insert an objects geometry into this object 
+            
+        """
 
+        # if tuple or list assume its [polyidx, points]
+        if isinstance(obj, tuple) or isinstance(obj, list):
+            if replace is True:
+                self.points=obj[0]
+                self.polygons=obj[1]                 
+            else:
+                self.insert_polygons(obj[0], obj[1])
+
+        if isinstance(obj, object3d):
+            if replace is True:
+                self.points=obj.points
+                self.polygons=obj.polygons                 
+            else:
+                self.insert_polygons(obj.polygons, obj.points)
+
+    ############################################### 
     def append(self, otherobj):
         """ add another object to this one 
             points can be added, paying attention to the index 
@@ -95,29 +113,6 @@ class object3d(polygon_operator):
         return len(self.face_normals)  
 
     ############################################### 
-
-    def insert(self, obj, replace=False):
-        """ insert an objects geometry into this object 
-            
-        """
-
-        # if tuple or list assume its [polyidx, points]
-        if isinstance(obj, tuple) or isinstance(obj, list):
-            if replace is True:
-                self.points=obj[0]
-                self.polygons=obj[1]                 
-            else:
-                self.insert_polygons(obj[0], obj[1])
-
-        if isinstance(obj, object3d):
-            if replace is True:
-                self.points=obj.points
-                self.polygons=obj.polygons                 
-            else:
-                self.insert_polygons(obj.polygons, obj.points)
-
-
-    ############################################### 
     def convert_pts_vec3(self):
         """ return a list of pygfx vec3 objects for each vertex """
 
@@ -141,7 +136,7 @@ class object3d(polygon_operator):
     ############################################### 
     def calc_face_normals(self):
         """ calculate the normals for each face of object
-            UNFINISHED - ONLY WORKS FOR 3 and four side polys  
+            only tested for 3 and 4 sided polygons   
         """
         
         vectrx = []
@@ -219,7 +214,6 @@ class object3d(polygon_operator):
         #return vectrx
         return out_face_normals
 
-
     ############################################### 
     def one_vec_to_arrow(self, r3, pos=None):
         """ single vector into a renderable 3D line 
@@ -288,7 +282,7 @@ class object3d(polygon_operator):
             self.polygons.append( vec )  
 
     ############################################### 
-    def two_vecs_to_obj(self, r3_1, r3_2):
+    def vector_between_to_obj(self, r3_1, r3_2):
         """ a vector between two other vectors 
             probably not useful, but interesting 
         """
@@ -335,11 +329,7 @@ class object3d(polygon_operator):
                     self.one_vec_to_obj(v, pos) 
                 if len(v) == 2:
                     self.one_vec_to_obj(v[0], v[1])                 
-                
-        # experiment to make a line bewteen each 2 points 
-        #for i,v in enumerate(vecs):
-        #    if i>0:    
-        #        self.two_vecs_to_obj(vecs[i-1], v) 
+               
 
     ###############################################  
     ###############################################  
@@ -351,7 +341,6 @@ class object3d(polygon_operator):
     #    pass  
     
     ############################################### 
-
     def prim_line(self, axis, pos, rot, size=1):
         """ 3d lines, 2 point polygons """
 
@@ -423,7 +412,6 @@ class object3d(polygon_operator):
         self.insert_polygons([tuple(poly)], pts)
 
     ###############################################
-
     def prim_cone(self, axis, pos, dia=1):
         """ first prim tool to use other tools and prims 
             made so we can make an arrow prim 
@@ -444,8 +432,6 @@ class object3d(polygon_operator):
             oset = (0,0,-tiplen) 
 
         self.radial_triangulate_face(1, offset=oset )
-
-
 
     ############################################### 
     def prim_sphere(self, pos, rot, size=1 ):
