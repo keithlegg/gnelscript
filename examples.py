@@ -8,12 +8,9 @@ from pygfx.obj3d import  *
 
 
 
-from pygfx.raytrace import  *
-
-
-rtrace = raytracer() 
-
-rtrace.save_image( rtrace.main() )
+#from pygfx.raytrace import  *
+#rtrace = raytracer() 
+#rtrace.save_image( rtrace.main() )
 
 
 #######################################################
@@ -122,18 +119,7 @@ print( '##### to cartesian ', sp.to_cartesian() )
 
 
 
-def offset_between_2vecs():
-    """ create a vector representing offset between two points """
 
-    obj = object3d()
-    com = vec3() #container for commands
-    
-    a = vec3(2, 0, 2)  
-    b = vec3(3, 0, 3)  
-
-    c = a.between(b)
-
-    print("## offsetz is ",  c) 
 
 
 
@@ -260,23 +246,6 @@ def modify_part_of_an_object():
 
 
 
-################################################
-
-def extrude_single_face(fid): 
-    """ UNFINISHED! """
-    obj = object3d()
-    obj.load('objects/sphere.obj')
-
-    print( obj.get_face_geom(fid ) ) #reindex=True 
-    print( obj.get_face_edges(fid ) ) #DEBUG - add reindex 
-    print( obj.get_face_normal(fid ) )
-    print( obj.get_face_centroid(fid ) )
-    
-
-#extrude_single_face(20)
-
-
-
 
 
 
@@ -311,23 +280,8 @@ def multi_face_triangulate_offset():
 
 
 
-def circle_with_cube_all_pts():
-    """ BROKEN - FIX THIS 
-        make a circle with a rotated cube at each point 
-    """
 
-    obj = object3d()
-    obj.prim_circle(axis='z', pos=(0,0,0), spokes=22) 
-    ctr = obj.get_face_centroid(0)
-    obj.triangulate(force=True)
-    pts = obj.get_face_pts(0) 
-    ct = 0
-    for pt in pts:
-        tmp = object3d()
-        tmp.prim_cube(linecolor=(255,0,0), size=.05, pos=pt, rot=(ct,ct,ct), pivot='world')
-        ct += 10
-        obj.insert(tmp)  
-    obj.save("cube_pts.obj")
+
 
 
 

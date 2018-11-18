@@ -1,8 +1,9 @@
 """
-    ORINGIAL CODE IS FROM :
+    ORIGINAL CODE IS FROM :
        https://gist.github.com/rossant/6046463
 """
 
+import math 
 
 import numpy as np
 
@@ -15,14 +16,14 @@ class raytracer(object):
 
     def __init__(self):
         # Default light and material parameters.
-        self.ambient = .05
-        self.diffuse_c = 1.
-        self.specular_c = 1.
-        self.specular_k = 50
+        self.ambient     = .1 #.05
+        self.diffuse_c   = 1.
+        self.specular_c  = 1.
+        self.specular_k  = 50
         self.color_light = np.ones(3)
 
-        self.w = 800
-        self.h = 800
+        self.w = 600
+        self.h = 600
 
     def normalize(self, x):
         x /= np.linalg.norm(x)
@@ -50,7 +51,12 @@ class raytracer(object):
         c = np.dot(OS, OS) - R * R
         disc = b * b - 4 * a * c
         if disc > 0:
-            distSqrt = np.sqrt(disc)
+            
+            distSqrt = np.sqrt(disc) #original 
+
+            # distSqrt = math.sin(np.sqrt(disc)*5) # makes a neat wavy effect 
+            # distSqrt = math.cos(np.sqrt(disc)*5) # makes a neat wavy effect 
+
             q = (-b - distSqrt) / 2.0 if b < 0 else (-b + distSqrt) / 2.0
             t0 = q / a
             t1 = c / q
@@ -95,20 +101,26 @@ class raytracer(object):
         M = rayO + rayD * t
         # Find properties of the object.
         N = self.get_normal(obj, M)
+
         color = self.get_color(obj, M)
         toL = self.normalize(L - M)
         toO = self.normalize(O - M)
+
         # Shadow: find if the point is shadowed or not.
         l = [self.intersect(M + N * .0001, toL, obj_sh) 
                 for k, obj_sh in enumerate(scene) if k != obj_idx]
         if l and min(l) < np.inf:
             return
+        
         # Start computing the color.
         col_ray = self.ambient
+        
         # Lambert shading (diffuse).
         col_ray += obj.get('diffuse_c', self.diffuse_c) * max(np.dot(N, toL), 0) * color
+        
         # Blinn-Phong shading (specular).
         col_ray += obj.get('specular_c', self.specular_c) * max(np.dot(N, self.normalize(toL + toO)), 0) ** self.specular_k * self.color_light
+        
         return obj, M, N, col_ray
 
     def add_sphere(self, position, radius, color):
@@ -128,19 +140,29 @@ class raytracer(object):
         color_plane0 = 1. * np.ones(3)
         color_plane1 = 0. * np.ones(3)
 
-        scene = [self.add_sphere([.75, .1, 1.], .6, [0., 0., 1.]),
-                 self.add_sphere([-.75, .1, 2.25], .6, [.5, .223, .5]),
-                 self.add_sphere([-2.75, .1, 3.5], .6, [1., .572, .184]),
-                 self.add_plane([0., -.5, 0.], [0., 1., 0.], color_plane0, color_plane1),
+        ## scene = [self.add_sphere([.75, .1, 1.], .6, [0., 0., 1.]),
+        ##          self.add_sphere([-.75, .1, 2.25], .6, [.5, .223, .5]),
+        ##          self.add_sphere([-2.75, .1, 3.5], .6, [1., .572, .184]),
+        ##          self.add_plane([0., -.5, 0.], [0., 1., 0.], color_plane0, color_plane1),
+        ##     ]
+
+
+        scene = [self.add_sphere([  .75  , .1 , 1.  ], .6, [0. ,  0.  , 1.]   ),
+                 self.add_sphere([ -.75  , .1 , 2.25], .6, [.5 , .223 , .5]   ),
+                 self.add_sphere([ -2.75 , .1 , 3.5 ], .6, [1. , .572 , .184] ),
+
+                 self.add_plane([0., -5, 0.], [0., 1., 0.], color_plane0, color_plane1),
             ]
 
         # Light position and color.
         L = np.array([5., 5., -10.])
 
-        depth_max = 5  # Maximum number of light reflections.
+        depth_max = 5      # Maximum number of light reflections.
         col = np.zeros(3)  # Current color.
-        O = np.array([0., 0.35, -1.])  # Camera.
+        
+        O = np.array([0., 0.95, -1.])  # Camera.
         Q = np.array([0., 0., 0.])  # Camera pointing to.
+
         img = np.zeros((self.h, self.w, 3))
 
         r = float(self.w) / self.h
@@ -149,8 +171,10 @@ class raytracer(object):
 
         # Loop through all pixels.
         for i, x in enumerate(np.linspace(S[0], S[2], self.w)):
+           
             if i % 10 == 0:
                 print( i / float(self.w) * 100, "%" )
+
             for j, y in enumerate(np.linspace(S[1], S[3], self.h)):
                 col[:] = 0
                 Q[:2] = (x, y)

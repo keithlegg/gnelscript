@@ -207,20 +207,23 @@ def multi_face_triangulate_offset():
     obj = object3d()
     obj.load('objects/sphere.obj')
 
+
     nrmls = []
-    for i,p in enumerate(obj.points):
+    for i,p in enumerate(obj.polygons):
         nrmls.append( (i, obj.get_face_normal(i)*3) )
-    for n in nrmls[1:4]:
-        print(n[0])
-        obj.radial_triangulate_face(n[0], offset=n[1] )
+
+    print('## NUM NORMALS ', len(nrmls) )
+
+    #for n in nrmls:
+    #    obj.radial_triangulate_face(n[0], offset=n[1] , as_new_obj= True )
 
     obj.save("durian_fruit.obj")
 
+multi_face_triangulate_offset() 
+
 #####################################################
 def circle_with_cube_all_pts():
-    """ BROKEN - FIX THIS 
-        make a circle with a rotated cube at each point 
-    """
+    """ make a circle with a rotated cube at each point """
 
     obj = object3d()
     obj.prim_circle(axis='z', pos=(0,0,0), spokes=42) 
@@ -237,6 +240,10 @@ def circle_with_cube_all_pts():
 
 #####################################################
 def spherical_to_point():
+    """ test of spherical coordinates to a cartesian point 
+        done in a nested loop to make a sphere
+    """
+
     mu = math_util() 
     obj = object3d()
 
@@ -402,32 +409,6 @@ def build_orthogonal_vector():
 
     obj.save('perpendicular.obj')
 
-#####################################################
-def test_geom_operator_pass_inout(): 
-    """ test of get face 
-        the output of one pass is used as the input of the next 
-        this is a test to ensure the function doesnt corrupt anything  
-    """
-
-    obj = object3d()
-    obj.load('objects/kube.obj')
-
-    fid = 1
-
-    # reindex (sphere has 40+ polygons)
-    geom  = obj.get_face_geom(fid, reindex=True )
- 
-    # dont reindex now, test "pass through"
-    geom2 = obj.get_face_geom(1,  geom=geom ) 
-    geom3 = obj.get_face_geom(1,  geom=geom2 )
-
-
-    #run the output through a verify and inspect     
-    #if obj.verify_geom(geom3):
-    #    print('## geom - object passes all checks ')     
-    #    obj.inspect_geom(geom3)
-   
-    print(geom) 
 
 #####################################################
 def test_subsel_point_transform(): 
@@ -526,7 +507,7 @@ def model_geom_from_scratch():
 #####################################################
 def extract_by_copy_hack():
     """ *slightly* higher level than raw geom 
-        use the lookup util to get the pt ids by face index 
+        use the face lookup util to get the geom by face index 
     """
 
     obj = object3d()
@@ -659,6 +640,7 @@ def face_extrude():
         obj.extrude_face(i, 10/i)
 
     obj.save('extrudez.obj')
+
 #####################################################
 def rotate_around_vec():
     """ test of function to generate a matrix 
@@ -686,3 +668,42 @@ def rotate_around_vec():
     #add second vector to compare X axis *2 
     obj.one_vec_to_obj( (2,0,0) )     
     obj.save('vectorDaCleaner.obj')
+
+
+
+
+#####################################################
+
+def offset_between_2vecs():
+    """ create a vector representing offset between two points """
+
+    obj = object3d()
+    com = vec3() #container for commands
+    
+    a = vec3(2, 0, 2)  
+    b = vec3(3, 0, 3)  
+
+    c = a.between(b)
+
+    print("## offset is ",  c) 
+
+
+#####################################################
+
+def circle_with_cube_all_pts():
+    """ BROKEN - FIX THIS 
+        make a circle with a rotated cube at each point 
+    """
+
+    obj = object3d()
+    obj.prim_circle(axis='z', pos=(0,0,0), spokes=22) 
+    ctr = obj.get_face_centroid(0)
+    obj.triangulate(force=True)
+    pts = obj.get_face_pts(0) 
+    ct = 0
+    for pt in pts:
+        tmp = object3d()
+        tmp.prim_cube(linecolor=(255,0,0), size=.05, pos=pt, rot=(ct,ct,ct), pivot='world')
+        ct += 10
+        obj.insert(tmp)  
+    obj.save("cube_pts.obj")
