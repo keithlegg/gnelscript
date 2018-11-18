@@ -144,16 +144,18 @@ class point_operator(object):
         return out
 
     ############################################### 
-    def calc_circle(self, pos=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
-        """ spokes = num spokes """
+    def calc_circle(self, pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
+        """ spokes = num spokes 
+            raw points, not geometry is build in point generators  
+        """
 
         px=0
         py=0
         pz=0 
 
-        ox = pos[0]
-        oy = pos[1]
-        oz = pos[2]
+        ox = 0
+        oy = 0
+        oz = 0
 
         out = []
         
@@ -177,6 +179,9 @@ class point_operator(object):
                 out.append( (px, py, pz))                
             dit+=degs
         
+        out = self.xform_pts( pos, out) 
+        out = self.rotate_pts(rot, out) 
+
         if periodic:
             out.append( out[0] )
 

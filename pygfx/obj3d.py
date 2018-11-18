@@ -157,64 +157,6 @@ class object3d(polygon_operator):
         return cache_face_normals
 
     ############################################### 
-    def test_vector_thingy(self, f_index=None):
-        """ iterate each vertex by face assignment and convert 
-            to vec3 
-        """
-        
-        vectrx = []
-
-        out_face_normals = [] 
-
-        # iterate each face and convert eart vertex into a vec3 
-        for f in self.polygons:
-            
-            # create a vec3 for each vertex (3 or 4 sided polys)
-            v1=vec3();v2=vec3()
-            v3=vec3();v4=vec3()
-
-            # load each point into a pygfx.vec3 object 
-            # 3 sided polys
-            if len(f) == 3:
-                v1.insert( self.points[f[0]-1] )
-                v2.insert( self.points[f[1]-1] )
-                v3.insert( self.points[f[2]-1] )
-
- 
-                a = v1 - v2;
-                b = v1 - v3;
-                out_face_normals.append(a.cross(b) )
-
-
-                #print( self.mu.rtd( v1.angle_between(v2) ) )
-                #out_face_normals.append( v3.vector_mean([v1,v2,v3] ).normal * 2 )
-                #to get angle??
-                #av = v3.average_angle( (1,0,0), [v1,v2,v3])
-                #print( ' #average of multiple vecotrs  is ?? ', av )
-                               
-
-            # 4 sided polys     
-            if len(f) == 4:
-                v1.insert( self.points[f[0]-1] )
-                v2.insert( self.points[f[1]-1] )
-                v3.insert( self.points[f[2]-1] )                
-                v4.insert( self.points[f[3]-1] )
-
-
-                a = v1 - v2;
-                b = v1 - v3;
-                out_face_normals.append(a.cross(b) )
-
-            ##
-            #vectrx.append(v.copy(vtype='tuple'))
-        
-        #tmp = object3d()
-        #tmp.vectorlist_to_obj(vectrx)
-        #tmp.save('vtx_vectrz.obj')
-        #return vectrx
-        return out_face_normals
-
-    ############################################### 
     def one_vec_to_arrow(self, r3, pos=None):
         """ single vector into a renderable 3D line 
             
@@ -394,7 +336,7 @@ class object3d(polygon_operator):
         #self.xform_pts( pos )
 
     ###############################################  
-    def prim_circle(self, axis, pos, dia=1, spokes=9):
+    def prim_circle(self, axis, pos=(0,0,0), rot=(0,0,0), dia=1, spokes=9):
         """ UNFINSIHED single polygon operations  """    
 
         print('## debug prim circle ', axis , pos   )
@@ -403,16 +345,19 @@ class object3d(polygon_operator):
         poly = []
 
         # calc_circle( pos=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
-        pts = self.calc_circle( dia=dia, axis=axis, periodic=True, spokes=spokes , pos=pos)
+        pts = self.calc_circle( dia=dia, axis=axis, periodic=True, spokes=spokes)
         
         # we add one because calc_circle_2d returns zero indexed data but OBJ is NOT zero indexed        
         for x in range(spokes):
             poly.append(x+1) 
 
+        pts = self.xform_pts(  pos, pts)
+        pts = self.rotate_pts( rot, pts)
+
         self.insert_polygons([tuple(poly)], pts)
 
     ###############################################
-    def prim_cone(self, axis, pos, dia=1):
+    def prim_cone(self, axis, pos=(0,0,0), rot=(0,0,0), dia=1, spokes=8):
         """ first prim tool to use other tools and prims 
             made so we can make an arrow prim 
         """
@@ -420,18 +365,23 @@ class object3d(polygon_operator):
         print("## debug pos cone ", pos )
 
  
-        self.prim_circle(axis=axis, pos=pos, dia=dia)
+        self.prim_circle(axis=axis, pos=pos, dia=dia, spokes=spokes)
         
         tiplen = dia*2
 
+        #debug = use a normal instead of world coords
+        #this currently will not work if the circle is rotated !! 
         if axis=='x':
-            oset = (-tiplen,0,0)
+            oset = (tiplen,0,0)
         if axis=='y':
-            oset = (0,-tiplen,0)            
+            oset = (0,tiplen,0)            
         if axis=='z':
-            oset = (0,0,-tiplen) 
+            oset = (0,0,tiplen) 
 
         self.radial_triangulate_face(1, offset=oset )
+
+        #pts = self.xform_pts(  pos, pts)
+        #pts = self.rotate_pts( rot, pts)
 
     ############################################### 
     def prim_sphere(self, pos, rot, size=1 ):
@@ -494,15 +444,18 @@ class object3d(polygon_operator):
         
         # the last bottom vertex at (0, 0, -r)
         self.points.append( (0,0,-radius) )
+
                
         #end caps
         #self.points.append( (fid,fid+1,fid+2) )
         
-        #self.rotate_pts( rot )
-        #self.xform_pts( pos )
+        #pts = self.xform_pts(  pos, pts)
+        #pts = self.rotate_pts( rot, pts)
+
+
 
     ###############################################  
-    def prim_locator(self, pos, rot, size=1):
+    def prim_locator(self, pos=(0,0,0), rot=(0,0,0), size=1):
    
         pts = [
                # x axis indicator  

@@ -69,51 +69,33 @@ ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj     
 
 
 
-"""
-dia = .1
+def make_3d_arrow(): 
+    """ fully 3D model of an arrow 
+        will be used for visualizing vectors 
+    """
+    
+    dia    = .1
+    length = .8 
+    spokes = 4
+    axis   = 'z'
 
-obj = object3d()
-axis = 'y'
-pos = (.75,0,0)
+    obj = object3d()
 
-obj.prim_circle(axis=axis, pos=pos, dia=dia)
+    if axis=='x':
+        obj.prim_cone( axis=axis, pos=(length,0,0), dia=dia, spokes=spokes )
+    if axis=='y':
+        obj.prim_cone( axis=axis, pos=(0,length,0), dia=dia, spokes=spokes )        
+    if axis=='z':
+        obj.prim_cone( axis=axis, pos=(0,0,length), dia=dia, spokes=spokes )
 
-tiplen = dia*2
+    obj2 = object3d()
+    obj2.prim_circle( axis=axis, pos=(0,0,0), spokes=spokes , dia=dia/5)
+    obj2.extrude_face(1, distance=-length)
+    obj.insert(obj2)
 
-if axis=='x':
-    oset = (-tiplen,0,0)
-if axis=='y':
-    oset = (0,-tiplen,0)            
-if axis=='z':
-    oset = (0,0,-tiplen) 
-obj.radial_triangulate_face(1, offset=oset )
+    obj.save("kone.obj")
+ 
 
-
-obj2 = object3d()
-obj2.prim_circle(axis=axis, pos=pos, spokes=4 , dia=.02)
-obj2.extrude_face(1, distance=.75)
-#obj.insert(obj2)
-
-
-obj.save("kone.obj")
-"""
-
-
-"""
-mu = math_util() 
-obj = object3d()
-sp = spherical(1.73,-.95,-.78) 
-
-#cart = vec3(1,1,1)
-#sp.from_cartesian( cart )
-#print('### spherical ', sp)
-
-print( '##### to cartesian ', sp.to_cartesian() ) 
-
-#obj.prim_cube(pos=pt, size=.1, linecolor=(255,0,0), rot=(0,0,0), pivot='world')
-
-#obj.save('ball_of_cubes.obj') 
-"""
 
 
 
