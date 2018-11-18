@@ -5,11 +5,20 @@ from pygfx.point_ops import *
 
 
 from pygfx.math_ops import math_util as mu
-#from pygfx.math_ops import vec2  
-#from pygfx.math_ops import vec3  
-#from pygfx.math_ops import matrix33 
+from pygfx.math_ops import NUMPY_IS_LOADED
 
-import numpy as np 
+#from pygfx.math_ops import matrix33, vec2, vec3  
+
+
+
+
+if NUMPY_IS_LOADED:
+    # print(' ## debug - loading numpy module in point ops. ')
+    import numpy as np  
+else:
+    print(' ## debug - numpy module disabled in point ops. ')
+
+
 
 
 
@@ -54,7 +63,7 @@ class render3d(object):
     ## ## ## ## ## 
     def save_image(self,filename='output.png', noalpha=True):
         self.post_process()
-        self.fb.save_file(filename, noalpha=noalpha)     
+        self.fb.save(filename, noalpha=noalpha)     
         
 
 
@@ -223,7 +232,7 @@ class simple_render(object):
     ## ## ## ## ## 
     def save_image(self,filename='output.png', noalpha=True):
         self.post_process()
-        self.fb.save_file(filename, noalpha=noalpha)     
+        self.fb.save(filename, noalpha=noalpha)     
 
     def post_process(self):
         if self.SHOW_SCREEN_CLIP:
@@ -498,7 +507,7 @@ class simple_render(object):
         # obj.prim_cube() 
         # for f in range(numframes):
         #     self.render_obj((255,0,0), RX, RY+(f*step_degrees), RZ, 3, 100,  object3d=obj ) 
-        #     self.save_image( '%s/%s_%s.png'%(outfolder,outfilename,f) )
+        #     self.save( '%s/%s_%s.png'%(outfolder,outfilename,f) )
 
         self.render_objects = objs 
         
@@ -510,7 +519,7 @@ class simple_render(object):
 
         for f in range(numframes):
             self.render_multiobj((255,0,0), RX, RY+(f*step_degrees), RZ, linethick, scale ) 
-            self.save_image( '%s/%s_%s.%s'%(outfolder,outfilename,f,output_type) )
+            self.save( '%s/%s_%s.%s'%(outfolder,outfilename,f,output_type) )
 
 
     ## ## ## ## ## 
@@ -538,7 +547,7 @@ class simple_render(object):
         if self.renderpoints:
             rndr_bfr.draw_points_batch( render_data[0] ,  (255,255,0) , int(thick)        )  #points, color, thickness
 
-        rndr_bfr.save_file(filename) 
+        rndr_bfr.save(filename) 
 
     ## ## ## ## ##  
     def render_custom_matrix(self, object3d, scale, m33=None, m44=None, res_x=None, res_y=None):
@@ -563,18 +572,20 @@ class simple_render(object):
 
         # rotate the points of the object by multiplying by a matrix 
         if m33 is not None:
-            if isinstance(m33, np.ndarray):
-                tmp = matrix33()
-                tmp.insert(m33)
-                pvtxs =  tmp.batch_mult_pts(object3d.points ) 
+            if NUMPY_IS_LOADED:
+                if isinstance(m33, np.ndarray):
+                    tmp = matrix33()
+                    tmp.insert(m33)
+                    pvtxs =  tmp.batch_mult_pts(object3d.points ) 
             if isinstance(m33, matrix33):                
                 pvtxs =  m33.batch_mult_pts(object3d.points )          
            
         if m44 is not None:
-            if isinstance(m44, np.ndarray):
-                tmp = matrix44()
-                tmp.insert(m44)
-                pvtxs =  tmp.batch_mult_pts(object3d.points ) 
+            if NUMPY_IS_LOADED:            
+                if isinstance(m44, np.ndarray):
+                    tmp = matrix44()
+                    tmp.insert(m44)
+                    pvtxs =  tmp.batch_mult_pts(object3d.points ) 
             if isinstance(m44, matrix44):                
                 pvtxs =  m44.batch_mult_pts(object3d.points )  
 
@@ -823,7 +834,7 @@ class simple_render(object):
                     output.connect_the_dots( l3, (0,255,0), 1)                 
                 
         ## ## ## ## ##   
-        #output.save_file('scanlinez_.png') 
+        #output.save('scanlinez_.png') 
 
 
 

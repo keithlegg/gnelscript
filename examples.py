@@ -8,6 +8,13 @@ from pygfx.obj3d import  *
 
 
 
+from pygfx.raytrace import  *
+
+
+rtrace = raytracer() 
+
+rtrace.save_image( rtrace.main() )
+
 
 #######################################################
 

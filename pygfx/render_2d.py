@@ -17,7 +17,7 @@ def render_2d_vector(v1, v2, gridsize=50):
     fb.create_buffer(800, 800)
     fb.graticule(gridsize)
     fb.draw_vector_2d(   v1, v2 , scale=gridsize)
-    fb.save_file('vec.png')
+    fb.save('vec.png')
 
 
 

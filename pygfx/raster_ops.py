@@ -4,7 +4,14 @@ import os, sys, math
 
 from PIL import Image, ImageOps
 
+from pygfx.math_ops import  NUMPY_IS_LOADED
 from pygfx.point_ops_2d import point_operator_2d
+
+
+if NUMPY_IS_LOADED:
+    import numpy as np  
+else:
+    print(' ## debug - numpy module disabled in point ops. ')
 
 
 
@@ -32,14 +39,14 @@ class RasterObj(object):
         stats['resolution']='W:'+str(self.res_x)+' H:'+str(self.res_y)
         print( stats )
 
-    def save_file(self, name, noalpha=False):
+    def save(self, name, noalpha=False):
         print("Saving file to: " + name)
         if noalpha:
             self.fb.convert('RGB').save(name)
         else:    
             self.fb.save(name)
 
-    def load_file(self, name):
+    def load(self, name):
         self.fb = Image.open(name)
         self.res_x = self.fb.size[0]
         self.res_y = self.fb.size[1]
@@ -209,10 +216,10 @@ class PixelOp (RasterObj):
     """
     
     def __init__(self):
-        super(PixelOp , self).__init__()  
+        super().__init__()  
         self.filter = pixelFilter() 
+        #super(PixelOp , self).__init__() 
 
-    ## ## ## ## ##
     def graticule(self, spacing=10, scale=1):
         """  make a graticule grid  
             start at center and go out from there based on spacing value
@@ -268,7 +275,6 @@ class PixelOp (RasterObj):
         #put a dot at the center
         self.draw_fill_circle(self.center[0],self.center[0], 2, (200,255,0) ) 
 
-    ## ## ## ## ##
     def draw_cntr_line(self, points, color=(0,255,200), size=1, mag=1, framebuffer=None):
         """ DEBUG use offset feature of connect_the_dots  """
         
@@ -284,7 +290,6 @@ class PixelOp (RasterObj):
             framebuffer = self.fb
         self.connect_the_dots( tmp, color, size, origin=(self.center[0] ,self.center[1]), framebuffer=framebuffer)
 
-    ## ## ## ## ##
     def draw_cntr_pt(self, dot, size=1, origin=(0,0), color=(255,0,0), framebuffer=None):
         """ draw a point relative to center of image """
 
@@ -294,9 +299,6 @@ class PixelOp (RasterObj):
         #put a dot at the center
         self.draw_fill_circle(sp, ep, size, color ) 
 
-
-
-    ## ## ## ## ##
     def draw_vector_2d(self, vec, invert_y=True, origin=(0,0), scale=10):
 
         #make y negative to flip "UP" -PIL uses top left origin
@@ -319,7 +321,6 @@ class PixelOp (RasterObj):
 
         print("ANGLE OF VECTOR FROM VERTICAL (UP) %s"%self.ptgen.old_calc_theta_vert( ((self.center[0]+origin[0]),(self.center[1]+origin[1])), (ex,ey) ) )
 
-    ## ## ## ## ##  
     def normal_to_color(self, norml):
         out = [0,0,0]
         
@@ -334,8 +335,7 @@ class PixelOp (RasterObj):
         if out[2]>255:
              out[2]=255             
         return tuple(out)
-        
-    ## ## ## ## ##
+
     def tint(self, color, com):
         """ i needed a way to procedurally tweak color 
           used for the glowing neon line effect to darken linear borders
@@ -379,12 +379,14 @@ class PixelOp (RasterObj):
             if t[2]>clamp_low:
                 tmp =t[2]-amt
             return ( t[0], t[1], tmp )
-            
-    def pretty_much_yellow(self, pixel):
-        if pixel[0]>250 and  pixel[1]>250 and  pixel[2]<15:
-            return True
-        return False
   
+    def insert_numpy(self, data, brightness=255 ):
+        for y,row in enumerate(data):
+            for x,col in enumerate(row):
+                color = ( int(col[0]*brightness), int(col[1]*brightness), int(col[2]*brightness))
+                self.set_pix( (x, y) , color)
+
+
     def insert_image(self, px, py, foregroundfile, backgroundfile, outfile):
         """ Filename1 and 2 are input files; outfile is a path where results are saved (with extension)."""
 
@@ -396,7 +398,6 @@ class PixelOp (RasterObj):
         bg_w, bg_h = bgimg.size
         bgimg.paste(img, (px, py ) )
         bgimg.save(outfile)
-
 
     def fill_color(self, color, framebuffer=None):    
         """ fills image with solid color """
@@ -603,9 +604,22 @@ class PixelOp (RasterObj):
             self.draw_fill_circle( pts[pt][0], pts[pt][1], 5, color, framebuffer)
         
 
-    ############################################################
-    #these are old remnants of the computer vision code - consider new class for this?
-    ############################################################
+
+
+
+class pycv(PixelOp):
+    """ sketch of a computer vision system to locate fiducuals 
+        moved into its own class from PixelOp
+    """
+
+    def __init__(self):
+        super().__init__()  
+
+    def pretty_much_yellow(self, pixel):
+        if pixel[0]>250 and  pixel[1]>250 and  pixel[2]<15:
+            return True
+        return False
+
     def line_scan(self, pt1, pt2 , filterNoise=False, framebuffer=None):
         """
             filternoise is a tuple/ (#places to look forward/back , replace value) 

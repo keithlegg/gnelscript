@@ -833,24 +833,6 @@ class polygon_operator(point_operator):
         pts = self.get_face_pts(fid)
         return self.centroid_pts(pts) 
 
-    ###############################################  
-    """
-    def get_face_edges2(self, fid, reindex=False):
-        tmp = self.get_face_geom(fid)  # [poly idx, pt data] 
-
-        out_edge_pts = []
-        out_edge_ids = []
-
-        poly = tmp[0]
-
-        # iterate by two and connect to new radial center   
-        # thanks to pythons negative index, this works a treat  
-        for i in range(len(poly)):
-            out_edge_ids.append( (poly[i-1], poly[i] ) ) 
-            out_edge_pts.append( (self.points[poly[i-1]-1], self.points[poly[i]-1] ) ) 
-
-        return [out_edge_ids, out_edge_pts]
-    """
     ############################################### 
     ############################################### 
     # operators that modify geometry data and/or build new geom 
