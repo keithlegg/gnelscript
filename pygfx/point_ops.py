@@ -668,7 +668,13 @@ class polygon_operator(point_operator):
         """
 
         out = []
+
+
+        print('############# ptgrp ', len(ptgrp), '  ', len(self.points) )  
+
         for p in ptgrp:
+            print( p[0] )
+
             self.points[p[0]] = p[1]
         return out    
 
@@ -1031,17 +1037,21 @@ class polygon_operator(point_operator):
         nrmls = self.get_face_normal(fid=f_id, unitlen=True) 
 
         nrmls = nrmls * distance 
-        #s_edges = self.get_face_edges(f_id) 
+        # edge selection iterates a polygons points 2 at a time, 
+        # and forms each pair of points into a new line segment 
         s_edges = self.get_geom_edges(geom)  
         moved = self.xform_pts( nrmls, pts=geom[1])
         e_edges = self.get_geom_edges([geom[0],moved]) 
 
-        # wall polygons 
+        # "wall" polygons, geometry connecting the new poly to the old  
         # iterate one set of edges assuming they both have the same number 
         for w in e_edges[0]:
             wall_poly = []
+            # each "wall" polygon is a quad because the egde is 2 points
+            # the extruded edge is another 2, so 4 points per poly 
             wall_poly.extend(s_edges[1][w[0]-1]) # bottom half of quad polygon 
-            wall_poly.extend(e_edges[1][w[0]-1]) # top half of quad polygon                  
+            wall_poly.extend(e_edges[1][w[0]-1]) # top half of quad polygon  
+            # stitch the 4 points into a quad polygon                 
             self.insert_polygons( [(1,2,4,3)], wall_poly, asnew_shell=True) 
 
         # transformed face along normal (cap polygon) 
@@ -1070,7 +1080,8 @@ class polygon_operator(point_operator):
                 amtx = f_nrml[0]
                 amty = f_nrml[1]
                 amtz = f_nrml[2]
-
+ 
+                # absolute transform in world coordinates 
                 # amtx = offset[0]
                 # amty = offset[1]
                 # amtz = offset[2]

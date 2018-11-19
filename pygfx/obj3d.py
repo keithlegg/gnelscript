@@ -339,7 +339,7 @@ class object3d(polygon_operator):
     def prim_circle(self, axis, pos=(0,0,0), rot=(0,0,0), dia=1, spokes=9):
         """ UNFINSIHED single polygon operations  """    
 
-        print('## debug prim circle ', axis , pos   )
+        # print('## debug prim circle ', axis , pos   )
 
         pts  = []
         poly = []
@@ -362,7 +362,7 @@ class object3d(polygon_operator):
             made so we can make an arrow prim 
         """
 
-        print("## debug pos cone ", pos )
+        # print("## debug pos cone ", pos )
 
  
         self.prim_circle(axis=axis, pos=pos, dia=dia, spokes=spokes)
@@ -544,34 +544,60 @@ class object3d(polygon_operator):
         #self.xform_pts( pos )
 
     ###############################################  
-    def prim_arrow(self, pos=(0,0,0), rot=(0,0,0), vec3=None, size=1, pivot='obj'): 
+    def prim_arrow(self, axis='y', pos=(0,0,0), rot=(0,0,0), vec3=None, size=1, pivot='obj'): 
         """ fully 3D model of an arrow 
             will be used for visualizing vectors 
         """
+
+
+        ## obj = object3d()
+        ## if axis=='x':
+        ##     obj.prim_cone( axis=axis, pos=(length,0,0), dia=dia, spokes=spokes )
+        ## if axis=='y':
+        ##     obj.prim_cone( axis=axis, pos=(0,length,0), dia=dia, spokes=spokes )        
+        ## if axis=='z':
+        ##     obj.prim_cone( axis=axis, pos=(0,0,length), dia=dia, spokes=spokes )
+        ## obj2 = object3d()
+        ## obj2.prim_circle( axis=axis, pos=(0,0,0), spokes=spokes , dia=dia/5)
+
+
+        spokes  = 4  # num turns around axis 
+
+        length  = 1
+
+        dia      = .1        # extrude length is double this, or .2 
+        shaftlen = length-.2 # cone is .2, that plus this = 1 
         
-        dia    = .1
-        length = .8 
-        spokes = 4
-        axis   = 'z'
+        tmpobj1 = object3d()
 
         if axis=='x':
-            self.prim_cone( axis=axis, pos=(length,0,0), dia=dia, spokes=spokes )
+            tmpobj1.prim_cone( axis=axis, pos=(shaftlen,0,0), dia=dia, spokes=spokes )
         if axis=='y':
-            self.prim_cone( axis=axis, pos=(0,length,0), dia=dia, spokes=spokes )        
+            tmpobj1.prim_cone( axis=axis, pos=(0,shaftlen,0), dia=dia, spokes=spokes )        
         if axis=='z':
-            self.prim_cone( axis=axis, pos=(0,0,length), dia=dia, spokes=spokes )
+            tmpobj1.prim_cone( axis=axis, pos=(0,0,shaftlen), dia=dia, spokes=spokes )
 
         tmpobj = object3d()
         tmpobj.prim_circle( axis=axis, pos=(0,0,0), spokes=spokes , dia=dia/5)
-        tmpobj.extrude_face(1, distance=-length)
-        self.insert(tmpobj)
+       
+        # normal is flipped wrong only on some axis  
+        # look into why this happens - extrude used face normal its probably that 
+        if axis=='y':
+            tmpobj.extrude_face(1, distance=shaftlen)            
+        else:
+            tmpobj.extrude_face(1, distance=-shaftlen)
 
-        #self.insert_polygons(polys, pts) 
+        tmpobj1.insert(tmpobj)
+        
+        #tmpobj1.points = self.rotate_pts( rot , tmpobj1.points )
+        #tmpobj1.points = self.xform_pts( pos , tmpobj1.points)
+
+        self.insert(tmpobj1) 
 
     ###############################################  
-    def prim_line_arrow(self, axis, pos, rot, size=1):
-        """ UNFINSIHED single polygon operations  """   
-        pass
+    #def prim_line_arrow(self, axis, pos, rot, size=1):
+    #    """ UNFINSIHED make an arrow out of line geom without polygons """   
+    #    pass
 
     ############################################### 
     def prim_cube(self, linecolor, pos, rot, size=1, pivot='obj'):

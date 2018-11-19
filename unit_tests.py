@@ -486,13 +486,11 @@ def model_geom_from_scratch():
     #add new geom and auto increment the ids
     polys = [(1,2,3), (2,3,4) ]
     pts = [(1,1,1),(0,1,1),(-1,-1,1),(2,-2,1)]
-    # if you pass geom it will work in memory like a C pointer  
     geom = obj.insert_polygons(polys, pts, geom=geom) 
 
  
     polys = [(1,2,3,4) ]
     pts = [(4,-4.3,-3),(1.5,-2.5,-2.1),(-2,2,-4),(4,-4.2,1)]
-    # if you pass geom it will work in memory like a C pointer  
     geom2 = obj.insert_polygons(polys, pts, geom=geom2) 
 
     # use insert to add geom to object 

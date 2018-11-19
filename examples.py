@@ -63,21 +63,26 @@ ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj     
 """ 
 
 
+
+ 
+obj = object3d() 
+#obj.prim_arrow(axis='x',pos=(0,1,0))
+obj.prim_arrow(axis='y',pos=(0,2,0))
+#obj.prim_arrow(axis='z',pos=(0,3,0))
+obj.save('arrow.obj')
+ 
+
 #####################################################
 
 
 
 
-
-def make_3d_arrow(): 
-    """ fully 3D model of an arrow 
-        will be used for visualizing vectors 
-    """
+""" 
+def make_3d_arrow(axis='z'): 
     
-    dia    = .1
-    length = .8 
-    spokes = 4
-    axis   = 'z'
+    spokes = 4  # num turns around axis 
+    dia    = .1 # extrude length is double this, or .2 
+    length = .8 # cone is .2, that plus this = 1 
 
     obj = object3d()
 
@@ -90,18 +95,24 @@ def make_3d_arrow():
 
     obj2 = object3d()
     obj2.prim_circle( axis=axis, pos=(0,0,0), spokes=spokes , dia=dia/5)
-    obj2.extrude_face(1, distance=-length)
-    obj.insert(obj2)
+    
+    # normal is flipped wrong only on some axis  
+    # look into why this happens
+    if axis=='y':
+        obj2.extrude_face(1, distance=length)
+    else:
+        obj2.extrude_face(1, distance=-length)
 
-    obj.save("kone.obj")
+    obj.insert(obj2)
+    obj.save("arrow.obj")
+"""
  
 
 
 
 
-obj = object3d() 
-obj.prim_arrow()
-obj.save('arrow.obj')
+
+
 
 
 
@@ -135,37 +146,6 @@ def build_perspective_matrix():
     #mx = m44.buildPerspProjMat( 200, 1, 1, 100)
     ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
     ropr.save_image('simple_render.png')
-
-
-
-
-
-
-
-#######################################################
-
-def prim_arrow(axis): 
-    
-    obj = object3d() 
-    #obj.prim_circle(axis=axis, spokes=4 , dia=.02)
-    #obj.extrude_face(1, distance=.75)
-    
-    dist = 3
-    if axis=='x':
-        #posi=[dist,0,0]
-        obj.prim_cone(axis=axis, pos=[2,0,0], dia=.1 )
-
-    if axis=='y':
-        #posi = [0,dist,0]
-        obj.prim_cone(axis=axis, pos=[0,2,0], dia=.1 )    
-    
-    if axis=='z':
-        #posi = [0,0,dist]
-        obj.prim_cone(axis=axis, pos=[0,0,2], dia=.1 ) 
-
-
-    obj.save("arrow.obj")
-
 
 
 

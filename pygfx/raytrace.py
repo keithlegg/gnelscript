@@ -1,7 +1,13 @@
 """
     ORIGINAL CODE IS FROM :
        https://gist.github.com/rossant/6046463
+
+    This is entirely seperate from the other code. 
+    I have plans to integrate it into the other code slowly
+    It is fun to play with and learn from.
+
 """
+
 
 import math 
 
