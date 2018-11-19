@@ -99,7 +99,9 @@ def make_3d_arrow():
 
 
 
-
+obj = object3d() 
+obj.prim_arrow()
+obj.save('arrow.obj')
 
 
 

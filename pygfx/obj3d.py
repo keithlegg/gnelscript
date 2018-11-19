@@ -544,6 +544,31 @@ class object3d(polygon_operator):
         #self.xform_pts( pos )
 
     ###############################################  
+    def prim_arrow(self, pos=(0,0,0), rot=(0,0,0), vec3=None, size=1, pivot='obj'): 
+        """ fully 3D model of an arrow 
+            will be used for visualizing vectors 
+        """
+        
+        dia    = .1
+        length = .8 
+        spokes = 4
+        axis   = 'z'
+
+        if axis=='x':
+            self.prim_cone( axis=axis, pos=(length,0,0), dia=dia, spokes=spokes )
+        if axis=='y':
+            self.prim_cone( axis=axis, pos=(0,length,0), dia=dia, spokes=spokes )        
+        if axis=='z':
+            self.prim_cone( axis=axis, pos=(0,0,length), dia=dia, spokes=spokes )
+
+        tmpobj = object3d()
+        tmpobj.prim_circle( axis=axis, pos=(0,0,0), spokes=spokes , dia=dia/5)
+        tmpobj.extrude_face(1, distance=-length)
+        self.insert(tmpobj)
+
+        #self.insert_polygons(polys, pts) 
+
+    ###############################################  
     def prim_line_arrow(self, axis, pos, rot, size=1):
         """ UNFINSIHED single polygon operations  """   
         pass

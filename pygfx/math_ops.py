@@ -26,13 +26,14 @@ DEG_TO_RAD = 0.0174532925 # degree = radian * (180 / PI) # PI = 3.14159265
 RAD_TO_DEG = 57.29577951  # radian = degree * (PI/180)
 
 
+
 ###############################################
 class math_util(object):    
     """ general math library - may contain some of the same functions 
         as the vecotr and matrix objects, but those will be implemented 
         to operate relative to themselves, these will work more generally
 
-        for example self.dot_vec3() will be vec3.dot , ect 
+        for example self.dot_vec3() will be vec3.dot , etc 
     """
 
     def dot_vec3 (self, v1, v2):
@@ -137,6 +138,152 @@ class math_util(object):
         except:
            print('normalize_vec3: divide by zero error.') 
            return [0,0,1]
+
+
+    def mul_sqaure_matrices(self, m1, m2):
+        
+        """
+        # From the brilliant Bryant Ewert's script 
+        matrix_playground.mel 
+
+        matrix $cMatrix[4][4] = << 0, 0, 0, 0;  0, 0, 0, 0;  0, 0, 0, 0;  0, 0, 0, 0 >>;
+        for ( $i = 0; $i < 4; $i++ )
+        {
+            for ( $j = 0; $j < 4; $j++ )
+            {
+                for ( $k = 0; $k < 4; $k++ )
+                {
+                    $cMatrix[$i][$j] = $cMatrix[$i][$j] + ( $aMatrix[$i][$k] * $bMatrix[$k][$j] );
+                }
+            }
+        }
+        return $cMatrix;
+        """
+        pass
+
+
+    def matrix_adjoint(self, m44, size):
+        
+        """
+        # From the brilliant Bryant Ewert's script 
+        matrix_playground.mel 
+
+        # Returns a matrix which is the Adjoint of $aMatrix.
+        # The $size of the input matrix must be specified (3 or 4).
+
+        """
+        cMatrix = matrix44()
+        detSize = size - 1 
+
+        if size > 2:
+            """
+            # Cofactor of top-left 3×3 matrix
+            $cMatrix[0][0] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 1, 1 ), $detSize );
+            $cMatrix[0][1] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 1, 2 ), $detSize );
+            $cMatrix[0][2] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 1, 3 ), $detSize );
+
+            $cMatrix[1][0] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 2, 1 ), $detSize );
+            $cMatrix[1][1] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 2, 2 ), $detSize );
+            $cMatrix[1][2] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 2, 3 ), $detSize );
+
+            $cMatrix[2][0] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 3, 1 ), $detSize );
+            $cMatrix[2][1] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 3, 2 ), $detSize );
+            $cMatrix[2][2] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 3, 3 ), $detSize );
+            """
+            pass
+
+        if size > 3:
+            """
+            # Cofactor of 4th column
+            $cMatrix[0][3] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 1, 4 ), $detSize );
+
+            $cMatrix[1][3] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 2, 4 ), $detSize );
+
+            $cMatrix[2][3] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 3, 4 ), $detSize );
+
+            # Cofactor of 4th row
+            $cMatrix[3][0] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 4, 1 ), $detSize );
+            $cMatrix[3][1] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 4, 2 ), $detSize );
+            $cMatrix[3][2] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 4, 3 ), $detSize );
+            $cMatrix[3][3] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 4, 4 ), $detSize );
+            """ 
+            pass 
+
+        # Adjoint is TRANSPOSE of matrix containing cofactors
+        #cMatrix = transpose( $cMatrix, $size );
+        return cMatrix
+
+
+
+    def matrix_invert(self, aMatrix, size):
+        
+        """
+        # From the brilliant Bryant Ewert's script 
+        matrix_playground.mel 
+
+        # Returns a matrix which is the Inverse of $aMatrix.
+        # The $size of the input matrix must be specified (3 or 4).
+
+        """
+
+        iMatrix  = matrix44()
+    
+        #determinant = determinant( aMatrix, size )
+    
+        if  determinant != 0.0: 
+            #iMatrix = ( 1 / determinant( aMatrix, size ) ) * adjoint( aMatrix, size )
+            pass
+
+        return iMatrix;
+
+
+    def matrix_rotate(self, aMatrix, size):
+        
+        """
+        # From the brilliant Bryant Ewert's script 
+        matrix_playground.mel 
+
+        # Applies a Rotation Transformation to the specified Matrix ("A", "B" or "C").
+        # The rotation value and unit is derived from the current UI settings.
+        # Note: The rotation matrices used may seem Transposed to those typically
+        #    documented, but they are correct for this implementation within Maya,
+        #    specifically in regard to the Acquire and Apply functions (above).
+
+        """
+
+    
+        sAxis = ( "X", "Y", "Z" )
+        kRADIAN = 57.295779513082320876798154814105;
+        aMatrix = matrix44()
+        rMatrix = matrix44() 
+   
+        """ 
+        if ( $unit == 1 )       // must convert to degrees
+            $rotate = $fRotate / $kRADIAN;
+            
+        float $cos = `cos $rotate`;
+        float $sin = `sin $rotate`;
+            
+        switch ( $axis )
+        {
+            case 1:     // X axis
+                $rMatrix = << 1, 0, 0, 0;  0, $cos, $sin, 0;  0, -$sin, $cos, 0;  0, 0, 0, 1 >>;
+                break;
+                
+            case 2:     // Y axis
+                $rMatrix = << $cos, 0, -$sin, 0;  0, 1, 0, 0;  $sin, 0, $cos, 0;  0, 0, 0, 1 >>;
+                break;
+                
+            case 3:     // Z axis
+                $rMatrix = << $cos, $sin, 0, 0;  -$sin, $cos, 0, 0;  0, 0, 1, 0;  0, 0, 0, 1 >>;
+                break;
+        }
+        
+        $aMatrix = getMatrix( $which );
+        $rMatrix = multiplyMatrix( $aMatrix, $rMatrix );
+        
+        populateMatrix( "C", $rMatrix, ( "Rotate Matrix A " + $fRotate + ( $unit == 1 ? " deg" : " rad" ) + " on " + $sAxis[$axis-1] ) );
+        """
 
 ###############################################
 class vec2(object):    
@@ -381,6 +528,37 @@ class vec3(object):
             self.z = item
 
 
+    def to_euler(self):
+        """ 
+            UNFINISHED 
+            experimental - inspired by this:
+            https://stackoverflow.com/questions/21622956/how-to-convert-direction-vector-to-euler-angles
+        
+        """
+        
+        """
+        D = (XD,YD,ZD) # direction 
+        U = (XU,YU,ZU) # up
+        H = (XD,YD,0)  # heading 
+        
+        angle_H = math.atan2(YD,XD)
+        
+        ZD=sin(angle_P)
+        
+        angle_P=asin(ZD)
+
+        W0 = ( -YD, XD, 0 )
+        U0 = W0 × D
+
+        cos(angle_B) = Dot(U0,U) / abs(U0) / abs(U)
+        sin(angle_B) = Dot(W0,U) / abs(W0) / abs(U)
+        angle_B = atan2( Dot(W0,U) / abs(W0), Dot(U0,U) / abs(U0) )
+
+        """
+        pass  
+
+
+
     def project_vec3(self):
         """  UNFINISHED  
 
@@ -419,7 +597,7 @@ class vec3(object):
 
     @property
     def as_np(self):
-        """  vec3 as np.array """ 
+        """  get this vec3 as an np.array """ 
         return self.copy(vtype='numpy')
 
     def insert(self, iterable):
@@ -427,23 +605,27 @@ class vec3(object):
             does not check size, so just assume 3 items (x,y,z)
         """
 
-        if isinstance(iterable, np.ndarray):
-            self.x = iterable[0]
-            self.y = iterable[1]            
-            self.z = iterable[2]
-
         if isinstance(iterable, list) or isinstance(iterable, tuple):
             self.x = iterable[0]
             self.y = iterable[1]            
             self.z = iterable[2]
+
+        if NUMPY_IS_LOADED:
+            if isinstance(iterable, np.ndarray):
+                self.x = iterable[0]
+                self.y = iterable[1]            
+                self.z = iterable[2]
+
         return self 
 
  
     def copy(self, vtype=None):
         if vtype is None:
             return type(self)(self.x,self.y,self.z)
+
         if vtype is 'tuple':
             return ( (self.x,self.y,self.z) )
+
         if NUMPY_IS_LOADED:    
             if vtype is 'numpy':
                 return np.array( (self.x,self.y,self.z) )
@@ -539,17 +721,19 @@ class vec3(object):
                 >>> angle_between((1, 0, 0), (-1, 0, 0))
                 3.141592653589793
         """
-        
-        if isinstance(v1, tuple):
-            v1 = self.insert(v1)  #wrong?
-        if isinstance(v2, tuple):
-            v2 = self.insert(v2)  #wrong?
 
-        v1_u = v1.np_normal;v2_u = v2.np_normal
+        if NUMPY_IS_LOADED:        
+            if isinstance(v1, tuple):
+                v1 = self.insert(v1)  #wrong?
+            if isinstance(v2, tuple):
+                v2 = self.insert(v2)  #wrong?
 
-        #print('### ', v1_u , v2_u )
+            v1_u = v1.np_normal;v2_u = v2.np_normal
 
-        return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+            #print('### ', v1_u , v2_u )
+
+            return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+
 
     def angle_between(self, other):
         """ 
@@ -579,14 +763,16 @@ class vec3(object):
         count = 0
         a = 0 
         for v in p_vecs: 
+
             if mode=='angle':            
                 a = a + self.np_angle_between( upvec, v )
-            if mode=='vec3':
 
+            if mode=='vec3':
                 if isinstance(v, vec3):
                     tmp_x = tmp_x+v.x
                     tmp_y = tmp_x+v.y
                     tmp_z = tmp_x+v.z 
+
                 if isinstance(v, tuple) or isinstance(v, list):                
                     tmp_x = tmp_x+v[0]
                     tmp_y = tmp_x+v[1]
@@ -742,6 +928,7 @@ class quaternion(object):
             self.x = ch * sp * cb + sh * cp * sb
             self.y = -ch * sp * sb + sh * cp * cb
             self.z = -sh * sp * cb + ch * cp * sb
+
         elif (trans_type == 'inertial2ob'):
             self.w = ch * cp * cb + sh * sp * sb
             self.x = -ch * sp * cb - sh * cp * sb
@@ -1078,140 +1265,7 @@ class spherical(object):
         self.t=t
         self.p=0
 
-"""
-############################################################
 
-############################################################
-global proc matrixRotate( string $which )
-# Applies a Rotation Transformation to the specified Matrix ("A", "B" or "C").
-# The rotation value and unit is derived from the current UI settings.
-# Note: The rotation matrices used may seem Transposed to those typically
-#    documented, but they are correct for this implementation within Maya,
-#    specifically in regard to the Acquire and Apply functions (above).
-    string $form = getMatrixForm( $which );
-    
-    float $fRotate = `floatField -q -value matrixRotate`;
-    float $rotate = $fRotate;
-    int $unit = `radioButtonGrp -q -select matrixRotateUnit`;
-    int $axis = `radioButtonGrp -q -select matrixRotateAxis`;
-    string $sAxis[3] = { "X", "Y", "Z" };
-    float $kRADIAN = 57.295779513082320876798154814105;
-    matrix $aMatrix[4][4] = << 1, 0, 0, 0;  0, 1, 0, 0;  0, 0, 1, 0;  0, 0, 0, 1 >>;
-    matrix $rMatrix[4][4] = << 1, 0, 0, 0;  0, 1, 0, 0;  0, 0, 1, 0;  0, 0, 0, 1 >>;
-    
-    if ( $unit == 1 )       // must convert to degrees
-        $rotate = $fRotate / $kRADIAN;
-        
-    float $cos = `cos $rotate`;
-    float $sin = `sin $rotate`;
-        
-    switch ( $axis )
-    {
-        case 1:     // X axis
-            $rMatrix = << 1, 0, 0, 0;  0, $cos, $sin, 0;  0, -$sin, $cos, 0;  0, 0, 0, 1 >>;
-            break;
-            
-        case 2:     // Y axis
-            $rMatrix = << $cos, 0, -$sin, 0;  0, 1, 0, 0;  $sin, 0, $cos, 0;  0, 0, 0, 1 >>;
-            break;
-            
-        case 3:     // Z axis
-            $rMatrix = << $cos, $sin, 0, 0;  -$sin, $cos, 0, 0;  0, 0, 1, 0;  0, 0, 0, 1 >>;
-            break;
-    }
-    
-    $aMatrix = getMatrix( $which );
-    $rMatrix = multiplyMatrix( $aMatrix, $rMatrix );
-    
-    populateMatrix( "C", $rMatrix, ( "Rotate Matrix A " + $fRotate + ( $unit == 1 ? " deg" : " rad" ) + " on " + $sAxis[$axis-1] ) );
-   
-
-############################################################
-
-proc matrix multiplyMatrix( matrix $aMatrix, matrix $bMatrix )
-# Returns a matrix which is the product of multiplying $aMatrix and $bMatrix.
-# Note: As matrices in this script are always square (3×3 or 4×4) no error-checking
-#   is supplied to assert that the sizes of the two matrices are applicable for
-#   multiplication.
-
-    matrix $cMatrix[4][4] = << 0, 0, 0, 0;  0, 0, 0, 0;  0, 0, 0, 0;  0, 0, 0, 0 >>;
-
-    for ( $i = 0; $i < 4; $i++ )
-    {
-        for ( $j = 0; $j < 4; $j++ )
-        {
-            for ( $k = 0; $k < 4; $k++ )
-            {
-                $cMatrix[$i][$j] = $cMatrix[$i][$j] + ( $aMatrix[$i][$k] * $bMatrix[$k][$j] );
-            }
-        }
-    }
-    return $cMatrix;
-
-
-############################################################
-
-matrix inverse( matrix $aMatrix, int $size )
-# Returns a matrix which is the Inverse of $aMatrix.
-# The $size of the input matrix must be specified (3 or 4).
-
-    matrix $iMatrix[4][4] = << 0, 0, 0, 0;  0, 0, 0, 0;  0, 0, 0, 0;  0, 0, 0, 0 >>;
-    
-    float $determinant = determinant( $aMatrix, $size );
-    
-    if ( $determinant != 0.0 )
-        $iMatrix = ( 1 / determinant( $aMatrix, $size ) ) * adjoint( $aMatrix, $size );
-    
-    return $iMatrix;
-
-#############################################################
-
-matrix adjoint( matrix $aMatrix, int $size )
-# Returns a matrix which is the Adjoint of $aMatrix.
-# The $size of the input matrix must be specified (3 or 4).
-
-    matrix $cMatrix[4][4] = << 0, 0, 0, 0;  0, 0, 0, 0;  0, 0, 0, 0;  0, 0, 0, 0 >>;
-    
-    int $detSize = ( $size - 1 );
-
-    if ( $size > 2 )
-    {
-        // Cofactor of top-left 3×3 matrix
-        $cMatrix[0][0] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 1, 1 ), $detSize );
-        $cMatrix[0][1] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 1, 2 ), $detSize );
-        $cMatrix[0][2] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 1, 3 ), $detSize );
-
-        $cMatrix[1][0] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 2, 1 ), $detSize );
-        $cMatrix[1][1] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 2, 2 ), $detSize );
-        $cMatrix[1][2] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 2, 3 ), $detSize );
-
-        $cMatrix[2][0] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 3, 1 ), $detSize );
-        $cMatrix[2][1] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 3, 2 ), $detSize );
-        $cMatrix[2][2] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 3, 3 ), $detSize );
-    }
-
-    if ( $size > 3 )
-    {
-        // Cofactor of 4th column
-        $cMatrix[0][3] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 1, 4 ), $detSize );
-
-        $cMatrix[1][3] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 2, 4 ), $detSize );
-
-        $cMatrix[2][3] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 3, 4 ), $detSize );
-
-        // Cofactor of 4th row
-        $cMatrix[3][0] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 4, 1 ), $detSize );
-        $cMatrix[3][1] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 4, 2 ), $detSize );
-        $cMatrix[3][2] = -determinant( matrixCollapseRowColumn( $aMatrix, $size, 4, 3 ), $detSize );
-        $cMatrix[3][3] =  determinant( matrixCollapseRowColumn( $aMatrix, $size, 4, 4 ), $detSize );
-    }
-    
-    // Adjoint is TRANSPOSE of matrix containing cofactors
-    $cMatrix = transpose( $cMatrix, $size );
-    
-    return $cMatrix;
-
-"""
 ###############################################
 class matrix33(object):
     """ 3X3 matrix from pure python 
