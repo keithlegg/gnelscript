@@ -8,25 +8,52 @@ from pygfx.obj3d import  *
 
 
 
-#from pygfx.raytrace import  *
-#rtrace = raytracer() 
-#rtrace.save_image( rtrace.main() )
 
 
 #######################################################
+#######################################################
 
 """
-    IDEAS 
+
+    THIS IS A PLACE TO WORK ON NEW TOOlS, EXPEIMENTS ETC
+
+    If you want to see the "goodies", go look in unit_tests.py 
+
+"""
+
+
+#######################################################
+#######################################################
+
+
+
+
+"""
+    IDEAS / TODO list 
+
 def dagops_l_system_extrude():
+
 def time_based_simulation():
 def time_based_simulation_bresenham():
 def time_based_simulation_fft():
 def time_based_simulation_quaternion_slerp():
+
 def visualize_edges_as_little_arrows(obj1, obj2, slice): 
 def copy_obj_rotate_to_each_face(obj1, obj2, slice): 
 """
 
 
+
+
+#######################################################
+
+# run the raytracer 
+
+"""
+from pygfx.raytrace import  *
+rtrace = raytracer() 
+rtrace.save_image( rtrace.main() )
+"""
 
 #######################################################
 # test of new vec4 type 
@@ -64,58 +91,20 @@ ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj     
 
 
 
- 
-obj = object3d() 
+#######################################################
+
+#test of 3D arrow primitive model 
+
+#obj = object3d() 
 #obj.prim_arrow(axis='x',pos=(0,1,0))
-obj.prim_arrow(axis='y',pos=(0,2,0))
+#obj.prim_arrow(axis='y',pos=(0,2,0))
 #obj.prim_arrow(axis='z',pos=(0,3,0))
-obj.save('arrow.obj')
- 
-
-#####################################################
+#obj.save('arrow.obj')
 
 
 
 
-""" 
-def make_3d_arrow(axis='z'): 
-    
-    spokes = 4  # num turns around axis 
-    dia    = .1 # extrude length is double this, or .2 
-    length = .8 # cone is .2, that plus this = 1 
-
-    obj = object3d()
-
-    if axis=='x':
-        obj.prim_cone( axis=axis, pos=(length,0,0), dia=dia, spokes=spokes )
-    if axis=='y':
-        obj.prim_cone( axis=axis, pos=(0,length,0), dia=dia, spokes=spokes )        
-    if axis=='z':
-        obj.prim_cone( axis=axis, pos=(0,0,length), dia=dia, spokes=spokes )
-
-    obj2 = object3d()
-    obj2.prim_circle( axis=axis, pos=(0,0,0), spokes=spokes , dia=dia/5)
-    
-    # normal is flipped wrong only on some axis  
-    # look into why this happens
-    if axis=='y':
-        obj2.extrude_face(1, distance=length)
-    else:
-        obj2.extrude_face(1, distance=-length)
-
-    obj.insert(obj2)
-    obj.save("arrow.obj")
-"""
- 
-
-
-
-
-
-
-
-
-
+#######################################################
 
 
 def extrude_single_edge(fid): 
@@ -130,7 +119,7 @@ def extrude_single_edge(fid):
 
 
 
-
+#######################################################
 
 
 
@@ -156,10 +145,8 @@ def build_perspective_matrix():
 
 
 
-
-
-
 def loft_test():
+    """ UNFINISHED ! """
     obj = object3d()    
     obj.prim_circle() 
 
@@ -211,7 +198,7 @@ def modify_part_of_an_object():
 
 
 
-
+#######################################################
 
 def triangulate_test():
     """ UNFINISHED - 
@@ -225,6 +212,8 @@ def triangulate_test():
     obj.save('triangulated.obj')
 
 
+
+#######################################################
 
 def multi_face_triangulate_offset():
     """ broken - DEBUG """
@@ -240,12 +229,6 @@ def multi_face_triangulate_offset():
         obj.radial_triangulate_face(n[0], offset=n[1] )
 
     obj.save("durian_fruit.obj")
-
-
-
-
-
-
 
 
 
