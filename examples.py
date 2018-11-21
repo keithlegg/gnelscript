@@ -126,37 +126,43 @@ def make_normal_all_faces():
 ## vector_between_to_obj(self, r3_1, r3_2):
 
 #######################################################
-def select_polygons_spatially():
+def select_polygons_spatially( from_pt, dist ):
     """ UNFINISHED -  
         half working but it looks like the wrong faces are being selected
+
+        select_polygons_spatially( (2, 1, -4) , 4.5)
+
+
     """
     obj = object3d() 
     obj.load('objects/monkey.obj')
 
-    from_pt = (-1, 0, -1)
+    #define the point to use 
+    #from_pt = (2, 1, 4)
 
     # get the IDS of polygons near a point in space 
-    fids = obj.select_by_location('polygons', from_pt, 1.3 ) 
+    fids = obj.select_by_location('polygons', from_pt, dist ) 
 
     # use sub select to grab the geometry from the face IDs 
     geom = obj.sub_select_geom( ids=fids , reindex=True)
 
     # dump that into a new file 
     obj2 = object3d() 
-    
-    obj2.prim_cube( size=.05, pos=from_pt, pivot='world' )  
-    #tmp.prim_cube(linecolor=(255,0,0), size=.05, pos=pt, rot=(ct,ct,ct), pivot='world')
 
+    # place a cube to mark the spot we are using as an anchor     
+    obj2.prim_cube( size=.05, pos=from_pt, pivot='world' )  
+    
+    # save the geometry that was determined to be "near" the point 
     obj2.insert_polygons(geom[0], geom[1]  ) 
     obj2.save('polygons_near.obj')
 
+    #pull the vectors out of a work buffer to visualize what the tool is doing     
     # #dump the vectors in the work buffer to a new object 
-    # obj3 = object3d() 
-    # #obj3.vectorlist_to_obj( obj.vec_buffer )
-    # # r3, pos=None, arrowhead=False 
-    # for v_pt in obj.vec_buffer:
-    #     obj3.one_vec_to_obj( v_pt, pos=from_pt ) 
-    # obj3.save('dist_vectors.obj')
+    obj3 = object3d() 
+    obj3.vectorlist_to_obj( obj.vec_buffer )
+    obj3.save('dist_vectors.obj')
+
+
 
 
 

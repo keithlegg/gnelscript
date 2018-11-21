@@ -551,7 +551,7 @@ class polygon_operator(point_operator):
         
         if b.length <= dist:
             # experiment to cache vector data and use it later 
-            self.vec_buffer.append( b ) #+pt1vec
+            self.vec_buffer.append( (b, pt1vec) ) #+pt1vec
             return True   
         return False
 
