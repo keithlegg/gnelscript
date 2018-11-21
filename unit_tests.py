@@ -13,31 +13,24 @@ from pygfx.obj3d import  *
      Not a unit test in what you would think of as a test suite. 
      Not yet, anyway. 
 
+
+
+
+     BEWARE OF THE FOLLOWING :
+
+     --> zero indexing is a trap. 
+             Some functions are zero indexed, some are not. 
+
+     --> sub select can mangle the face indices 
+
+     --> not only that, it will copy the same geometry when reindexing. 
+         need to make it smarter so it only selects one thing one time 
+
+
+
 """
-#######################################################
-def select_polygons_spatially():
-    """ UNFINISHED -  
-        half working but it looks like the wrong faces are being selected
-    """
-    obj = object3d() 
-    obj.load('objects/monkey.obj')
 
-    from_pt = (-1, 0, -1)
 
-    # get the IDS of polygons near a point in space 
-    fids = obj.select_by_location('polygons', from_pt, 1.3 ) 
-
-    # use sub select to grab the geometry from the face IDs 
-    geom = obj.sub_select_geom( ids=fids , reindex=True)
-
-    # dump that into a new file 
-    obj2 = object3d() 
-    
-    obj2.prim_cube( size=.05, pos=from_pt, pivot='world' )  
-    #tmp.prim_cube(linecolor=(255,0,0), size=.05, pos=pt, rot=(ct,ct,ct), pivot='world')
-
-    obj2.insert_polygons(geom[0], geom[1]  ) 
-    obj2.save('polygons_near.obj')
 
 #######################################################
 def lighting_test( lightpos, fnum=1):
@@ -632,11 +625,12 @@ def load_build_another_from_normals(objectpath):
 
         obj2.vectorlist_to_obj(edges[1])
 
-    obj2.save("edges.obj")
+    obj2.save("all_face_normals.obj")
 
     ropr = simple_render()
     ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
-    ropr.save_image('simply_render.png')
+    ropr.save_image('pretty_render.png')
+
 
 #####################################################
 def face_extrude():

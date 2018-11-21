@@ -307,6 +307,8 @@ class polygon_operator(point_operator):
         #self.point_colors   = []
         #self.line_colors    = []
 
+        self.vec_buffer      = []  # vector work buffer - scratch area to store vectors for operations 
+
         # render properties embedded in geometry 
         self.linecolors = None       # iterable of colors for lines 
         self.linecolor  = (0,240,00)
@@ -546,8 +548,10 @@ class polygon_operator(point_operator):
         
         # get the vector between two points              
         b = pt1vec.between(pt2vec)
-
+        
         if b.length <= dist:
+            # experiment to cache vector data and use it later 
+            self.vec_buffer.append( b ) #+pt1vec
             return True   
         return False
 
@@ -557,7 +561,9 @@ class polygon_operator(point_operator):
        
 
     def select_by_location(self, select_type, pt_two, dist):
-        """ UNFINISHED
+        """ UNFINISHED - seems to be selecting the wrong faces 
+            subselct is wonky in a bunch of ways DEBUG 
+
             select by angle 
             direction to other things 
             select by distance to other objects, points , etc 
@@ -578,9 +584,7 @@ class polygon_operator(point_operator):
         if select_type == 'polygons':
 
             for fid in range(len(self.polygons)):
-                
                 pts = self.get_face_pts(fid)
-
                 if self.any_pt_is_near(pts, pt_two, dist):
                     near_fids.append(fid)                   
 
@@ -840,7 +844,7 @@ class polygon_operator(point_operator):
         if self.verify_geom([polygr,pointgr]) is False:
             return None 
 
-        for v_id in polygr[fid-1]:
+        for v_id in polygr[fid]:
             # keep a count of points stored to use as new index
             reindex_id.append(int(self.exprt_ply_idx ))
             # store points that are indexed in geom 
@@ -849,7 +853,7 @@ class polygon_operator(point_operator):
 
         # geom is always [ [(poly),..], [(point),(point),...]  ]
         if reindex is False:
-            return [[polygr[fid-1]]     , tmp_pts]
+            return [[polygr[fid]]     , tmp_pts]
         if reindex is True:
             return [[tuple(reindex_id)] , tmp_pts]
 

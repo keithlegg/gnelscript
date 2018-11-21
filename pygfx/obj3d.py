@@ -224,11 +224,10 @@ class object3d(polygon_operator):
             self.polygons.append( vec )  
 
     ############################################### 
+    """
     def vector_between_to_obj(self, r3_1, r3_2):
-        """ a vector between two other vectors 
-            probably not useful, but interesting 
-        """
-        
+        # a vector between two other vectors 
+        # probably not useful, but interesting 
         pts = [
                (r3_1[0], r3_1[1], r3_1[2]),
                (r3_2[0], r3_2[1], r3_2[2]), 
@@ -241,7 +240,7 @@ class object3d(polygon_operator):
             self.points.append(p)
         for vec in plyidx:    
             self.polygons.append( vec )  
- 
+    """
     ############################################### 
     def vectorlist_to_obj(self, vecs, pos=None):
         """ take a list of vectors and convert it to renderable geometry 

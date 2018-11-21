@@ -101,23 +101,62 @@ def vec_to_euler():
     obj = object3d() 
     obj.prim_arrow( axis='y')
     #obj.save('arrow.obj')
+
+
+def make_normal_all_faces():
+    """ the zero indexing is a big problem  
+        all functions should use zero indexing, but OBJ face indices are 1 indexed
+        not sure how to handle it, but need to get it sorted 
+    """
+    obj = object3d() 
+    obj.load('objects/sphere.obj')
+
+    vectors = [] 
+
+    for fid in range(len(obj.polygons)):
+        nrml = obj.get_face_normal(fid) 
+        cntr = obj.get_face_centroid(fid)
+        vectors.append( (nrml, cntr) )
+
+    obj2 = object3d()    
+    obj2.vectorlist_to_obj(vectors)
+    obj2.save('normals.obj') 
+
+
+## vector_between_to_obj(self, r3_1, r3_2):
+
+#######################################################
+def select_polygons_spatially():
+    """ UNFINISHED -  
+        half working but it looks like the wrong faces are being selected
+    """
+    obj = object3d() 
+    obj.load('objects/monkey.obj')
+
+    from_pt = (-1, 0, -1)
+
+    # get the IDS of polygons near a point in space 
+    fids = obj.select_by_location('polygons', from_pt, 1.3 ) 
+
+    # use sub select to grab the geometry from the face IDs 
+    geom = obj.sub_select_geom( ids=fids , reindex=True)
+
+    # dump that into a new file 
+    obj2 = object3d() 
     
-    #obj.select_by_location( (5,5,5), 1 )
-    #print(obj.pt_is_near( (.1,-1,4), (2,2,2), .05) )
+    obj2.prim_cube( size=.05, pos=from_pt, pivot='world' )  
+    #tmp.prim_cube(linecolor=(255,0,0), size=.05, pos=pt, rot=(ct,ct,ct), pivot='world')
 
-    fids = obj.select_by_location('polygons', (1,1,1), 1.4 ) 
-    print(fids )
+    obj2.insert_polygons(geom[0], geom[1]  ) 
+    obj2.save('polygons_near.obj')
 
-
-
-
-
-
-
-
-
-
-
+    # #dump the vectors in the work buffer to a new object 
+    # obj3 = object3d() 
+    # #obj3.vectorlist_to_obj( obj.vec_buffer )
+    # # r3, pos=None, arrowhead=False 
+    # for v_pt in obj.vec_buffer:
+    #     obj3.one_vec_to_obj( v_pt, pos=from_pt ) 
+    # obj3.save('dist_vectors.obj')
 
 
 
