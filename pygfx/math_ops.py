@@ -826,10 +826,14 @@ class vec4(object):
             self.w = item
 
     def to_vec3(self):
+        """ vec4 to vec3 - 
+            divide the weight across the other 3 axis 
+        """
         w = self.w
         return vec3( (self.x/w), (self.y/w), (self.z/w) )
 
     def from_vec3(self, vec3):
+        """ vec4 from a vec3, simply add a weight of 1 """
         self.x = vec3.x        
         self.y = vec3.y  
         self.z = vec3.z
@@ -1265,7 +1269,6 @@ class spherical(object):
         self.t=t
         self.p=0
 
-
 ###############################################
 class matrix33(object):
     """ 3X3 matrix from pure python 
@@ -1536,16 +1539,16 @@ class matrix33(object):
 
              https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
        
-             ⎛cosθ −sinθ  0 ⎞
-          G= ⎜sinθ  cosθ  0 ⎟ 
-             ⎝0      0    1 ⎠
+              ⎛cosθ −sinθ  0 ⎞
+          G = ⎜sinθ  cosθ  0 ⎟ 
+              ⎝0      0    1 ⎠
 
-             --------------------------------------------------------------
-             Given our unit vectors, we note that cosθ=A⋅B, and sinθ=||A×B||
+                --------------------------------------------------------------
+               Given our unit vectors, we note that cosθ=A⋅B, and sinθ=||A×B||
       
-             ⎛ A.B    -||A×B||    0 ⎞
-          G= ⎜||A×B||   A.B       0 ⎟ 
-             ⎝0          0        1 ⎠
+              ⎛ A.B    -||A×B||    0 ⎞
+          G = ⎜||A×B||   A.B       0 ⎟ 
+              ⎝0          0        1 ⎠
 
 
         """
@@ -1666,8 +1669,8 @@ class matrix44(object):
        ⎣Tx   Ty  Tz  1⎦
        -------------------------------------------------------------------------
 
-
     """    
+
     def __init__(self, a=1,b=0,c=0,d=0,
                        e=0,f=1,g=0,h=0,
                        i=0,j=0,k=1,l=0,
@@ -1900,8 +1903,7 @@ class matrix44(object):
         """ sub component of matrix rotate function 
             multiply a 3X3 matrix by a list of points 
         """
-
-        #debug - make work with other types, like self.insert() 
+        #debug - make work with other types??
 
         tmp_buffer = []
         out = None
@@ -1912,7 +1914,7 @@ class matrix44(object):
     def from_euler(self, xrot, yrot, zrot):
         """
             derived from the rotate_pts_3d function 
-
+            go read that doc for explanation  
         """
         dtr = self.mu.dtr
 

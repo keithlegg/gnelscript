@@ -39,7 +39,7 @@ only requires:
 
 
    Organized by the following modules:
-   -  unit_tests  - home for all the current examples of things you can so with the library
+   -  unit_tests  - home for all the current examples of things you can do with the library
    -  math_ops    - math, vectors, matrices, the core logic of it all  
    -  point_ops   - points, polygons, and objects, the "brains" of geometry processing
    -  obj3d       - data structure for 3D models. Inherits all the other stuff  

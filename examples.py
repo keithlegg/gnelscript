@@ -95,11 +95,28 @@ ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj     
 
 #test of 3D arrow primitive model 
 
-#obj = object3d() 
-#obj.prim_arrow(axis='x',pos=(0,1,0))
-#obj.prim_arrow(axis='y',pos=(0,2,0))
-#obj.prim_arrow(axis='z',pos=(0,3,0))
-#obj.save('arrow.obj')
+
+def vec_to_euler():
+
+    obj = object3d() 
+    obj.prim_arrow( axis='y')
+    #obj.save('arrow.obj')
+    
+    #obj.select_by_location( (5,5,5), 1 )
+    #print(obj.pt_is_near( (.1,-1,4), (2,2,2), .05) )
+
+    fids = obj.select_by_location('polygons', (1,1,1), 1.4 ) 
+    print(fids )
+
+
+
+
+
+
+
+
+
+
 
 
 

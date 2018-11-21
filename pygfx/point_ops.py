@@ -497,7 +497,8 @@ class polygon_operator(point_operator):
 
     ###############################################  
     def calc_tripoly_normal(self, three_pts, unitlen):
-        # create a vec3 from 3 points (3 or 4 sided polys)
+        """  create a normal vector (vec3) from 3 points that represent a polygon  """
+
         v1=vec3();v2=vec3()
         v3=vec3();v4=vec3()
 
@@ -512,7 +513,9 @@ class polygon_operator(point_operator):
         """ take 3 vec3 objects and return a face normal """
 
         # calculate the face normal  
-        a = v1 - v2;b = v1 - v3;
+        a = v1 - v2
+        b = v1 - v3
+
         if unitlen:
             f_nrml = a.cross(b).normal
         else:    
@@ -520,18 +523,71 @@ class polygon_operator(point_operator):
         
         return f_nrml 
 
+    ###############################################
+    def any_pt_is_near(self, pt_list, pt2, dist ):
+        """ run pt_is_near() for a list of points, 
+            exiting if any are within distance
+        """
+        
+        for pt in pt_list:
+            if self.pt_is_near(pt, pt2, dist): 
+                return True   
+        return False
+
+    ###############################################
+    def pt_is_near(self, pt1, pt2, dist ):
+        """ compare two 3D points and return True if they are within 
+            the specified distance to each other 
+        """
+        
+        # convert them to vec3 objects for the built in tools  
+        pt1vec  = vec3( pt1[0], pt1[1], pt1[2])
+        pt2vec  = vec3( pt2[0], pt2[1], pt2[2])        
+        
+        # get the vector between two points              
+        b = pt1vec.between(pt2vec)
+
+        if b.length <= dist:
+            return True   
+        return False
+
     ############################################### 
     ############################################### 
     # selection and inspection tools
- 
-    def select_by_location(self, reindex=False):
+       
+
+    def select_by_location(self, select_type, pt_two, dist):
         """ UNFINISHED
             select by angle 
             direction to other things 
             select by distance to other objects, points , etc 
 
         """
-        pass
+        
+        #pt2vec  = vec3( pt_two[0], pt_two[1], pt_two[2] )
+        
+        near_fids = [] 
+  
+        # not done yet 
+        # if select_type == 'points':
+        #     # for pnt in self.points:
+        #     #     # convert the point to a vec3 object 
+        #     pass
+
+
+        if select_type == 'polygons':
+
+            for fid in range(len(self.polygons)):
+                
+                pts = self.get_face_pts(fid)
+
+                if self.any_pt_is_near(pts, pt_two, dist):
+                    near_fids.append(fid)                   
+
+            return near_fids
+
+        return None
+
 
     ###############################################         
     def sub_select(self, slice=None, ids=None):

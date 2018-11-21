@@ -600,7 +600,7 @@ class object3d(polygon_operator):
     #    pass
 
     ############################################### 
-    def prim_cube(self, linecolor, pos, rot, size=1, pivot='obj'):
+    def prim_cube(self, linecolor=(0,128,0), pos=(0,0,0), rot=(0,0,0), size=1, pivot='obj'):
         """ single polygon operations (that can be stacked togteher ?) """
         pts = [];plybfr = []
                 

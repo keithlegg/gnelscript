@@ -15,8 +15,29 @@ from pygfx.obj3d import  *
 
 """
 #######################################################
+def select_polygons_spatially():
+    """ UNFINISHED -  
+        half working but it looks like the wrong faces are being selected
+    """
+    obj = object3d() 
+    obj.load('objects/monkey.obj')
 
+    from_pt = (-1, 0, -1)
 
+    # get the IDS of polygons near a point in space 
+    fids = obj.select_by_location('polygons', from_pt, 1.3 ) 
+
+    # use sub select to grab the geometry from the face IDs 
+    geom = obj.sub_select_geom( ids=fids , reindex=True)
+
+    # dump that into a new file 
+    obj2 = object3d() 
+    
+    obj2.prim_cube( size=.05, pos=from_pt, pivot='world' )  
+    #tmp.prim_cube(linecolor=(255,0,0), size=.05, pos=pt, rot=(ct,ct,ct), pivot='world')
+
+    obj2.insert_polygons(geom[0], geom[1]  ) 
+    obj2.save('polygons_near.obj')
 
 #######################################################
 def lighting_test( lightpos, fnum=1):
@@ -112,10 +133,7 @@ def lighting_test( lightpos, fnum=1):
         obj2.save('visible_faces.obj')
         obj2.flush() 
 
-
-
 #lighting_test( (10,-3, 0) )
-
 
 def animate_light_in_spherical_coords():
     """ generate some 3d positions in a spherical coordinates 
@@ -219,7 +237,7 @@ def multi_face_triangulate_offset():
 
     obj.save("durian_fruit.obj")
 
-multi_face_triangulate_offset() 
+# multi_face_triangulate_offset() 
 
 #####################################################
 def circle_with_cube_all_pts():
@@ -322,6 +340,7 @@ def object_primitives():
     if do_flush:
         obj.flush()
 #object_primitives() 
+
 #####################################################
 def three_renderers():
     """ example of the 3 main ways to render  
@@ -445,6 +464,7 @@ def test_point_transform():
     obj.points = obj.xform_pts( (0,2,0),  pts=obj.points ) 
 
     obj.save('ptgrp.obj')
+
 
 #####################################################
 def slice_extract_and_makenew():
@@ -620,7 +640,7 @@ def load_build_another_from_normals(objectpath):
 
 #####################################################
 def face_extrude():
-    """ brure force test of face extrude 
+    """ brute force test of face extrude 
         extrudes all faces in a polygon object 
         also will display a cheapo test "progress bar"
         because it can be slow 
