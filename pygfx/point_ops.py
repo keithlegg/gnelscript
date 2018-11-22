@@ -673,7 +673,7 @@ class polygon_operator(point_operator):
 
         pids = self.sub_select(slice=slice, ids=ids)
 
-        #print('## debug, test of optimize  ', pids) 
+        # print('## debug, sub_select_geom pids : ', pids) 
 
         for i in pids:
          
@@ -729,8 +729,7 @@ class polygon_operator(point_operator):
 
         out = []
 
-
-        print('############# ptgrp ', len(ptgrp), '  ', len(self.points) )  
+        # print('############# ptgrp ', len(ptgrp), '  ', len(self.points) )  
 
         for p in ptgrp:
             print( p[0] )
@@ -844,6 +843,8 @@ class polygon_operator(point_operator):
         if self.verify_geom([polygr,pointgr]) is False:
             return None 
 
+        # print( '########## ', polygr , fid )
+
         for v_id in polygr[fid]:
             # keep a count of points stored to use as new index
             reindex_id.append(int(self.exprt_ply_idx ))
@@ -910,7 +911,10 @@ class polygon_operator(point_operator):
 
     ############################################### 
     def apply_matrix_pts(self, pts, m33=None, m44=None):
-        """ batch mutliply points by a matrix 
+        """ 
+            DEBUG BAD INTERFACE! 
+             
+            batch mutliply points by a matrix 
             used for translate, rotate, and scaling. 
             
             Can be used for many other things as well.  

@@ -548,18 +548,6 @@ class object3d(polygon_operator):
             will be used for visualizing vectors 
         """
 
-
-        ## obj = object3d()
-        ## if axis=='x':
-        ##     obj.prim_cone( axis=axis, pos=(length,0,0), dia=dia, spokes=spokes )
-        ## if axis=='y':
-        ##     obj.prim_cone( axis=axis, pos=(0,length,0), dia=dia, spokes=spokes )        
-        ## if axis=='z':
-        ##     obj.prim_cone( axis=axis, pos=(0,0,length), dia=dia, spokes=spokes )
-        ## obj2 = object3d()
-        ## obj2.prim_circle( axis=axis, pos=(0,0,0), spokes=spokes , dia=dia/5)
-
-
         spokes  = 4  # num turns around axis 
 
         length  = 1
@@ -578,13 +566,13 @@ class object3d(polygon_operator):
 
         tmpobj = object3d()
         tmpobj.prim_circle( axis=axis, pos=(0,0,0), spokes=spokes , dia=dia/5)
-       
+
         # normal is flipped wrong only on some axis  
         # look into why this happens - extrude used face normal its probably that 
         if axis=='y':
-            tmpobj.extrude_face(1, distance=shaftlen)            
+            tmpobj.extrude_face(0, distance=shaftlen)            
         else:
-            tmpobj.extrude_face(1, distance=-shaftlen)
+            tmpobj.extrude_face(0, distance=-shaftlen)
 
         tmpobj1.insert(tmpobj)
         

@@ -98,14 +98,60 @@ ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj     
 
 def vec_to_euler():
 
-    obj = object3d() 
+    in_vec = vec3(45,0,0)
+
+    obj = object3d()
     obj.prim_arrow( axis='y')
-    #obj.save('arrow.obj')
+
+
+    ##----------------  
+    # from a quaternion 
+
+    # # quaternion test 
+    # q = quaternion() 
+    # q.from_euler( 45, 0, 0, trans_type='inertial2obj'  ) #trans_type='obj2inertial'
+    # m33 = q.to_m33( trans_type='inertial2obj') #trans_type='inertial2obj'
+
+    ##---------------- 
+    # from matrix object     
+    m33 = matrix33() 
+    # m33.from_euler(45,0,0) 
+
+    ##---------------- 
+
+    # rotation matrix to project one vector to another 
+    a = vec3(2,2,2)
+    b = vec3(-4,1,10)
+
+    crs = a.cross(b)
+
+    #determine the cross product of these two vectors (to determine a rotation axis)    
+    print('## cross product is ', crs )
+
+    #determine the dot product ( to find rotation angle)
+    dot = a.dot(b) 
+    
+    print('## dot product is ', dot )
+
+
+    #build quaternion (not sure what this means)
+    #the transformation matrix is the quaternion as a 3 by 3 ( not sure)
+
+
+    ##----------------  
+    obj.points = obj.apply_matrix_pts( obj.points, m33=m33, m44=None)
+    obj.save('arrow.obj')
+
+
+    # q.to_m33(self, trans_type='inertial2obj'):
+
+
+#vec_to_euler( ) 
 
 
 
 
-vec_to_euler() 
+
 
 
 #######################################################
