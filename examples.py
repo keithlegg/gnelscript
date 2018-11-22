@@ -189,24 +189,7 @@ def object_primitives():
 
 
 
-#####################################################
-def test_subsel_point_transform(): 
-    """ example of translate, rotate, scale of a point group 
-        translate tools work with "ptgroups", or raw points 
-    """
-    obj = object3d()
-    obj.load('objects/monkey.obj')
 
-    ptgrp = obj.get_pt_grp( slice=(1,300) )
-    xformed_pts = obj.scale_pts(2.5, ptgrp=ptgrp)   
-
-    ptgrp = obj.get_pt_grp( slice=(1,300) )
-    xformed_pts = obj.rotate_pts((0,30,0),  ptgrp=ptgrp)
-
-    ptgrp = obj.get_pt_grp( slice=(1,100) )
-    xformed_pts = obj.xform_pts( (0,2,0),  ptgrp=ptgrp) 
-
-    obj.save('ptgrp.obj')
 
 #####################################################
 def test_point_transform(): 
@@ -226,31 +209,7 @@ def test_point_transform():
     obj.save('ptgrp.obj')
 
 
-#####################################################
-def slice_extract_and_makenew():
-    """ load two models, extract parts of them using the subselect tool 
-        subselect grabs polys and points at the same time, with option to reindex
-         
-        reindex effectively makes a new object 
 
-        weld them into a new model 
-        fekkin awesome mate!  
-    """
-    
-    obj = object3d() 
-    obj.load('objects/sphere2.obj')
-    geom = obj.sub_select_geom( slice=(1,50), ids=[53,55,73], reindex=True)
-
-    obj3 = object3d() 
-    obj3.load('objects/monkey.obj')
-    geom2 = obj3.sub_select_geom( slice=(3,100) , ids=[101,105,148], reindex=True)
-
-    obj2 = object3d() 
-    ## weld two models together 
-    obj2.insert_polygons(geom[0], geom[1]  ) 
-    obj2.insert_polygons(geom2[0], geom2[1]  )
-
-    obj2.save('new.obj')
 
 #####################################################
 def model_geom_from_scratch(): 
@@ -282,33 +241,7 @@ def model_geom_from_scratch():
 
     obj.save("my_new_object.obj")
 
-#####################################################
-def extract_by_copy_hack():
-    """ *slightly* higher level than raw geom 
-        use the face lookup util to get the geom by face index 
-    """
 
-    obj = object3d()
-    obj.load('objects/kube.obj')
-
-    # duplicate all points with out thinking about it 
-    all_pts = obj.points
-
-    # extract two chunks of poly ids 
-    polygr1 =  obj.get_pt_ids([0,1,2])  
-    polygr2 =  obj.get_pt_ids([3,5])
-
-    # make a new object and dump data into it
-    obj2 = object3d() 
-    obj2.points = all_pts  #move all points over - DEBUG add a clean func to remove unused
-
-    for ply in polygr1:
-        obj2.polygons.extend(ply)
-    for ply in polygr2:
-        obj2.polygons.extend(ply)        
-
-
-    obj2.save('kube_modify.obj')
 
 
 #####################################################

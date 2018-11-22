@@ -147,42 +147,7 @@ def vec_to_euler():
 
 
 
-#######################################################
-def select_polygons_spatially( from_pt, dist ):
-    """ UNFINISHED -  
-        half working but it looks like the wrong faces are being selected
 
-        select_polygons_spatially( (2, 1, -4) , 4.5)
-
-
-    """
-    obj = object3d() 
-    obj.load('objects/monkey.obj')
-
-    #define the point to use 
-    #from_pt = (2, 1, 4)
-
-    # get the IDS of polygons near a point in space 
-    fids = obj.select_by_location('polygons', from_pt, dist ) 
-
-    # use sub select to grab the geometry from the face IDs 
-    geom = obj.sub_select_geom( ids=fids , reindex=True)
-
-    # dump that into a new file 
-    obj2 = object3d() 
-
-    # place a cube to mark the spot we are using as an anchor     
-    obj2.prim_cube( size=.05, pos=from_pt, pivot='world' )  
-    
-    # save the geometry that was determined to be "near" the point 
-    obj2.insert_polygons(geom[0], geom[1]  ) 
-    obj2.save('polygons_near.obj')
-
-    #pull the vectors out of a work buffer to visualize what the tool is doing     
-    # #dump the vectors in the work buffer to a new object 
-    obj3 = object3d() 
-    obj3.vectorlist_to_obj( obj.vec_buffer )
-    obj3.save('dist_vectors.obj')
 
 
 
@@ -215,31 +180,7 @@ def loft_test():
     obj = object3d()    
     obj.prim_circle() 
 
-
-#######################################################
-
-
-def modify_a_subselect():
-    """ UNFINSIHED ! """
-
-    obj = object3d()
-    #obj.load('objects/sphere.obj')
-    obj.load('kube.obj')
-
-    geom = obj.sub_select_geom( slice=[1,5]  , reindex=True )
-
-    # rotate_pts( rot, pts=None, ptgrp=None):
-    newpts = obj.rotate_pts(rot=(45,45,45), pts=geom[1])
-
-    print(geom)
-    geom2 = obj.sub_select_geom( slice=[5,6]  , reindex=True )
-    #newpts2 = obj.rotate_pts((-45,0,45), points=geom2[1])
-
-    obj2 = object3d() 
-    #obj2.insert_polygons(geom[0], newpts  )      
-    obj2.insert_polygons(geom2[0], geom2[1], asnew_shell=False  ) 
-    # obj2.insert_polygons(geom2[0], newpts2  , asnew_shell=False) 
-    obj2.save('kube_modify.obj')
+    # (polygon_operator) .poly_loft( obj2, as_new_obj=True):
 
 
 
