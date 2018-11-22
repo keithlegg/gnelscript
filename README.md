@@ -9,11 +9,11 @@ Render and composite images with PIL.
 
 Lot of tools to process polygons like:
 
-OBJ file load and save 
-Sub select parts of a model 
-Triangulation 
-Polygon N sided face extrude 
-visualize vectors and line geometry 
+   - OBJ file load and save 
+   - Sub select parts of a model 
+   - Triangulation 
+   - Polygon N sided face extrude 
+   - visualize vectors and line geometry 
 
 
 
@@ -39,7 +39,7 @@ only requires:
 
 
    Organized by the following modules:
-   -  unit_tests  - home for all the current examples of things you can do with the library
+   -  examples    - home for all the current examples of things you can do with the library
    -  math_ops    - math, vectors, matrices, the core logic of it all  
    -  point_ops   - points, polygons, and objects, the "brains" of geometry processing
    -  obj3d       - data structure for 3D models. Inherits all the other stuff  
@@ -47,8 +47,8 @@ only requires:
    -  render      - brain dead simple 3D rendering, examples of using pygfx modules to build a 3D render  
 
    Stuff you can ignore for now :
+   -  unit_tests  - not done yet 
    -  raytrace    - someones code I imported and am considering intergrating 
-   -  examples    - nothing here worth looking at 
    -  dag_ops     - directed acyclic graph, first stab at a scene graph (not working yet)
    -  grid_ops    - nothing here yet, future home of mapping and grids 
    -  examples_2d - nothing here worth looking at  

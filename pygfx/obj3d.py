@@ -377,7 +377,7 @@ class object3d(polygon_operator):
         if axis=='z':
             oset = (0,0,tiplen) 
 
-        self.radial_triangulate_face(1, offset=oset )
+        self.radial_triangulate_face(0, offset=oset )
 
         #pts = self.xform_pts(  pos, pts)
         #pts = self.rotate_pts( rot, pts)
