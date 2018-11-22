@@ -5,7 +5,57 @@ from pygfx.math_ops import  *
 from pygfx.obj3d import  *
 
 
+from pygfx.raytrace import  *
 
+
+
+#######################################################
+
+# run the raytracer 
+
+def raytrace():
+    
+    rtrace = raytracer() 
+    rtrace.save_image( rtrace.main() )
+ 
+
+
+
+#######################################################
+
+
+
+def build_perspective_matrix():
+    #debug - NOT WORKING!  Work In Progress 
+
+    obj = object3d()
+    obj.prim_cube()
+    #obj.scale_pts((3,3,30))
+    obj.rotate_pts((30,30,30))
+    ropr = simple_render()
+    #                          fov, aspect, znear, zfar)
+    #mx = m44.buildPerspProjMat( 200, 1, 1, 100)
+    ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
+    ropr.save_image('simple_render.png')
+
+
+
+
+#####################################################
+def pass_matrix_to_render():
+    """ use a 3X3 or 4X4 matrix to adjust a render 
+        attempt to "visualize" a matrix 
+    """
+
+    obj = object3d()
+    obj.prim_cube(pos=(0,0,0), rot=(0,0,0), linecolor=(255,0,0))
+    ropr = simple_render()
+    m44 = matrix44()
+    m44.from_euler(45,45,0)
+    ropr.render_matrix_obj( None, m44, 3, 100, 'custom_render.png' , obj      )
+
+
+#######################################################
 
 def lighting_test( lightpos, fnum=1):
     """ run the scanline render with a lighting model 
@@ -100,25 +150,10 @@ def lighting_test( lightpos, fnum=1):
         obj2.save('visible_faces.obj')
         obj2.flush() 
 
-#lighting_test( (10,-3, 0) )
 
+# lighting_test( (10,-3, 0) )
 
-#####################################################
-def pass_matrix_to_render():
-    """ use a 3X3 or 4X4 matrix to adjust a render 
-        attempt to "visualize" a matrix 
-    """
-
-    obj = object3d()
-    obj.prim_cube(pos=(0,0,0), rot=(0,0,0), linecolor=(255,0,0))
-    ropr = simple_render()
-    m44 = matrix44()
-    m44.from_euler(45,45,0)
-    ropr.render_matrix_obj( None, m44, 3, 100, 'custom_render.png' , obj      )
-
-
-
-#####################################################
+## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
     
 def animate_light_in_spherical_coords():
     """ generate some 3d positions in a spherical coordinates 

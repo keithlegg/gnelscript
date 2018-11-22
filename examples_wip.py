@@ -15,7 +15,7 @@ from pygfx.obj3d import  *
 
 """
 
-    THIS IS A PLACE TO WORK ON NEW TOOlS, EXPEIMENTS ETC
+    THIS IS A PLACE TO WORK ON NEW TOOlS, EXPERIMENTS ETC
 
     If you want to see the "goodies", go look in unit_tests.py 
 
@@ -45,15 +45,6 @@ def copy_obj_rotate_to_each_face(obj1, obj2, slice):
 
 
 
-#######################################################
-
-# run the raytracer 
-
-"""
-from pygfx.raytrace import  *
-rtrace = raytracer() 
-rtrace.save_image( rtrace.main() )
-"""
 
 #######################################################
 # test of new vec4 type 
@@ -74,20 +65,22 @@ print( v4 )
 # print( m44.np_inverse )
 # print(m44*v4)
 
+
+
 #######################################################
 # test of new quaternion type 
 
-""" 
-q1 = quaternion()
-m33 = matrix33()
-m33.from_euler(45,0,45)
-q1.from_m33(m33)
-m9 = q1.to_m33() 
-obj = object3d()
-obj.prim_cube()
-ropr = simple_render()
-ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj      )
-""" 
+def quaternion_test():  
+    q1 = quaternion()
+    m33 = matrix33()
+    m33.from_euler(45,0,45)
+    q1.from_m33(m33)
+    m9 = q1.to_m33() 
+    obj = object3d()
+    obj.prim_cube()
+    ropr = simple_render()
+    ropr.render_matrix_obj( m9 , None ,     1,   100, 'custom_render.png' , obj      )
+ 
 
 
 
@@ -207,25 +200,6 @@ def extrude_single_edge(fid):
     print( obj.get_face_edges(fid ) ) #DEBUG - add reindex 
     print( obj.get_face_normal(fid ) )
     print( obj.get_face_centroid(fid ) )
-
-
-
-#######################################################
-
-
-
-def build_perspective_matrix():
-    #debug - NOT WORKING!  Work In Progress 
-
-    obj = object3d()
-    obj.prim_cube()
-    #obj.scale_pts((3,3,30))
-    obj.rotate_pts((30,30,30))
-    ropr = simple_render()
-    #                          fov, aspect, znear, zfar)
-    #mx = m44.buildPerspProjMat( 200, 1, 1, 100)
-    ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
-    ropr.save_image('simple_render.png')
 
 
 
