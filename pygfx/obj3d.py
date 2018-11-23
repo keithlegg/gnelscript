@@ -242,6 +242,10 @@ class object3d(polygon_operator):
             self.polygons.append( vec )  
     """
     ############################################### 
+
+    #def edgegeom_to_vectorlist(self, geom):
+  
+    ############################################### 
     def vectorlist_to_obj(self, vecs, pos=None):
         """ take a list of vectors and convert it to renderable geometry 
         
@@ -316,7 +320,7 @@ class object3d(polygon_operator):
         #self.xform_pts( pos )
         
     ###############################################  
-    def prim_quad(self, axis, pos, rot, size=1):
+    def prim_quad(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
         """ single polygon operations (that can be stacked together ?) """
         
         if axis == 'x':

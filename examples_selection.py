@@ -1,6 +1,12 @@
 
 
 
+#from pygfx.render import *
+
+from pygfx.math_ops import  *
+from pygfx.point_ops import *
+from pygfx.obj3d import  *
+
 
 #####################################################
 def extract_by_copy_hack():
@@ -29,7 +35,7 @@ def extract_by_copy_hack():
 
 
     obj2.save('kube_modify.obj')
-    
+
 
 #####################################################
 def slice_extract_and_makenew():
@@ -77,6 +83,7 @@ def test_subsel_point_transform():
     obj.save('ptgrp.obj')
 
 
+
 #######################################################
 
 
@@ -105,11 +112,14 @@ def modify_a_subselect():
 
 #######################################################
 def select_polygons_spatially( from_pt, dist ):
-    """ UNFINISHED -  
-        half working but it looks like the wrong faces are being selected
+    """ 
+        calculate the vector from face normal to a fixed point
+        if the angle is within a threshold, select the face
+        extract all those into a new model and export it  
 
+        TO RUN: 
+        
         select_polygons_spatially( (2, 1, -4) , 4.5)
-
 
     """
     obj = object3d() 
@@ -140,3 +150,5 @@ def select_polygons_spatially( from_pt, dist ):
     obj3.vectorlist_to_obj( obj.vec_buffer )
     obj3.save('dist_vectors.obj')
 
+
+#select_polygons_spatially( (2, 1, -4) , 4.5)

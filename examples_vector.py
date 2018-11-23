@@ -1,9 +1,11 @@
 
 
-from pygfx.render import *
-from pygfx.point_ops import *
+
 from pygfx.math_ops import  *
+from pygfx.point_ops import *
 from pygfx.obj3d import  *
+from pygfx.render import *
+
 
 
 

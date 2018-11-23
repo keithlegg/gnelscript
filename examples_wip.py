@@ -89,16 +89,31 @@ def quaternion_test():
 #test of 3D arrow primitive model 
 
 
-def vec_to_euler():
+def place_obect_on_vector():
+    """ how to we place objects on an arbirtary  3D vector in space? 
+        various tests to answer that question. 
+
+        Techniques explored are:
+            Quaternion 
+            Euler 
+            Matrix 
+            Spherical 
+
+    """
 
     in_vec = vec3(45,0,0)
+    in_pt  = vec3(5,5,5)
+
 
     obj = object3d()
     obj.prim_arrow( axis='y')
 
 
     ##----------------  
-    # from a quaternion 
+    # using a quaternion 
+
+    ##----------------  
+    # using a quaternion 
 
     # # quaternion test 
     # q = quaternion() 
@@ -144,11 +159,29 @@ def vec_to_euler():
 
 
 
+#######################################################
 
 
+def broken_get_poly_edges():
+    """ GEOM format is broken 
+        EDGES format is broken
+        The whole thing needs to be re-written 
 
+    """
+    obj = object3d()
+    obj.prim_quad() 
+    geom =  obj.get_face_edges(0 ) 
 
+    vecs = []
+    for v in geom[0]:
+        tmpvec = []
+        for vi in v:
+            tmpvec.append( geom[1][vi] )
+        vecs.append(tmpvec)
 
+    obj2 = object3d() 
+    obj2.vectorlist_to_obj( vecs )
+    obj2.save('subsel.obj')
 
 
 
@@ -157,7 +190,11 @@ def vec_to_euler():
 
 
 def extrude_single_edge(fid): 
-    """ UNFINISHED! """
+    """ GEOM format is broken 
+        EDGES format is broken
+        The whole thing needs to be re-written 
+    """
+
     obj = object3d()
     obj.load('objects/sphere.obj')
 
@@ -170,10 +207,6 @@ def extrude_single_edge(fid):
 
 
 #######################################################
-
-
-
-
 
 def loft_test():
     """ UNFINISHED ! """

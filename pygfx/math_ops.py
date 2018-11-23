@@ -357,9 +357,8 @@ class vec2(object):
         return val
 
     def project_pt(self, A, B, offset):
-        """ i forgot what this does.... hmm 
-            returns a vector that is .... 
-        """
+        """ project a point along a vector """
+
         nX = B.x - A.x;nY = B.y - A.y
         distX = pow( (A.x - B.x ) , 2.0 ) 
         distY = pow( (A.y - B.y ) , 2.0 ) 
@@ -558,6 +557,31 @@ class vec3(object):
         pass  
 
 
+
+    def project_pt(self, offset):
+        """ project a point along a vector """
+        
+        # nX = B.x - A.x
+        # nY = B.y - A.y
+        # nZ = B.z - A.z 
+
+        # distX = pow( (A.x - B.x ) , 2.0 ) 
+        # distY = pow( (A.y - B.y ) , 2.0 ) 
+        # distZ = pow( (A.z - B.z ) , 2.0 ) 
+        # vecLength = math.sqrt(distX + distY + distZ )
+
+        # normalized vector  
+        # calcX = nX / self.length
+        # calcY = nY / self.length
+        # calcZ = nZ / self.length
+
+        normal = self.normal
+
+        # project point along vector with offset (can use negative too)
+        ptX = self.x + (normal.x * offset)
+        ptY = self.y + (normal.y * offset)
+        ptZ = self.z + (normal.z * offset)
+        return type(self)(ptX, ptY, ptZ)
 
     def project_vec3(self):
         """  UNFINISHED  
@@ -961,9 +985,7 @@ class quaternion(object):
             self.set_identity()
 
     def dot_product(self, q): 
-        #return a.x * b.x + a.y * b.y + a.z * b.z + a.z * a.z; #surely this is a typo?
-        #return self.x*q.x + self.y*q.y + self.z*q.z + self.z*q.z;   #<-- ??
-        return self.x*q.x + self.y*q.y + self.z*q.z + self.z*self.z; #<-- ??
+        return a.x * b.x + a.y * b.y + a.z * b.z + a.z * a.z;   
 
     def conjugate(self, q):
         result = type(self)()

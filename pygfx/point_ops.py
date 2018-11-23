@@ -271,20 +271,54 @@ class polygon_operator(point_operator):
 
         3D model and tools to work on polygons 
        
+        -------------------------------------------
+
+        all code is experimental! 
+
+        GEOM and GROUPS should really be another object type
+
+        I was torn between simplicity of code anf keeping a flat structure
+        My reasoning was that if you have a format made of arrays of numbers 
+        it offers more flexiblity for importing from other languages, formats, text files, etc  
+
+        This tool was built as a toy to play with. It has potential to be a really awesome tool 
+        but that would probably require a big think and a third rewrite. 
 
         -------------------------------------------
+
+        Known problems:
+
+            None of the tools "stiches" faces together.
+            They obey rules of good topology, but all faces are unconnected
+
+            - Extrude does not "clean up" the old geom it extrudes, it simply adds more on top 
+            - Multi face triangulate will not work on a concave polygon, it needs to be symetrical 
+            - GEOM format is a mess, it was designed to be an "OBJ file in memory"
+              the indexing works, but is sloppy and the more you try to sub-select at a time the worse it gets 
+            - EDGE GEOM does not obey the rules, it groups points in pairs, and is all wacky 
+            
+
+
+        --------------------------------------------
             Concepts 
- 
-        SUBSELECT        = slice (start, end ), ids = [LIST OF PTS]
+        --------------------------------------------
 
-        GEOM             = [ [], [] ]
-        GEOM             = [ [(poly),(poly),..], [(pt),(pt),(pt),(pt),... ] ]
-        GEOM (extended)  = [ [(poly),(poly),..], [(pt),(pt),(pt),(pt),... ] ]
+        SUBSELECT              = slice (start, end ), ids = [LIST OF PTS]
+  
+        --------------------------------------------
 
-        PTGRP            = [ [ID,(PT)], [ID,(PT)] ]
-        PTGRP (extended) = [ [ID,(PT)], [ID,(PT)] ,   [COLOR], [NORMAL], [META] ]        
+        GEOM                   = [ [], [] ]
+        GEOM                   = [ [(poly),(poly),..], [(pt),(pt),(pt),(pt),... ] ]
+        GEOM (extended)        = [ [(poly),(poly),..], [(pt),(pt),(pt),(pt),... ] ]
 
-        FACEGRP = [ [ID,(POLY)], [ID,(POLY)], .. ]
+        --------------------------------------------
+        
+        PTGRP                  = [ [ID,(PT)], [ID,(PT)] ]
+        PTGRP (extended)       = [ [ID,(PT)], [ID,(PT)] ,   [COLOR], [NORMAL], [META] ]        
+
+        FACEGRP (not implemented)          = [ [ID,(POLY)], [ID,(POLY)], .. ]
+
+        --------------------------------------------
 
         NAMING 
 
@@ -728,12 +762,9 @@ class polygon_operator(point_operator):
         """
 
         out = []
-
         # print('############# ptgrp ', len(ptgrp), '  ', len(self.points) )  
 
         for p in ptgrp:
-            print( p[0] )
-
             self.points[p[0]] = p[1]
         return out    
 
@@ -781,8 +812,16 @@ class polygon_operator(point_operator):
 
     ###############################################  
     def get_geom_edges(self, geom ):
-        """ only works on a single polygon geom object 
+        """ THIS WHOLE THING IS KINDA BROKEN!
+
+            GEOM format is supposed to be a OBJ in memory
+            it is wonky to begin with 
+            
+            This is even more wonky, it is pairing the points instead of keeping them single list
+
+            Also - only works on a single polygon geom object 
             DEBUG - make work with multiple 
+
         """
 
         out_edge_ids = []
@@ -796,7 +835,15 @@ class polygon_operator(point_operator):
 
             # iterate by two and store segments
             out_edge_ids.append((  ply[idx-2]           ,ply[idx-1]              )) # poly index
+            
+            # THIS IS WRONG?? DEBUG - IT MAKES PAIRS OF POINTS 
+            # THIS BREAKS FROM THE CONVENTION OF SINGLE INDEXED POINTS ! 
             out_edge_pts.append((  geom[1][ply[idx-1]-2], geom[1][ply[idx-1]-1]  )) # point index
+            
+            # THIS IS A HALFWAY FIXED SINGLE INDEXED POINT 
+            #out_edge_pts.append(  geom[1][ply[idx-1]-2] ) # edge start point
+            #out_edge_pts.append(  geom[1][ply[idx-1]-1] ) # edge end point  
+
 
         return [out_edge_ids, out_edge_pts]
 
@@ -1098,13 +1145,15 @@ class polygon_operator(point_operator):
     def extrude_face(self, f_id, distance):
  
         geom  = self.sub_select_geom(ids=[f_id] , reindex=True)
-        nrmls = self.get_face_normal(fid=f_id, unitlen=True) 
+        nrml = self.get_face_normal(fid=f_id, unitlen=True) 
 
-        nrmls = nrmls * distance 
+        nrml = nrml * distance 
         # edge selection iterates a polygons points 2 at a time, 
         # and forms each pair of points into a new line segment 
         s_edges = self.get_geom_edges(geom)  
-        moved = self.xform_pts( nrmls, pts=geom[1])
+
+        # move the face up and build the walls connecting to it 
+        moved = self.xform_pts( nrml, pts=geom[1])
         e_edges = self.get_geom_edges([geom[0],moved]) 
 
         # "wall" polygons, geometry connecting the new poly to the old  
@@ -1113,8 +1162,17 @@ class polygon_operator(point_operator):
             wall_poly = []
             # each "wall" polygon is a quad because the egde is 2 points
             # the extruded edge is another 2, so 4 points per poly 
+            
+            #edge geom is broken - it groups point in pairs
+            #this is a halfway working fix that uses single points
+            #for wi in w: 
+            #    wall_poly.append( s_edges[1][wi] )
+            #    wall_poly.append( e_edges[1][wi] )
+
+            #this is the old "broken" extrude that works, but uses a paired point data struct
             wall_poly.extend(s_edges[1][w[0]-1]) # bottom half of quad polygon 
             wall_poly.extend(e_edges[1][w[0]-1]) # top half of quad polygon  
+            
             # stitch the 4 points into a quad polygon                 
             self.insert_polygons( [(1,2,4,3)], wall_poly, asnew_shell=True) 
 

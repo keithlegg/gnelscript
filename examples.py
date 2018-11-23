@@ -8,8 +8,29 @@ from pygfx.obj3d import  *
 
 
 
-    
 
+
+
+
+def project_point_along_vector():
+    
+    # 2d vector 
+    a = vec2(  1  ,1   )
+    b = vec2( 1.01 ,1.01 )
+    com = vec2() 
+    print( com.project_pt(a, b, 1) )
+
+
+    #x = vec3(1,1,1)
+    #print( x.project_pt() )
+
+
+
+
+project_point_along_vector()
+
+
+#####################################################
 
 def test_copysop():
     """ copy SOP is a subselect, copy and transform the result
@@ -22,6 +43,7 @@ def test_copysop():
     #be cautious of large number of polys. It gets slow real quick!
     obj.copy_sop(slice=(1,10), offset=(0,2,0), num=5, distance=.75)
     obj.save('stax.obj')
+
 
 #####################################################
 def test_rotate_points():
@@ -102,7 +124,6 @@ def circle_with_cube_all_pts():
 
     obj = object3d()
     obj.prim_circle(axis='z', pos=(0,0,0), spokes=42) 
-    ctr = obj.get_face_centroid(0)
     obj.triangulate(force=True)
     pts = obj.get_face_pts(0) 
     ct = 0
@@ -112,6 +133,7 @@ def circle_with_cube_all_pts():
         ct += 10
         obj.insert(tmp)  
     obj.save("cubey.obj")
+
 
 #####################################################
 def spherical_to_point():
@@ -185,7 +207,7 @@ def object_primitives():
     obj.save("new_cone.obj")
     if do_flush:
         obj.flush()
-#object_primitives() 
+
 
 
 
