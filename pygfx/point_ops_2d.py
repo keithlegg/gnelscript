@@ -236,10 +236,10 @@ class point_operator_2d(object):
         try:
             a = bot_xy[1]-top_xy[1]  
             o = bot_xy[0]-top_xy[0]
-            #if a==0 or o ==0:
-            #    r = self.rtd(math.atan(o)) 
-            #else:
-            r = self.rtd(math.atan(o/a)) 
+            if a==0 or o ==0:
+                r = self.rtd(math.atan(o)) 
+            else:
+                r = self.rtd(math.atan(o/a)) 
             return r
         except:
             print('error calc angle - div by 0?') 

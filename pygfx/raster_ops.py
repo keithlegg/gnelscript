@@ -299,7 +299,33 @@ class PixelOp (RasterObj):
         #put a dot at the center
         self.draw_fill_circle(sp, ep, size, color ) 
 
+
+    ################################################################# 
+
+    def draw_point_2d(self, vec, invert_y=True, origin=(0,0), scale=10):
+        """ this will draw a point in 2d from the center of the image 
+            the only slightly special thing going on here is the scale factor 
+            this allows for an image with variable grid size 
+        """
+        
+        #make y negative to flip "UP" -PIL uses top left origin
+        #-1 will flip , 1 will NOT flip 
+        if invert_y:
+            invert = -1
+        else:
+            invert = 1    
+
+        x = (self.center[0]+origin[0]) + (vec[0]*scale)
+        y = (self.center[1]+origin[1]) + (vec[1]*scale) * invert 
+
+        self.draw_fill_circle( x, y, 3, (230,0,0) ) 
+
+
     def draw_vector_2d(self, vec, invert_y=True, origin=(0,0), scale=10):
+        """ this will draw a vector in 2d from the center of the image 
+            the only slightly special thing going on here is the scale factor 
+            this allows for an image with variable grid size 
+        """
 
         #make y negative to flip "UP" -PIL uses top left origin
         #-1 will flip , 1 will NOT flip 
@@ -311,7 +337,7 @@ class PixelOp (RasterObj):
         ex = (self.center[0]+origin[0]) + (vec[0]*scale)
         ey = (self.center[1]+origin[1]) + (vec[1]*scale) * invert 
 
-        #self.graticule(50)
+        #self.graticule(50) # - better to do this outside of this fucntion for more control over layering 
 
         #args are ( points, color, thickness, framebuffer=None):
         # self.connect_the_dots([ ((self.center[0]+origin[0]),(self.center[1]+origin[1])),
@@ -319,7 +345,11 @@ class PixelOp (RasterObj):
         self.connect_the_dots([ ((self.center[0]+origin[0]),(self.center[1]+origin[1])),
                                 (ex,ey)], (0,230,0), 1 )
 
-        print("ANGLE OF VECTOR FROM VERTICAL (UP) %s"%self.ptgen.old_calc_theta_vert( ((self.center[0]+origin[0]),(self.center[1]+origin[1])), (ex,ey) ) )
+        calc_angle = self.ptgen.old_calc_theta_vert( ( (self.center[0]+origin[0]), (self.center[1]+origin[1]) ),  (ex,ey) )
+
+        print("ANGLE OF VECTOR FROM VERTICAL (UP) %s" % calc_angle)
+
+    ################################################################# 
 
     def normal_to_color(self, norml):
         out = [0,0,0]
