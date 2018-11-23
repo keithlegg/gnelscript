@@ -229,7 +229,7 @@ class PixelOp (RasterObj):
         clr_backg = (0,50,90)
         clr_lines = (0,150,190)
         clr_dots  = (0,255,0)
-        gridcolor = (75,100,80)
+        gridcolor = (145,120,180)
 
         #draw a dot in the center
         cen_x = self.center[0]  
@@ -290,6 +290,7 @@ class PixelOp (RasterObj):
             framebuffer = self.fb
         self.connect_the_dots( tmp, color, size, origin=(self.center[0] ,self.center[1]), framebuffer=framebuffer)
 
+
     def draw_cntr_pt(self, dot, size=1, origin=(0,0), color=(255,0,0), framebuffer=None):
         """ draw a point relative to center of image """
 
@@ -302,7 +303,34 @@ class PixelOp (RasterObj):
 
     ################################################################# 
 
-    def draw_point_2d(self, vec, invert_y=True, origin=(0,0), scale=10):
+    def render_line_2d(self, pts, invert_y=True, origin=(0,0), scale=10):
+        """ this will draw a point in 2d from the center of the image 
+            the only slightly special thing going on here is the scale factor 
+            this allows for an image with variable grid size 
+        """
+        
+        #make y negative to flip "UP" -PIL uses top left origin
+        #-1 will flip , 1 will NOT flip 
+        if invert_y:
+            invert = -1
+        else:
+            invert = 1    
+    
+        transformed_pts = []
+
+        for pt in pts:
+            x = (self.center[0]+origin[0]) + (pt[0]*scale)
+            y = (self.center[1]+origin[1]) + (pt[1]*scale) * invert 
+            
+            transformed_pts.append( (x,y) ) 
+
+        print('### ', pts )
+
+        self.connect_the_dots( transformed_pts, (230, 200, 0 ), 1 )
+
+
+
+    def render_point_2d(self, vec, invert_y=True, origin=(0,0), scale=10):
         """ this will draw a point in 2d from the center of the image 
             the only slightly special thing going on here is the scale factor 
             this allows for an image with variable grid size 
@@ -321,7 +349,7 @@ class PixelOp (RasterObj):
         self.draw_fill_circle( x, y, 3, (230,0,0) ) 
 
 
-    def draw_vector_2d(self, vec, invert_y=True, origin=(0,0), scale=10):
+    def render_vector_2d(self, vec, invert_y=True, origin=(0,0), scale=10):
         """ this will draw a vector in 2d from the center of the image 
             the only slightly special thing going on here is the scale factor 
             this allows for an image with variable grid size 
@@ -339,9 +367,6 @@ class PixelOp (RasterObj):
 
         #self.graticule(50) # - better to do this outside of this fucntion for more control over layering 
 
-        #args are ( points, color, thickness, framebuffer=None):
-        # self.connect_the_dots([ ((self.center[0]+origin[0]),(self.center[1]+origin[1])),
-        #                         (ex,ey)], (0,200,0), 2 )
         self.connect_the_dots([ ((self.center[0]+origin[0]),(self.center[1]+origin[1])),
                                 (ex,ey)], (0,230,0), 1 )
 
@@ -605,7 +630,8 @@ class PixelOp (RasterObj):
                 try:
                     dpix[ pt[0], pt[1] ] = color 
                 except IndexError:
-                    print('clipping error, check yo coordinates dawg. ')
+                    #print('clipping error, check yo coordinates dawg. ')
+                    pass
 
             #really crappy way to add line thickness - makes a point a "plus sign"      
             if thickness:
@@ -617,8 +643,9 @@ class PixelOp (RasterObj):
                         dpix[ pt[0]+pthick, pt[1]        ] = color  
                         dpix[ pt[0]-pthick, pt[1]        ] = color
                     except IndexError:
-                        print('clipping error, check yo coordinates dawg. ')
-    
+                        #print('clipping error, check yo coordinates dawg. ')
+                        pass
+
     def draw_pt_along_vector(self, pt1, pt2, num, color, dia=1, framebuffer=None):
         """ draw any number of points along a vector """
 
