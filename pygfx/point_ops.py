@@ -1501,32 +1501,22 @@ class polygon_operator(point_operator):
                     for f in tok:
                         if(f!='' ):
                             clndat.append(f) 
-                    if len(clndat)==5 or len(clndat)==4:
-                        tok=clndat    
-                        numtok = len(tok)               
-                        #THIS NONSENSE IS TO CLEAN UP ERRANT SPACES IN FILE 
-  
-                        #VERTICIES 
+
+                    #weak attempt to clean up the textfile a little                    
+                    tok=clndat    
+                    numtok = len(tok)               
+                    if tok: 
+                        # VERTICIES 
                         if tok[0]=='v':
                             self.points.append( (float(tok[1]), float(tok[2]), float(tok[3]) ) ) 
 
-                        #FACES
+                        # FACES
                         if tok[0]=='f':
-                           # print('face found ', tok[1],tok[2],tok[3],tok[4])
-                           b1 = tok[1].split('/')
-                           b2 = tok[2].split('/')
-                           b3 = tok[3].split('/')
 
-                           #four sided polygons   
-                           if numtok==4:
-                               poly = ( int(b1[0]),  int(b2[0]), int(b3[0])  )
-                               
-                           #three sided polygons      
-                           if numtok==5:
-                               b4 = tok[4].split('/')
-                               poly = ( int(b1[0]),  int(b2[0]), int(b3[0]), int(b4[0]) )
-
-
+                           fids = tok[1:]
+                           poly = []
+                           for fid in fids:
+                               poly.append(int(fid))   
                            self.polygons.append( poly )
 
                 #NORMALS 

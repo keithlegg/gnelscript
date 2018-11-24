@@ -606,7 +606,9 @@ class PixelOp (RasterObj):
             self.draw_fill_circle(pt[0], pt[1], dia, color, framebuffer)
     
     def connect_the_dots(self, points, color, thickness, origin=(0,0), framebuffer=None):
-        """ debug - add check to make sure it doesnt go off edge of page """
+        """ debug - add check to make sure it doesnt go off edge of page 
+                    clipping is a whole thing unto itself and maybe better put elsewhere? 
+        """
 
         if framebuffer:
             self.read_buffer(framebuffer)

@@ -56,6 +56,9 @@ def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None
         #I wrote a 2D renderer in 5 lines!! Not too shaby. 
         for ply in obj.polygons:
             poly = []
+            
+            print( ply )
+
             for fid in ply:
                 poly.append( obj.points[fid-1] )
             fb.render_line_2d( poly,  scale=gridsize)   
