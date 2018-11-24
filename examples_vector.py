@@ -108,7 +108,7 @@ def right_triangle_viewer( xcrd, ycrd ):
 
 
 
-# right_triangle_viewer(2,2)
+right_triangle_viewer(2,2)
 
 
 #####################################################

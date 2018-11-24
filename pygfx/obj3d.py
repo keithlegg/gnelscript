@@ -387,6 +387,9 @@ class object3d(polygon_operator):
         #pts = self.rotate_pts( rot, pts)
 
     ############################################### 
+    #def prim_sphere2(self, pos=(0,0,0), rot=(0,0,0), size=1 ):
+
+    ############################################### 
     def prim_sphere(self, pos, rot, size=1 ):
         
         #UNFINISHED 

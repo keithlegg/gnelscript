@@ -185,10 +185,10 @@ def three_renderers():
      """
 
     obj = object3d()
-    #obj.load('objects/sphere2.obj')
-    obj.load('extrudez.obj')
+    obj.load('objects/sphere2.obj')
+    #obj.load('original_sin.obj')
 
-    obj.rotate_pts((20,170,170))
+    #obj.rotate_pts((20,170,170))
     obj.triangulate() 
 
     ropr = simple_render()
@@ -226,3 +226,12 @@ def three_renderers():
     #ropr.scanline(obj, render_scale) 
     #ropr.save_image('simple_render.png')
 
+
+
+
+three_renderers()
+
+
+#obj = object3d() 
+#obj.load('original_sin.obj')
+#bloody_simple_2drender('2d_render.png', obj=obj, gridsize=200)

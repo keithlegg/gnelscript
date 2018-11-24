@@ -1,10 +1,9 @@
 
 
-
-#from pygfx.point_ops import *
+from pygfx.obj3d import  *
+from pygfx.point_ops import *
 
 from pygfx.raster_ops import *
-
 from pygfx.math_ops import  vec2
 
 
@@ -31,7 +30,11 @@ def render_2d_vector(v1, gridsize=50):
 
 ###################################################
 
-def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, gridsize=50):
+
+
+###################################################
+
+def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None, gridsize=50):
     """ draw some points and lines on a grid 
 
         TO RUN:
@@ -48,6 +51,15 @@ def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, gridsize
 
     #pt_size = 3
 
+
+    if obj is not None:
+        #I wrote a 2D renderer in 5 lines!! Not too shaby. 
+        for ply in obj.polygons:
+            poly = []
+            for fid in ply:
+                poly.append( obj.points[fid-1] )
+            fb.render_line_2d( poly,  scale=gridsize)   
+
     if lines is not None:
         for line in lines:        
             fb.render_line_2d( line,  scale=gridsize)
@@ -63,9 +75,32 @@ def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, gridsize
     fb.save(imagename)
 
 
-#pts = [(1,1),(2,2),(3,3)]
-#lines = [ [ (1,1), (1,2), (2,1)], [ (6,1), (1,6), (5,-1)] ]
-#bloody_simple_2drender('2d_render.png', pts=pts, vecs=pts, lines=lines )
+
+## ---------------------------------------
+
+
+def example_BSR():
+    """ BSR = bloody simple renderer """
+    pts = [(1,1),(2,2),(3,3)]
+    lines = [ [ (1,1), (1,2), (2,1)], [ (6,1), (1,6), (5,-1)] ]
+
+    bloody_simple_2drender('2d_render.png', pts=pts, vecs=pts, lines=lines )
+
+
+
+## ---------------------------------------
+
+
+def load_obj_render_BSR(objfile):
+    """ BSR = bloody simple renderer """
+    #load a 3d model and render it in 2D
+    obj = object3d() 
+    obj.load(objfile)
+    bloody_simple_2drender('2d_render.png', obj=obj, gridsize=100)
+
+
+load_obj_render_BSR('original_sin.obj') 
+
 
 
 ###################################################

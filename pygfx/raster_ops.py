@@ -303,6 +303,7 @@ class PixelOp (RasterObj):
 
     ################################################################# 
 
+
     def render_line_2d(self, pts, invert_y=True, origin=(0,0), scale=10):
         """ this will draw a point in 2d from the center of the image 
             the only slightly special thing going on here is the scale factor 
@@ -323,11 +324,8 @@ class PixelOp (RasterObj):
             y = (self.center[1]+origin[1]) + (pt[1]*scale) * invert 
             
             transformed_pts.append( (x,y) ) 
-
-        print('### ', pts )
-
+        #print('### ', pts )
         self.connect_the_dots( transformed_pts, (230, 200, 0 ), 1 )
-
 
 
     def render_point_2d(self, vec, invert_y=True, origin=(0,0), scale=10):
@@ -373,6 +371,32 @@ class PixelOp (RasterObj):
         calc_angle = self.ptgen.old_calc_theta_vert( ( (self.center[0]+origin[0]), (self.center[1]+origin[1]) ),  (ex,ey) )
 
         print("ANGLE OF VECTOR FROM VERTICAL (UP) %s" % calc_angle)
+
+
+    def render_obj_2d(self, obj, invert_y=True, origin=(0,0), scale=10):
+        """ this will draw an obj file in orthogrphic 2d from the center of the image 
+
+            the only slightly special thing going on here is the scale factor 
+            this allows for an image with variable grid size 
+        """
+        
+        #make y negative to flip "UP" -PIL uses top left origin
+        #-1 will flip , 1 will NOT flip 
+        if invert_y:
+            invert = -1
+        else:
+            invert = 1    
+    
+        transformed_pts = []
+
+        #for pt in pts:
+        #    x = (self.center[0]+origin[0]) + (pt[0]*scale)
+        #    y = (self.center[1]+origin[1]) + (pt[1]*scale) * invert 
+        #    
+        #    transformed_pts.append( (x,y) ) 
+        
+        #print('### ', pts )
+        self.connect_the_dots( transformed_pts, (230, 200, 0 ), 1 )
 
     ################################################################# 
 
