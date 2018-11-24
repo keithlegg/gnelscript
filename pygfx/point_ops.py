@@ -337,6 +337,8 @@ class polygon_operator(point_operator):
         self.points          = []    # list of tuples of XYZ points per vertex         -  [(x,y,z), (x,y,z)]  
         self.polygons        = []    # list of tuples for 2 or more vertex connections -  [(1,2,5,8) , (1,2)] 
         self.face_normals    = []
+        self.face_uvs        = []
+
         #self.point_normals  = []
         #self.point_colors   = []
         #self.line_colors    = []
@@ -393,9 +395,10 @@ class polygon_operator(point_operator):
     def flush(self):
         """ set all geometry to a clean state """
 
-        self.points       = [] 
-        self.polygons     = []      
-        self.face_normals = []  
+        self.points          = [] 
+        self.polygons        = []      
+        self.face_normals    = []
+        self.face_uvs        = []
 
         self.exprt_ply_idx   = 1 #obj is NOT zero indexed
         #self.exprt_pnt_idx   = 0 #pts ARE zero indexed (everything BUT .obj face idx's are)
@@ -1510,22 +1513,64 @@ class polygon_operator(point_operator):
                         if tok[0]=='v':
                             self.points.append( (float(tok[1]), float(tok[2]), float(tok[3]) ) ) 
 
+                        # LINES
+                        if tok[0]=='l':
+                            ## LINE IMPORT IS UNTESTED !
+                            fids = tok[1:] #remove the first item (letter f )
+                            polyline = []
+                            for fid in fids:
+                                polyline.append(int(fid))   
+                            self.polygons.append( polyline )                         
+
                         # FACES
                         if tok[0]=='f':
+                            
+                            fids = tok[1:] #remove the first item (letter f )
+                            
+                            poly = []
+                            for fid in fids:
+                                
+                                ## DEAL WITH THIS STUFF - '47//1'
+                                if '/' in fid:
+                                    #print('DEBUG WE DONT KNOW WHAT TO DO HERE! ')
+                                    
+                                    # Vertex texture coordinate indices
+                                    # f v1/vt1 v2/vt2 v3/vt3
 
-                           fids = tok[1:]
-                           poly = []
-                           for fid in fids:
-                               poly.append(int(fid))   
-                           self.polygons.append( poly )
+                                    # Vertex normal indices
+                                    # f v1/vt1/vn1 v2/vt2/vn2 v3/vt3/vn3
 
-                #NORMALS 
-                #if tok[0]=='vn':
-                #    print('normal found ', tok)
-                
-                #UV's
-                #if tok[0]=='vt':
-                #    print('texture UV found ', tok)
+                                    # Vertex normal indices without texture coordinate indices
+                                    # f v1//vn1 v2//vn2 v3//vn3
+                                    tmp = fid.split('/')
+                                    if len(tmp):
+                                        # take the first slash delineated integer?
+                                        poly.append(int(tmp[0]))    
+
+                                else:    
+                                    poly.append(int(fid))   
+
+                            self.polygons.append( poly )
+
+
+                        # NORMALS
+                        if tok[0]=='vn':
+                            # debug - count the data being loaded and do sanity checks,
+                            # for example, does the number of normals match the faces 
+                            
+                            #print('normal found     ', (tok[1],tok[2],tok[3]) )
+                            
+                            self.face_normals.append( ( float(tok[1]), float(tok[2]), float(tok[3]) ) )    
+
+                        # UV's
+                        if tok[0]=='vt':
+                            print('texture UV found ', tok)
+                            #self.face_uvs        
+
+                        # What the hell are "Parameter space vertices"?                        
+                        #if tok[0]=='vp':
+                        #    print('Parameter space vertices found ', tok)
+                               
 
     ###############################################  
 

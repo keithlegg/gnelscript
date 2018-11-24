@@ -37,6 +37,14 @@ def render_2d_vector(v1, gridsize=50):
 def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None, gridsize=50):
     """ draw some points and lines on a grid 
 
+        ARGS:
+
+            pts      - list of points to render 
+            vecs     - list of vectors to render 
+            lines    - list of lines to render 
+            obj      - list of 3D obect models to render
+            gridsize - parameter to set a grid units to pixels ratio
+
         TO RUN:
 
             pts = [(1,1),(2,2),(3,3)]
@@ -50,18 +58,17 @@ def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None
     fb.graticule(gridsize)
 
     #pt_size = 3
-
+    pointcolor = ()
+    linecolot = () 
 
     if obj is not None:
-        #I wrote a 2D renderer in 5 lines!! Not too shaby. 
-        for ply in obj.polygons:
-            poly = []
-            
-            print( ply )
-
-            for fid in ply:
-                poly.append( obj.points[fid-1] )
-            fb.render_line_2d( poly,  scale=gridsize)   
+        for o in obj:
+            # look! I wrote a renderer in 5 lines!! 
+            for ply in o.polygons:
+                poly = []
+                for fid in ply:
+                    poly.append( o.points[fid-1] )
+                fb.render_line_2d( poly,  scale=gridsize)   
 
     if lines is not None:
         for line in lines:        
@@ -99,7 +106,11 @@ def load_obj_render_BSR(objfile):
     #load a 3d model and render it in 2D
     obj = object3d() 
     obj.load(objfile)
-    bloody_simple_2drender('2d_render.png', obj=obj, gridsize=100)
+    
+    obj2 = object3d() 
+    obj2.load('objects/monkey.obj')
+
+    bloody_simple_2drender('2d_render.png', obj=[obj,obj2], gridsize=100)
 
 
 load_obj_render_BSR('original_sin.obj') 
