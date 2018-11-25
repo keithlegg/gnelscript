@@ -100,21 +100,27 @@ def example_BSR():
 
 ## ---------------------------------------
 
-
 def load_obj_render_BSR(objfile):
     """ BSR = bloody simple renderer """
     #load a 3d model and render it in 2D
     obj = object3d() 
     obj.load(objfile)
     
-    obj2 = object3d() 
-    obj2.load('objects/monkey.obj')
+    obj.scale_pts( (.1,.2,.1) )
+    obj.rotate_pts( (.1,.1,.1) )
 
-    bloody_simple_2drender('2d_render.png', obj=[obj,obj2], gridsize=100)
+    #obj2 = object3d() 
+    #obj2.load('objects/monkey.obj')
+
+    bloody_simple_2drender('2d_render.png', obj=[obj], gridsize=100)
 
 
-load_obj_render_BSR('original_sin.obj') 
+load_obj_render_BSR('objects/teapot.obj') 
 
+
+#obj = object3d() 
+#obj.load('objects/teapot.obj')
+#obj.show() 
 
 
 ###################################################

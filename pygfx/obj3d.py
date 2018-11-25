@@ -19,6 +19,10 @@ class object3d(polygon_operator):
         self.pos       = [0,0,0]
         self.scale     = [1,1,1]
 
+        #self.uv_points       = []
+        #self.uv_polys        = []
+        #self.normals         = []
+
     def reset(self):
         self.rot          = [0,0,0]
         self.pos          = [0,0,0]
@@ -87,9 +91,13 @@ class object3d(polygon_operator):
         data.append('  rotation      : %s %s %s'%( self.rot[0], self.rot[1], self.rot[2]) )
         data.append('  scale         : %s %s %s'%( self.scale[0], self.scale[1], self.scale[2]) )
         data.append(' --------------------------- ' )        
-        data.append('  num face normals   : %s' %  self.numfacnrml )  # unimplemented
+        data.append('  num face normals   : %s' %  self.numfacnrml )   
         data.append('  num verts          : %s' %  self.numpts     )
         data.append('  num polygons       : %s' %  self.numply     )
+        
+        data.append('  num UV points      : %s' %  len(self.uv_points)    )
+        data.append('  num UV faces       : %s' %  len(self.uv_polys)     )
+
         data.append(' --------------------------- ' )         
         data.append('  num triangles      : %s' %  tris  )
         data.append('  num quads          : %s' %  quads )  
@@ -110,7 +118,7 @@ class object3d(polygon_operator):
 
     @property
     def numfacnrml(self):
-        return len(self.face_normals)  
+        return len(self.normals)  
 
     ############################################### 
     def convert_pts_vec3(self):
@@ -152,7 +160,7 @@ class object3d(polygon_operator):
             f_nrml = self.get_face_normal(idx)
             #print('############ ', f_nrml)
             # store it in object for later use 
-            self.face_normals.append(f_nrml) 
+            self.normals.append(f_nrml) 
 
         return cache_face_normals
 

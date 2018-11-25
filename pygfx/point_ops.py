@@ -334,10 +334,12 @@ class polygon_operator(point_operator):
         super().__init__()  
 
         # geometry properties 
+        self.uv_points       = []   # UV single point coordinates
+        self.uv_polys        = []   # UV face indices  
+        self.normals         = []   # face_normals
+
         self.points          = []    # list of tuples of XYZ points per vertex         -  [(x,y,z), (x,y,z)]  
         self.polygons        = []    # list of tuples for 2 or more vertex connections -  [(1,2,5,8) , (1,2)] 
-        self.face_normals    = []
-        self.face_uvs        = []
 
         #self.point_normals  = []
         #self.point_colors   = []
@@ -397,7 +399,7 @@ class polygon_operator(point_operator):
 
         self.points          = [] 
         self.polygons        = []      
-        self.face_normals    = []
+        self.normals         = []
         self.face_uvs        = []
 
         self.exprt_ply_idx   = 1 #obj is NOT zero indexed
@@ -990,7 +992,7 @@ class polygon_operator(point_operator):
             batch mutliply a point group by a matrix 
             used for translate, rotate, and scaling. 
         """
-      
+
         pt_ids = []
         pt_data = []
 
@@ -1017,17 +1019,30 @@ class polygon_operator(point_operator):
     def scale_pts(self, amt, pts=None, ptgrp=None ):
 
         # build a scale matrix 
+        
+        amtx = 1
+        amty = 1
+        amtz = 1
+                        
+        if isinstance(amt,tuple):
+            amtx = amt[0]
+            amty = amt[1]
+            amtz = amt[2]
+        else:
+            amtx = amt
+            amty = amt
+            amtz = amt            
 
         sc_m33 = self.m33.identity
-        sc_m33[0]  = amt
-        sc_m33[4]  = amt
-        sc_m33[8]  = amt    
+        sc_m33[0]  = amtx
+        sc_m33[4]  = amty
+        sc_m33[8]  = amtz    
 
         # sc_m44 = self.m44.identity
         # sc_m44[0]  = amt
         # sc_m44[5]  = amt
         # sc_m44[10] = amt        
-
+    
         ################################################
         if pts and ptgrp is None: 
             return self.apply_matrix_pts(pts, m33=sc_m33)  # m44=sc_m44 
@@ -1035,7 +1050,7 @@ class polygon_operator(point_operator):
         if pts is None and ptgrp is None:
             # no args gets all the points of this object 
             ptgrp = self.get_pt_grp()    
-        
+  
         scaled = self.apply_matrix_ptgrp(ptgrp, m33=sc_m33)  # m44=sc_m44
         self.insert_pt_grp(scaled)
 
@@ -1527,12 +1542,13 @@ class polygon_operator(point_operator):
                             
                             fids = tok[1:] #remove the first item (letter f )
                             
-                            poly = []
+                            poly    = []
+                            uv_poly = []
+
                             for fid in fids:
                                 
                                 ## DEAL WITH THIS STUFF - '47//1'
                                 if '/' in fid:
-                                    #print('DEBUG WE DONT KNOW WHAT TO DO HERE! ')
                                     
                                     # Vertex texture coordinate indices
                                     # f v1/vt1 v2/vt2 v3/vt3
@@ -1542,16 +1558,21 @@ class polygon_operator(point_operator):
 
                                     # Vertex normal indices without texture coordinate indices
                                     # f v1//vn1 v2//vn2 v3//vn3
+
                                     tmp = fid.split('/')
                                     if len(tmp):
-                                        # take the first slash delineated integer?
+                                        # first slash delineated integer is face ID
                                         poly.append(int(tmp[0]))    
+                                        # second slash delineated integer is face UV
+                                        if tmp[1]: 
+                                            uv_poly.append(int(tmp[1]))
+
 
                                 else:    
                                     poly.append(int(fid))   
 
                             self.polygons.append( poly )
-
+                            self.uv_polys.append(uv_poly) 
 
                         # NORMALS
                         if tok[0]=='vn':
@@ -1560,12 +1581,30 @@ class polygon_operator(point_operator):
                             
                             #print('normal found     ', (tok[1],tok[2],tok[3]) )
                             
-                            self.face_normals.append( ( float(tok[1]), float(tok[2]), float(tok[3]) ) )    
+                            self.normals.append( ( float(tok[1]), float(tok[2]), float(tok[3]) ) )    
 
                         # UV's
                         if tok[0]=='vt':
-                            print('texture UV found ', tok)
-                            #self.face_uvs        
+                            # print('texture UV found ', tok)
+                            self.uv_points.append( (float(tok[1]), float(tok[2]), float(tok[3]) ) ) 
+
+                            """
+                            v  0.000000 2.000000 0.000000
+                            v  0.000000 0.000000 0.000000
+                            v  2.000000 0.000000 0.000000
+                            v  2.000000 2.000000 0.000000
+                            vt 0.000000 1.000000 0.000000
+                            vt 0.000000 0.000000 0.000000
+                            vt 1.000000 0.000000 0.000000
+                            vt 1.000000 1.000000 0.000000
+                            # 4 vertices
+                            usemtl wood
+                            # The first number is the point,
+                            # then the slash,
+                            # and the second is the texture point
+                            f 1/1 2/2 3/3 4/4
+                            # 1 element
+                            """
 
                         # What the hell are "Parameter space vertices"?                        
                         #if tok[0]=='vp':
