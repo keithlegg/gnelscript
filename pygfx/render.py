@@ -455,8 +455,11 @@ class simple_render(object):
             self.rp = self.project_polygons(object3d, rx, ry, rz, scale, res_x, res_y)
 
             for i,l in enumerate(self.rp):
-                if object3d.linecolors:
-                    color = object3d.linecolors[i]
+                
+                #cool idea - needs more work to implement 
+                #if object3d.linecolors:
+                #    color = object3d.linecolors[i]
+                
                 rndr_bfr.connect_the_dots( l, color, int(thick/2) )  #points, color, thickness
 
         ###########################
@@ -519,7 +522,7 @@ class simple_render(object):
 
         for f in range(numframes):
             self.render_multiobj((255,0,0), RX, RY+(f*step_degrees), RZ, linethick, scale ) 
-            self.save( '%s/%s_%s.%s'%(outfolder,outfilename,f,output_type) )
+            self.save_image( '%s/%s_%s.%s'%(outfolder,outfilename,f,output_type) )
 
 
     ## ## ## ## ## 
@@ -653,9 +656,9 @@ class simple_render(object):
           
         polydata.append( obj.points       )
         polydata.append( obj.polygons     )
-        polydata.append( obj.face_normals )
+        polydata.append( obj.normals )
 
-        print('## num points %s; num polygons %s; num normals %s '%(len(obj.points) , len(obj.polygons), len(obj.face_normals) ) )
+        print('## num points %s; num polygons %s; num normals %s '%(len(obj.points) , len(obj.polygons), len(obj.normals) ) )
         return polydata
     
     ## ## ## ## ##  
@@ -776,7 +779,7 @@ class simple_render(object):
                     light_angle = (  nrml.angle_between( vec_to_light ) )
                     angle  = int(mu().rtd(light_angle ))
                     # this is a terrible way to do it, but it looks pretty good for a first try
-                    facecolor = (angle,angle,angle)
+                    facecolor = (256-angle,256-angle,256-angle)
 
                     #--------
                     # store lighting vectors that were calulated so we can play with them later  

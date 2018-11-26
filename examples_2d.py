@@ -4,9 +4,9 @@ from pygfx.obj3d import  *
 from pygfx.point_ops import *
 
 from pygfx.raster_ops import *
-from pygfx.math_ops import  vec2
+from pygfx.math_ops import  *
 
-
+mu = math_util() 
 
 
 
@@ -34,7 +34,7 @@ def render_2d_vector(v1, gridsize=50):
 
 ###################################################
 
-def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None, gridsize=50):
+def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None, gridsize=50, fb=None):
     """ draw some points and lines on a grid 
 
         ARGS:
@@ -53,9 +53,10 @@ def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None
 
     """
 
-    fb = PixelOp()   
-    fb.create_buffer(800, 800)
-    fb.graticule(gridsize)
+    if fb is None:
+        fb = PixelOp()   
+        fb.create_buffer(800, 800)
+        fb.graticule(gridsize)
 
     #pt_size = 3
     pointcolor = ()
@@ -106,8 +107,8 @@ def load_obj_render_BSR(objfile):
     obj = object3d() 
     obj.load(objfile)
     
-    obj.scale_pts( (.1,.2,.1) )
-    obj.rotate_pts( (.1,.1,.1) )
+    #obj.scale_pts( (.1,.2,.1) )
+    #obj.rotate_pts( (.1,.1,.1) )
 
     #obj2 = object3d() 
     #obj2.load('objects/monkey.obj')
@@ -115,12 +116,72 @@ def load_obj_render_BSR(objfile):
     bloody_simple_2drender('2d_render.png', obj=[obj], gridsize=100)
 
 
-load_obj_render_BSR('objects/teapot.obj') 
+#load_obj_render_BSR('original_sin.obj') 
 
 
-#obj = object3d() 
-#obj.load('objects/teapot.obj')
-#obj.show() 
+
+
+###################################################
+
+
+
+
+
+def unit_circle_anim( ):
+    """ animate the right triangle(s) sweeping the full 360 degrees of a unit circle 
+    """
+
+    pixels_per_unit = 200 
+
+    fr_cnt = 0
+    for theta in range(1,360,1):
+        
+        fb = PixelOp()   
+        fb.create_buffer(800, 800)
+        fb.graticule(pixels_per_unit)
+
+        # print('THETA IS ', theta )
+
+        x = math.cos(mu.dtr( theta) )    
+        y = math.sin(mu.dtr( theta) ) 
+
+        hypot  = vec3(x,y,0)
+        adaj   = vec3(x,0,0)
+        oppos  = vec3(0,y,0)
+      
+        #form the 3 vectors of the right triangle 
+        obj = object3d() 
+        obj.one_vec_to_obj(hypot)
+        obj.one_vec_to_obj(adaj)
+        obj.one_vec_to_obj(oppos, adaj)
+
+        #put a cube at the current theta angle 
+        obj.prim_cube(pos=(x, y, 0), size=.05,linecolor=(255,0,0),rot=(0,0,0),pivot='world')
+
+
+        #calculate the points between 1 and theta to form a circle 
+        dots = []
+        for dot in range(1,theta,1):
+            xx = math.cos(mu.dtr( dot) )    
+            yy = math.sin(mu.dtr( dot) )             
+            dots.append( (xx,yy) ) 
+        bloody_simple_2drender('unit_circle_%s.png'%fr_cnt, pts=dots, gridsize=pixels_per_unit, fb=fb)
+
+
+        #draw the OBJ file forming a right triangle 
+        bloody_simple_2drender('unit_circle_%s.png'%fr_cnt, obj=[obj], gridsize=pixels_per_unit, fb=fb)
+        fr_cnt += 1
+
+
+# unit_circle_anim()
+
+
+###################################################
+
+
+
+###################################################
+
 
 
 ###################################################

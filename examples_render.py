@@ -1,4 +1,7 @@
 
+import sys 
+
+
 from pygfx.render import *
 from pygfx.point_ops import *
 from pygfx.math_ops import  *
@@ -8,6 +11,44 @@ from pygfx.obj3d import  *
 from pygfx.raytrace import  *
 
 
+
+
+
+
+
+
+#######################################################
+
+
+def make_gif_from_frames():
+    # ref - https://engineering.giphy.com/how-to-make-gifs-with-ffmpeg/
+
+    ##convert frames to video 
+    ## ffmpeg -r 30 -i my3d_%d.png -s hd480 -vcodec libx264 output.mp4
+
+    ## convert video to GIF 
+    # ffmpeg -i output.mp4 -f gif output.gif
+
+    ## convert video to GIF with speed change
+    # ffmpeg -i output.mp4 -f gif -filter:v "setpts=3*PTS" output.gif
+
+    pass
+
+
+
+
+
+def basic_animation():
+    obj = object3d() 
+    obj.prim_cube() 
+
+    #obj.load('objects')
+
+    ropr = simple_render()
+    ropr.anim(objs=[obj], init_rots=(0,0,0), linethick=5, numframes=5, scale=150 )
+#    anim(self, objs, init_rots=(0,0,0), linethick=5, numframes=5, scale=150):
+
+#basic_animation()
 
 #######################################################
 
@@ -71,7 +112,8 @@ def lighting_test( lightpos, fnum=1):
 
     obj = object3d()
     obj.load('objects/monkey.obj')
-    
+    obj.rotate_pts( (180,0,0) )
+
     #obj.load('objects/sphere.obj')
     #obj.prim_quad(axis='z',  pos=(0,0,0), rot=(0,0,0)) 
     #obj.points = obj.rotate_pts((-10,180,180),pts=obj.points)
@@ -174,6 +216,8 @@ def animate_light_in_spherical_coords():
             lighting_test(pt,fnum)
             fnum+=1 
 
+
+# animate_light_in_spherical_coords()
 #######################################################
 
 
@@ -229,7 +273,12 @@ def three_renderers():
 
 
 
-three_renderers()
+#three_renderers()
+
+
+
+########################################################
+
 
 
 #obj = object3d() 

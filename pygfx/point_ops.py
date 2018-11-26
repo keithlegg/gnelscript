@@ -380,6 +380,7 @@ class polygon_operator(point_operator):
             for idx in p:
                 tri.append(self.points[idx-1])
             mean = self.triangle_mean_z(tri)
+            #print('## mean ',  mean )
             tmp.append( (mean, p) )
         
         if reverse:
