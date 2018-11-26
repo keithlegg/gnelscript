@@ -81,7 +81,7 @@ def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None
 
     if pts is not None:
         for p in pts:
-            fb.render_point_2d( p , scale=gridsize )
+            fb.render_point_2d( p , scale=gridsize, dotsize=10)
 
     fb.save(imagename)
 
@@ -118,6 +118,90 @@ def load_obj_render_BSR(objfile):
 
 #load_obj_render_BSR('original_sin.obj') 
 
+
+
+###################################################
+
+"""
+def partial_bresenham( x1, y1, x2, y2):
+    # only works when the first line is numerically lower than the second 
+    # I suppose you can presort them and get around this problem ?
+    dy = y2-y1
+    dx = x2-x1
+    d = 2*dy - dx
+    x = x1
+    y = y1
+    
+    print(' distances x %s y %s  '%(dx,dy) )
+    print(' d %s start x %s y %s '%(d,x,y) )
+ 
+    while x <= x2:
+        print( 'Draw pixel at (%s,%s) \n'%(x,y))
+
+        x+=1
+        if d<0 :
+            d += dy + dy
+            # print('D < 0 IN LOOP %s\n'% d )
+
+        else:
+            d += 2*(dy-dx)
+            # print('D !<0 IN LOOP %s\n'% d )
+
+            y+=1
+"""
+
+        
+
+
+def animate_bresenham( x1, y1, x2, y2):
+    """ 
+        make an animation of the bresenham algorithm 
+
+        TO RUN:
+            animate_bresenham(-3,3,5,6)
+
+    """
+
+    dy = y2-y1
+    dx = x2-x1
+    d = 2*dy - dx
+    x = x1
+    y = y1
+    
+    pixels_per_unit = 50 
+
+    #print(' distances x %s y %s  '%(dx,dy) )
+    #print(' d %s start x %s y %s '%(d,x,y) )
+ 
+    fb = PixelOp()   
+    fb.create_buffer(800, 800)
+    fb.graticule(pixels_per_unit)
+
+    fr_cnt = 0 
+    pt_bufr = [] 
+    while x <= x2:
+   
+        
+        bloody_simple_2drender('unit_circle_%s.png'%fr_cnt, pts=[(x1,y1), (x2,y2)], gridsize=pixels_per_unit, fb=fb)
+
+        pt_bufr.append( (x,y) )
+        bloody_simple_2drender('unit_circle_%s.png'%fr_cnt, pts=pt_bufr, gridsize=pixels_per_unit, fb=fb)
+
+        x+=1
+        if d<0 :
+            d += dy + dy
+            # print('D < 0 IN LOOP %s\n'% d )
+
+        else:
+            d += 2*(dy-dx)
+            # print('D !<0 IN LOOP %s\n'% d )
+
+            y+=1
+        
+        fr_cnt += 1 
+
+
+        
 
 
 

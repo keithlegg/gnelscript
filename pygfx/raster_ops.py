@@ -328,7 +328,7 @@ class PixelOp (RasterObj):
         self.connect_the_dots( transformed_pts, (230, 200, 0 ), 1 )
 
 
-    def render_point_2d(self, vec, invert_y=True, origin=(0,0), scale=10):
+    def render_point_2d(self, vec, invert_y=True, origin=(0,0), scale=10, dotsize=3):
         """ this will draw a point in 2d from the center of the image 
             the only slightly special thing going on here is the scale factor 
             this allows for an image with variable grid size 
@@ -344,7 +344,7 @@ class PixelOp (RasterObj):
         x = (self.center[0]+origin[0]) + (vec[0]*scale)
         y = (self.center[1]+origin[1]) + (vec[1]*scale) * invert 
 
-        self.draw_fill_circle( x, y, 3, (230,0,0) ) 
+        self.draw_fill_circle( x, y, dotsize, (230,0,0) ) 
 
 
     def render_vector_2d(self, vec, invert_y=True, origin=(0,0), scale=10):

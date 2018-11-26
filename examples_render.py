@@ -26,6 +26,10 @@ def make_gif_from_frames():
     ##convert frames to video 
     ## ffmpeg -r 30 -i my3d_%d.png -s hd480 -vcodec libx264 output.mp4
 
+    ##convert frames to video preserve aspect ratio 
+    ## ffmpeg -r 30 -i unit_circle_%d.png -vf scale=w=320:h=240:force_original_aspect_ratio=decrease  -vcodec libx264 output.mp4
+
+
     ## convert video to GIF 
     # ffmpeg -i output.mp4 -f gif output.gif
 
