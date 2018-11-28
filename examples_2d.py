@@ -1,10 +1,10 @@
 
-
-from pygfx.obj3d import  *
-from pygfx.point_ops import *
-
-from pygfx.raster_ops import *
 from pygfx.math_ops import  *
+from pygfx.raster_ops import *
+from pygfx.point_ops import *
+from pygfx.point_ops_2d import *
+from pygfx.obj3d import  *
+
 
 mu = math_util() 
 
@@ -28,13 +28,12 @@ def render_2d_vector(v1, gridsize=50):
 
 # render_2d_vector( (0,5)  ) 
 
-###################################################
 
 
 
 ###################################################
 
-def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None, gridsize=50, fb=None):
+def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None, gridsize=50, fb=None, gratic=True):
     """ draw some points and lines on a grid 
 
         ARGS:
@@ -56,7 +55,10 @@ def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None
     if fb is None:
         fb = PixelOp()   
         fb.create_buffer(800, 800)
-        fb.graticule(gridsize)
+        if gratic is True:
+            fb.graticule(gridsize)
+        if gratic is False:
+            fb.fill_color((0,0,0) )
 
     #pt_size = 3
     pointcolor = ()
@@ -81,7 +83,7 @@ def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None
 
     if pts is not None:
         for p in pts:
-            fb.render_point_2d( p , scale=gridsize, dotsize=10)
+            fb.render_point_2d( p , scale=gridsize ) #dotsize=10
 
     fb.save(imagename)
 
@@ -117,6 +119,48 @@ def load_obj_render_BSR(objfile):
 
 
 #load_obj_render_BSR('original_sin.obj') 
+
+
+###################################################
+
+def draw_fractal_tree():
+    tree = []
+
+    tn = tnode()
+    tn.set(0, -20) 
+    tree.append(tn)
+
+    fractal(tree, 0,10) 
+
+    pts = tree_to_lines(tree) 
+
+    bloody_simple_2drender('frac_tree.png', lines=pts, gridsize=1, gratic=False)
+
+
+#draw_fractal_tree() 
+
+###################################################
+
+
+
+def project_point_along_2Dvector():
+    """ visualize the output of vector function 
+        not sure this even works ? debug  
+    """ 
+    
+    # 2d vector 
+    a = vec2(  1 , 1  )
+    b = vec2( -1 , -1 )
+    com = vec2() 
+
+    #fb = PixelOp()   
+    #fb.create_buffer(800, 800)
+    #fb.graticule(pixels_per_unit)
+
+    vecs = [a,b]
+    pts = [com.project_pt(a, b, 2)]
+
+    bloody_simple_2drender('2d_render.png', vecs=vecs, pts=pts, gridsize=40)
 
 
 
@@ -157,6 +201,8 @@ def animate_bresenham( x1, y1, x2, y2):
     """ 
         make an animation of the bresenham algorithm 
 
+        this is not a full implementation of bresenham, but it works 
+
         TO RUN:
             animate_bresenham(-3,3,5,6)
 
@@ -181,9 +227,10 @@ def animate_bresenham( x1, y1, x2, y2):
     pt_bufr = [] 
     while x <= x2:
    
-        
+        #draw the start and end point on each framebuffer 
         bloody_simple_2drender('unit_circle_%s.png'%fr_cnt, pts=[(x1,y1), (x2,y2)], gridsize=pixels_per_unit, fb=fb)
 
+        #calc and draw each step in between 
         pt_bufr.append( (x,y) )
         bloody_simple_2drender('unit_circle_%s.png'%fr_cnt, pts=pt_bufr, gridsize=pixels_per_unit, fb=fb)
 
@@ -200,16 +247,11 @@ def animate_bresenham( x1, y1, x2, y2):
         
         fr_cnt += 1 
 
-
-        
+       
 
 
 
 ###################################################
-
-
-
-
 
 def unit_circle_anim( ):
     """ animate the right triangle(s) sweeping the full 360 degrees of a unit circle 
@@ -324,16 +366,7 @@ def test_2d_intersect():
 
 
 
-###################################################
 
-
-def project_point_along_2Dvector():
-    
-    # 2d vector 
-    a = vec2(  1  ,1   )
-    b = vec2( 1.01 ,1.01 )
-    com = vec2() 
-    print( com.project_pt(a, b, 1) )
 
 
 

@@ -771,6 +771,9 @@ class polygon_operator(point_operator):
         # print('############# ptgrp ', len(ptgrp), '  ', len(self.points) )  
 
         for p in ptgrp:
+            #print('### point ', p , len(self.points))
+            # debug this runs out of range on last point 
+            # KEEP ZERO INDEX for all but OBJ file? debug 
             self.points[p[0]] = p[1]
         return out    
 

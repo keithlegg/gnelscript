@@ -351,3 +351,89 @@ class point_operator_2d(object):
                 r = 180  
                                                            
         return r
+
+
+
+
+###################################################
+
+class tnode(object):
+    def __init__(self):
+        self.x=0
+        self.y=0
+    
+    def get(self):
+        return (self.x, self.y)
+    
+    def set(self,x,y):
+        self.x = x
+        self.y = y
+
+
+def fractal(tree, depth, maxdepth):
+
+    growth = depth*3
+
+    frwrd = 40-growth
+    brfrwrd = 20+growth
+    brlen = 30-growth
+
+    #print('depth is %s'%depth)
+    if depth==maxdepth:
+        return None 
+
+    else:    
+        # #trunk
+        # if depth==0:
+
+        # else:
+
+        last = tree[len(tree)-1]
+        # print('## last tree xy is ', last.x, last.y )
+
+        # advance forward 
+        tn = tnode()
+        tn.set(last.x, last.y+frwrd) 
+        tree.append(tn)
+
+        newlast = tree[len(tree)-1]
+
+        # right side of tree
+        tn = tnode()
+        tn.set(newlast.x+brlen*2, newlast.y+brfrwrd) 
+        tree.append(tn)
+
+        # return to stalk 
+        tn = tnode()
+        tn.set(newlast.x, newlast.y) 
+        tree.append(tn)
+
+        # left side of tree
+        tn = tnode()
+        tn.set(newlast.x-brlen*2, newlast.y+brfrwrd) 
+        tree.append(tn)
+
+        # return to stalk 
+        tn = tnode()
+        tn.set(newlast.x, newlast.y) 
+        tree.append(tn)
+
+        depth += 1
+        fractal(tree, depth, maxdepth)        
+
+
+def tree_to_lines(tree):
+    """ iterate a tree and get the points XY coords to draw"""
+
+    out_pts = []
+    ct = 0 
+    for i,t in enumerate(tree):
+        #print(' # node %s x:%s y:%s '%(ct, t.x ,t.y ) )
+        if i>0:
+            last = tree[i-1]    
+            out_pts.append( ( (last.x, last.y), (t.x, t.y) ) )
+        ct += 1
+
+    return out_pts 
+
+

@@ -74,16 +74,32 @@ def build_perspective_matrix():
     #debug - NOT WORKING!  Work In Progress 
 
     obj = object3d()
-    obj.prim_cube()
+    
+    #obj.prim_cube()
+    obj.load('objects/monkey.obj')
+
+    obj.xform_pts( (0,0,-10) )
     #obj.scale_pts((3,3,30))
-    obj.rotate_pts((30,30,30))
+    #obj.rotate_pts((30,30,30))
     ropr = simple_render()
+    
+    persp_m44 = matrix44()
     #                          fov, aspect, znear, zfar)
-    #mx = m44.buildPerspProjMat( 200, 1, 1, 100)
+    persp_m44 = persp_m44.buildPerspProjMat( 300, 1, 100, 1000)
+    
+    print( persp_m44)
+
+    # apply_matrix_pts( pts, m33=None, m44=None):
+    obj.points = obj.apply_matrix_pts(obj.points, m44=persp_m44) 
+
     ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
     ropr.save_image('simple_render.png')
 
+    # render_matrix_obj (self,  m33, m44, thick, scale, filename, object3d =None):
+    #ropr.render_matrix_obj( m33=None, m44=persp_m44, thick=1, scale=200, filename='out.png', object3d=obj)
 
+
+build_perspective_matrix() 
 
 
 #####################################################

@@ -12,24 +12,6 @@ from pygfx.obj3d import  *
 
 
 
-def project_point_along_vector():
-    
-    # 2d vector 
-    a = vec2(  1  ,1   )
-    b = vec2( 1.01 ,1.01 )
-    com = vec2() 
-    print( com.project_pt(a, b, 1) )
-
-
-    #x = vec3(1,1,1)
-    #print( x.project_pt() )
-
-
-
-
-project_point_along_vector()
-
-
 #####################################################
 
 def test_copysop():

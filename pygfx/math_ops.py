@@ -1923,14 +1923,18 @@ class matrix44(object):
 
     def batch_mult_pts(self, pts):
         """ sub component of matrix rotate function 
-            multiply a 3X3 matrix by a list of points 
+            multiply a 4X4 matrix by a list of points 
         """
         #debug - make work with other types??
 
         tmp_buffer = []
         out = None
         for pvec in pts:  
+            #total experiment for perpective/homogeneous coordinates  
+            #pvec = vec4(pt[0], pt[1], pt[2], 1)
+            #print(pvec)
             tmp_buffer.append( self * pvec )
+ 
         return tmp_buffer
 
     def from_euler(self, xrot, yrot, zrot):
@@ -2049,19 +2053,19 @@ class matrix44(object):
         #xymax = 100
         xymax = znear * math.tan(fov * PI_OVER_360);
 
-        ymin = -xymax;
-        xmin = -xymax;
+        ymin = -xymax
+        xmin = -xymax
 
-        width = xymax - xmin;
-        height = xymax - ymin;
+        width = xymax - xmin
+        height = xymax - ymin
 
-        depth =   zfar - znear;
-        q     = -(zfar + znear) / depth;
-        qn    = -2 * (zfar * znear) / depth;
+        depth =  zfar - znear
+        q     = -(zfar + znear) / depth
+        qn    = -2 * (zfar * znear) / depth
 
-        w = 2 * znear / width;
-        w = w / aspect;
-        h = 2 * znear / height;
+        w = 2 * znear / width
+        w = w / aspect
+        h = 2 * znear / height
 
         m = self.identity
 
