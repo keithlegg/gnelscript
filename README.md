@@ -39,34 +39,29 @@ only requires:
 
 
    Organized by the following modules:
-   -  examples    - home for all the current examples of things you can do with the library
    -  math_ops    - math, vectors, matrices, the core logic of it all  
    -  point_ops   - points, polygons, and objects, the "brains" of geometry processing
    -  obj3d       - data structure for 3D models. Inherits all the other stuff  
    -  raster_ops  - image manipulation with PIL, framebuffer  
    -  render      - brain dead simple 3D rendering, examples of using pygfx modules to build a 3D render  
 
+   Example files are split up by type:
+   -  examples            - examples of geometry processing
+   -  examples_2d         - examples of 2D rendering and 2D vector processing 
+   -  examples_render     - examples of 3D rendering 
+   -  examples_selection  - examples of extracting portions of polygon geometry  
+   -  examples_vector     - examples of 3D vector processing
+
    Stuff you can ignore for now :
-   -  unit_tests  - not done yet 
-   -  raytrace    - someones code I imported and am considering intergrating 
-   -  dag_ops     - directed acyclic graph, first stab at a scene graph (not working yet)
-   -  grid_ops    - nothing here yet, future home of mapping and grids 
-   -  examples_2d - nothing here worth looking at  
-   -  render_2d   - nothing here yet, future home of 2D rendering 
+   -  examples_wip - work in progess examples 
+   -  unit_tests   - not done yet 
+   -  raytrace     - someones code I imported and am considering intergrating 
+   -  dag_ops      - directed acyclic graph, first stab at a scene graph (not working yet)
+   -  grid_ops     - nothing here yet, future home of mapping and grids 
+   -  examples_2d  - nothing here worth looking at  
+   -  render_2d    - nothing here yet, future home of 2D rendering 
 
 
-The big changes from original pyrender:
-
-  - cleaner, more organized code 
-  - added 3X3 matrices 
-  - matrix and vectors are their own types of object now
-  - numpy integration, so it can interface to numpy arrays seamlessly 
-  - better point operators 
-  - better polygon operators 
-  - working triangulation
-  - improved object operators and primitive objects
-  - object3D type 
-  - "matrix" render - pass a 3X3, or 4X4 matrix to renderer directly 
 
 
 

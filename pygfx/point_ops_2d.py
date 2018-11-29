@@ -353,6 +353,30 @@ class point_operator_2d(object):
         return r
 
 
+class obj2d(point_operator_2d)
+    """
+        2.5D object - modeled after obj3d but much simpler
+        
+        I kept the 3D data but z is unused
+        that allows loading and saving of OBJ files and other goodies 
+
+        polygons and objects are combined in this single object  
+    """
+
+    def __init__(self):
+        super().__init__()  
+
+        self.points   = []
+        self.polygons = []
+
+        self.rot       = [0,0,0]
+        self.pos       = [0,0,0]
+        self.scale     = [1,1,0]
+
+    def reset(self):
+        self.rot          = [0,0,0]
+        self.pos          = [0,0,0]
+        self.scale        = [1,1,1]
 
 
 ###################################################
