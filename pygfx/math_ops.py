@@ -35,6 +35,26 @@ class math_util(object):
         for example self.dot_vec3() will be vec3.dot , etc 
     """
 
+    ####################################
+
+    # # iterate through rows of X
+    # for i in range(len(X)):
+    #    # iterate through columns of Y
+    #    for j in range(len(Y[0])):
+    #        # iterate through rows of Y
+    #        for k in range(len(Y)):
+    #            result[i][j] += X[i][k] * Y[k][j]
+
+    ####################################
+
+    # def matmult(a,b):
+    #     zip_b = zip(*b)
+    #     # uncomment next line if python 3 : 
+    #     # zip_b = list(zip_b)
+    #     return [[sum(ele_a*ele_b for ele_a, ele_b in zip(row_a, col_b)) 
+    #              for col_b in zip_b] for row_a in a]
+
+
     def dot_vec3 (self, v1, v2):
          """ scalar - mag but not direction """
          return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2] 
@@ -311,7 +331,7 @@ class vec2(object):
 
         print('## debug vec2 mult type other is ' , type(other) )
 
-        if isintance(other, tuple) or isintance(other, list):
+        if isinstance(other, tuple) or isinstance(other, list):
             return type(self)(self.x * other.x, self.y * other.y)
 
     ## ## ##
@@ -906,21 +926,23 @@ class matrix22(object):
 
         """
 
-        #if isinstance(n, vec2):
-        #    outx = self.m[0]*n.x + self.m[3]*n.y + self.m[6]*n.z 
-        #    outy = self.m[1]*n.x + self.m[4]*n.y + self.m[7]*n.z 
-        #    return  (outx, outy, outz)
+        if isinstance(n, vec2):
+            outx = self.m[0]*n.x + self.m[2]*n.y   
+            outy = self.m[1]*n.x + self.m[3]*n.y  
+            return  (outx, outy)
 
-        # if isinstance(n, tuple) or isinstance(n, list) or isinstance(n, np.ndarray):
-        #     outx = self.m[0]*n[0] + self.m[3]*n[1] + self.m[6]*n[2] 
-        #     outy = self.m[1]*n[0] + self.m[4]*n[1] + self.m[7]*n[2] 
-        #     outz = self.m[2]*n[0] + self.m[5]*n[1] + self.m[8]*n[2] 
-        #     return  (outx, outy, outz)
+        # if isinstance(n, tuple) or isinstance(n, list):
+        #     return type(self)(
+        #             self.m[0]*n[0]  + self.m[2]*n[1],
+        #             self.m[1]*n[2]  + self.m[3]*n[3]
+        #            )
 
         if type(n) == type(self):
             return type(self)(
-                    self.m[0]*n[0]  + self.m[1]*n[2],
-                    self.m[2]*n[1]  + self.m[3]*n[3]
+                    self.m[0]*n[0] + self.m[1]*n[2], 
+                    self.m[0]*n[1] + self.m[1]*n[3],
+                    self.m[2]*n[0] + self.m[3]*n[2], 
+                    self.m[2]*n[1] + self.m[3]*n[3]                    
                    )
 
     def from_euler(self, rot):
@@ -929,12 +951,10 @@ class matrix22(object):
         """
         dtr = self.mu.dtr
 
-        # build rotationY (see diagram above) 
-        mat =  self.identity
-        mat[0]  =  math.cos(dtr( rot ))
-        mat[1]  = -math.sin(dtr( rot ))
-        mat[2]  =  math.sin(dtr( rot ))
-        mat[3]  =  math.cos(dtr( rot ))
+        self.m[0]  =  math.cos(dtr( rot ))
+        self.m[1]  = -math.sin(dtr( rot ))
+        self.m[2]  =  math.sin(dtr( rot ))
+        self.m[3]  =  math.cos(dtr( rot ))
 
 
     def batch_mult_pts(self, pts):

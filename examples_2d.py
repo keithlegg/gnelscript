@@ -37,19 +37,25 @@ def test_matrix22(gridsize=50):
        gridsize  : specify pixels per linear unit
 
     """
-    v1 = (1,0)
-    v2 = (0,1)
+    v1 = vec2(3,0)
+    v2 = vec2(0,3)
 
     m22 = matrix22()
-    m22.from_euler(45)
-     
+    m22.from_euler(60)
+
+    m22_2 = matrix22()
+    m22_2.from_euler(-30)
+
+    m22 =  m22_2 * m22
+
+    v3 =  m22 * v2 
 
     fb = PixelOp()   
     fb.create_buffer(800, 800)
     fb.graticule(gridsize)
 
-    fb.render_vector_2d(   v1,  scale=gridsize)
     fb.render_vector_2d(   v2,  scale=gridsize)
+    fb.render_vector_2d(   v3,  scale=gridsize)
 
     fb.save('vec.png')
 

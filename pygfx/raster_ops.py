@@ -368,9 +368,8 @@ class PixelOp (RasterObj):
         self.connect_the_dots([ ((self.center[0]+origin[0]),(self.center[1]+origin[1])),
                                 (ex,ey)], (0,230,0), 1 )
 
-        calc_angle = self.ptgen.old_calc_theta_vert( ( (self.center[0]+origin[0]), (self.center[1]+origin[1]) ),  (ex,ey) )
-
-        print("ANGLE OF VECTOR FROM VERTICAL (UP) %s" % calc_angle)
+        #calc_angle = self.ptgen.old_calc_theta_vert( ( (self.center[0]+origin[0]), (self.center[1]+origin[1]) ),  (ex,ey) )
+        # print("ANGLE OF VECTOR FROM VERTICAL (UP) %s" % calc_angle)
 
 
     def render_obj_2d(self, obj, invert_y=True, origin=(0,0), scale=10):
