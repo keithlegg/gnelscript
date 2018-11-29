@@ -29,6 +29,33 @@ def render_2d_vector(v1, gridsize=50):
 # render_2d_vector( (0,5)  ) 
 
 
+###################################################
+def test_matrix22(gridsize=50):
+    """draw a vector and tell us the angle of it in degrees
+       
+       vector    : 2 2D tuples e.g. (1.5,1), (0,0)
+       gridsize  : specify pixels per linear unit
+
+    """
+    v1 = (1,0)
+    v2 = (0,1)
+
+    m22 = matrix22()
+    m22.from_euler(45)
+     
+
+    fb = PixelOp()   
+    fb.create_buffer(800, 800)
+    fb.graticule(gridsize)
+
+    fb.render_vector_2d(   v1,  scale=gridsize)
+    fb.render_vector_2d(   v2,  scale=gridsize)
+
+    fb.save('vec.png')
+
+
+test_matrix22() 
+
 
 
 ###################################################

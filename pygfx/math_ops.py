@@ -26,7 +26,6 @@ DEG_TO_RAD = 0.0174532925 # degree = radian * (180 / PI) # PI = 3.14159265
 RAD_TO_DEG = 57.29577951  # radian = degree * (PI/180)
 
 
-
 ###############################################
 class math_util(object):    
     """ general math library - may contain some of the same functions 
@@ -306,7 +305,14 @@ class vec2(object):
         return type(self)(self.x - other.x, self.y - other.y)
 
     def __mul__(self, other):
-        return type(self)(self.x * other.x, self.y * other.y)
+        
+        #if isinstance(other, matrix22):
+        #    matrix22
+
+        print('## debug vec2 mult type other is ' , type(other) )
+
+        if isintance(other, tuple) or isintance(other, list):
+            return type(self)(self.x * other.x, self.y * other.y)
 
     ## ## ##
     def div_scalar(self, scalar):
@@ -420,41 +426,10 @@ class vec2(object):
 
     @property
     def normal(self):
-        """ untested - normal for a 2d vector """ 
+        """ untested - normalize a 2d vector """ 
         invLength = 1.0/math.sqrt(self.x*self.x + self.y*self.y)
         self.x *= invLength
         self.y *= invLength
-            
-    def calc_normal(self):
-        """
-        Quoting from http://www.opengl.org/wiki/Calculating_a_Surface_Normal
-        A surface normal for a triangle can be calculated by taking the vector cross product of two edges of that triangle. 
-        The order of the vertices used in the calculation will affect the direction of the normal 
-        (in or out of the face w.r.t. winding).
-        So for a triangle p1, p2, p3, 
-        if the vector U = p2 - p1 and the vector V = p3 - p1 then the normal N = U x V and can be calculated by:
-        Nx = UyVz - UzVy
-        Ny = UzVx - UxVz
-        Nz = UxVy - UyVx
-        """
-        """
-        The cross product of two sides of the triangle equals the surface normal. So, if VV = P2P2 - P1P1 and WW = P3P3 - P1P1, and NN is the surface normal, then:
-        Nx=(Vy∗Wz)−(Vz∗Wy)Nx=(Vy∗Wz)−(Vz∗Wy)
-        Ny=(Vz∗Wx)−(Vx∗Wz)Ny=(Vz∗Wx)−(Vx∗Wz)
-        Nz=(Vx∗Wy)−(Vy∗Wx)Nz=(Vx∗Wy)−(Vy∗Wx)
-        If AA is the new vector whose components add up to 1, then:
-        Ax=Nx/(|Nx|+|Ny|+|Nz|)Ax=Nx/(|Nx|+|Ny|+|Nz|)
-        Ay=Ny/(|Nx|+|Ny|+|Nz|)Ay=Ny/(|Nx|+|Ny|+|Nz|)
-        Az=Nz/(|Nx|+|Ny|+|Nz|)
-        """
-
-        out = []
-
-        #Nx = UyVz - UzVy
-        #Ny = UzVx - UxVz
-        #Nz = UxVy - UyVx
-
-        return out
 
 ###############################################
 class vec3(object):    
@@ -867,429 +842,109 @@ class vec4(object):
 #x′=x∗m00+y∗m10+z∗m20+w∗m30y′=x∗m01+y∗m11+z∗m21+w∗m31z′=x∗m02+y∗m12+z∗m22+w∗m32w′=x∗m03+y∗m13+z∗m23+w∗m33
 
 ###############################################
-class quaternion(object):
-    """ UNTESTED
-        first stab at quaternion 
-        mostly converted from C - 
-        taken from this: https://github.com/mycmessia/3D-Math-Primer/blob/master/3D%20Math/Quaternion.cpp 
+class matrix22(object):
+    """ 2D matrix experiment """
 
-    """
-
-    def __init__(self,w=1,x=0,y=0,z=0):
-        self.w=w 
-        self.x=x
-        self.y=y
-        self.z=z
-
-    #def inverse(self)
-    #def difference(self)
-    #def to_euler(self)
-
-    def __repr__(self):
-        return '(%s, %s, %s, %s)' % (self.w, self.x, self.y, self.z)
-
+    def __init__(self, a=1, b=0, c=0, d=1):
+        self.m = [a,b,c,d]
+        self.mu = math_util()
+    
     def __getitem__(self, index):
-        if index==0:
-            return self.w
-        if index==1:
-            return self.x
-        if index==2:
-            return self.y
-        if index==3:
-            return self.z
+        return self.m[index]
 
     def __setitem__(self, key, item):
-        if key==0:
-            self.w = item
-        if key==1:
-            self.x = item
-        if key==2:
-            self.y = item
-        if key==3:
-            self.z = item
+        self.m[key] = item
+
+    def __repr__(self):
+        return '(%s, %s, %s, %s)'%(self.m[0], self.m[1], self.m[2],  self.m[3])
 
     @property
     def identity(self):
-        return type(self)(1,0,0,0)
+        return type(self)()
 
-    def set_identity(self):
-        self.w=1 
-        self.x=0
-        self.y=0
-        self.z=0
-
-    def set_rotx (self, theta):
-        theta_over2 = theta * .5
-        self.w = math.cos(theta_over2);
-        self.x = math.sin(theta_over2);
-        #self.y = 0
-        #self.z = 0
-
-    def set_roty (self, theta):
-        theta_over2 = theta * .5
-        self.w = math.cos(theta_over2)
-        #self.x = 0
-        self.y = math.sin(theta_over2)
-        #self.z = 0
-
-    def set_rotz (self, theta):
-        theta_over2 = theta * .5
-        self.w = math.cos(theta_over2)
-        #self.x = 0
-        #self.y = 0
-        self.z = math.sin(theta_over2)
-
-    def from_euler(self, h, p, b, trans_type='obj2inertial'):
-        sp=0;sb=0;sh=0
-        cp=0;cb=0;ch=0
-        
-        sp = math.sin(p*.5) 
-        sb = math.sin(b*.5) 
-        sh = math.sin(h*.5) 
-
-        cp = math.cos(p*.5) 
-        cb = math.cos(b*.5) 
-        ch = math.cos(h*.5) 
+    @property
+    def transpose(self):
+        """
+        UNTESTED 
+        # standard indicies  |  #transposed indicies
+        1  2                 |   1 3 
+        3  4                 |   2 4 
        
-        if (trans_type == 'obj2inertial'):
-            self.w = ch * cp * cb + sh * sp * sb
-            self.x = ch * sp * cb + sh * cp * sb
-            self.y = -ch * sp * sb + sh * cp * cb
-            self.z = -sh * sp * cb + ch * cp * sb
+        """
 
-        elif (trans_type == 'inertial2ob'):
-            self.w = ch * cp * cb + sh * sp * sb
-            self.x = -ch * sp * cb - sh * cp * sb
-            self.y = ch * sp * sb - sh * cp * cb
-            self.z = sh * sp * cb - ch * cp * sb
-        
-        else:
-            print( "Invalid trans_type!" ) 
-
-    def mag(self):
-        mag = float( math.sqrt(  self.w*self.w + 
-                                 self.x*self.x + 
-                                 self.y*self.y + 
-                                 self.z*self.z) ) 
-        return mag 
-
-    def normalize(self):
-        mag = self.mag() 
-        if mag > 0:
-            oneOverMag = float( 1.0 / mag)
-            self.w *= oneOverMag
-            self.x *= oneOverMag
-            self.y *= oneOverMag
-            self.z *= oneOverMag
-        else:
-            self.set_identity()
-
-    def dot_product(self, q): 
-        return a.x * b.x + a.y * b.y + a.z * b.z + a.z * a.z;   
-
-    def conjugate(self, q):
-        result = type(self)()
-        
-        result.w =  q.w
-        result.x = -q.x
-        result.y = -q.y
-        result.z = -q.z
-        return result
+        return type(self)(
+            self.m[0], self.m[1],
+            self.m[2], self.m[3]
+        )
 
 
-    def __mul__(self, a):
-        result = type(self)()
+    def __add__(self, other):
+        """ UNTESTED """
+        return type(self)(
+            self.m[0]+n[0], self.m[2]+n[1],
+            self.m[1]+n[2], self.m[3]+n[3]
+        )
     
-        w = self.w
-        x = self.x
-        y = self.y
-        z = self.z
+    def __sub__(self, other):
+        """ UNTESTED """        
+        return type(self)(
+            self.m[0]-n[0], self.m[1]-n[2],
+            self.m[2]-n[1], self.m[3]-n[3]
+        )
 
-        result.w = w * a.w - x * a.x - y * a.y - z * a.z
-        result.x = w * a.x + x * a.w + z * a.y + y * a.z
-        result.y = w * a.y + y * a.w + x * a.z + z * a.x
-        result.z = w * a.z + z * a.w + y * a.x + x * a.y
-        
-        return result;
+    # def __truediv__(self, other):
+    #     # matrices don't divide! there is no concept of dividing by a matrix.
+    #     # multiply by an inverse, which achieves the same thing.
 
+    def __mul__(self, n):
+        """ UNTESTED !!
 
-    def from_m33(self, m33):
-        """ 
-           m11  m12 m13 
-           m21  m22 m23 
-           m31  m32 m33 
+            multiply two 2X2 matricies together 
+
+            the order that you mutliply will call a different object!!!
+            make sure you do "this * other", NOT "other * this"
+
         """
-        
-        four_w_sq_min1 = m33[0] + m33[4] + m33[8]
-        four_x_sq_min1 = m33[0] - m33[4] - m33[8]
-        four_y_sq_min1 = m33[4] - m33[0] - m33[8]
-        four_z_sq_min1 = m33[8] - m33[0] - m33[4]
-        
-        maxIndex = 0
-        max = four_w_sq_min1
-        
-        if four_x_sq_min1 > max:
-            max = four_x_sq_min1
-            maxIndex = 1
-        
-        if (four_y_sq_min1 > max):
-            max = four_y_sq_min1
-            maxIndex = 2
-        
-        if (four_z_sq_min1 > max):
-            max = four_z_sq_min1
-            maxIndex = 3
-        
-        max = math.sqrt (max + 1.0) * 0.5
-        mult = 0.25 / max
-        
-        if maxIndex==0:
-            self.w = max;
-            self.x = (m33[5] - m33[7]) * mult;
-            self.y = (m33[6] - m33[2]) * mult;
-            self.z = (m33[1] - m33[3]) * mult;
 
-        if maxIndex==1:
-            self.x = max;
-            self.w = (m33[5] - m33[7]) * mult;
-            self.y = (m33[1] + m33[3]) * mult;
-            self.z = (m33[6] + m33[2]) * mult;
+        #if isinstance(n, vec2):
+        #    outx = self.m[0]*n.x + self.m[3]*n.y + self.m[6]*n.z 
+        #    outy = self.m[1]*n.x + self.m[4]*n.y + self.m[7]*n.z 
+        #    return  (outx, outy, outz)
 
-        if maxIndex==2:
-            self.y = max;
-            self.w = (m33[6] - m33[2]) * mult;
-            self.x = (m33[1] + m33[3]) * mult;
-            self.z = (m33[5] + m33[7]) * mult;
+        # if isinstance(n, tuple) or isinstance(n, list) or isinstance(n, np.ndarray):
+        #     outx = self.m[0]*n[0] + self.m[3]*n[1] + self.m[6]*n[2] 
+        #     outy = self.m[1]*n[0] + self.m[4]*n[1] + self.m[7]*n[2] 
+        #     outz = self.m[2]*n[0] + self.m[5]*n[1] + self.m[8]*n[2] 
+        #     return  (outx, outy, outz)
 
-        if maxIndex==3:
-            self.z = max;
-            self.w = (m33[1] - m33[3]) * mult;
-            self.x = (m33[6] + m33[2]) * mult;
-            self.y = (m33[5] + m33[7]) * mult;
-            self.z = (m33[5] + m33[7]) * mult;
- 
+        if type(n) == type(self):
+            return type(self)(
+                    self.m[0]*n[0]  + self.m[1]*n[2],
+                    self.m[2]*n[1]  + self.m[3]*n[3]
+                   )
 
-
-    def to_m33(self, trans_type='inertial2obj'):
- 
-            mo = matrix33() 
-            q = self 
-
-            if (trans_type == 'inertial2obj'):
- 
-                mo[0] = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
-                mo[1] = 2.0 * (q.x * q.y + q.w * q.z)
-                mo[2] = 2.0 * (q.x * q.z + q.w * q.y)
-                
-                mo[3] = 2.0 * (q.x * q.y - q.w * q.z)
-                mo[4] = 1.0 - 2.0 * (q.x * q.x + q.z * q.z)
-                mo[5] = 2.0 * (q.y * q.z + q.w * q.x)
-                
-                mo[6] = 2.0 * (q.x * q.z + q.w * q.y)
-                mo[7] = 2.0 * (q.y * q.z - q.w * q.x)
-                mo[8] = 1.0 - 2.0 * (q.x * q.x + q.y * q.y)
- 
-                return mo 
-
-            elif (trans_type == 'obj2inertial'):
- 
-                mo[0] = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
-                mo[1] = 2.0 * (q.x * q.y - q.w * q.z)
-                mo[2] = 2.0 * (q.x * q.z + q.w * q.y)
-                
-                mo[3] = 2.0 * (q.x * q.y + q.w * q.z)
-                mo[4] = 1.0 - 2.0 * (q.x * q.x + q.z * q.z)
-                mo[5] = 2.0 * (q.y * q.z - q.w * q.x)
-
-                mo[6] = 2.0 * (q.x * q.z + q.w * q.y)
-                mo[7] = 2.0 * (q.y * q.z + q.w * q.x)
-                mo[8] = 1.0 - 2.0 * (q.x * q.x + q.y * q.y)
- 
-                return mo 
-
-            else:
-                print("Invalid trans_type!")
-   
-    def set_rot_zxis(self, axis, theta):
-        #assert((vectorMag(axis) - 1.0f) < 0.01f);
-        thetaOver2 = theta * .5
-        sinThetaOver2 = math.sin(thetaOver2)
-       
-        w = math.cos(thetaOver2)
-        x = axis.x * sinThetaOver2
-        y = axis.y * sinThetaOver2
-        z = axis.z * sinThetaOver2
-
-    def get_rot_angle(self):
-        thetaOver2 = math.acos(self.w)
-        return thetaOver2 * 2.0
- 
-    def get_rot_axis(self):
-        sin_theta_over2Sq = 1.0 - self.w * self.w
-        one_over_sin_theta = 1.0 / math.sqrt(sin_theta_over2Sq)
-        
-        nx = self.x * one_over_sin_theta
-        ny = self.y * one_over_sin_theta
-        nz = self.z * one_over_sin_theta
-        
-        return vec3(nx, ny, nz)
- 
-
-    def slerp (self, q0, q1, t):
- 
-        if (t <= 0):
-            return q0
-        if (t >= 1):
-            return q1
-
-        cosOmega = self.dot_product(q0, q1)
-        
-        q1w = q1.w
-        q1x = q1.x
-        q1y = q1.y
-        q1z = q1.z
-        
-        # avoid getting different results
-        if (cosOmega < 0):
-            q1w = -q1w
-            q1x = -q1x
-            q1y = -q1y
-            q1z = -q1z
-            cosOmega -= cosOmega
-        
-        k0 = 0
-        k1 = 0
-        # avoid sth over 0 happening
-        if cosOmega > 0.999:
-            k0 = 1.0 - t
-            k1 = t
-        else:
-        
-            sinOmega = math.sqrt(1.0 - cosOmega * cosOmega)
-            omega = math.atan2 (sinOmega, cosOmega)
-            oneOverSinOmega = 1.0/sinOmega
-            
-            k0 = math.sin ((1.0- t) * omega) * oneOverSinOmega
-            k1 = math.sin (t*omega) * oneOverSinOmega
-        
-        ####
-        result = type(self)()
-        
-        result.x = k0 * q0.x + k1 * q1x;
-        result.y = k0 * q0.y + k1 * q1y;
-        result.z = k0 * q0.z + k1 * q1z;
-        result.w = k0 * q0.w + k1 * q1w;
-        
-        return result
-
-###############################################
-class spherical(object):
-    """ UNTESTED -   polar and spherical coordinates 
-
-    # https://stackoverflow.com/questions/4116658/faster-numpy-cartesian-to-spherical-coordinate-conversion
-
-    def cart2sph(x,y,z):
-        XsqPlusYsq = x**2 + y**2
-        r = m.sqrt(XsqPlusYsq + z**2)               # r
-        elev = m.atan2(z,m.sqrt(XsqPlusYsq))     # theta
-        az = m.atan2(y,x)                           # phi
-        return r, elev, az
-
-    def cart2sphA(pts):
-        return np.array([cart2sph(x,y,z) for x,y,z in pts])
-
-    def appendSpherical(xyz):
-        np.hstack((xyz, cart2sphA(xyz)))
-
-    """
-
-    def __init__(self,r=0,t=0,p=0):
-        """ r = radius 
-            t = theta 
-            p = phi  (not needed for polar)
-        """
-        #self.mu = math_util() 
-        self.r=r
-        self.t=t
-        self.p=p
-
-    def __repr__(self):
-        return '(%s, %s, %s)' % (self.r, self.p, self.t)
-
-    def __getitem__(self, index):
-        if index==0:
-            return self.r
-        if index==1:
-            return self.t
-        if index==2:
-            return self.p
-
-    def __setitem__(self, key, item):
-        if key==0:
-            self.r = item
-        if key==1:
-            self.t = item
-        if key==2:
-            self.p = item
-
-    def to_cartesian(self, deg_rad='rad'):
-        """ from David Gould's book
-            Complete Maya Programing II 
-            page 14 
-        """
-        x = self.r * math.sin(self.p) * math.cos(self.t)
-        y = self.r * math.sin(self.p) * math.sin(self.t)
-        z = self.r * math.cos(self.p)    
-        return (x,y,z)
- 
-    def from_cartesian(self, vec3):
-        """ UNTESTED 
-            from David Gould's book
-            Complete Maya Programing II 
-            page 14 
-
-            r = length( x y z )
-            p = tan-1 (length(x y), z)) 
-            t = tan-1 (y,x)
-        """        
-        if isinstance(vec3,tuple):
-            vec3 = vec3(vec3[0],vec3[1],vec3[2]) 
-
-        r = vec3.length  
-        p = math.atan( -1*math.sqrt(vec3[0]*vec3[0]+vec3[1]*vec3[1])*vec3[2]  ) 
-        t = math.atan( -1*(vec3[1]*vec3[0]))
-        print('### r %s p %s t %s '%(r,p,t))
-        self.r=r
-        self.t=t
-        self.p=p
-        #return type(self)(r,p,t)
-
-    def polar_to_cartesian(self):
-        """ UNTESTED
-            polar coordinates are spherical without the phi element 
-            from David Gould's book
-            Complete Maya Programing II 
-            page 13         
+    def from_euler(self, rot):
         """ 
-        pass
+            UNTESTED      
+        """
+        dtr = self.mu.dtr
 
-    def cartesian_to_polar(self, vec3):
-        """ UNTESTED
-            polar coordinates are spherical without the phi element 
-            from David Gould's book
-            Complete Maya Programing II 
-            page 13         
-        """ 
-        if isinstance(vec3,tuple):
-            vec3 = vec3(vec3[0],vec3[1],0) #Z is ignored  
+        # build rotationY (see diagram above) 
+        mat =  self.identity
+        mat[0]  =  math.cos(dtr( rot ))
+        mat[1]  = -math.sin(dtr( rot ))
+        mat[2]  =  math.sin(dtr( rot ))
+        mat[3]  =  math.cos(dtr( rot ))
 
-        r = math.sqrt(vec3[0]*vec3[0] + vec3[1]*vec3[1])  
-        t = math.atan( vec3[1]*vec3[0] ) 
 
-        print('### cartesian to polar  r %s t %s '%(r,t))
-        self.r=r
-        self.t=t
-        self.p=0
+    def batch_mult_pts(self, pts):
+        """ iterate a list of points and multiply them by this matrix """
+
+        tmp_buffer = []
+        out = None
+        for pvec in pts:  
+            tmp_buffer.append( self * pvec )
+        return tmp_buffer
 
 ###############################################
 class matrix33(object):
@@ -2081,3 +1736,430 @@ class matrix44(object):
         
         #print(m)
         return m
+
+###############################################
+class quaternion(object):
+    """ UNTESTED
+        first stab at quaternion 
+        mostly converted from C - 
+        taken from this: https://github.com/mycmessia/3D-Math-Primer/blob/master/3D%20Math/Quaternion.cpp 
+
+    """
+
+    def __init__(self,w=1,x=0,y=0,z=0):
+        self.w=w 
+        self.x=x
+        self.y=y
+        self.z=z
+
+    #def inverse(self)
+    #def difference(self)
+    #def to_euler(self)
+
+    def __repr__(self):
+        return '(%s, %s, %s, %s)' % (self.w, self.x, self.y, self.z)
+
+    def __getitem__(self, index):
+        if index==0:
+            return self.w
+        if index==1:
+            return self.x
+        if index==2:
+            return self.y
+        if index==3:
+            return self.z
+
+    def __setitem__(self, key, item):
+        if key==0:
+            self.w = item
+        if key==1:
+            self.x = item
+        if key==2:
+            self.y = item
+        if key==3:
+            self.z = item
+
+    @property
+    def identity(self):
+        return type(self)(1,0,0,0)
+
+    def set_identity(self):
+        self.w=1 
+        self.x=0
+        self.y=0
+        self.z=0
+
+    def set_rotx (self, theta):
+        theta_over2 = theta * .5
+        self.w = math.cos(theta_over2);
+        self.x = math.sin(theta_over2);
+        #self.y = 0
+        #self.z = 0
+
+    def set_roty (self, theta):
+        theta_over2 = theta * .5
+        self.w = math.cos(theta_over2)
+        #self.x = 0
+        self.y = math.sin(theta_over2)
+        #self.z = 0
+
+    def set_rotz (self, theta):
+        theta_over2 = theta * .5
+        self.w = math.cos(theta_over2)
+        #self.x = 0
+        #self.y = 0
+        self.z = math.sin(theta_over2)
+
+    def from_euler(self, h, p, b, trans_type='obj2inertial'):
+        sp=0;sb=0;sh=0
+        cp=0;cb=0;ch=0
+        
+        sp = math.sin(p*.5) 
+        sb = math.sin(b*.5) 
+        sh = math.sin(h*.5) 
+
+        cp = math.cos(p*.5) 
+        cb = math.cos(b*.5) 
+        ch = math.cos(h*.5) 
+       
+        if (trans_type == 'obj2inertial'):
+            self.w = ch * cp * cb + sh * sp * sb
+            self.x = ch * sp * cb + sh * cp * sb
+            self.y = -ch * sp * sb + sh * cp * cb
+            self.z = -sh * sp * cb + ch * cp * sb
+
+        elif (trans_type == 'inertial2ob'):
+            self.w = ch * cp * cb + sh * sp * sb
+            self.x = -ch * sp * cb - sh * cp * sb
+            self.y = ch * sp * sb - sh * cp * cb
+            self.z = sh * sp * cb - ch * cp * sb
+        
+        else:
+            print( "Invalid trans_type!" ) 
+
+    def mag(self):
+        mag = float( math.sqrt(  self.w*self.w + 
+                                 self.x*self.x + 
+                                 self.y*self.y + 
+                                 self.z*self.z) ) 
+        return mag 
+
+    def normalize(self):
+        mag = self.mag() 
+        if mag > 0:
+            oneOverMag = float( 1.0 / mag)
+            self.w *= oneOverMag
+            self.x *= oneOverMag
+            self.y *= oneOverMag
+            self.z *= oneOverMag
+        else:
+            self.set_identity()
+
+    def dot_product(self, q): 
+        return a.x * b.x + a.y * b.y + a.z * b.z + a.z * a.z;   
+
+    def conjugate(self, q):
+        result = type(self)()
+        
+        result.w =  q.w
+        result.x = -q.x
+        result.y = -q.y
+        result.z = -q.z
+        return result
+
+
+    def __mul__(self, a):
+        result = type(self)()
+    
+        w = self.w
+        x = self.x
+        y = self.y
+        z = self.z
+
+        result.w = w * a.w - x * a.x - y * a.y - z * a.z
+        result.x = w * a.x + x * a.w + z * a.y + y * a.z
+        result.y = w * a.y + y * a.w + x * a.z + z * a.x
+        result.z = w * a.z + z * a.w + y * a.x + x * a.y
+        
+        return result;
+
+
+    def from_m33(self, m33):
+        """ 
+           m11  m12 m13 
+           m21  m22 m23 
+           m31  m32 m33 
+        """
+        
+        four_w_sq_min1 = m33[0] + m33[4] + m33[8]
+        four_x_sq_min1 = m33[0] - m33[4] - m33[8]
+        four_y_sq_min1 = m33[4] - m33[0] - m33[8]
+        four_z_sq_min1 = m33[8] - m33[0] - m33[4]
+        
+        maxIndex = 0
+        max = four_w_sq_min1
+        
+        if four_x_sq_min1 > max:
+            max = four_x_sq_min1
+            maxIndex = 1
+        
+        if (four_y_sq_min1 > max):
+            max = four_y_sq_min1
+            maxIndex = 2
+        
+        if (four_z_sq_min1 > max):
+            max = four_z_sq_min1
+            maxIndex = 3
+        
+        max = math.sqrt (max + 1.0) * 0.5
+        mult = 0.25 / max
+        
+        if maxIndex==0:
+            self.w = max;
+            self.x = (m33[5] - m33[7]) * mult;
+            self.y = (m33[6] - m33[2]) * mult;
+            self.z = (m33[1] - m33[3]) * mult;
+
+        if maxIndex==1:
+            self.x = max;
+            self.w = (m33[5] - m33[7]) * mult;
+            self.y = (m33[1] + m33[3]) * mult;
+            self.z = (m33[6] + m33[2]) * mult;
+
+        if maxIndex==2:
+            self.y = max;
+            self.w = (m33[6] - m33[2]) * mult;
+            self.x = (m33[1] + m33[3]) * mult;
+            self.z = (m33[5] + m33[7]) * mult;
+
+        if maxIndex==3:
+            self.z = max;
+            self.w = (m33[1] - m33[3]) * mult;
+            self.x = (m33[6] + m33[2]) * mult;
+            self.y = (m33[5] + m33[7]) * mult;
+            self.z = (m33[5] + m33[7]) * mult;
+ 
+
+
+    def to_m33(self, trans_type='inertial2obj'):
+ 
+            mo = matrix33() 
+            q = self 
+
+            if (trans_type == 'inertial2obj'):
+ 
+                mo[0] = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
+                mo[1] = 2.0 * (q.x * q.y + q.w * q.z)
+                mo[2] = 2.0 * (q.x * q.z + q.w * q.y)
+                
+                mo[3] = 2.0 * (q.x * q.y - q.w * q.z)
+                mo[4] = 1.0 - 2.0 * (q.x * q.x + q.z * q.z)
+                mo[5] = 2.0 * (q.y * q.z + q.w * q.x)
+                
+                mo[6] = 2.0 * (q.x * q.z + q.w * q.y)
+                mo[7] = 2.0 * (q.y * q.z - q.w * q.x)
+                mo[8] = 1.0 - 2.0 * (q.x * q.x + q.y * q.y)
+ 
+                return mo 
+
+            elif (trans_type == 'obj2inertial'):
+ 
+                mo[0] = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
+                mo[1] = 2.0 * (q.x * q.y - q.w * q.z)
+                mo[2] = 2.0 * (q.x * q.z + q.w * q.y)
+                
+                mo[3] = 2.0 * (q.x * q.y + q.w * q.z)
+                mo[4] = 1.0 - 2.0 * (q.x * q.x + q.z * q.z)
+                mo[5] = 2.0 * (q.y * q.z - q.w * q.x)
+
+                mo[6] = 2.0 * (q.x * q.z + q.w * q.y)
+                mo[7] = 2.0 * (q.y * q.z + q.w * q.x)
+                mo[8] = 1.0 - 2.0 * (q.x * q.x + q.y * q.y)
+ 
+                return mo 
+
+            else:
+                print("Invalid trans_type!")
+   
+    def set_rot_zxis(self, axis, theta):
+        #assert((vectorMag(axis) - 1.0f) < 0.01f);
+        thetaOver2 = theta * .5
+        sinThetaOver2 = math.sin(thetaOver2)
+       
+        w = math.cos(thetaOver2)
+        x = axis.x * sinThetaOver2
+        y = axis.y * sinThetaOver2
+        z = axis.z * sinThetaOver2
+
+    def get_rot_angle(self):
+        thetaOver2 = math.acos(self.w)
+        return thetaOver2 * 2.0
+ 
+    def get_rot_axis(self):
+        sin_theta_over2Sq = 1.0 - self.w * self.w
+        one_over_sin_theta = 1.0 / math.sqrt(sin_theta_over2Sq)
+        
+        nx = self.x * one_over_sin_theta
+        ny = self.y * one_over_sin_theta
+        nz = self.z * one_over_sin_theta
+        
+        return vec3(nx, ny, nz)
+ 
+
+    def slerp (self, q0, q1, t):
+ 
+        if (t <= 0):
+            return q0
+        if (t >= 1):
+            return q1
+
+        cosOmega = self.dot_product(q0, q1)
+        
+        q1w = q1.w
+        q1x = q1.x
+        q1y = q1.y
+        q1z = q1.z
+        
+        # avoid getting different results
+        if (cosOmega < 0):
+            q1w = -q1w
+            q1x = -q1x
+            q1y = -q1y
+            q1z = -q1z
+            cosOmega -= cosOmega
+        
+        k0 = 0
+        k1 = 0
+        # avoid sth over 0 happening
+        if cosOmega > 0.999:
+            k0 = 1.0 - t
+            k1 = t
+        else:
+        
+            sinOmega = math.sqrt(1.0 - cosOmega * cosOmega)
+            omega = math.atan2 (sinOmega, cosOmega)
+            oneOverSinOmega = 1.0/sinOmega
+            
+            k0 = math.sin ((1.0- t) * omega) * oneOverSinOmega
+            k1 = math.sin (t*omega) * oneOverSinOmega
+        
+        ####
+        result = type(self)()
+        
+        result.x = k0 * q0.x + k1 * q1x;
+        result.y = k0 * q0.y + k1 * q1y;
+        result.z = k0 * q0.z + k1 * q1z;
+        result.w = k0 * q0.w + k1 * q1w;
+        
+        return result
+
+###############################################
+class spherical(object):
+    """ UNTESTED -   polar and spherical coordinates 
+
+    # https://stackoverflow.com/questions/4116658/faster-numpy-cartesian-to-spherical-coordinate-conversion
+
+    def cart2sph(x,y,z):
+        XsqPlusYsq = x**2 + y**2
+        r = m.sqrt(XsqPlusYsq + z**2)               # r
+        elev = m.atan2(z,m.sqrt(XsqPlusYsq))     # theta
+        az = m.atan2(y,x)                           # phi
+        return r, elev, az
+
+    def cart2sphA(pts):
+        return np.array([cart2sph(x,y,z) for x,y,z in pts])
+
+    def appendSpherical(xyz):
+        np.hstack((xyz, cart2sphA(xyz)))
+
+    """
+
+    def __init__(self,r=0,t=0,p=0):
+        """ r = radius 
+            t = theta 
+            p = phi  (not needed for polar)
+        """
+        #self.mu = math_util() 
+        self.r=r
+        self.t=t
+        self.p=p
+
+    def __repr__(self):
+        return '(%s, %s, %s)' % (self.r, self.p, self.t)
+
+    def __getitem__(self, index):
+        if index==0:
+            return self.r
+        if index==1:
+            return self.t
+        if index==2:
+            return self.p
+
+    def __setitem__(self, key, item):
+        if key==0:
+            self.r = item
+        if key==1:
+            self.t = item
+        if key==2:
+            self.p = item
+
+    def to_cartesian(self, deg_rad='rad'):
+        """ from David Gould's book
+            Complete Maya Programing II 
+            page 14 
+        """
+        x = self.r * math.sin(self.p) * math.cos(self.t)
+        y = self.r * math.sin(self.p) * math.sin(self.t)
+        z = self.r * math.cos(self.p)    
+        return (x,y,z)
+ 
+    def from_cartesian(self, vec3):
+        """ UNTESTED 
+            from David Gould's book
+            Complete Maya Programing II 
+            page 14 
+
+            r = length( x y z )
+            p = tan-1 (length(x y), z)) 
+            t = tan-1 (y,x)
+        """        
+        if isinstance(vec3,tuple):
+            vec3 = vec3(vec3[0],vec3[1],vec3[2]) 
+
+        r = vec3.length  
+        p = math.atan( -1*math.sqrt(vec3[0]*vec3[0]+vec3[1]*vec3[1])*vec3[2]  ) 
+        t = math.atan( -1*(vec3[1]*vec3[0]))
+        print('### r %s p %s t %s '%(r,p,t))
+        self.r=r
+        self.t=t
+        self.p=p
+        #return type(self)(r,p,t)
+
+    def polar_to_cartesian(self):
+        """ UNTESTED
+            polar coordinates are spherical without the phi element 
+            from David Gould's book
+            Complete Maya Programing II 
+            page 13         
+        """ 
+        pass
+
+    def cartesian_to_polar(self, vec3):
+        """ UNTESTED
+            polar coordinates are spherical without the phi element 
+            from David Gould's book
+            Complete Maya Programing II 
+            page 13         
+        """ 
+        if isinstance(vec3,tuple):
+            vec3 = vec3(vec3[0],vec3[1],0) #Z is ignored  
+
+        r = math.sqrt(vec3[0]*vec3[0] + vec3[1]*vec3[1])  
+        t = math.atan( vec3[1]*vec3[0] ) 
+
+        print('### cartesian to polar  r %s t %s '%(r,t))
+        self.r=r
+        self.t=t
+        self.p=0
+
+
