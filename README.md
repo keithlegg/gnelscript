@@ -27,15 +27,20 @@ you chain them together.
 
 
 
+
+
+
+
 design goals:
    - simple. Only do what needs to be done and nothing more
    - flat code structure as possible. All components should be easy to find 
    - fun. Its a playground to lean vectors, matrices, math and more. 
+   - only requires PIL and numpy 
+   - numpy is loosely intergrated and can be disabled
 
 
-only requires:
-    - PIL 
-    - numpy (numpy is loosely intergrated and could be pulled out)
+
+
 
 
    Organized by the following modules:

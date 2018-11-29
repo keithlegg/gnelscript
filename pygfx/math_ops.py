@@ -917,9 +917,7 @@ class matrix22(object):
     #     # multiply by an inverse, which achieves the same thing.
 
     def __mul__(self, n):
-        """ UNTESTED !!
-
-            multiply two 2X2 matricies together 
+        """ multiply two 2X2 matricies together 
 
             the order that you mutliply will call a different object!!!
             make sure you do "this * other", NOT "other * this"
@@ -931,11 +929,10 @@ class matrix22(object):
             outy = self.m[1]*n.x + self.m[3]*n.y  
             return  (outx, outy)
 
-        # if isinstance(n, tuple) or isinstance(n, list):
-        #     return type(self)(
-        #             self.m[0]*n[0]  + self.m[2]*n[1],
-        #             self.m[1]*n[2]  + self.m[3]*n[3]
-        #            )
+        if isinstance(n, tuple) or isinstance(n, list):
+            outx = self.m[0]*n[0] + self.m[2]*n[1]   
+            outy = self.m[1]*n[0] + self.m[3]*n[1]  
+            return  (outx, outy)
 
         if type(n) == type(self):
             return type(self)(
@@ -946,9 +943,7 @@ class matrix22(object):
                    )
 
     def from_euler(self, rot):
-        """ 
-            UNTESTED      
-        """
+
         dtr = self.mu.dtr
 
         self.m[0]  =  math.cos(dtr( rot ))
@@ -962,8 +957,8 @@ class matrix22(object):
 
         tmp_buffer = []
         out = None
-        for pvec in pts:  
-            tmp_buffer.append( self * pvec )
+        for pt in pts:  
+            tmp_buffer.append( self * pt )
         return tmp_buffer
 
 ###############################################

@@ -29,44 +29,10 @@ def render_2d_vector(v1, gridsize=50):
 # render_2d_vector( (0,5)  ) 
 
 
-###################################################
-def test_matrix22(gridsize=50):
-    """draw a vector and tell us the angle of it in degrees
-       
-       vector    : 2 2D tuples e.g. (1.5,1), (0,0)
-       gridsize  : specify pixels per linear unit
-
-    """
-    v1 = vec2(3,0)
-    v2 = vec2(0,3)
-
-    m22 = matrix22()
-    m22.from_euler(60)
-
-    m22_2 = matrix22()
-    m22_2.from_euler(-30)
-
-    m22 =  m22_2 * m22
-
-    v3 =  m22 * v2 
-
-    fb = PixelOp()   
-    fb.create_buffer(800, 800)
-    fb.graticule(gridsize)
-
-    fb.render_vector_2d(   v2,  scale=gridsize)
-    fb.render_vector_2d(   v3,  scale=gridsize)
-
-    fb.save('vec.png')
-
-
-test_matrix22() 
-
-
 
 ###################################################
 
-def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None, gridsize=50, fb=None, gratic=True):
+def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None, gridsize=50, pfb=None, gratic=True):
     """ draw some points and lines on a grid 
 
         ARGS:
@@ -76,6 +42,9 @@ def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None
             lines    - list of lines to render 
             obj      - list of 3D obect models to render
             gridsize - parameter to set a grid units to pixels ratio
+            pfb      - passed frame buffer - work on framebuffer passed in 
+                       as opposed to a single new framebuffer 
+                       this allows layering of multiple renders 
 
         TO RUN:
 
@@ -85,13 +54,16 @@ def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None
 
     """
 
-    if fb is None:
+    if pfb is None:
         fb = PixelOp()   
         fb.create_buffer(800, 800)
         if gratic is True:
             fb.graticule(gridsize)
         if gratic is False:
             fb.fill_color((0,0,0) )
+
+    else:
+        fb = pfb 
 
     #pt_size = 3
     pointcolor = ()
@@ -118,7 +90,8 @@ def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None
         for p in pts:
             fb.render_point_2d( p , scale=gridsize ) #dotsize=10
 
-    fb.save(imagename)
+    if pfb is None:
+        fb.save(imagename)
 
 
 
@@ -155,6 +128,49 @@ def load_obj_render_BSR(objfile):
 
 
 ###################################################
+def test_matrix22(gridsize=50):
+    """ first test of the 2X2 matrix object
+        shows:
+            matrix multiply matrix 
+            vector2 multiply matrix  
+    """
+
+    v1 = vec2(3,0)
+    v2 = vec2(0,3)
+
+    #rotate 45 degrees 
+    m22 = matrix22()
+    m22.from_euler(45)
+
+    # make a second matrix, also 45 degrees, should give us 90 total 
+    m22_2 = matrix22()
+    m22_2.from_euler(45)
+    m22 =  m22_2 * m22
+
+    # mutliply a vector by the matrix 
+    v3 =  m22 * v2 
+
+    fb = PixelOp()   
+    fb.create_buffer(800, 800)
+    fb.graticule(gridsize)
+    
+    pts = [ (0,0), (0,1), (2,1), (0,2) ]
+    #bloody_simple_2drender('2d_rotation.png', pts=pts, gridsize=50, pfb=fb)
+
+    vecs = [v2,v3]
+    bloody_simple_2drender('2d_rotation.png', vecs=vecs, gridsize=50, pfb=fb)
+
+    #rotate the points by matrix multiplication 
+    pts = m22.batch_mult_pts(pts) 
+    bloody_simple_2drender('2d_rotation.png', pts=pts, gridsize=50, pfb=fb)
+    fb.save('2d_rotation.png')
+
+
+
+#test_matrix22() 
+
+
+###################################################
 
 def draw_fractal_tree():
     tree = []
@@ -170,7 +186,7 @@ def draw_fractal_tree():
     bloody_simple_2drender('frac_tree.png', lines=pts, gridsize=1, gratic=False)
 
 
-#draw_fractal_tree() 
+# draw_fractal_tree() 
 
 ###################################################
 
@@ -261,11 +277,11 @@ def animate_bresenham( x1, y1, x2, y2):
     while x <= x2:
    
         #draw the start and end point on each framebuffer 
-        bloody_simple_2drender('unit_circle_%s.png'%fr_cnt, pts=[(x1,y1), (x2,y2)], gridsize=pixels_per_unit, fb=fb)
+        bloody_simple_2drender('unit_circle_%s.png'%fr_cnt, pts=[(x1,y1), (x2,y2)], gridsize=pixels_per_unit, pfb=fb)
 
         #calc and draw each step in between 
         pt_bufr.append( (x,y) )
-        bloody_simple_2drender('unit_circle_%s.png'%fr_cnt, pts=pt_bufr, gridsize=pixels_per_unit, fb=fb)
+        bloody_simple_2drender('unit_circle_%s.png'%fr_cnt, pts=pt_bufr, gridsize=pixels_per_unit, pfb=fb)
 
         x+=1
         if d<0 :
@@ -324,11 +340,12 @@ def unit_circle_anim( ):
             xx = math.cos(mu.dtr( dot) )    
             yy = math.sin(mu.dtr( dot) )             
             dots.append( (xx,yy) ) 
-        bloody_simple_2drender('unit_circle_%s.png'%fr_cnt, pts=dots, gridsize=pixels_per_unit, fb=fb)
+        bloody_simple_2drender('unit_circle_%s.png'%fr_cnt, pts=dots, gridsize=pixels_per_unit, pfb=fb)
 
 
         #draw the OBJ file forming a right triangle 
-        bloody_simple_2drender('unit_circle_%s.png'%fr_cnt, obj=[obj], gridsize=pixels_per_unit, fb=fb)
+        bloody_simple_2drender('unit_circle_%s.png'%fr_cnt, obj=[obj], gridsize=pixels_per_unit, pfb=fb)
+        fb.save( 'unit_circle_%s.png'%fr_cnt )
         fr_cnt += 1
 
 
@@ -336,17 +353,6 @@ def unit_circle_anim( ):
 
 
 ###################################################
-
-
-
-###################################################
-
-
-
-###################################################
-###################################################
-
-
 
 
 def distance_between_2vecs():
@@ -380,24 +386,36 @@ print( a.project_pt(a, b, 0) )
 
 
 def test_2d_intersect():
-    a = vec2()
+
+    pixels_per_unit = 50 
+
+    fb = PixelOp()   
+    fb.create_buffer(800, 800)
+    fb.graticule(pixels_per_unit)
+
+    com = vec2()  #container for commands 
 
     s1 = vec2( 5, 5)
     e1 = vec2(-5,-5)
 
     s2 = vec2( 6, 3)
     e2 = vec2(-3,-3)
+      
+    #debug - make auto convert from vec2 so we dont have to re enter these 
+    #lines = [ ( s1,e1 ), (s2,e2 ) ] 
+
+    lines = [ ( ( 5,5),(-5,-5) ),  (( 6, 3),(-3,-3)  ) ] 
+    bloody_simple_2drender('XXX', lines=lines, pfb=fb)
+    
+    pt = com.intersect(s1,e1,s2,e2)
+    bloody_simple_2drender('XXX', pts=[pt],  pfb=fb)
+
+    fb.save('intersect_2d.png')
+
+    print( 'vectors intersect at point ', pt )
 
 
-    vecs = [ a, b, c]
-    # pts = [(1,1),(2,2),(3,3)]
-    bloody_simple_2drender('2d_render.png', pts=None, vecs=vecs)
-
-    print( a.intersect(s1,e1,s2,e2) )
-
-
-
-
+#test_2d_intersect() 
 
 
 

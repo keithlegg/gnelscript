@@ -353,7 +353,7 @@ class point_operator_2d(object):
         return r
 
 
-class obj2d(point_operator_2d)
+class obj2d(point_operator_2d):
     """
         2.5D object - modeled after obj3d but much simpler
         
