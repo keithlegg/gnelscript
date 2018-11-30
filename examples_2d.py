@@ -130,9 +130,9 @@ def load_obj_render_BSR(objfile):
 ###################################################
 def test_matrix22(gridsize=50):
     """ first test of the 2X2 matrix object
-        shows:
-            matrix multiply matrix 
-            vector2 multiply matrix  
+        demonstrates how to:
+            multiply 2 matrices together 
+            multiply a vector by a matrix  
     """
 
     v1 = vec2(3,0)
@@ -166,8 +166,44 @@ def test_matrix22(gridsize=50):
     fb.save('2d_rotation.png')
 
 
-
 #test_matrix22() 
+
+###################################################
+def test_2d_object(gridsize=50):
+    """ first test of new 2D object """
+
+    obj = object2d() 
+
+    #you can load a 3D object, Z axis gets ignored
+    obj.load('objects/sphere.obj')
+
+    #obj.prim_square()
+    #obj.prim_triangle()
+
+    #obj.save('2d_square.obj')
+
+    #rotate 45 degrees 
+    m22 = matrix22()
+    m22.from_euler(45)
+
+    fb = PixelOp()   
+    fb.create_buffer(800, 800)
+    fb.graticule(gridsize)
+
+    #rotate the points by matrix multiplication 
+    obj.points = m22.batch_mult_pts( obj.points ) 
+
+    #saving a 2d object from 3D flattens it on Z axis. 
+    #utterly mangles the topology 
+    obj.save('2d_rotated.obj')
+
+    #bloody_simple_2drender('2d_rotation.png', pts=pts, gridsize=200, pfb=fb)
+    bloody_simple_2drender('2d_rotation.png', obj=[obj], gridsize=200, pfb=fb)
+
+    fb.save('2d_rotation.png')
+
+
+# test_2d_object() 
 
 
 ###################################################

@@ -1,6 +1,7 @@
 
 
 import math 
+import os 
 
 from pygfx.math_ops import math_util as mu
 
@@ -353,7 +354,7 @@ class point_operator_2d(object):
         return r
 
 
-class obj2d(point_operator_2d):
+class object2d(point_operator_2d):
     """
         2.5D object - modeled after obj3d but much simpler
         
@@ -366,17 +367,169 @@ class obj2d(point_operator_2d):
     def __init__(self):
         super().__init__()  
 
-        self.points   = []
-        self.polygons = []
+        self.uv_points       = []   # UV single point coordinates
+        self.uv_polys        = []   # UV face indices  
+        self.normals         = []   # face_normals
 
-        self.rot       = [0,0,0]
-        self.pos       = [0,0,0]
-        self.scale     = [1,1,0]
+        self.points          = []    # list of tuples of XYZ points per vertex         -  [(x,y,z), (x,y,z)]  
+        self.polygons        = []    # list of tuples for 2 or more vertex connections -  [(1,2,5,8) , (1,2)] 
+
+        self.rot             = [0,0,0]
+        self.pos             = [0,0,0]
+        self.scale           = [1,1,0]
 
     def reset(self):
         self.rot          = [0,0,0]
         self.pos          = [0,0,0]
         self.scale        = [1,1,1]
+
+
+    def prim_square(self,  pos=(0,0,0), rot=(0,0,0), size=1):
+        pts = [] 
+
+        #keep Z but leave it zero
+        pts.append((-size, -size, 0))  
+        pts.append((-size,  size, 0))  
+        pts.append(( size,  size, 0)) 
+        pts.append(( size, -size, 0)) 
+
+        #not a good solution - this doesnt take into account existing geom 
+        self.points.extend(pts)
+        self.polygons.append( (1,2,3,4) )
+
+
+    def prim_triangle(self, pos=(0,0,0), rot=(0,0,0), size=1):
+        pts =  [(-size,0,0), (0,size,0), (size,0,0) ]
+        poly = [(1,2,3)]
+
+        #not a good solution - this doesnt take into account existing geom 
+        self.points.extend(pts)
+        self.polygons.append( (1,2,3) )
+
+
+    # def prim_circle(self,  center=(0,0,0), dia=1):
+    #     pass
+
+
+    ###############################################  
+
+    def load(self, filename):
+        ## copied from pointgen 3d 
+
+        if os.path.lexists(filename) == 0:
+            self.scribe("%s DOES NOT EXIST !! "%filename )
+            #raise
+            
+        if os.path.lexists(filename):
+            f = open( filename,"r", encoding='utf-8')
+            contents = f.readlines()
+            for x in contents :
+                #lines = x
+                nonewline = x.split('\n')
+                tok =  nonewline[0].split(" ") 
+                if tok[0]!='#':
+                    ###
+                    #THIS NONSENSE IS TO CLEAN UP ERRANT SPACES IN FILE 
+                    clndat = []
+                    for f in tok:
+                        if(f!='' ):
+                            clndat.append(f) 
+
+                    #weak attempt to clean up the textfile a little                    
+                    tok=clndat    
+                    numtok = len(tok)               
+                    if tok: 
+                        # VERTICIES 
+                        if tok[0]=='v':
+                            self.points.append( (float(tok[1]), float(tok[2]), float(tok[3]) ) ) 
+
+                        # LINES
+                        if tok[0]=='l':
+                            ## LINE IMPORT IS UNTESTED !
+                            fids = tok[1:] #remove the first item (letter f )
+                            polyline = []
+                            for fid in fids:
+                                polyline.append(int(fid))   
+                            self.polygons.append( polyline )                         
+
+                        # FACES
+                        if tok[0]=='f':
+                            
+                            fids = tok[1:] #remove the first item (letter f )
+                            
+                            poly    = []
+                            uv_poly = []
+
+                            for fid in fids:
+                                
+                                ## DEAL WITH THIS STUFF - '47//1'
+                                if '/' in fid:
+                                    tmp = fid.split('/')
+                                    if len(tmp):
+                                        # first slash delineated integer is face ID
+                                        poly.append(int(tmp[0]))    
+                                        # second slash delineated integer is face UV
+                                        if tmp[1]: 
+                                            uv_poly.append(int(tmp[1]))
+
+
+                                else:    
+                                    poly.append(int(fid))   
+
+                            self.polygons.append( poly )
+                            self.uv_polys.append(uv_poly) 
+
+    ###############################################  
+
+    def save(self, filename, as_lines=False):
+        ## copied from pointgen 3d 
+
+        buf = [] #array of strings to be written out as the OBJ file
+
+        buf.append("# Created by Magic Mirror render toy.")
+        buf.append("# Keith Legg - December 2015.")        
+        buf.append("# version2   - November 2018.\n")
+
+        buf.append('\n# Define the vertices')
+
+        for p in self.points:
+            if len(p) == 2:
+                #add empty Z if 2 otherwise it becomes and error 
+                p = (p[0],p[1],0)
+
+            if len(p) != 3:
+                print('## object save - bad vertex coordinate ', p )
+                return None 
+
+            buf.append('v %s %s %s'%( p[0], p[1], p[2]) ) #x y z components 
+        
+        buf.append('\n# Define the polygon geometry')
+        buf.append('# No UV or normals at this time')
+        for ply in self.polygons:
+            plybuf = ''
+            for f in ply:
+                #plybuf = plybuf +(' %s'%str(int(f)+1) ) #add one because OBJ is NOT zero indexed
+                plybuf = plybuf +(' %s'%str(int(f)) ) #add one because OBJ is NOT zero indexed
+
+            if as_lines:
+                # save as lines
+                buf.append('l %s'%plybuf)
+            else:
+                buf.append('f %s'%plybuf)
+ 
+        buf.append('\n')
+
+        ################################### 
+        #Our filebuffer is an array, we need a string so flatten it 
+        output = ''
+        for s in buf:
+            output=output+s+'\n'
+
+        #save it to disk now
+        fobj = open( filename,"w") #encoding='utf-8'
+        fobj.write(output)
+        fobj.close()
+
 
 
 ###################################################

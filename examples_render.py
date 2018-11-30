@@ -99,7 +99,7 @@ def build_perspective_matrix():
     #ropr.render_matrix_obj( m33=None, m44=persp_m44, thick=1, scale=200, filename='out.png', object3d=obj)
 
 
-build_perspective_matrix() 
+# build_perspective_matrix() 
 
 
 #####################################################
@@ -213,7 +213,7 @@ def lighting_test( lightpos, fnum=1):
         obj2.flush() 
 
 
-# lighting_test( (10,-3, 0) )
+#lighting_test( (10,-3, 0) )
 
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##
     
