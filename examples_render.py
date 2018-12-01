@@ -123,8 +123,8 @@ def texmapping_test(fnum=1):
     obj = object3d()
     
     #obj.load('objects/monkey.obj')
-    obj.load('objects/sphere.obj')
-    #obj.load('objects/cube.obj')
+    #obj.load('objects/sphere.obj')
+    obj.load('objects/cube.obj')
 
     #obj.prim_quad(axis='z',  pos=(0,0,0), rot=(0,0,0))
     obj.triangulate() 
@@ -134,7 +134,7 @@ def texmapping_test(fnum=1):
     # obj.rotate_pts( (180,0,0) )
 
     fb = PixelOp()   
-    fb.load('tex.png') 
+    fb.load('uvmap.jpg') 
 
     render_scale = 200
     lightpos = (0,1,3)
@@ -145,13 +145,13 @@ def texmapping_test(fnum=1):
     ropr.COLOR_MODE = 'lighted'
     
     ropr.SHOW_FACE_CENTER = False
-    ropr.SHOW_EDGES       = False     
+    #ropr.SHOW_EDGES       = False     
 
     ropr.scanline(obj, render_scale, lightpos=lightpos, texmap=fb ) 
     ropr.save_image('simple_render_%s.png'%fnum)
 
 
-texmapping_test() 
+# texmapping_test() 
 
 #######################################################
 

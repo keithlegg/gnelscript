@@ -198,6 +198,7 @@ class simple_render(object):
         
         self.uvx = 0 #pointer for UV map X axis  
         self.uvy = 0 #pointer for UV map X axis
+        self.ptgen = point_operator_2d()
 
         half_x = resx/2 
         half_y = resy/2 
@@ -664,7 +665,29 @@ class simple_render(object):
 
         print('## num points %s; num polygons %s; num normals %s '%(len(obj.points) , len(obj.polygons), len(obj.normals) ) )
         return polydata
-    
+
+
+
+    def paint_line(self, points, color_fb, framebuffer=None, yindex=0):
+        """ paint a line of pixels from an image  """
+
+        dpix = framebuffer.fb.load() 
+ 
+        p1 = list(points[0])    
+        p2 = list(points[1])  
+
+        pts = self.ptgen.calc_line(p1[0], p1[1], p2[0], p2[1])
+        
+        pxct = 0
+
+        for pt in pts:
+            dpix[ pt[0], pt[1] ] = color_fb.get_pix( (pxct,yindex))
+            pxct += 1 
+
+
+
+
+
     ## ## ## ## ##  
     def scanline(self, obj, scale=200, lightpos=(0,10,0) , texmap=None):
         """ 
@@ -854,21 +877,23 @@ class simple_render(object):
                         #pix_clr = (pix_clr[0]-angle, pix_clr[1]-angle, pix_clr[2]-angle)
 
                         #pix_clr = self.tex_fb.get_pix( (20,20) )
-                        
+
                         #print('## color x %s y %s is '%(self.uvx, self.uvy),pix_clr)
                         
                         ######################
+                        # def paint_line( points, color_fb, framebuffer=None,):
+
                         if i and j: 
                             drawlin = [i,j]
-                            output.connect_the_dots( drawlin, pix_clr, 1)
+                            self.paint_line( drawlin, self.tex_fb , output, self.uvy) 
                             self.uvy += 1
                         if i and k:
                             drawlin = [i,k]
-                            output.connect_the_dots( drawlin, pix_clr, 1)
+                            self.paint_line( drawlin, self.tex_fb , output, self.uvy)                             
                             self.uvy += 1                            
                         if j and k:
                             drawlin = [j,k]
-                            output.connect_the_dots( drawlin, pix_clr, 1) 
+                            self.paint_line( drawlin, self.tex_fb , output, self.uvy)                             
                             self.uvy += 1
 
 
