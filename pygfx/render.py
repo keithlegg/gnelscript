@@ -34,6 +34,8 @@ class render3d(object):
         self.rp   = []          # render path data  (lines)
         self.rpts = []          # render point data (points)
 
+        self.tex_fb = None  #first stab at texture mapping 
+
         if framebuffer==None:
             self.res = [resx, resy]
             self.fb.create_buffer(resx, resy)
@@ -194,6 +196,9 @@ class simple_render(object):
         self.rp   = []          # render path data  (lines)
         self.rpts = []          # render point data (points)
         
+        self.uvx = 0 #pointer for UV map X axis  
+        self.uvy = 0 #pointer for UV map X axis
+
         half_x = resx/2 
         half_y = resy/2 
 
@@ -524,7 +529,6 @@ class simple_render(object):
             self.render_multiobj((255,0,0), RX, RY+(f*step_degrees), RZ, linethick, scale ) 
             self.save_image( '%s/%s_%s.%s'%(outfolder,outfilename,f,output_type) )
 
-
     ## ## ## ## ## 
     def render_matrix_obj (self,  m33, m44, thick, scale, filename, object3d =None):
         """ high level wrapper to call render_custom_matrix """
@@ -662,7 +666,7 @@ class simple_render(object):
         return polydata
     
     ## ## ## ## ##  
-    def scanline(self, obj, scale=200, lightpos=(0,10,0) ):
+    def scanline(self, obj, scale=200, lightpos=(0,10,0) , texmap=None):
         """ 
             polydata = [ points[], polygons[], normals[] ]
         """
@@ -680,6 +684,9 @@ class simple_render(object):
         center = (self.res[0]/2, self.res[1]/2)
         
 
+        if texmap is not None:
+            print('loading texmap! ', texmap)
+            self.tex_fb = texmap
 
         #mark the 0 point for convenience
         #output.horiz_line(res_y/2, (255,0,255) ) 
@@ -691,8 +698,14 @@ class simple_render(object):
             num_idx = len(ply) # number of vertices per poly 
             drwply = []        # 3 points of triangle to draw
             
+            self.uvx = 0
+            self.uvy = 0
+
             #only look at 3 and four sided polys 
             if num_idx==3 or num_idx == 4:
+
+                #  #pointer for UV map X axis  
+                self.uvy += 1 #pointer for UV map X axis
 
                 # DEBUG, if face is 4 sided - we need to triangulate it 
 
@@ -747,7 +760,12 @@ class simple_render(object):
                 
                 if self.COLOR_MODE=='flat':                 
                     facecolor = (100,100,100 )
+
+                #if self.COLOR_MODE=='uvmap':  
+                #    """attempt at texture mapping """               
+                #    facecolor = (100,100,100 )
                 
+
                 if self.COLOR_MODE=='lighted':  
                     """ light or dark depending on angle to a point (light) 
                          -- once that works add:
@@ -804,21 +822,57 @@ class simple_render(object):
                         if k: 
                             output.draw_fill_circle( k[0], k[1], 1, (0,0,255) )  
 
-                    #attempt to fill the polygon 
-                    #ineffecient! why draw the whole vertical sweep ?
-                    # should only go top to bottom of polygon 
+                    ## fill a polygon - old but working  
+                    ## #ineffecient! why draw the whole vertical sweep ?
+                    ## # should only go top to bottom of polygon 
+                    ## if self.SHOW_FACES:
+                    ##     if i and j: 
+                    ##         drawlin = [i,j]
+                    ##         output.connect_the_dots( drawlin, facecolor, 1)
+                    ##     if i and k:
+                    ##         drawlin = [i,k]
+                    ##         output.connect_the_dots( drawlin, facecolor, 1)
+                    ##     if j and k:
+                    ##         drawlin = [j,k]
+                    ##         output.connect_the_dots( drawlin, facecolor, 1) 
+                    
+                    ###############################################
+
+                    ## fill a polygon - test of texture mapping   
                     if self.SHOW_FACES:
+
+                        #self.uvx = 0 #reset the horizontal image pointer for each line 
+                        
+                        
+                        #get color from texture map 
+                        pix_clr = self.tex_fb.get_pix((self.uvx, self.uvy))
+                        #pix_clr = (150,150,250)
+                        
+                        #print(angle)
+
+                        #add lighting into to pixel color 
+                        #pix_clr = (pix_clr[0]-angle, pix_clr[1]-angle, pix_clr[2]-angle)
+
+                        #pix_clr = self.tex_fb.get_pix( (20,20) )
+                        
+                        #print('## color x %s y %s is '%(self.uvx, self.uvy),pix_clr)
+                        
+                        ######################
                         if i and j: 
                             drawlin = [i,j]
-                            output.connect_the_dots( drawlin, facecolor, 1)
+                            output.connect_the_dots( drawlin, pix_clr, 1)
+                            self.uvy += 1
                         if i and k:
                             drawlin = [i,k]
-                            output.connect_the_dots( drawlin, facecolor, 1)
+                            output.connect_the_dots( drawlin, pix_clr, 1)
+                            self.uvy += 1                            
                         if j and k:
                             drawlin = [j,k]
-                            output.connect_the_dots( drawlin, facecolor, 1) 
+                            output.connect_the_dots( drawlin, pix_clr, 1) 
+                            self.uvy += 1
 
-                
+
+
                 ##################                
                 if self.SHOW_NORMALS:
                     #draw face normal 

@@ -99,7 +99,7 @@ class RasterObj(object):
         self.fb = self.fb.convert("RGB")
 
     def get_pix(self, pt ):
-        self.fb.getpixel(pt) 
+        return self.fb.getpixel(pt) 
 
     def set_pix(self, pt , color ):
         dpix = self.fb.load()

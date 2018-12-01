@@ -9,6 +9,24 @@ from pygfx.obj3d import  *
 mu = math_util() 
 
 
+###################################################
+#def make_checker_map( , ):
+
+
+def render_texture_map(input_img, gridsize=50):
+    
+    fb = RasterObj() 
+    #fb.load(input_img) 
+
+    #fb.set_pix()
+
+
+    print() 
+
+    pass
+
+
+
 
 ###################################################
 def render_2d_vector(v1, gridsize=50):

@@ -380,9 +380,16 @@ class polygon_operator(point_operator):
             for idx in p:
                 tri.append(self.points[idx-1])
             mean = self.triangle_mean_z(tri)
+            
+            if not  isinstance(mean,float):
+                print('error in  z_sort - mean is NOT float ', mean )
+                mean = 0.0 
+
             #print('## mean ',  mean )
             tmp.append( (mean, p) )
         
+
+
         if reverse:
             tmp.sort(reverse=True)
         else:
