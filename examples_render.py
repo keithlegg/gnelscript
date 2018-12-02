@@ -128,13 +128,22 @@ def texmapping_test(fnum=1):
 
     #obj.prim_quad(axis='z',  pos=(0,0,0), rot=(0,0,0))
     obj.triangulate() 
-    obj.rotate_pts( (45,45,45) )
+    obj.rotate_pts( (45, 45, 45) )
 
 
     # obj.rotate_pts( (180,0,0) )
 
+    # load the texture to map to polygons 
     fb = PixelOp()   
+    #fb.load('tex.png') 
     fb.load('uvmap.jpg') 
+
+    #------------
+    #you can fo PIL operations on the images at anytime!
+    #from PIL import ImageEnhance
+    #enhancer = ImageEnhance.Brightness(fb.fb)
+    #fb.fb = enhancer.enhance(3) #.show("Sharpness %f" % factor)
+    #------------
 
     render_scale = 200
     lightpos = (0,1,3)
@@ -145,13 +154,17 @@ def texmapping_test(fnum=1):
     ropr.COLOR_MODE = 'lighted'
     
     ropr.SHOW_FACE_CENTER = False
-    #ropr.SHOW_EDGES       = False     
+    ropr.SHOW_EDGES       = False     
 
     ropr.scanline(obj, render_scale, lightpos=lightpos, texmap=fb ) 
     ropr.save_image('simple_render_%s.png'%fnum)
 
 
-# texmapping_test() 
+texmapping_test(30)
+
+#ANIMATE IT 
+#for a in range(20):
+#    texmapping_test(a) 
 
 #######################################################
 

@@ -681,7 +681,10 @@ class simple_render(object):
         pxct = 0
 
         for pt in pts:
-            dpix[ pt[0], pt[1] ] = color_fb.get_pix( (pxct,yindex))
+            try:
+                dpix[ pt[0], pt[1] ] = color_fb.get_pix( (pxct,yindex))
+            except:
+                pass
             pxct += 1 
 
 
@@ -832,6 +835,7 @@ class simple_render(object):
                     s_hvec = (-1*(res_x/2),hscan)
                     e_hvec = (       res_x,hscan)
 
+                    # take the 3 edges of a triangle and determine if the horizontal scanline intersects any 
                     i = vecmath.intersect(s_hvec, e_hvec, s1, e1) #left  side of triangle
                     j = vecmath.intersect(s_hvec, e_hvec, s2, e2) #right side of triangle
                     k = vecmath.intersect(s_hvec, e_hvec, s3, e3) #top   side of triangle
@@ -845,7 +849,14 @@ class simple_render(object):
                         if k: 
                             output.draw_fill_circle( k[0], k[1], 1, (0,0,255) )  
 
-                    ## fill a polygon - old but working  
+                    """
+                    fill a polygon - old but working 
+                    
+                    the reason for three different scan lines is the 
+                    possibility of 3 possible edges residing on the same horizontal line  
+                    This is dependent on the variable rotation of the triangle relative to the rendered image
+                    """
+
                     ## #ineffecient! why draw the whole vertical sweep ?
                     ## # should only go top to bottom of polygon 
                     ## if self.SHOW_FACES:
@@ -863,20 +874,21 @@ class simple_render(object):
 
                     ## fill a polygon - test of texture mapping   
                     if self.SHOW_FACES:
+                       
+                        # get pixel color value from texture map 
+                        # self.uvx and self.uvy are iterators that keep track of pixels drawn
 
-                        #self.uvx = 0 #reset the horizontal image pointer for each line 
+                        # not a "true" UV coordinate, but an offset in image space
+                        vtx_u = .3 
+                        vtx_v = .9 
                         
-                        
-                        #get color from texture map 
-                        pix_clr = self.tex_fb.get_pix((self.uvx, self.uvy))
-                        #pix_clr = (150,150,250)
-                        
-                        #print(angle)
+                        tex_u = int(self.tex_fb.size[0] * vtx_u) + self.uvx
+                        tex_v = int(self.tex_fb.size[1] * vtx_v) + self.uvy
+
+                        pix_clr = self.tex_fb.get_pix((tex_u, tex_v))                        
 
                         #add lighting into to pixel color 
-                        #pix_clr = (pix_clr[0]-angle, pix_clr[1]-angle, pix_clr[2]-angle)
-
-                        #pix_clr = self.tex_fb.get_pix( (20,20) )
+                        pix_clr = (pix_clr[0]-angle, pix_clr[1]-angle, pix_clr[2]-angle)
 
                         #print('## color x %s y %s is '%(self.uvx, self.uvy),pix_clr)
                         
@@ -885,15 +897,15 @@ class simple_render(object):
 
                         if i and j: 
                             drawlin = [i,j]
-                            self.paint_line( drawlin, self.tex_fb , output, self.uvy) 
+                            self.paint_line( drawlin, self.tex_fb , output, tex_v) 
                             self.uvy += 1
                         if i and k:
                             drawlin = [i,k]
-                            self.paint_line( drawlin, self.tex_fb , output, self.uvy)                             
+                            self.paint_line( drawlin, self.tex_fb , output, tex_v)                             
                             self.uvy += 1                            
                         if j and k:
                             drawlin = [j,k]
-                            self.paint_line( drawlin, self.tex_fb , output, self.uvy)                             
+                            self.paint_line( drawlin, self.tex_fb , output, tex_v)                             
                             self.uvy += 1
 
 

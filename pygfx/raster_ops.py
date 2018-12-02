@@ -99,7 +99,22 @@ class RasterObj(object):
         self.fb = self.fb.convert("RGB")
 
     def get_pix(self, pt ):
-        return self.fb.getpixel(pt) 
+        """ DEBUG - add a "wrap around feature  
+            if a pixel is requested out of bounds - loop around to start 
+        """
+        get_pt = list(pt) 
+        # print(get_pt)
+
+        if pt[0] >= self.size[0]:
+            new_x = pt[0] - self.size[0]
+            get_pt = [new_x, pt[1]]
+            #print( '## error U get pix ', pt, get_pt)
+        if pt[1] >= self.size[1]:
+            new_y = pt[1] - self.size[1]
+            get_pt = [pt[0], new_y]
+            #print( '## error V get pix ', pt, get_pt)
+
+        return self.fb.getpixel(tuple(get_pt)) 
 
     def set_pix(self, pt , color ):
         dpix = self.fb.load()
