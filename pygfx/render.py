@@ -668,7 +668,7 @@ class simple_render(object):
 
 
 
-    def paint_line(self, points, color_fb, framebuffer=None, yindex=0):
+    def paint_line(self, points, color_fb, framebuffer=None, xoffset=0, yoffset=0, bright=1):
         """ paint a line of pixels from an image  """
 
         dpix = framebuffer.fb.load() 
@@ -682,7 +682,18 @@ class simple_render(object):
 
         for pt in pts:
             try:
-                dpix[ pt[0], pt[1] ] = color_fb.get_pix( (pxct,yindex))
+                #mix luminance with color from texture
+                pre_color = list(color_fb.get_pix( (pxct+xoffset,yoffset)) )
+                
+                pre_color[0] = int(pre_color[0] - bright) # R
+                pre_color[1] = int(pre_color[1] - bright) # G
+                pre_color[2] = int(pre_color[2] - bright) # B
+
+                dpix[ pt[0], pt[1] ] = tuple(pre_color) 
+
+                #or just use pure texture with full luminance 
+                #dpix[ pt[0], pt[1] ] = color_fb.get_pix( (pxct+xoffset,yoffset)) 
+
             except:
                 pass
             pxct += 1 
@@ -709,6 +720,7 @@ class simple_render(object):
         res_y = self.res[1]
         center = (self.res[0]/2, self.res[1]/2)
         
+        light_intensity  = .6 
 
         if texmap is not None:
             print('loading texmap! ', texmap)
@@ -786,13 +798,9 @@ class simple_render(object):
                 
                 if self.COLOR_MODE=='flat':                 
                     facecolor = (100,100,100 )
+           
 
-                #if self.COLOR_MODE=='uvmap':  
-                #    """attempt at texture mapping """               
-                #    facecolor = (100,100,100 )
-                
-
-                if self.COLOR_MODE=='lighted':  
+                if self.COLOR_MODE=='lighted' or self.COLOR_MODE=='lightedshaded':  
                     """ light or dark depending on angle to a point (light) 
                          -- once that works add:
                               light intesity 
@@ -823,7 +831,8 @@ class simple_render(object):
                     light_angle = (  nrml.angle_between( vec_to_light ) )
                     angle  = int(mu().rtd(light_angle ))
                     # this is a terrible way to do it, but it looks pretty good for a first try
-                    facecolor = (256-angle,256-angle,256-angle)
+                    light_pow = int(light_intensity*256)
+                    facecolor = (light_pow-angle,light_pow-angle,light_pow-angle)
 
                     #--------
                     # store lighting vectors that were calulated so we can play with them later  
@@ -849,26 +858,6 @@ class simple_render(object):
                         if k: 
                             output.draw_fill_circle( k[0], k[1], 1, (0,0,255) )  
 
-                    """
-                    fill a polygon - old but working 
-                    
-                    the reason for three different scan lines is the 
-                    possibility of 3 possible edges residing on the same horizontal line  
-                    This is dependent on the variable rotation of the triangle relative to the rendered image
-                    """
-
-                    ## #ineffecient! why draw the whole vertical sweep ?
-                    ## # should only go top to bottom of polygon 
-                    ## if self.SHOW_FACES:
-                    ##     if i and j: 
-                    ##         drawlin = [i,j]
-                    ##         output.connect_the_dots( drawlin, facecolor, 1)
-                    ##     if i and k:
-                    ##         drawlin = [i,k]
-                    ##         output.connect_the_dots( drawlin, facecolor, 1)
-                    ##     if j and k:
-                    ##         drawlin = [j,k]
-                    ##         output.connect_the_dots( drawlin, facecolor, 1) 
                     
                     ###############################################
 
@@ -879,35 +868,54 @@ class simple_render(object):
                         # self.uvx and self.uvy are iterators that keep track of pixels drawn
 
                         # not a "true" UV coordinate, but an offset in image space
-                        vtx_u = .3 
-                        vtx_v = .9 
-                        
+                        vtx_u = .0 
+                        vtx_v = .0 
+
                         tex_u = int(self.tex_fb.size[0] * vtx_u) + self.uvx
                         tex_v = int(self.tex_fb.size[1] * vtx_v) + self.uvy
 
-                        pix_clr = self.tex_fb.get_pix((tex_u, tex_v))                        
+                        pix_clr=(0,0,0)
+                        #if self.COLOR_MODE=='lighted': 
+                        #    pix_clr = self.tex_fb.get_pix((tex_u, tex_v))                        
 
                         #add lighting into to pixel color 
-                        pix_clr = (pix_clr[0]-angle, pix_clr[1]-angle, pix_clr[2]-angle)
+                        #pix_clr = (pix_clr[0]-angle, pix_clr[1]-angle, pix_clr[2]-angle)
 
                         #print('## color x %s y %s is '%(self.uvx, self.uvy),pix_clr)
                         
                         ######################
                         # def paint_line( points, color_fb, framebuffer=None,):
+                        if self.COLOR_MODE=='lightedshaded': 
+                            
+                            luminance = (256-angle)
+                         
+                            if i and j: 
+                                drawlin = [i,j]
+                                self.paint_line( drawlin, self.tex_fb , output, tex_u, tex_v, luminance) 
+                                self.uvy += 1
+                            if i and k:
+                                drawlin = [i,k]
+                                self.paint_line( drawlin, self.tex_fb , output, tex_u, tex_v, luminance)                             
+                                self.uvy += 1                            
+                            if j and k:
+                                drawlin = [j,k]
+                                self.paint_line( drawlin, self.tex_fb , output, tex_u, tex_v, luminance)                             
+                                self.uvy += 1
 
-                        if i and j: 
-                            drawlin = [i,j]
-                            self.paint_line( drawlin, self.tex_fb , output, tex_v) 
-                            self.uvy += 1
-                        if i and k:
-                            drawlin = [i,k]
-                            self.paint_line( drawlin, self.tex_fb , output, tex_v)                             
-                            self.uvy += 1                            
-                        if j and k:
-                            drawlin = [j,k]
-                            self.paint_line( drawlin, self.tex_fb , output, tex_v)                             
-                            self.uvy += 1
-
+                        ######################
+                        if self.COLOR_MODE=='lighted': 
+                            #ineffecient! why draw the whole vertical sweep ?
+                            # should only go top to bottom of polygon 
+                            if self.SHOW_FACES:
+                                if i and j: 
+                                    drawlin = [i,j]
+                                    output.connect_the_dots( drawlin, facecolor, 1)
+                                if i and k:
+                                    drawlin = [i,k]
+                                    output.connect_the_dots( drawlin, facecolor, 1)
+                                if j and k:
+                                    drawlin = [j,k]
+                                    output.connect_the_dots( drawlin, facecolor, 1) 
 
 
                 ##################                

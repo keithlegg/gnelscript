@@ -123,44 +123,48 @@ def texmapping_test(fnum=1):
     obj = object3d()
     
     #obj.load('objects/monkey.obj')
-    #obj.load('objects/sphere.obj')
-    obj.load('objects/cube.obj')
+    obj.load('objects/sphere.obj')
+    #obj.load('objects/cube.obj')
 
     #obj.prim_quad(axis='z',  pos=(0,0,0), rot=(0,0,0))
     obj.triangulate() 
-    obj.rotate_pts( (45, 45, 45) )
+    obj.rotate_pts( (200, -20, 0) )
 
 
     # obj.rotate_pts( (180,0,0) )
 
     # load the texture to map to polygons 
-    fb = PixelOp()   
-    #fb.load('tex.png') 
-    fb.load('uvmap.jpg') 
+    img_op = PixelOp()   
+    
+    #img_op.load('tex.png') 
+    img_op.load('uvmap_sm.jpg') 
 
     #------------
-    #you can fo PIL operations on the images at anytime!
-    #from PIL import ImageEnhance
-    #enhancer = ImageEnhance.Brightness(fb.fb)
-    #fb.fb = enhancer.enhance(3) #.show("Sharpness %f" % factor)
+    #you can do PIL operations on the images at anytime!
+    """
+    from PIL import ImageEnhance
+    enhancer = ImageEnhance.Brightness(img_op.fb)
+    img_op.fb = enhancer.enhance(3) #.show("Sharpness %f" % factor)
+    """
     #------------
 
     render_scale = 200
-    lightpos = (0,1,3)
-
+    lightpos = (0,-1,-3)
 
     ropr = simple_render()
-   
-    ropr.COLOR_MODE = 'lighted'
+
+ 
+    #ropr.COLOR_MODE = 'lighted'
+    ropr.COLOR_MODE = 'lightedshaded'
     
     ropr.SHOW_FACE_CENTER = False
     ropr.SHOW_EDGES       = False     
 
-    ropr.scanline(obj, render_scale, lightpos=lightpos, texmap=fb ) 
+    ropr.scanline(obj, render_scale, lightpos=lightpos, texmap=img_op ) 
     ropr.save_image('simple_render_%s.png'%fnum)
 
 
-texmapping_test(30)
+# texmapping_test(30)
 
 #ANIMATE IT 
 #for a in range(20):
