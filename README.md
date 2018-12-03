@@ -1,25 +1,11 @@
+
+![alt text](https://github.com/keithlegg/pyrender2/blob/master/images/example/monkey_tex.png) 
+
 # pyrender2
 
-"swiss army power tool" for 3D geometric data. 
 
-Procedural modeling for polygons, 
-Very basic 3D rendering in pure python.
-Render and composite images with PIL. 
+Render, 3D Model and composite images in pure python. 
 
-
-Lot of tools to process polygons like:
-
-   - OBJ file load and save 
-   - Sub select parts of a model 
-   - Triangulation 
-   - Polygon N sided face extrude 
-   - visualize vectors and line geometry 
-
-
-
-
-
-![alt text](https://github.com/keithlegg/pyrender2/blob/master/images/example/monkey.flat.png) 
 
 I am writing this to learn 3D math. It is for fun and to be used
 as a platform to teach 3D math and graphics. 
@@ -27,22 +13,6 @@ as a platform to teach 3D math and graphics.
 Inspired by years of working with Maya 3D and Houdini. 
 I love the "ops" idea from houdini, everything is an operator and
 you chain them together.
-
-
-
-
-
-
-
-design goals:
-   - simple. Only do what needs to be done and nothing more
-   - flat code structure as possible. All components should be easy to find 
-   - fun. Its a playground to lean vectors, matrices, math and more. 
-   - only requires PIL and numpy 
-   - numpy is loosely intergrated and can be disabled
-
-
-
 
 
 
