@@ -13,6 +13,107 @@ from pygfx.render import *
 
 mu = math_util() 
 
+
+def make_right_triangle(theta, obj=None):
+    """ UNTESTED 
+        calulate three 3D vectors to form a right triangle based on a theta angle 
+        
+        if object is passed in : 
+            bake those vectors into a 3d line geometry 
+            insert a 3D cube at the point the triangle meets the unit circle 
+
+    """
+    x = math.cos(mu.dtr( theta) )    
+    y = math.sin(mu.dtr( theta) ) 
+
+    axis = 'y'
+
+    if axis == 'x':
+        hypot  = vec3(x,y,0)
+        adaj   = vec3(x,0,0)
+        oppos  = vec3(0,y,0)
+        #obj.prim_cube(pos=(x, y, 0), size=.05,linecolor=(255,0,0),rot=(0,0,0),pivot='world')
+
+    if axis == 'y':
+        hypot  = vec3(x,0,y)
+        adaj   = vec3(x,0,0)
+        oppos  = vec3(0,0,y)
+        #obj.prim_cube(pos=(x, y, 0), size=.05,linecolor=(255,0,0),rot=(0,0,0),pivot='world')
+
+    if axis == 'z':
+        hypot  = vec3(0,x,y)
+        adaj   = vec3(0,x,0)
+        oppos  = vec3(0,0,y)
+        #obj.prim_cube(pos=(x, y, 0), size=.05,linecolor=(255,0,0),rot=(0,0,0),pivot='world')
+
+    # print('## ---------- ')
+    # print('## theta is             %s'%theta)
+    # print('## length of hypotenuse %s'%hypot.length)
+    # print('## length of adjacent   %s'%adaj.length)      
+    # print('## length of opposite   %s'%oppos.length)
+    # print('## a^2 + b^           = %s'% str(adaj.length**2 + oppos.length**2)  )
+    
+    # print('## ---------- ')
+    #print('## angle between  h a   %s'%hypot.angle_between(adaj)  )
+    #print('## angle between  a o   %s'%adaj.angle_between(oppos)  )      
+    #print('## angle between  o h   %s'%oppos.angle_between(hypot) )
+    
+    if obj is None:
+        return [oppos, adaj, hypot]
+
+    if obj is not None:
+        obj.one_vec_to_obj(hypot)
+        obj.one_vec_to_obj(adaj)
+        obj.one_vec_to_obj(oppos, adaj)
+
+
+#####################################################
+def homogeneous_test():
+    camera = vec3( 0,0,-5 )
+ 
+    #pt_4d = vec4(15,21,0,3)
+    pt_4d = vec4(15,21,0,3)
+
+    print(pt_4d*.3333)
+
+
+
+homogeneous_test() 
+
+
+"""
+def homogeneous_test():
+    camera = vec3( 0,0,-5 )
+ 
+    fov = 25
+    
+    vecs = make_right_triangle(fov)
+    #view frustrum boundaries 
+    vf_tl = vec4()
+    vf_tl.insert(vecs[0])
+    vf_tr = vec4()
+    vf_tr.insert(vecs[1])
+
+    obj = object3d() 
+    obj.one_vec_to_obj(vf_tl)    
+    obj.one_vec_to_obj(vf_tr)
+    obj.save('frustrum.obj')
+"""
+
+#####################################################
+"""
+def homogeneous_test_2d():
+    camera = vec3(0,0,-5)
+ 
+    fov = 90
+
+    #view frustrum boundaries 
+    vf_tl = vec4() 
+    vf_tr = vec4() 
+    #vf_br = vec4() 
+    #vf_bl = vec4() 
+"""
+
 #####################################################
 
 def angle_between_vectors():
@@ -53,6 +154,8 @@ def unit_circle_viewer( ):
     obj.save('original_sin.obj')
 
 
+# unit_circle_viewer()
+
 #####################################################
 
 
@@ -70,61 +173,34 @@ def right_triangle_viewer( xcrd, ycrd ):
 
     obj = object3d()
 
-    def make_right_triangle(theta):
-        """ put a cube at the point the triangle meets the unit circle """
-        x = math.cos(mu.dtr( theta) )    
-        y = math.sin(mu.dtr( theta) ) 
-
-        hypot  = vec3(x,y,0)
-        adaj   = vec3(x,0,0)
-        oppos  = vec3(0,y,0)
-
-        print('## ---------- ')
-        print('## theta is             %s'%theta)
-        print('## length of hypotenuse %s'%hypot.length)
-        print('## length of adjacent   %s'%adaj.length)      
-        print('## length of opposite   %s'%oppos.length)
-        print('## a^2 + b^           = %s'% str(adaj.length**2 + oppos.length**2)  )
-
-        #print('## angle between  h a   %s'%hypot.angle_between(adaj)  )
-        #print('## angle between  a o   %s'%adaj.angle_between(oppos)  )      
-        #print('## angle between  o h   %s'%oppos.angle_between(hypot) )
-
-        obj.one_vec_to_obj(hypot)
-        obj.one_vec_to_obj(adaj)
-        obj.one_vec_to_obj(oppos, adaj)
-
-        obj.prim_cube(pos=(x, y, 0), size=.05,linecolor=(255,0,0),rot=(0,0,0),pivot='world')
-
     ## -------- 
     for i in range(0,360,79):
-        make_right_triangle(i)
-
+        make_right_triangle(i, obj)
 
     #obj.calc_circle(dia=radius, axis='z', periodic=True, spokes=23)
     obj.prim_circle(dia=radius, axis='z', spokes=23)
-
     obj.save('original_sin.obj')
 
-
-
-right_triangle_viewer(2,2)
+# right_triangle_viewer(2,2)
 
 
 #####################################################
     
 def visualize_cross_product():
     obj = object3d()
-    a = vec3(2,2,2)
-    b = vec3(-4,1,10)
+    a = vec3(-1,0,1)
+    b = vec3(1,0,1)
 
     obj.one_vec_to_obj(a)
     obj.one_vec_to_obj(b)
+
     obj.one_vec_to_obj( a.cross(b).normal )
+    #obj.one_vec_to_obj( a.cross(b) )
 
     obj.save('cross_product.obj')
 
 
+#visualize_cross_product()
 
 #####################################################
 
@@ -134,7 +210,7 @@ def offset_between_2vecs():
     obj = object3d()
     com = vec3() #container for commands
     
-    a = vec3(-2, 0, 2)  
+    a = vec3(-2, 4, 2)  
     b = vec3(3, 0, 3)  
 
     c = a.between(b)
@@ -143,11 +219,15 @@ def offset_between_2vecs():
 
     obj.one_vec_to_obj(a)
     obj.one_vec_to_obj(b)
-    obj.one_vec_to_obj( c, a ) #move the vector to the end of another - forms a triangle 
+    
+    #move the vector to the end of another - forms a triangle
+    #it becomes a lot more illustrative if we connect the two endpoints 
+    obj.one_vec_to_obj( c, a )  
 
     obj.save('offset_between.obj')
 
 
+#offset_between_2vecs() 
 
 #####################################################
 def rotate_around_vec():
@@ -190,6 +270,8 @@ def make_normal_all_faces():
 
     vectors = [] 
 
+    # iterate all faces, calculate a normal for it 
+    # transfrom that normal vector to the 3D center of the face 
     for fid in range(len(obj.polygons)):
         nrml = obj.get_face_normal(fid) 
         cntr = obj.get_face_centroid(fid)
@@ -199,6 +281,7 @@ def make_normal_all_faces():
     obj2.vectorlist_to_obj(vectors)
     obj2.save('normals.obj') 
 
+# make_normal_all_faces() 
 
 #####################################################
 def load_build_another_from_normals(objectpath):
@@ -273,19 +356,23 @@ def model_geom_from_scratch_calc_normals():
 #####################################################
 
 def build_orthogonal_vector():
+    """ treats the "line" as an infinite vector 
+
+    """
+
     obj = object3d()
     com = vec3() #container for commands
 
     # the point we are "looking" from 
-    pt1 = vec3(-1,1,1)
+    pt1 = vec3(-1,1,-4)
     obj.prim_cube(pos=pt1,size=.05,linecolor=(255,0,0),rot=(0,0,0),pivot='world')
 
     # the point of the line origin
-    pt2 = vec3(-2,.3,.9)
+    pt2 = vec3(10,-5, 17)
     obj.prim_cube(pos=pt2,size=.1,linecolor=(255,0,0),rot=(0,0,0),pivot='world')    
     
     # the line, needs to be normalized for the math to work  
-    display_unitvec = vec3(0,5,0)
+    display_unitvec = vec3(0,1,0)
     unitvec = display_unitvec.normal
     
     #render it as full size, not unit length 
@@ -294,9 +381,12 @@ def build_orthogonal_vector():
     display_unitvec = display_unitvec * -1
     obj.one_vec_to_obj( display_unitvec , pos=pt2) 
 
-    d= com.orthogonal_vec_from_pt(pt2, unitvec, pt1)
-    obj.one_vec_to_obj( d , pos=pt1)  
+    d = com.orthogonal_vec_from_pt(pt2, unitvec, pt1)
+
+    #obj.one_vec_to_obj( d*-1 )   
+    obj.one_vec_to_obj( d , pt1 )   
 
     obj.save('perpendicular.obj')
 
 
+# build_orthogonal_vector() 

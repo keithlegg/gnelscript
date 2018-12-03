@@ -821,6 +821,19 @@ class vec4(object):
         
         #self.mu = math_util() 
 
+    def __mul__(self, other):
+        # https://www.tomdalling.com/blog/modern-opengl/explaining-homogenous-coordinates-and-projective-geometry/
+        
+        if isinstance(other, float) or isinstance(other, int):
+            #return type(self)(self.x*other, self.y*other, self.z*other)
+            
+            new_x = self.x * other 
+            new_y = self.y * other 
+            new_z = self.z * other 
+            new_w = self.w * other 
+            return type(self)( (new_x/new_w), (new_y/new_w), (new_z/new_w), new_w )
+
+
     def __repr__(self):
         return '(%s, %s, %s, %s)' % (self.x, self.y, self.z, self.w)
 
@@ -843,6 +856,34 @@ class vec4(object):
             self.z = item
         if key==3:
             self.w = item
+
+    def insert(self, iterable):
+        """ convert an np.array, tuple or list  to vec3  
+            does not check size, so just assume 3 items (x,y,z)
+        """
+        if isinstance(iterable, vec3):
+            self.from_vec3(iterable) 
+
+        if isinstance(iterable, list) or isinstance(iterable, tuple):
+            self.x = iterable[0]
+            self.y = iterable[1]            
+            self.z = iterable[2]
+
+            if len(iterable)==3: 
+                self.w = 1  
+            if len(iterable)==4:
+                self.w = iterable[3]                 
+
+        if NUMPY_IS_LOADED:
+            if isinstance(iterable, np.ndarray):
+                self.x = iterable[0]
+                self.y = iterable[1]            
+                self.z = iterable[2]
+                if len(iterable)==3: 
+                    self.w = 1  
+                if len(iterable)==4:
+                    self.w = iterable[3] 
+        return self 
 
     def to_vec3(self):
         """ vec4 to vec3 - 
@@ -1399,7 +1440,7 @@ class matrix44(object):
                )
    
     def __mul__(self, n):
-        """multiply by other matrix or a vector """
+        """multiply this 4X4 by another 4X4 matrix or a vector3, vector4 """
 
         if isinstance(n, vec4):
             #untested
@@ -1435,15 +1476,16 @@ class matrix44(object):
 
 
         if isinstance(n, tuple) or isinstance(n, list):
-            #why add the last 12,13,14 ? (transform?)
-            # outx = self.m[0] * n[0] + self.m[4] * n[1] + self.m[8]  * n[2]     + self.m[12]
-            # outy = self.m[1] * n[0] + self.m[5] * n[1] + self.m[9]  * n[2]     + self.m[13]
-            # outz = self.m[2] * n[0] + self.m[6] * n[1] + self.m[10] * n[2]     + self.m[14]
+            
+            # what is the purspose of adding 12,13,14 ?
+            outx = self.m[0] * n[0] + self.m[4] * n[1] + self.m[8]  * n[2]     + self.m[12]
+            outy = self.m[1] * n[0] + self.m[5] * n[1] + self.m[9]  * n[2]     + self.m[13]
+            outz = self.m[2] * n[0] + self.m[6] * n[1] + self.m[10] * n[2]     + self.m[14]
 
             # column major, same as first, without 12,13,14               
-            outx = self.m[0] * n[0] + self.m[4] * n[1] + self.m[8]  * n[2] 
-            outy = self.m[1] * n[0] + self.m[5] * n[1] + self.m[9]  * n[2] 
-            outz = self.m[2] * n[0] + self.m[6] * n[1] + self.m[10] * n[2] 
+            #outx = self.m[0] * n[0] + self.m[4] * n[1] + self.m[8]  * n[2] 
+            #outy = self.m[1] * n[0] + self.m[5] * n[1] + self.m[9]  * n[2] 
+            #outz = self.m[2] * n[0] + self.m[6] * n[1] + self.m[10] * n[2] 
 
             # row major - same as first, without 12,13,14    
             # outx = self.m[0] * n[0] + self.m[1] * n[1] + self.m[2]  * n[2] 
@@ -1709,6 +1751,13 @@ class matrix44(object):
         """
             UNTESTED 
             
+            transformation matrix that changes the W element of each vertex. 
+            After the the camera matrix is applied to each vertex, 
+            but before the projection matrix is applied, 
+            the Z element of each vertex represents the distance away from the camera. 
+            the larger Z is, the more the vertex should be scaled down
+
+
             http://stackoverflow.com/questions/8633034/basic-render-3d-perspective-projection-onto-2d-screen-with-camera-without-openg
 
             use homogenous transformations and coordinates. 
@@ -1717,6 +1766,10 @@ class matrix44(object):
                 Position it relative to the camera using the model matrix.
                 Project it either orthographically or in perspective using the projection matrix.
                 Apply the viewport transformation to place it on the screen.
+
+
+
+
         """
 
         PI_OVER_360 = 0.00872664625

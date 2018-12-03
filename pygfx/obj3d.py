@@ -203,7 +203,10 @@ class object3d(polygon_operator):
             can be from world origin or from a point 
 
         """
-        
+
+        #if isinstance(r3,vec4):
+        #    r3 = [r3[0]
+
         if pos:
             pts = [
                    (pos[0]       , pos[1]      , pos[2]       ),

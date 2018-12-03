@@ -33,13 +33,17 @@ from pygfx.obj3d import  *
 
 def dagops_l_system_extrude():
 
-def time_based_simulation():
-def time_based_simulation_bresenham():
+def inverse_kinematic 
+
+
 def time_based_simulation_fft():
 def time_based_simulation_quaternion_slerp():
 
 def visualize_edges_as_little_arrows(obj1, obj2, slice): 
 def copy_obj_rotate_to_each_face(obj1, obj2, slice): 
+
+
+
 """
 
 
