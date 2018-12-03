@@ -18,6 +18,9 @@ Lot of tools to process polygons like:
 
 
 
+
+![alt text](https://github.com/keithlegg/pyrender2/blob/master/images/example/monkey.flat.png) 
+
 I am writing this to learn 3D math. It is for fun and to be used
 as a platform to teach 3D math and graphics. 
 
