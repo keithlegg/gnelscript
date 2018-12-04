@@ -72,9 +72,23 @@ def homogeneous_test():
     camera = vec3( 0,0,-5 )
  
     #pt_4d = vec4(15,21,0,3)
+    
+    pt    = vec4(15,21,3)
     pt_4d = vec4(15,21,0,3)
 
-    print(pt_4d*.3333)
+
+    m44= matrix44()
+    
+    #m44.from_euler(45,45,45)
+    
+    persp = m44.buildPerspProjMat(49,1,1,1.1)
+
+    #def (self, fov, aspect, znear, zfar):
+    
+    print( pt_4d )
+    print( persp * pt_4d) 
+    print( persp * pt) 
+
 
 
 

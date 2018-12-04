@@ -70,36 +70,58 @@ def raytrace():
 
 
 
-def build_perspective_matrix():
+def build_perspective_matrix(near, far, num):
     #debug - NOT WORKING!  Work In Progress 
+ 
+    render_scale = 20
 
     obj = object3d()
     
     #obj.prim_cube()
     obj.load('objects/monkey.obj')
 
-    obj.xform_pts( (0,0,-10) )
+    #obj.xform_pts( (0,0,0) )
+    obj.rotate_pts( (0,num*10,0) )
+
     #obj.scale_pts((3,3,30))
     #obj.rotate_pts((30,30,30))
     ropr = simple_render()
-    
+
+    #ropr.COLOR_MODE = 'lighted'
+    #ropr.COLOR_MODE = 'lightedshaded'
+    #ropr.SHOW_FACE_CENTER = False
+    #ropr.SHOW_EDGES       = False     
+
     persp_m44 = matrix44()
     #                          fov, aspect, znear, zfar)
-    persp_m44 = persp_m44.buildPerspProjMat( 300, 1, 100, 1000)
-    
-    print( persp_m44)
+    #persp_m44 = persp_m44.buildPerspProjMat( 60, 1, near, far)
+    persp_m44 = persp_m44.buildPerspProjMat( 60, 1, 1, 10)
 
     # apply_matrix_pts( pts, m33=None, m44=None):
     obj.points = obj.apply_matrix_pts(obj.points, m44=persp_m44) 
-
-    ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
-    ropr.save_image('simple_render.png')
+    ropr.render_obj((100,0,255), 0, 0, 0, 1, render_scale, object3d=obj)
+    
+    print('rendering frame %s'%num)
+    ropr.save_image('anim/persp_render_%s.png'%num)
 
     # render_matrix_obj (self,  m33, m44, thick, scale, filename, object3d =None):
     #ropr.render_matrix_obj( m33=None, m44=persp_m44, thick=1, scale=200, filename='out.png', object3d=obj)
 
 
-# build_perspective_matrix() 
+
+def animate_persp():
+   step = 1 
+
+   ct=0
+   for n in range(2,100,step):
+       #for f in range(2,50,step):    
+       build_perspective_matrix(1,n,ct) 
+       ct+=1
+
+
+#animate_persp() 
+
+#build_perspective_matrix( 1, 10, 1 ) 
 
 
 #####################################################
@@ -122,13 +144,13 @@ def texmapping_test(fnum=1):
     
     obj = object3d()
     
-    #obj.load('objects/monkey.obj')
-    obj.load('objects/sphere.obj')
+    obj.load('objects/monkey.obj')
+    #obj.load('objects/sphere.obj')
     #obj.load('objects/cube.obj')
 
     #obj.prim_quad(axis='z',  pos=(0,0,0), rot=(0,0,0))
     obj.triangulate() 
-    obj.rotate_pts( (200, -20, 0) )
+    obj.rotate_pts( (180, fnum*10, 0) )
 
 
     # obj.rotate_pts( (180,0,0) )
@@ -137,7 +159,7 @@ def texmapping_test(fnum=1):
     img_op = PixelOp()   
     
     #img_op.load('tex.png') 
-    img_op.load('uvmap_sm.jpg') 
+    img_op.load('images/uvmap_sm.jpg') 
 
     #------------
     #you can do PIL operations on the images at anytime!
@@ -148,8 +170,8 @@ def texmapping_test(fnum=1):
     """
     #------------
 
-    render_scale = 200
-    lightpos = (0,-1,-3)
+    render_scale = 150
+    lightpos = (0, 1 ,3)
 
     ropr = simple_render()
 
@@ -164,11 +186,17 @@ def texmapping_test(fnum=1):
     ropr.save_image('simple_render_%s.png'%fnum)
 
 
-# texmapping_test(30)
 
-#ANIMATE IT 
-#for a in range(20):
-#    texmapping_test(a) 
+# single frame render 
+#texmapping_test(30)
+
+
+def animate_scanline():
+    for a in range(37):
+        texmapping_test(a) 
+
+
+animate_scanline() 
 
 #######################################################
 

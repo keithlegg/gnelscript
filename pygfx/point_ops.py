@@ -371,7 +371,9 @@ class polygon_operator(point_operator):
                 Will be replaced by a visible faces algorithm someday 
                 Be aware, the rendered renders EVERY polygon even when they are not seen
         """
-        out = [];tmp = []
+        out = [];
+
+        tmp = [] 
 
         #build a list of [mean z, [points, polygon] ]
         #sort by mean z value, and return the sorted list 
@@ -384,17 +386,22 @@ class polygon_operator(point_operator):
             if not  isinstance(mean,float):
                 print('error in  z_sort - mean is NOT float ', mean )
                 mean = 0.0 
-
-            #print('## mean ',  mean )
-            tmp.append( (mean, p) )
+            if isinstance(mean,float):
+                # print('## mean ',  mean )
+                tmp.append( (mean, p) )
         
+        def custom_sort(t):
+            return t[0]
+        
+        #L = [("Alice", 25), ("Bob", 20), ("Alex", 5)]
+        #L.sort(key=custom_sort)
+        #print(L)
 
-
+        #THIS IS BUGGY - ATTEMPTING MY OWN SORT 
         if reverse:
-            tmp.sort(reverse=True)
+            tmp.sort(key=custom_sort, reverse=True)
         else:
-            tmp.sort()
-
+            tmp.sort(key=custom_sort)
         for t in tmp:
             out.append(t[1])    
         

@@ -22,7 +22,7 @@ else:
 
 
 
-
+"""
 class render3d(object):  
 
     def __init__(self, resx=800, resy=600, framebuffer=None):
@@ -71,14 +71,12 @@ class render3d(object):
 
     ## ## ## ## ##  
     def project_polygons(self, object3d,  rx, ry, rz, scale, res_x=None, res_y=None):
-        """
-          rotate and project 3D line geometry into 2D.
+        
+         # rotate and project 3D line geometry into 2D.
+         # You can convert this data INTO 3d by adding an empty Z axis.
+         # iterate through each point (vector) and mutliply it by a rotation 4X4 matrix
 
-          You can convert this data INTO 3d by adding an empty Z axis.
-             - - - 
-          iterate through each point (vector) and mutliply it by a rotation 4X4 matrix
-
-        """
+        
         if res_x==None:
             res_x = self.res[0]
         
@@ -173,7 +171,7 @@ class render3d(object):
                     lines_to_draw.append(  ( (sx,sy), (ex, ey) ) )
    
         return lines_to_draw
-
+"""
 
 
 ##########################################################################################################
@@ -348,6 +346,16 @@ class simple_render(object):
                     idx  = int(ply[pt])-1 #index start of line in 2d
                     idx2 = int(ply[pt+1])-1 #index end of line in 2d
                     
+                    # # #start of line
+                    # x = pvtxs[idx][0] #first vtx - x component  
+                    # y = pvtxs[idx][1] #first vtx - y component 
+                    # z = pvtxs[idx][2]/10 #first vtx - z component 
+                    # # #end of line
+                    # x2 = pvtxs[idx2][0] #second vtx - x component  
+                    # y2 = pvtxs[idx2][1] #second vtx - y component 
+                    # z2 = pvtxs[idx2][2]/10 #second vtx - z component 
+
+
                     # #start of line
                     x = pvtxs[idx][0] #first vtx - x component  
                     y = pvtxs[idx][1] #first vtx - y component 
@@ -358,13 +366,25 @@ class simple_render(object):
                     y2 = pvtxs[idx2][1] #second vtx - y component 
                     z2 = pvtxs[idx2][2]/10 #second vtx - z component 
 
-                    #attempt at perspective rendering . math, BLAH!
-                    if self.is_orthographic==False:
-                        #z = (pvtxs[idx][2] + pvtxs[idx2][2])/2
-                        # here is my sad attempt at cheapo perspective:
-                        #scale = scale -(z*20)   #terrible perspective illusion,  but a really cool effect
-                        pass
+                    #first shot at perspective - this is a good start 
+                    x = x/z 
+                    y = y/z
+                    x2 = x2/z2 
+                    y2 = y2/z2 
 
+
+                    ###################################################
+
+                    # print('## Z IS ', z , z2 )
+
+                    # orthographic - NO Z coordinate  
+                    ## #start of line to draw in 2d 
+                    ## sx =  ((x*scale) +center[0])  
+                    ## sy =  ((y*scale) +center[1])  
+                    ## #end of line to draw in 2d
+                    ## ex =  ((x2*scale)+center[0])  
+                    ## ey =  ((y2*scale)+center[1])   
+  
 
                     #start of line to draw in 2d 
                     sx =  ((x*scale) +center[0])  
@@ -426,7 +446,6 @@ class simple_render(object):
                     #end of line to draw in 2d
                     ex =  ((x2*scale)+center[0])  
                     ey =  ((y2*scale)+center[1])   
-
                     
                     lines_to_draw.append(  ( (sx,sy), (ex, ey) ) )
 
@@ -657,6 +676,15 @@ class simple_render(object):
         #obj.triangulate() 
 
         n_plys = len(obj.polygons)
+        
+        """
+            #buggy! 
+
+              File "XXXX/pyrender2/pygfx/point_ops.py", line 394, in z_sort
+                tmp.sort(reverse=True)
+            TypeError: '<' not supported between instances of 'list' and 'tuple'
+       
+        """
         obj.z_sort(reverse=True) # works-ish 
           
         polydata.append( obj.points       )
