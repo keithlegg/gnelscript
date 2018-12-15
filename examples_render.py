@@ -27,7 +27,7 @@ def make_gif_from_frames():
     ## ffmpeg -r 30 -i my3d_%d.png -s hd480 -vcodec libx264 output.mp4
 
     ##convert frames to video preserve aspect ratio 
-    ## ffmpeg -r 30 -i unit_circle_%d.png -vf scale=w=320:h=240:force_original_aspect_ratio=decrease  -vcodec libx264 output.mp4
+    ## ffmpeg -r 30 -i unit_circle_%d.png -vf scale=w=640:h=480:force_original_aspect_ratio=decrease  -vcodec libx264 output.mp4
 
 
     ## convert video to GIF 
@@ -52,7 +52,7 @@ def basic_animation():
     ropr.anim(objs=[obj], init_rots=(0,0,0), linethick=5, numframes=5, scale=150 )
 #    anim(self, objs, init_rots=(0,0,0), linethick=5, numframes=5, scale=150):
 
-#basic_animation()
+# basic_animation()
 
 #######################################################
 
@@ -65,6 +65,77 @@ def raytrace():
  
 
 
+
+
+#######################################################
+
+
+def three_renderers(fnum):
+    """ example of the 3 main ways to render  
+            - single object 
+            - multi object (single in a loop)
+            - scanline 
+     """
+
+    obj = object3d()
+    obj.load('objects/cube.obj')
+    #obj.load('original_sin.obj')
+
+    #obj.xform_pts( (1, 1, 1) )
+
+    obj.rotate_pts( (45, fnum*10, 0) )
+    #obj.triangulate() 
+
+    ropr = simple_render()
+
+    render_linecolor = (255,0,255)
+    render_scale = 100 
+
+    ####
+
+    ## # some render properties you can tweak 
+    ## ropr.SHOW_EDGES         = False
+    ## ropr.SHOW_FACE_CENTER   = False
+    ## ropr.COLOR_MODE         = 'normal'
+    ## ropr.COLOR_MODE         = 'flat'
+    ## ropr.SHOW_EDGES         = True 
+    ropr.SHOW_VTXS             = True 
+    ropr.USE_PERSPECTIVE       = False
+
+
+    ####
+    if ropr.USE_PERSPECTIVE:
+        ropr.SHOW_VTXS = False
+        persp_m44 = matrix44()    
+        persp_m44 = persp_m44.buildPerspProjMat( 60, 1, 1, 10)
+        obj.points = obj.apply_matrix_pts(obj.points, m44=persp_m44)
+
+    # render single object 
+    ropr.render_obj((100,0,255), 1, 1, 1, 1, render_scale, object3d=obj)
+    ropr.save_image('simple_render_%s.png'%fnum)
+    
+    ####
+
+    ##  render multiple objects
+    ## obj2 = object3d()
+    ## obj2.prim_quad()
+    ## ropr.render_objects.append(obj) 
+    ## ropr.render_objects.append(obj2) 
+    ## #                GS (  color,  rx, ry, rz, linethick, scale)
+    ## ropr.render_multiobj( render_linecolor, 45, 45, 45, 4, render_scale) 
+
+    ####
+    ## scanline render 
+    # ropr.scanline(obj, render_scale) 
+    # ropr.save_image('simple_render.png')
+
+
+def animate_three_renders():
+    for x in range(100):
+        three_renderers(x)
+
+
+animate_three_renders() 
 
 #######################################################
 
@@ -98,7 +169,8 @@ def build_perspective_matrix(near, far, num):
     persp_m44 = persp_m44.buildPerspProjMat( 60, 1, 1, 10)
 
     # apply_matrix_pts( pts, m33=None, m44=None):
-    obj.points = obj.apply_matrix_pts(obj.points, m44=persp_m44) 
+    #obj.points = obj.apply_matrix_pts(obj.points, m44=persp_m44) 
+
     ropr.render_obj((100,0,255), 0, 0, 0, 1, render_scale, object3d=obj)
     
     print('rendering frame %s'%num)
@@ -113,7 +185,7 @@ def animate_persp():
    step = 1 
 
    ct=0
-   for n in range(2,100,step):
+   for n in range(2,20,step):
        #for f in range(2,50,step):    
        build_perspective_matrix(1,n,ct) 
        ct+=1
@@ -144,13 +216,18 @@ def texmapping_test(fnum=1):
     
     obj = object3d()
     
+    #obj.load('objects/teapot.obj') #really slow!
     obj.load('objects/monkey.obj')
     #obj.load('objects/sphere.obj')
     #obj.load('objects/cube.obj')
 
     #obj.prim_quad(axis='z',  pos=(0,0,0), rot=(0,0,0))
     obj.triangulate() 
-    obj.rotate_pts( (180, fnum*10, 0) )
+    
+    obj.rotate_pts( (180, 0, 0) ) #for monkey ,teapot
+    
+    #obj.rotate_pts( (45, 45, 45) ) #for monkey ,teapot
+    #obj.scale_pts( (math.sin( fnum/40 ), math.sin( fnum/40 ), math.sin( fnum/40 )) ) #for teapot 
 
 
     # obj.rotate_pts( (180,0,0) )
@@ -170,7 +247,7 @@ def texmapping_test(fnum=1):
     """
     #------------
 
-    render_scale = 150
+    render_scale = 200
     lightpos = (0, 1 ,3)
 
     ropr = simple_render()
@@ -192,11 +269,11 @@ def texmapping_test(fnum=1):
 
 
 def animate_scanline():
-    for a in range(37):
+    for a in range(3):
         texmapping_test(a) 
 
 
-animate_scanline() 
+#animate_scanline() 
 
 #######################################################
 
@@ -213,8 +290,11 @@ def lighting_test( lightpos, fnum=1):
     save_lighting_data_as_objects = True 
 
     obj = object3d()
-    obj.load('objects/monkey.obj')
-    obj.rotate_pts( (180,0,0) )
+
+    obj.load('objects/teapot.obj')
+    
+    #obj.rotate_pts( (180,0,0) )
+    obj.scale_pts( (.5,.5,.5) )
 
     #obj.load('objects/sphere.obj')
     #obj.prim_quad(axis='z',  pos=(0,0,0), rot=(0,0,0)) 
@@ -320,62 +400,7 @@ def animate_light_in_spherical_coords():
 
 
 # animate_light_in_spherical_coords()
-#######################################################
 
-
-def three_renderers():
-    """ example of the 3 main ways to render  
-            - single object 
-            - multi object (single in a loop)
-            - scanline 
-     """
-
-    obj = object3d()
-    obj.load('objects/sphere2.obj')
-    #obj.load('original_sin.obj')
-
-    #obj.rotate_pts((20,170,170))
-    obj.triangulate() 
-
-    ropr = simple_render()
-
-    render_linecolor = (255,0,255)
-    render_scale = 200 
-
-    ####
-
-    ## # some render properties you can tweak 
-    ## ropr.SHOW_EDGES = False
-    ## ropr.SHOW_FACE_CENTER = False
-    ## ropr.COLOR_MODE = 'normal'
-    ## ropr.COLOR_MODE = 'flat'
-    ## ropr.SHOW_EDGES = True 
-
-    ####
-
-    # render single object 
-    ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj)
-    ropr.save_image('simple_render.png')
-    
-    ####
-
-    ##  render multiple objects
-    ## obj2 = object3d()
-    ## obj2.prim_quad()
-    ## ropr.render_objects.append(obj) 
-    ## ropr.render_objects.append(obj2) 
-    ## #                GS (  color,  rx, ry, rz, linethick, scale)
-    ## ropr.render_multiobj( render_linecolor, 45, 45, 45, 4, render_scale) 
-
-    ####
-    ## scanline render 
-    #ropr.scanline(obj, render_scale) 
-    #ropr.save_image('simple_render.png')
-
-
-
-
-#three_renderers()
 
 
 

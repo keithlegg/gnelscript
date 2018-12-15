@@ -51,7 +51,7 @@ class render3d(object):
         # renderer properties 
         self.COLOR_MODE           = 'flat'    ####'flat', 'zdepth',  'normal'
         self.is_orthographic      = True
-        self.renderpoints         = True 
+        self.SHOW_VTXS            = True 
         self.render_normal_lines  = True 
         self.SHOW_VEC_HITS        = False  #faces cover this up!
         self.SHOW_EDGES           = True
@@ -219,16 +219,18 @@ class simple_render(object):
 
         ###############################################
         # renderer properties 
-        self.is_orthographic      = True
-        self.renderpoints         = True 
+        self.SHOW_VTXS            = True 
         self.render_normal_lines  = True 
         self.SHOW_VEC_HITS        = False  #faces cover this up!
         self.SHOW_EDGES           = True
         self.SHOW_FACES           = True
         self.SHOW_NORMALS         = True  
         self.SHOW_FACE_CENTER     = True
+
+        self.USE_PERSPECTIVE      = False         
         self.SHOW_SCREEN_CLIP     = False # broken 
         self.DO_SCREEN_CLIP       = False # broken 
+
 
         self.COLOR_MODE           = 'flat'    ####'flat', 'zdepth',  'normal' 
         ###############################################
@@ -262,7 +264,7 @@ class simple_render(object):
         """
            project 3D point geometry into 2D
         """
-       
+
         #I dont think these belong here  
         if res_x==None:
             res_x = self.res[0]
@@ -293,9 +295,16 @@ class simple_render(object):
         ##     points_projected.append( (sx,sy) )
    
         for p in pvtxs:
-            sx = (p[0]*scale) + center[0]  
-            sy = (p[1]*scale) + center[1]  
-            points_projected.append( (sx,sy) )
+            sx = p[0]  
+            sy = p[1] 
+            sz = p[2]   
+
+            if self.USE_PERSPECTIVE:
+                sx = sx/sz 
+                sy = sy/sz
+
+
+            points_projected.append( ((sx*scale) + center[0] , (sy*scale) + center[1] ) )
 
         return points_projected
 
@@ -338,7 +347,7 @@ class simple_render(object):
 
         #project rotated points into screen space  
         for ply in object3d.polygons:
-            num_idx = len(ply) #walk array of indeces to vertecies
+            num_idx = len(ply) #walk array of indeces to vertices
             for pt in range(num_idx):
 
                 if pt<num_idx-1:
@@ -366,11 +375,13 @@ class simple_render(object):
                     y2 = pvtxs[idx2][1] #second vtx - y component 
                     z2 = pvtxs[idx2][2]/10 #second vtx - z component 
 
+                    
                     #first shot at perspective - this is a good start 
-                    x = x/z 
-                    y = y/z
-                    x2 = x2/z2 
-                    y2 = y2/z2 
+                    if self.USE_PERSPECTIVE:
+                        x = x/z 
+                        y = y/z
+                        x2 = x2/z2 
+                        y2 = y2/z2 
 
 
                     ###################################################
@@ -424,30 +435,26 @@ class simple_render(object):
 
                     lines_to_draw.append(  ( (sx,sy), (ex, ey) ) )
                 
-                ###################################
-                # test to draw last line of poly 
-                if pt==num_idx-1:
-                    idx  = int(ply[pt])-1   # index start of line in 2d
-                    idx2 = int(ply[0])-1   # index end of line in 2d
-
-                    # start of line
-                    x = pvtxs[idx][0] #first vtx - x component  
-                    y = pvtxs[idx][1] #first vtx - y component 
-                    z = pvtxs[idx][2]/10 #first vtx - z component 
-
-                    # end of line
-                    x2 = pvtxs[idx2][0] #second vtx - x component  
-                    y2 = pvtxs[idx2][1] #second vtx - y component 
-                    z2 = pvtxs[idx2][2]/10 #second vtx - z component 
-
-                    #start of line to draw in 2d 
-                    sx =  ((x*scale) +center[0])  
-                    sy =  ((y*scale) +center[1])  
-                    #end of line to draw in 2d
-                    ex =  ((x2*scale)+center[0])  
-                    ey =  ((y2*scale)+center[1])   
-                    
-                    lines_to_draw.append(  ( (sx,sy), (ex, ey) ) )
+                # ###################################
+                # # test to draw last line of poly 
+                # if pt==num_idx-1:
+                #     idx  = int(ply[pt])-1   # index start of line in 2d
+                #     idx2 = int(ply[0])-1   # index end of line in 2d
+                #     # start of line
+                #     x = pvtxs[idx][0] #first vtx - x component  
+                #     y = pvtxs[idx][1] #first vtx - y component 
+                #     z = pvtxs[idx][2]/10 #first vtx - z component 
+                #     # end of line
+                #     x2 = pvtxs[idx2][0] #second vtx - x component  
+                #     y2 = pvtxs[idx2][1] #second vtx - y component 
+                #     z2 = pvtxs[idx2][2]/10 #second vtx - z component 
+                #     #start of line to draw in 2d 
+                #     sx =  ((x*scale) +center[0])  
+                #     sy =  ((y*scale) +center[1])  
+                #     #end of line to draw in 2d
+                #     ex =  ((x2*scale)+center[0])  
+                #     ey =  ((y2*scale)+center[1])   
+                #     lines_to_draw.append(  ( (sx,sy), (ex, ey) ) )
 
         return lines_to_draw
 
@@ -489,7 +496,7 @@ class simple_render(object):
 
         ###########################
         # render point geometry 
-        if self.renderpoints:
+        if self.SHOW_VTXS:
             self.rpts = self.project_points(object3d, rx, ry, rz, scale, res_x, res_y)
             rndr_bfr.draw_points_batch( self.rpts ,  (255,255,0) , int(thick)        )  #points, color, thickness
    
@@ -571,7 +578,7 @@ class simple_render(object):
                 rndr_bfr.connect_the_dots( l, color, int(thick/2) )  #points, color, thickness
         ###########################
         ## render point geometry 
-        if self.renderpoints:
+        if self.SHOW_VTXS:
             rndr_bfr.draw_points_batch( render_data[0] ,  (255,255,0) , int(thick)        )  #points, color, thickness
 
         rndr_bfr.save(filename) 
