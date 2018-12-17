@@ -299,6 +299,7 @@ class simple_render(object):
             sy = p[1] 
             sz = p[2]   
 
+            #dont think this works - debug 
             if self.USE_PERSPECTIVE:
                 sx = sx/sz 
                 sy = sy/sz
@@ -692,8 +693,13 @@ class simple_render(object):
             TypeError: '<' not supported between instances of 'list' and 'tuple'
        
         """
-        obj.z_sort(reverse=True) # works-ish 
-          
+
+        # flip them becasue the perspective mangles the Z coords 
+        if self.USE_PERSPECTIVE:
+            obj.z_sort()  
+        else:
+            obj.z_sort(reverse=True)  
+
         polydata.append( obj.points       )
         polydata.append( obj.polygons     )
         polydata.append( obj.normals )
@@ -766,7 +772,8 @@ class simple_render(object):
         #output.vert_line( res_x/2, (255,0,255) ) 
 
         ###############################################
-
+         
+        # polydata is [ points, polygons, normals ] 
         for ply in polydata[1]:
             num_idx = len(ply) # number of vertices per poly 
             drwply = []        # 3 points of triangle to draw
@@ -785,16 +792,27 @@ class simple_render(object):
                 for pt in range(num_idx):
                     idx = int(ply[pt])  
                     drwply.append( polydata[0][idx-1] )
+               
 
-                #build up line data for three sides of triangle
-                s1 = ( (drwply[0][0]*scale)+center[0], (drwply[0][1]*scale)+center[1] )
-                e1 = ( (drwply[1][0]*scale)+center[0], (drwply[1][1]*scale)+center[1] )
-                #
-                s2 = ( (drwply[1][0]*scale)+center[0], (drwply[1][1]*scale)+center[1] )
-                e2 = ( (drwply[2][0]*scale)+center[0], (drwply[2][1]*scale)+center[1] )
-                #
-                s3 = ( (drwply[2][0]*scale)+center[0], (drwply[2][1]*scale)+center[1] )
-                e3 = ( (drwply[0][0]*scale)+center[0], (drwply[0][1]*scale)+center[1] )
+                # ///////////////////////////////////// 
+                #test of perspective with scanline - debug 
+                if self.USE_PERSPECTIVE:
+                    s1 = ( (drwply[0][0]/drwply[0][2]*scale)+center[0], (drwply[0][1]/drwply[0][2]*scale)+center[1] )
+                    e1 = ( (drwply[1][0]/drwply[1][2]*scale)+center[0], (drwply[1][1]/drwply[1][2]*scale)+center[1] )
+                    s2 = ( (drwply[1][0]/drwply[1][2]*scale)+center[0], (drwply[1][1]/drwply[1][2]*scale)+center[1] )
+                    e2 = ( (drwply[2][0]/drwply[2][2]*scale)+center[0], (drwply[2][1]/drwply[2][2]*scale)+center[1] )
+                    s3 = ( (drwply[2][0]/drwply[2][2]*scale)+center[0], (drwply[2][1]/drwply[2][2]*scale)+center[1] )
+                    e3 = ( (drwply[0][0]/drwply[0][2]*scale)+center[0], (drwply[0][1]/drwply[0][2]*scale)+center[1] )
+                else: 
+                    # build up line data for three sides of triangle
+                    s1 = ( (drwply[0][0]*scale)+center[0], (drwply[0][1]*scale)+center[1] )
+                    e1 = ( (drwply[1][0]*scale)+center[0], (drwply[1][1]*scale)+center[1] )
+                    #
+                    s2 = ( (drwply[1][0]*scale)+center[0], (drwply[1][1]*scale)+center[1] )
+                    e2 = ( (drwply[2][0]*scale)+center[0], (drwply[2][1]*scale)+center[1] )
+                    #
+                    s3 = ( (drwply[2][0]*scale)+center[0], (drwply[2][1]*scale)+center[1] )
+                    e3 = ( (drwply[0][0]*scale)+center[0], (drwply[0][1]*scale)+center[1] )
       
                 ##########                ##########      
                 #edge lines

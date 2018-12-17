@@ -135,7 +135,7 @@ def animate_three_renders():
         three_renderers(x)
 
 
-animate_three_renders() 
+#animate_three_renders() 
 
 #######################################################
 
@@ -196,18 +196,7 @@ def animate_persp():
 #build_perspective_matrix( 1, 10, 1 ) 
 
 
-#####################################################
-def pass_matrix_to_render():
-    """ use a 3X3 or 4X4 matrix to adjust a render 
-        attempt to "visualize" a matrix 
-    """
 
-    obj = object3d()
-    obj.prim_cube(pos=(0,0,0), rot=(0,0,0), linecolor=(255,0,0))
-    ropr = simple_render()
-    m44 = matrix44()
-    m44.from_euler(45,45,0)
-    ropr.render_matrix_obj( None, m44, 3, 100, 'custom_render.png' , obj      )
 
 
 #######################################################
@@ -217,6 +206,9 @@ def texmapping_test(fnum=1):
     obj = object3d()
     
     #obj.load('objects/teapot.obj') #really slow!
+    
+    #obj.load('objects/cube.obj')    
+    
     obj.load('objects/monkey.obj')
     #obj.load('objects/sphere.obj')
     #obj.load('objects/cube.obj')
@@ -224,9 +216,12 @@ def texmapping_test(fnum=1):
     #obj.prim_quad(axis='z',  pos=(0,0,0), rot=(0,0,0))
     obj.triangulate() 
     
-    obj.rotate_pts( (180, 0, 0) ) #for monkey ,teapot
+    obj.rotate_pts( (180, 45, 0) ) #for monkey ,teapot
     
-    #obj.rotate_pts( (45, 45, 45) ) #for monkey ,teapot
+    #obj.rotate_pts( (45, fnum, 45) ) 
+    # obj.scale_pts((.5,fnum,.5))
+    obj.points = obj.xform_pts( (0, 0, 1),  pts=obj.points ) 
+
     #obj.scale_pts( (math.sin( fnum/40 ), math.sin( fnum/40 ), math.sin( fnum/40 )) ) #for teapot 
 
 
@@ -247,7 +242,7 @@ def texmapping_test(fnum=1):
     """
     #------------
 
-    render_scale = 200
+    render_scale = 100
     lightpos = (0, 1 ,3)
 
     ropr = simple_render()
@@ -259,6 +254,14 @@ def texmapping_test(fnum=1):
     ropr.SHOW_FACE_CENTER = False
     ropr.SHOW_EDGES       = False     
 
+    ropr.USE_PERSPECTIVE  = True 
+
+    if ropr.USE_PERSPECTIVE:
+        ropr.SHOW_VTXS = False
+        persp_m44 = matrix44()    
+        persp_m44 = persp_m44.buildPerspProjMat( 60, 1, 1, 10)
+        obj.points = obj.apply_matrix_pts(obj.points, m44=persp_m44)
+
     ropr.scanline(obj, render_scale, lightpos=lightpos, texmap=img_op ) 
     ropr.save_image('simple_render_%s.png'%fnum)
 
@@ -269,11 +272,11 @@ def texmapping_test(fnum=1):
 
 
 def animate_scanline():
-    for a in range(3):
+    for a in range(10):
         texmapping_test(a) 
 
 
-#animate_scanline() 
+animate_scanline() 
 
 #######################################################
 
@@ -402,6 +405,19 @@ def animate_light_in_spherical_coords():
 # animate_light_in_spherical_coords()
 
 
+
+#####################################################
+def pass_matrix_to_render():
+    """ use a 3X3 or 4X4 matrix to adjust a render 
+        attempt to "visualize" a matrix 
+    """
+
+    obj = object3d()
+    obj.prim_cube(pos=(0,0,0), rot=(0,0,0), linecolor=(255,0,0))
+    ropr = simple_render()
+    m44 = matrix44()
+    m44.from_euler(45,45,0)
+    ropr.render_matrix_obj( None, m44, 3, 100, 'custom_render.png' , obj      )
 
 
 ########################################################
