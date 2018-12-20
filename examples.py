@@ -204,7 +204,7 @@ def test_point_transform():
     obj = object3d()
     obj.load('objects/monkey.obj')
 
-    obj.points = obj.scale_pts(1.5, pts=obj.points )   
+    obj.points = obj.scale_pts(1.5      , pts=obj.points )   
 
     obj.points = obj.rotate_pts((0,30,0), pts=obj.points ) 
 

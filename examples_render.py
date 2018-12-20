@@ -65,6 +65,7 @@ def raytrace():
  
 
 
+raytrace() 
 
 
 #######################################################
@@ -259,7 +260,8 @@ def texmapping_test(fnum=1):
     if ropr.USE_PERSPECTIVE:
         ropr.SHOW_VTXS = False
         persp_m44 = matrix44()    
-        persp_m44 = persp_m44.buildPerspProjMat( 60, 1, 1, 10)
+        #                                       fov, aspect, znear, zfar):
+        persp_m44 = persp_m44.buildPerspProjMat( fnum*2,  1,     1,     10)
         obj.points = obj.apply_matrix_pts(obj.points, m44=persp_m44)
 
     ropr.scanline(obj, render_scale, lightpos=lightpos, texmap=img_op ) 
@@ -272,11 +274,11 @@ def texmapping_test(fnum=1):
 
 
 def animate_scanline():
-    for a in range(10):
+    for a in range(11,20,1):
         texmapping_test(a) 
 
 
-animate_scanline() 
+#animate_scanline() 
 
 #######################################################
 

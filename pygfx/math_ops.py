@@ -1783,6 +1783,15 @@ class matrix44(object):
         height = xymax - ymin
 
         depth =  zfar - znear
+        
+        #avoid those pesky divide by zero errors 
+        if depth==0:
+            depth=.1
+        if width==0:
+            width=1
+        if height==0:
+            height=1                        
+
         q     = -(zfar + znear) / depth
         qn    = -2 * (zfar * znear) / depth
 

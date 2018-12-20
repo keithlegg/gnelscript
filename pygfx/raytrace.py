@@ -14,8 +14,15 @@ import math
 import numpy as np
 
 
+#required for framebuffer 
 from pygfx.raster_ops import *
 
+#not required, but FUN! 
+#from pygfx.point_ops import *
+#from pygfx.math_ops import  *
+from pygfx.obj3d import  *
+
+export = object3d() 
 
 
 class raytracer(object):
@@ -28,8 +35,8 @@ class raytracer(object):
         self.specular_k  = 50
         self.color_light = np.ones(3)
 
-        self.w = 600
-        self.h = 600
+        self.w = 100
+        self.h = 100
 
     def normalize(self, x):
         x /= np.linalg.norm(x)
@@ -51,7 +58,9 @@ class raytracer(object):
         # Return the distance from O to the intersection of the ray (O, D) with the 
         # sphere (S, R), or +inf if there is no intersection.
         # O and S are 3D points, D (direction) is a normalized vector, R is a scalar.
+
         a = np.dot(D, D)
+      
         OS = O - S
         b = 2 * np.dot(D, OS)
         c = np.dot(OS, OS) - R * R
@@ -91,6 +100,11 @@ class raytracer(object):
             color = color(M)
         return color
 
+    def get_transparency(self, obj, M):
+        """ keith attempting to do a thing """
+        transparency = obj['transparency']
+        return transparency
+
     def trace_ray(self, scene, rayO, rayD, L, O):
         # Find first point of intersection with the scene.
         t = np.inf
@@ -105,10 +119,27 @@ class raytracer(object):
         obj = scene[obj_idx]
         # Find the point of intersection on the object.
         M = rayO + rayD * t
+        
+        ##########################
+        #keith is having fun here - beware  
+        #export.one_vec_to_obj( r3, pos=None, arrowhead=False):        
+        #export.one_vec_to_obj( M )
+        ##########################
+
+
         # Find properties of the object.
         N = self.get_normal(obj, M)
 
         color = self.get_color(obj, M)
+        
+        ###########
+        # keith attempting to add transparency  
+        transparency = self.get_transparency(obj, M)
+        if transparency:
+            #    print(obj['type'] , 'has transparency ', transparency)
+            export.one_vec_to_obj( M )
+        ###########
+
         toL = self.normalize(L - M)
         toO = self.normalize(O - M)
 
@@ -131,14 +162,14 @@ class raytracer(object):
 
     def add_sphere(self, position, radius, color):
         return dict(type='sphere', position=np.array(position), 
-            radius=np.array(radius), color=np.array(color), reflection=.5)
+            radius=np.array(radius), color=np.array(color), reflection=0, transparency=.2)
         
     def add_plane(self, position, normal, cp1, cp2):
         return dict(type='plane', position=np.array(position), 
             normal=np.array(normal),
             color=lambda M: (cp1 
                 if (int(M[0] * 2) % 2) == (int(M[2] * 2) % 2) else cp2),
-            diffuse_c=.75, specular_c=.5, reflection=.25)
+            diffuse_c=.75, specular_c=.5, reflection=1, transparency=None)
     
     
     def main(self):
@@ -153,11 +184,9 @@ class raytracer(object):
         ##     ]
 
 
-        scene = [self.add_sphere([  .75  , .1 , 1.  ], .6, [0. ,  0.  , 1.]   ),
-                 self.add_sphere([ -.75  , .1 , 2.25], .6, [.5 , .223 , .5]   ),
-                 self.add_sphere([ -2.75 , .1 , 3.5 ], .6, [1. , .572 , .184] ),
-
-                 self.add_plane([0., -5, 0.], [0., 1., 0.], color_plane0, color_plane1),
+        scene = [ self.add_sphere([ 0 , 3 , 3 ], 1 , [1. , .572 , .184] ),
+                  self.add_sphere([ -4 , 3 , 10 ], 1, [1. , .572 , .184] ),
+                  self.add_plane( [0., -5, 0.], [0., 1., 0.], color_plane0, color_plane1),
             ]
 
         # Light position and color.
@@ -201,6 +230,8 @@ class raytracer(object):
                     reflection *= obj.get('reflection', 1.)
                 img[self.h - j - 1, i, :] = np.clip(col, 0, 1)
 
+
+        export.save("dump_geom_raytrace.obj") 
         return img 
 
     def save_image(self, pixdata):
