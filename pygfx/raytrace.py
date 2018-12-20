@@ -138,6 +138,8 @@ class raytracer(object):
         if transparency:
             #    print(obj['type'] , 'has transparency ', transparency)
             export.one_vec_to_obj( M )
+            if N.any():
+                export.one_vec_to_obj( (N[0],N[1],N[2]), M )
         ###########
 
         toL = self.normalize(L - M)

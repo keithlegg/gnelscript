@@ -206,14 +206,15 @@ class object3d(polygon_operator):
 
         #if isinstance(r3,vec4):
         #    r3 = [r3[0]
+        
 
-        if pos:
+        if pos is not None:
             pts = [
                    (pos[0]       , pos[1]      , pos[2]       ),
                    (pos[0]+r3[0] , pos[1]+r3[1], pos[2]+r3[2] ),                   
                   ]
 
-        if not pos:    
+        if pos is None:    
             if arrowhead is False:
                 pts = [
                        (0    , 0    , 0    ),
