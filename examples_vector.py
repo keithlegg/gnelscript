@@ -92,7 +92,7 @@ def homogeneous_test():
 
 
 
-homogeneous_test() 
+# homogeneous_test() 
 
 
 """
@@ -214,7 +214,7 @@ def visualize_cross_product():
     obj.save('cross_product.obj')
 
 
-#visualize_cross_product()
+visualize_cross_product()
 
 #####################################################
 

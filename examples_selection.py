@@ -37,6 +37,8 @@ def extract_by_copy_hack():
     obj2.save('kube_modify.obj')
 
 
+
+
 #####################################################
 def slice_extract_and_makenew():
     """ load two models, extract parts of them using the subselect tool 
