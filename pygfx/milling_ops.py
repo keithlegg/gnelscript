@@ -60,14 +60,17 @@ class gcode_assembly(object3d):
                 
                 if comm:
                    
+                    # ignore commented out lines 
                     if lin[0]==';' or lin[0]=='\'':  
-                        # print('LINE IS COMMENTED OUT ', lin )
                         self.commented.append(lin)
-                    else:    
-                        if comm in self.dialect:
-                            print("COMMAND FOUND!")
-                        
+
+                    #scan if not commented     
+                    else:   
                         print(" COM IS ", comm  )
+
+                        for key in self.dialect :
+                            if key in comm:
+                                print(" COM FOUND! ", self.dialect [key] )
 
                         #print("index is %s command is %s " % (n_idx, comm ) )
 
