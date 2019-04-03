@@ -217,7 +217,6 @@ class gcode_assembly(object3d):
 
     def __init__(self):
         super().__init__()  
-        self.segments  = [] # [index, command] 
         self.commented = [] # [index, string] 
 
         self.dialect = bridgeport_gcode
@@ -225,6 +224,12 @@ class gcode_assembly(object3d):
 
         # self.linear_units = 'in'
         # self.z_axis  ?? 
+        
+        # stored position of the cutting head
+        self.POSX = 0
+        self.POSY = 0
+        self.POSZ = 0
+        self.segments  = [] # [index, command, xyz_pos] 
 
     def load_gcode_textfile(self, filename):
 
@@ -256,9 +261,10 @@ class gcode_assembly(object3d):
                                 self.commented.append(tmp[1])
                         
                         # check for known commands 
-                        for key in self.dialect :
-                            if key in comm:
-                                print(" COM FOUND! ", self.dialect [key] )
+                        #for key in self.dialect :
+                        #    if key in comm:
+                        #        print(" COM FOUND! ", self.dialect [key] )
+                                
 
                         # check for any known coordinate words
                         has_coords = False 
@@ -273,11 +279,27 @@ class gcode_assembly(object3d):
                                 if cw2 in comm:
                                     words.append(cw2)
 
-                            print('COORD WORD ', words, '  --   ', comm)
+                            # now we know there are coords and which ones, do the interpolation 
+                            for coord in words:
+                                if coord == 'X':
+                                    print( comm.split('X') )
+                                    pass#self.POSX = 
+                                if coord == 'Y':
+                                    print( comm.split('Y') )                                    
+                                    pass#self.POSY =
+                                if coord == 'Z':
+                                    print( comm.split('Z') )                                    
+                                    pass#self.POSZ =      
+
+                            #print('COORD WORD ', words, '  --   ', comm)
+                            self.segments.append( [n_idx[1:], [self.POSX, self.POSY, self.POSZ], comm ] )
+
 
                         #print("index is %s command is %s " % (n_idx, comm ) )
             #
-            print("COMMENTS ARE ", self.commented )
+            print("ALL DONE ")
+            for s in self.segments:
+                print(s)
 
 
 
