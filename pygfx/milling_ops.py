@@ -143,36 +143,51 @@ bridgeport_gcode =  {
     "M3": "spindle_clockwise", #?
     "M5": "spindle_off", #?
 
-    "G00": "rapid_traverse",
-
     # G1 Code sets the Linear Interpolation mode. The format of the G1 command is:
     # G1X__Y__Z__F__;
     # Where X__Y__Z__ defines the endpoint of the move to be made. Simultaneous XYZ motion along a linear (straight
     # line) path occurs at the feedrate defined by the F__ word.    
 
+    "G0" : "rapid_traverse", #  G0/G1 - R__I__J__A__; Move to Pt
+    "G00": "rapid_traverse",
+
+    "G1" : "linear_interpolation", 
     "G01": "linear_interpolation",
 
-    #"G02": "circular_interpolation",
-    #"G03": "circular_interpolation",
+    "G2": "circular_interpolation",        
+    "G02": "circular_interpolation",
 
-    "G12": "helical_1",
-    "G13": "helical_2",
+    "G4" : "dwell",
+
+    "G12": "helical_1", # G12/G13 - A__Z__F__; Do Helix 
+    "G13": "helical_2", 
 
     #Circular interpolation is effective in the XY, YZ or ZX planes by preparatory codes as follows:
     "G17": "circle_XY_plane",
     "G18": "circle_ZX_plane",
     "G19": "circle_YZ_plane",
 
-    "G170": "mill_cycle",
-    #"G175": "mill_circle",
-
     "G70": "inch_conversion",
     "G71": "metric_conversion",
 
     "G80": "drill_cycle",
 
-    "G90": "abs_progr",
-    "G91": "incr_progr",
+    "G90": "abs_progr",  # data in a word represents the coordinate value of the point from part program zero.
+    "G91": "incr_progr", # data in a word is distance along designated axis from the existing position to the desired position
+
+    # canned milling cycles 
+    # G170: Outside Frame Mill
+    # G171: Inside Frame Mill
+    # G172: Pocket Frame Mill
+    # G173: Outside Face Mill
+    # G174: Inside Face Mill
+    # G175: Outside Circle Mill
+    # G176: Inside Circle Mill
+    # G177: Pocket Circle Mill
+    # G179: Slot Mill
+
+    "G175": "inside_mill_cycle",   # G175 X__Y__Z__R__Z__Z__P__F__P__F__F__;
+    "G176": "outside_mill_circle", # G176 X__Y__Z__R__Z__Z__P__F__P__F__F__;
 
     # "X": "x_axis",
     # "Y": "y_axis",
@@ -220,7 +235,7 @@ class gcode_assembly(object3d):
         self.commented = [] # [index, string] 
 
         self.dialect = bridgeport_gcode
-        self.coord_words = ['X','Y','Z','U','V','W','I','J','K'] #,'A','B','C','D']
+        self.coord_words = ['X','Y','Z','U','V','W','I','J','K']# ,'R','P','F' ,'A','B','C','D']
 
         # self.linear_units = 'in'
         # self.z_axis  ?? 
@@ -230,6 +245,54 @@ class gcode_assembly(object3d):
         self.POSY = 0
         self.POSZ = 0
         self.segments  = [] # [index, command, xyz_pos] 
+
+    
+    def contains_coord_words(self, string): 
+        # check for any known coordinate words
+        has_coords = False 
+        for cw in self.coord_words:
+            if cw in string:
+                has_coords = True
+        return  has_coords       
+
+    def which_coord_words(self, string):
+        words = []
+        for cw2 in self.coord_words:
+            if cw2 in string:
+                words.append(cw2)
+        return words
+
+    def between_token_list(self, string, tokens):
+        """ give a list of tokens, return a list of betweens 
+            
+            string = y987a123b541c307d999
+            tokens = [a,b,c,d]
+            output = [123,541,307] 
+        """
+        ## words = []
+        ## for cw2 in self.coord_words:
+        ##     if cw2 in string:
+        ##         words.append(cw2)
+        ## return words
+        return None 
+        
+
+    def scan_for_xyz(self, string):
+        
+        #string
+
+        #remove ";" and "\n"
+
+        pass
+
+    def parse_coord_word(self, string):
+
+        #string
+
+        #remove ";" and "\n"
+
+        pass
+
 
     def load_gcode_textfile(self, filename):
 
@@ -267,29 +330,24 @@ class gcode_assembly(object3d):
                                 
 
                         # check for any known coordinate words
-                        has_coords = False 
-                        for cw in self.coord_words:
-                            if cw in comm:
-                                has_coords = True
+                        has_coords = self.contains_coord_words(comm) 
 
                         # if has coordinate words, determine which ones it has 
                         if has_coords is True:             
-                            words = []
-                            for cw2 in self.coord_words:
-                                if cw2 in comm:
-                                    words.append(cw2)
 
-                            # now we know there are coords and which ones, do the interpolation 
-                            for coord in words:
-                                if coord == 'X':
-                                    print( comm.split('X') )
-                                    pass#self.POSX = 
-                                if coord == 'Y':
-                                    print( comm.split('Y') )                                    
-                                    pass#self.POSY =
-                                if coord == 'Z':
-                                    print( comm.split('Z') )                                    
-                                    pass#self.POSZ =      
+                            print( comm, self.which_coord_words(comm) )
+
+                            ## now we know there are coords and which ones, do the interpolation 
+                            #for coord in self.which_coord_words(comm):
+                            #    if coord == 'X':
+                            #        print( comm.split('X') )
+                            #        pass#self.POSX = 
+                            #    if coord == 'Y':
+                            #        print( comm.split('Y') )                                    
+                            #        pass#self.POSY =
+                            #    if coord == 'Z':
+                            #        print( comm.split('Z') )                                    
+                            #        pass#self.POSZ =      
 
                             #print('COORD WORD ', words, '  --   ', comm)
                             self.segments.append( [n_idx[1:], [self.POSX, self.POSY, self.POSZ], comm ] )
@@ -297,9 +355,9 @@ class gcode_assembly(object3d):
 
                         #print("index is %s command is %s " % (n_idx, comm ) )
             #
-            print("ALL DONE ")
-            for s in self.segments:
-                print(s)
+            #print("ALL DONE ")
+            #for s in self.segments:
+            #    print(s)
 
 
 

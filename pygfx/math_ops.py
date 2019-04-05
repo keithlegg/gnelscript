@@ -159,7 +159,7 @@ class math_util(object):
            return [0,0,1]
 
 
-    def mul_sqaure_matrices(self, m1, m2):
+    def mul_square_matrices(self, m1, m2):
         
         """
         # From the brilliant Bryant Ewert's script 
