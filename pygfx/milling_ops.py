@@ -3,6 +3,7 @@
 
 
 import math 
+import re 
 
 #from pygfx.point_ops import polygon_operator
 #from pygfx.math_ops import vec3 
@@ -235,7 +236,7 @@ class gcode_assembly(object3d):
         self.commented = [] # [index, string] 
 
         self.dialect = bridgeport_gcode
-        self.coord_words = ['X','Y','Z','U','V','W','I','J','K']# ,'R','P','F' ,'A','B','C','D']
+        self.coord_words = ['X','Y','Z','U','V','W','I','J','K','R','P','F'] # ,'A','B','C','D']
 
         # self.linear_units = 'in'
         # self.z_axis  ?? 
@@ -246,7 +247,21 @@ class gcode_assembly(object3d):
         self.POSZ = 0
         self.segments  = [] # [index, command, xyz_pos] 
 
-    
+    def show_data(self):
+        for s in self.segments:
+            print(s[1])
+
+    def save_3d_object(self, filename):
+        obj   = object3d() # container for 3D object 
+        data = []
+        
+        for pt in self.segments:
+            #data.append(pt[1])
+            obj.one_vec_to_obj(pt[1])
+
+        #obj.vectorlist_to_obj( data ) #, pos=centroid)
+        obj.save( filename )
+
     def contains_coord_words(self, string): 
         # check for any known coordinate words
         has_coords = False 
@@ -265,33 +280,32 @@ class gcode_assembly(object3d):
     def between_token_list(self, string, tokens):
         """ give a list of tokens, return a list of betweens 
             
-            string = y987a123b541c307d999
-            tokens = [a,b,c,d]
-            output = [123,541,307] 
+            string = 'y987a123b541c307d999'
+            tokens = ['a','b','c','d']
+            out = self.between_token_list( string, tokens)
+
+            out will be:
+                 ['123', '541', '307']
         """
-        ## words = []
-        ## for cw2 in self.coord_words:
-        ##     if cw2 in string:
-        ##         words.append(cw2)
-        ## return words
-        return None 
-        
 
-    def scan_for_xyz(self, string):
-        
-        #string
+        #return re.split( tokens_str ,string)
+        match = ''
+        if len(tokens)==1:
+            match = tokens[0] + '|'
+        if len(tokens)>1:    
+            for i,t in enumerate(tokens):
+                if i<len(tokens)-1:
+                    match = match + t + '|'
+                if i==len(tokens)-1:
+                    match = match + t 
 
-        #remove ";" and "\n"
-
-        pass
-
-    def parse_coord_word(self, string):
-
-        #string
-
-        #remove ";" and "\n"
-
-        pass
+        tmp = re.split( match, string)
+        out = []
+        for t in tmp:
+            tmp2 = t.replace('\n','')
+            tmp2 = tmp2.replace(';','')
+            out.append(tmp2)
+        return out[1:]  
 
 
     def load_gcode_textfile(self, filename):
@@ -335,29 +349,25 @@ class gcode_assembly(object3d):
                         # if has coordinate words, determine which ones it has 
                         if has_coords is True:             
 
-                            print( comm, self.which_coord_words(comm) )
+                            line_contains = ( self.which_coord_words(comm) )
+                            output        = self.between_token_list(comm, line_contains)
 
-                            ## now we know there are coords and which ones, do the interpolation 
-                            #for coord in self.which_coord_words(comm):
-                            #    if coord == 'X':
-                            #        print( comm.split('X') )
-                            #        pass#self.POSX = 
-                            #    if coord == 'Y':
-                            #        print( comm.split('Y') )                                    
-                            #        pass#self.POSY =
-                            #    if coord == 'Z':
-                            #        print( comm.split('Z') )                                    
-                            #        pass#self.POSZ =      
+                            #print( line_contains, output )
+                            for i,token in enumerate(line_contains):
+                                if token=='X':
+                                    self.POSX = output[i]
+                                if token=='Y':
+                                    self.POSY = output[i]
+                                if token=='Z':
+                                    self.POSZ = output[i]
+                                
+                    self.segments.append( [n_idx[1:], [self.POSX, self.POSY, self.POSZ], comm ] )
 
-                            #print('COORD WORD ', words, '  --   ', comm)
-                            self.segments.append( [n_idx[1:], [self.POSX, self.POSY, self.POSZ], comm ] )
 
 
                         #print("index is %s command is %s " % (n_idx, comm ) )
             #
-            #print("ALL DONE ")
-            #for s in self.segments:
-            #    print(s)
+
 
 
 

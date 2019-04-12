@@ -16,6 +16,12 @@ gc_asm = gcode_assembly()
 
 #gc_asm.load_gcode_textfile('gcode/1001.txt')
 
-gc_asm.load_gcode_textfile('gcode/tinker.txt')
+gc_asm.load_gcode_textfile('gcode/engrave.txt')
+
+#gc_asm.show_data()
+gc_asm.save_3d_object('gcode_3d.obj')
+
+
+
 
 
