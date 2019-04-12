@@ -254,12 +254,12 @@ class gcode_assembly(object3d):
     def save_3d_object(self, filename):
         obj   = object3d() # container for 3D object 
         data = []
-        
-        for pt in self.segments:
-            #data.append(pt[1])
-            obj.one_vec_to_obj(pt[1])
 
-        #obj.vectorlist_to_obj( data ) #, pos=centroid)
+        line_data = []
+        for pt in self.segments:
+            line_data.append( pt[1] )
+
+        obj.pts_to_linesegment(line_data)
         obj.save( filename )
 
     def contains_coord_words(self, string): 
@@ -355,11 +355,11 @@ class gcode_assembly(object3d):
                             #print( line_contains, output )
                             for i,token in enumerate(line_contains):
                                 if token=='X':
-                                    self.POSX = output[i]
+                                    self.POSX = float(output[i])
                                 if token=='Y':
-                                    self.POSY = output[i]
+                                    self.POSY = float(output[i])
                                 if token=='Z':
-                                    self.POSZ = output[i]
+                                    self.POSZ = float(output[i])
                                 
                     self.segments.append( [n_idx[1:], [self.POSX, self.POSY, self.POSZ], comm ] )
 

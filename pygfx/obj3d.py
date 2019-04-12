@@ -237,7 +237,7 @@ class object3d(polygon_operator):
 
     ############################################### 
     """
-    def vector_between_to_obj(self, r3_1, r3_2):
+    def vector_between_two_obj(self, r3_1, r3_2):
         # a vector between two other vectors 
         # probably not useful, but interesting 
         pts = [
@@ -256,7 +256,27 @@ class object3d(polygon_operator):
     ############################################### 
 
     #def edgegeom_to_vectorlist(self, geom):
-  
+
+    ############################################### 
+    def pts_to_linesegment(self, pt_list):
+
+        for i,pt in enumerate(pt_list):
+            
+            if pt == None:
+                return None
+
+            if i>0:
+                n = self.numpts # add this number to the indices in case of existing geom 
+                plyidx = [(n+1,n+2)]
+                
+                pts = [ pt_list[i-1], pt_list[i] ]
+
+                #append points to internal 
+                for p in pts:
+                    self.points.append(p)
+                for vec in plyidx:    
+                    self.polygons.append( vec )                          
+
     ############################################### 
     def vectorlist_to_obj(self, vecs, pos=None):
         """ take a list of vectors and convert it to renderable geometry 
