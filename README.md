@@ -30,14 +30,16 @@ you chain them together.
    -  examples_selection  - examples of extracting portions of polygon geometry  
    -  examples_vector     - examples of 3D vector processing
 
+
    Stuff you can ignore for now :
-   -  examples_wip - work in progess examples 
-   -  unit_tests   - not done yet 
-   -  raytrace     - someones code I imported and am considering intergrating 
-   -  dag_ops      - directed acyclic graph, first stab at a scene graph (not working yet)
-   -  grid_ops     - nothing here yet, future home of mapping and grids 
-   -  examples_2d  - nothing here worth looking at  
-   -  render_2d    - nothing here yet, future home of 2D rendering 
+   -  examples_milling  - examples of G-code related tools. CNC and CAM in the future?
+   -  examples_wip      - work in progess examples 
+   -  unit_tests        - not done yet 
+   -  raytrace          - someones code I imported and am considering intergrating 
+   -  dag_ops           - directed acyclic graph, first stab at a scene graph (not working yet)
+   -  grid_ops          - nothing here yet, future home of mapping and grids 
+   -  examples_2d       - nothing here worth looking at  
+   -  render_2d         - nothing here yet, future home of 2D rendering 
 
 
 

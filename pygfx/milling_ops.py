@@ -228,14 +228,25 @@ bridgeport_gcode =  {
 
 ##------------------------------------------
 
- 
-class gcode_assembly(object3d):
+
+
+##------------------------------------------
+
+class generate_gcode(object):
+    def __init__(self):
+        pass
+        
+
+##------------------------------------------
+
+
+class gcode_to_polyline(object3d):
 
     def __init__(self):
         super().__init__()  
         self.commented = [] # [index, string] 
 
-        self.dialect = bridgeport_gcode
+        #self.dialect = bridgeport_gcode
         self.coord_words = ['X','Y','Z','U','V','W','I','J','K','R','P','F'] # ,'A','B','C','D']
 
         # self.linear_units = 'in'
@@ -247,11 +258,16 @@ class gcode_assembly(object3d):
         self.POSZ = 0
         self.segments  = [] # [index, command, xyz_pos] 
 
+        self.DEBUG_MODE = True
+
+
     def show_data(self):
         for s in self.segments:
             print(s[1])
 
     def save_3d_object(self, filename):
+        """ dump the XYZ positions into a polyline object """
+
         obj   = object3d() # container for 3D object 
         data = []
 
@@ -308,7 +324,15 @@ class gcode_assembly(object3d):
         return out[1:]  
 
 
-    def load_gcode_textfile(self, filename):
+    def save_gcode(self, filename):
+        f = open( filename,"w", encoding='utf-8')
+        
+        #for seg in self.segments:
+        #    #f.write(seg[])
+        #    print( seg[0], seg[2])
+
+
+    def load_gcode(self, filename):
 
         #if os.path.lexists(filename) == 0:
         #    self.scribe("%s DOES NOT EXIST !! "%filename )
@@ -319,9 +343,16 @@ class gcode_assembly(object3d):
             contents = f.readlines()
 
             for lin in contents:
-                n_idx = lin[0:3]
-                comm = lin[3:]
+                if self.DEBUG_MODE:
+                    print("#### LINE IS ", lin.replace("\n","") )
+
+                #seperate the line index out and split from rest of command
+                lindex = self.between_token_list(lin, ['N', 'G', 'M'])
+                n_idx = lindex[0]   
+                comm = lin[len(str(n_idx)):]   
                 
+                # print("########### ", lin , n_idx , comm)
+
                 if comm:
                    
                     # ignore commented out lines 
@@ -360,15 +391,8 @@ class gcode_assembly(object3d):
                                     self.POSY = float(output[i])
                                 if token=='Z':
                                     self.POSZ = float(output[i])
-                                
-                    self.segments.append( [n_idx[1:], [self.POSX, self.POSY, self.POSZ], comm ] )
 
-
-
-                        #print("index is %s command is %s " % (n_idx, comm ) )
-            #
-
-
+                    self.segments.append( [n_idx, [self.POSX, self.POSY, self.POSZ], comm ] )
 
 
 
