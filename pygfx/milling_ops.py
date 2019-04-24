@@ -141,7 +141,7 @@ bridgeport_gcode =  {
     "M8": "coolant_on", #?
     "M9": "coolant_off", #?
     
-    "M3": "spindle_clockwise", #?
+
     "M5": "spindle_off", #?
 
     # G1 Code sets the Linear Interpolation mode. The format of the G1 command is:
@@ -149,16 +149,17 @@ bridgeport_gcode =  {
     # Where X__Y__Z__ defines the endpoint of the move to be made. Simultaneous XYZ motion along a linear (straight
     # line) path occurs at the feedrate defined by the F__ word.    
 
-    "G0" : "rapid_traverse", #  G0/G1 - R__I__J__A__; Move to Pt
+    # "G0" : "rapid_traverse", #  G0/G1 - R__I__J__A__; Move to Pt
     "G00": "rapid_traverse",
 
-    "G1" : "linear_interpolation", 
+    # "G1" : "linear_interpolation", 
     "G01": "linear_interpolation",
 
-    "G2": "circular_interpolation",        
+    # "G2": "circular_interpolation",        
     "G02": "circular_interpolation",
 
-    "G4" : "dwell",
+    # "G4" : "dwell",
+    "G40" : "dwell",
 
     "G12": "helical_1", # G12/G13 - A__Z__F__; Do Helix 
     "G13": "helical_2", 
@@ -221,7 +222,9 @@ bridgeport_gcode =  {
     # "V": "v_axis",
     # "W": "w_axis", 
 
+    #"M3": "end?", 
     "M30": "end",
+
     "E": "end",
 }
 
@@ -244,21 +247,28 @@ class gcode_to_polyline(object3d):
 
     def __init__(self):
         super().__init__()  
-        self.commented = [] # [index, string] 
 
-        #self.dialect = bridgeport_gcode
-        self.coord_words = ['X','Y','Z','U','V','W','I','J','K','R','P','F'] # ,'A','B','C','D']
-
+        self.DEBUG_MODE = True
+                
         # self.linear_units = 'in'
         # self.z_axis  ?? 
+
+        #comments get dumped into this array (full or partial line)
+        self.commented = [] # [index, string] 
+
+        #swappable dialects of gcode commands (Bridgeport is the only one for now)
+        self.dialect = bridgeport_gcode
+
+        self.coord_words = ['X','Y','Z','U','V','W','I','J','K','R','P','F'] # ,'A','B','C','D']
         
-        # stored position of the cutting head
+        # simulated position of the cutting head
         self.POSX = 0
         self.POSY = 0
         self.POSZ = 0
+
         self.segments  = [] # [index, command, xyz_pos] 
 
-        self.DEBUG_MODE = True
+
 
 
     def show_data(self):
@@ -343,8 +353,9 @@ class gcode_to_polyline(object3d):
             contents = f.readlines()
 
             for lin in contents:
-                if self.DEBUG_MODE:
-                    print("#### LINE IS ", lin.replace("\n","") )
+
+                #if self.DEBUG_MODE:
+                #    print("#### LINE IS ", lin.replace("\n","") )
 
                 #seperate the line index out and split from rest of command
                 lindex = self.between_token_list(lin, ['N', 'G', 'M'])
@@ -368,11 +379,14 @@ class gcode_to_polyline(object3d):
                             if tmp[1] is not '\n':
                                 self.commented.append(tmp[1])
                         
+
+                          
                         # check for known commands 
-                        #for key in self.dialect :
-                        #    if key in comm:
-                        #        print(" COM FOUND! ", self.dialect [key] )
-                                
+                        for key in self.dialect :
+                            if key in comm:
+                                print(" COM FOUND at INDEX %s ! "%n_idx , key, '---', self.dialect [key] )
+
+                           
 
                         # check for any known coordinate words
                         has_coords = self.contains_coord_words(comm) 
