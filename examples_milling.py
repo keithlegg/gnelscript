@@ -25,7 +25,9 @@ gc_poly = gcode_to_polyline()
 
 #gc_poly.load_gcode_textfile('gcode/1001.txt')
 
-gc_poly.load_gcode('gcode/king.txt')
+#gc_poly.load_gcode('gcode/king.txt')
+
+gc_poly.load_gcode('gcode/bridgeport/king.txt')
 
 #gc_poly.save_gcode('gcode/fubar.txt')
 

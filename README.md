@@ -22,6 +22,7 @@ you chain them together.
    -  obj3d       - data structure for 3D models. Inherits all the other stuff  
    -  raster_ops  - image manipulation with PIL, framebuffer  
    -  render      - brain dead simple 3D rendering, examples of using pygfx modules to build a 3D render  
+   -  milling_ops - process G-code files for CNC/CAM related stuff. Experimental. 
 
    Example files are split up by type:
    -  examples            - examples of geometry processing

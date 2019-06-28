@@ -153,4 +153,4 @@ def select_polygons_spatially( from_pt, dist ):
     obj3.save('dist_vectors.obj')
 
 
-#select_polygons_spatially( (2, 1, -4) , 4.5)
+select_polygons_spatially( (2, 1, -4) , 4.5)
