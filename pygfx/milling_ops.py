@@ -20,6 +20,18 @@ from pygfx.gcode.linuxcnc import  parser_commands
 
 
 
+# COMMENT = ';' # bridgeport uses this 
+
+COMMENT = '('    # linuxcnc uses this 
+PARAM   = '#<'   # parameter (variable) , followed with brackets 
+
+#<xscale> = 1.0
+#<yscale> = 1.0
+#<zscale> = 1.0
+#<fscale> = 10000.0
+#<toolno> = 1
+#<rpm>    = 1600
+
 ##------------------------------------------
 
 ## GCODE KNOWN DIALECTS 
@@ -51,17 +63,19 @@ class gcode_to_polyline(object3d):
         super().__init__()  
 
         self.DEBUG_MODE = True
-                
         # self.linear_units = 'in'
         # self.z_axis  ?? 
 
         #comments get dumped into this array (full or partial line)
         self.commented = [] # [index, string] 
+        
+        self.param_names  = [] # [name, value ]
+        self.param_values = [] # [name, value ]
 
         #swappable dialects of gcode commands 
         self.dialect = parser_commands
 
-        self.coord_words = ['X','Y','Z','U','V','W','I','J','K','R','P','F'] # ,'A','B','C','D']
+        self.coord_words = ['N','G', 'X','Y','Z','U','V','W','I','J','K','R','P','F'] # ,'A','B','C','D']
         
         # simulated position of the cutting head
         self.POSX = 0
@@ -105,7 +119,23 @@ class gcode_to_polyline(object3d):
                 words.append(cw2)
         return words
 
-    def between_token_list(self, string, tokens):
+    def parse_params(self, string):
+        """ discover and retain any parameters in the file """
+        if PARAM in string:
+            tmp = self.between_token_list(string, [PARAM, '>']) 
+
+            if len(tmp)==2:
+                if tmp[0] not in self.param_names:
+                    if '=' in tmp[1]:
+                        tmp2 = tmp[1].split('=')
+                        self.param_names.append(tmp[0])
+                        self.param_values.append(tmp2[1].replace(' ',''))
+                else:
+                    #IT IS ALREADY PARSED!
+                    #deal with this here or in another function??
+                    pass
+
+    def between_token_list(self, string, tokens, return_match=False):
         """ give a list of tokens, return a list of betweens 
             
             string = 'y987a123b541c307d999'
@@ -114,6 +144,11 @@ class gcode_to_polyline(object3d):
 
             out will be:
                  ['123', '541', '307']
+
+            unless return_match is True,
+                then out will be:
+                    [ ['a',123'], ['b',541'], ['c',307'] ]
+
         """
 
         #return re.split( tokens_str ,string)
@@ -126,14 +161,27 @@ class gcode_to_polyline(object3d):
                     match = match + t + '|'
                 if i==len(tokens)-1:
                     match = match + t 
+        
+        if return_match is False:
+            tmp = re.split( match, string)
+        else:
+            match = '('+match+')'
+            tmp = re.split( match, string)
 
-        tmp = re.split( match, string)
         out = []
         for t in tmp:
             tmp2 = t.replace('\n','')
             tmp2 = tmp2.replace(';','')
             out.append(tmp2)
-        return out[1:]  
+
+        if return_match is False:
+            return out[1:]  
+        else:
+            out2 = [] 
+            for i,tok in enumerate(out[1:]):
+                if i%2==0:
+                    out2.append( [tok, out[1:][i+1]] )
+            return out2
 
 
     def save_gcode(self, filename):
@@ -142,7 +190,6 @@ class gcode_to_polyline(object3d):
         #for seg in self.segments:
         #    #f.write(seg[])
         #    print( seg[0], seg[2])
-
 
     def load_gcode(self, filename):
 
@@ -154,61 +201,79 @@ class gcode_to_polyline(object3d):
             f = open( filename,"r", encoding='utf-8')
             contents = f.readlines()
 
+ 
+            #scan entire file for parametrs first 
+            for lin in contents:
+                self.parse_params(lin)
+
+            print("#### params ", self.param_names )
+
+            cleaned_contents = []
+
             for lin in contents:
 
                 #if self.DEBUG_MODE:
-                #    print("#### LINE IS ", lin.replace("\n","") )
+                #print("#### LINE IS ", lin.replace("\n","") )
 
-                #seperate the line index out and split from rest of command
-                lindex = self.between_token_list(lin, ['N', 'G', 'M'])
-                n_idx = lindex[0]   
-                comm = lin[len(str(n_idx)):]   
-                
-                # print("########### ", lin , n_idx , comm)
+                # ignore commented out lines 
+                if lin[0]==COMMENT or lin[0]=='\'':  
+                    self.commented.append(lin)
 
-                if comm:
-                   
-                    # ignore commented out lines 
-                    if lin[0]==';' or lin[0]=='\'':  
-                        self.commented.append(lin)
+                else:
 
-                    #scan if not commented     
-                    else:
-                        #check for comments on the line but not at start   
-                        if ';' in lin:
-                            tmp = lin.split(';')
-                            lin = tmp[0]
-                            if tmp[1] is not '\n':
-                                self.commented.append(tmp[1])
-                        
 
-                          
-                        # check for known commands 
-                        for key in self.dialect :
-                            if key in comm:
-                                print(" COM FOUND at INDEX %s ! "%n_idx , key, '---', self.dialect [key] )
+                    # seperate the line index out and split from rest of command
+                    lindex = self.between_token_list(lin, self.coord_words, return_match=True)
+                    #n_idx = lindex[0]   
+                    #comm = lin[len(str(n_idx)):] 
+                    if lindex:
+                        #print('############### ', lindex)
 
-                           
+                        # execute the parameters(variables) if they exist 
+                        for i,tok in enumerate(lindex):
+                            for j,p in enumerate(self.param_names):
+                                if p in tok[1]:
+                                    # substitute the value with the name 
+                                    tok[1] = (tok[1].replace('#<%s>'%self.param_names[j], self.param_values[j]) )
+                                    try:
+                                        # DONT LOAD ANY GCODE TEXTFILES WITH EXECUTABLE PYTHON IN THEM!
+                                        # THIS IS A SECURITY HOLE FOR WANKERS TO EXPLOIT 
+                                        
+                                        # eval the damn thing and capture the result 
+                                        #print( tok[0], eval(tok[1])[0])
+                                        pass
+                                        
+                                    except:
+                                        pass    
 
-                        # check for any known coordinate words
-                        has_coords = self.contains_coord_words(comm) 
+                        print( lindex )
 
-                        # if has coordinate words, determine which ones it has 
-                        if has_coords is True:             
+                        ## #check for comments on the line but not at start   
+                        ## if COMMENT in lin:
+                        ##     tmp = lin.split(COMMENT)
+                        ##     lin = tmp[0]
+                        ##     if tmp[1] is not '\n':
+                        ##         self.commented.append(tmp[1])
+                        ## # check for known commands 
+                        ## for key in self.dialect :
+                        ##     if key in comm:
+                        ##         print(" COM FOUND at INDEX %s ! "%n_idx , key, '---', self.dialect [key] )
+                        ## # check for any known coordinate words
+                        ## has_coords = self.contains_coord_words(comm) 
+                        ## # if has coordinate words, determine which ones it has 
+                        ## if has_coords is True:             
+                        ##     line_contains = ( self.which_coord_words(comm) )
+                        ##     output        = self.between_token_list(comm, line_contains)
+                        ##     #print( line_contains, output )
+                        ##     for i,token in enumerate(line_contains):
+                        ##         if token=='X':
+                        ##             self.POSX = float(output[i])
+                        ##         if token=='Y':
+                        ##             self.POSY = float(output[i])
+                        ##         if token=='Z':
+                        ##             self.POSZ = float(output[i])
 
-                            line_contains = ( self.which_coord_words(comm) )
-                            output        = self.between_token_list(comm, line_contains)
-
-                            #print( line_contains, output )
-                            for i,token in enumerate(line_contains):
-                                if token=='X':
-                                    self.POSX = float(output[i])
-                                if token=='Y':
-                                    self.POSY = float(output[i])
-                                if token=='Z':
-                                    self.POSZ = float(output[i])
-
-                    self.segments.append( [n_idx, [self.POSX, self.POSY, self.POSZ], comm ] )
+                        #self.segments.append( [n_idx, [self.POSX, self.POSY, self.POSZ], comm ] )
 
 
 
