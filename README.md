@@ -23,6 +23,7 @@ you chain them together.
    -  raster_ops  - image manipulation with PIL, framebuffer  
    -  render      - brain dead simple 3D rendering, examples of using pygfx modules to build a 3D render  
    -  milling_ops - process G-code files for CNC/CAM related stuff. Experimental. 
+   -  kicad_ops   - parse the kicad pcb format for CNC/CAM related stuff. Experimental.
 
    Example files are split up by type:
    -  examples            - examples of geometry processing

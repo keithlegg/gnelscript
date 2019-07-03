@@ -6,6 +6,10 @@ import re
 from pygfx.milling_ops import gcode_to_polyline
 
 
+class kicad_module(object):
+    def __init__(self):
+        self.name = ''
+        self.line_data = []
 
 
 class import_footprint(gcode_to_polyline):
@@ -13,9 +17,15 @@ class import_footprint(gcode_to_polyline):
     def __init__(self):
         super().__init__()  
 
-        self.parse_depth   = 0
+        self.parse_depth = 0
+        self.module_depth = 0 
+
         self.file_contents = []
-        self.entities      = []
+        self.cur_entity = None 
+        self.cur_module = None 
+
+        self.modules = []
+
 
         self.known_entities = ['module','gr_line','segment']
 
@@ -23,21 +33,52 @@ class import_footprint(gcode_to_polyline):
         self.object_units  = 'cm'
 
         #self.GLOBAL_SCALE = 0.3904 # unit conversion (cm to mills?)
+    ##############
+    def show_modules(self):
+        for m in self.modules:
+            print(m.name)
 
     ##############
     def load_kicadpcb(self, filename):
+        """ a parser that is not recursive, but clever enough to scan all the 
+            file entities and know what module they are in 
+        """
         print('reading file %s'%filename)
         f = open(filename, 'r')
         for line in f:
             if '(' in line or ')' in line:
-                #self.known_entities
                 toked = line.split(' ') 
-                for tok in toked:
+                for i,tok in enumerate(toked):
                     if tok !='':
                       
                         for ct in re.findall('\(',tok):
-                            if tok[1:] in self.known_entities:
-                                print("### found one! ", tok )
+                            self.cur_entity = self.scrub(tok[1:]) #name of entity immediately after "("
+
+                            #if module depth is non zero we are parsing a module  
+                            if self.module_depth>0:
+                               print("we are in module %s "%self.cur_module, self.cur_entity, self.module_depth, self.parse_depth )
+                           
+                            #if module depth is set we are parsing a module, if it matches depth we must be done traversing     
+                            if self.parse_depth == self.module_depth and self.cur_module is not None:
+                               
+                                #make a new "module" container object to store what we found in file 
+                                new_mod = kicad_module()
+                                new_mod.name = self.cur_module
+                                self.modules.append( new_mod )
+
+                                print("we are out of module %s"%self.cur_module)
+                                
+                                #step out of the module 
+                                self.module_depth = 0
+                                self.cur_module = None 
+                                
+
+
+                            #if we found a module - store the depth it was found at and the name     
+                            if tok[1:] == 'module':
+                                self.module_depth = self.parse_depth 
+                                self.cur_module = self.scrub(toked[i+1])
+
                             self.parse_depth += 1
                         for ct in re.findall('\)',tok):
                             self.parse_depth -= 1
@@ -56,9 +97,13 @@ class import_footprint(gcode_to_polyline):
     def scrub(self, inp):
         """ clean up parsed characters from kicad file """
 
-        out = inp
+        out = inp.lower()
         out = out.strip()
         out = out.replace(')','')
+        out = out.replace(' ','')
+        out = out.replace('-','_')
+        out = out.replace('\"','')
+        out = out.replace('\'','')
         return out
     
     ##############    

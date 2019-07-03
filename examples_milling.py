@@ -54,11 +54,12 @@ kicad = import_footprint()
 #kicad.load_gcode('gcode/ngc/3D_Chips.ngc')
 
 #kicad.load_kicadpcb('gcode/kicad/sample1.kicad_pcb')
-kicad.load_kicadpcb('gcode/kicad/zipper.kicad_pcb')
+#kicad.load_kicadpcb('gcode/kicad/zipper.kicad_pcb')
+kicad.load_kicadpcb('gcode/kicad/simple.kicad_pcb')
 
 kicad.process()
  
-
+kicad.show_modules()
 #-------------------------------
 
 
