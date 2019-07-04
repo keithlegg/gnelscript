@@ -49,17 +49,17 @@ gc_poly = gcode_to_polyline()
 
 #-------------------------------
  
-kicad = import_footprint()
+kicad = pcbfile()
 
 #kicad.load_gcode('gcode/ngc/3D_Chips.ngc')
 
-#kicad.load_kicadpcb('gcode/kicad/sample1.kicad_pcb')
+kicad.load_kicadpcb('gcode/kicad/sample1.kicad_pcb')
 #kicad.load_kicadpcb('gcode/kicad/zipper.kicad_pcb')
-kicad.load_kicadpcb('gcode/kicad/simple.kicad_pcb')
+#kicad.load_kicadpcb('gcode/kicad/simple.kicad_pcb')
 
 kicad.process()
  
-kicad.show_modules()
+#kicad.show_modules()
 #-------------------------------
 
 

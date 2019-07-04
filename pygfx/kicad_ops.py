@@ -6,13 +6,23 @@ import re
 from pygfx.milling_ops import gcode_to_polyline
 
 
+class kicad_pad(object):
+    """container for a kicad pad"""    
+    def __init__(self):
+        self.name = ''
+        self.size = 0
+        self.xcoord = 0
+        self.ycoord = 0
+
 class kicad_module(object):
+    """container for a kicad module"""
     def __init__(self):
         self.name = ''
         self.line_data = []
 
 
-class import_footprint(gcode_to_polyline):
+
+class pcbfile(gcode_to_polyline):
 
     def __init__(self):
         super().__init__()  
@@ -21,6 +31,8 @@ class import_footprint(gcode_to_polyline):
         self.module_depth = 0 
 
         self.file_contents = []
+        
+        self.oneup_entity = None 
         self.cur_entity = None 
         self.cur_module = None 
 
@@ -43,7 +55,7 @@ class import_footprint(gcode_to_polyline):
         """ a parser that is not recursive, but clever enough to scan all the 
             file entities and know what module they are in 
         """
-        print('reading file %s'%filename)
+
         f = open(filename, 'r')
         for line in f:
             if '(' in line or ')' in line:
@@ -51,36 +63,73 @@ class import_footprint(gcode_to_polyline):
                 for i,tok in enumerate(toked):
                     if tok !='':
                       
+                        # if we encounter a "(" - go deeper into the parse
                         for ct in re.findall('\(',tok):
+                            
+                            # often, we only care about the entity immediately above current. store what it is 
+                            if self.cur_entity is not None:
+                                self.oneup_entity = self.cur_entity
+
                             self.cur_entity = self.scrub(tok[1:]) #name of entity immediately after "("
 
-                            #if module depth is non zero we are parsing a module  
-                            if self.module_depth>0:
-                               print("we are in module %s "%self.cur_module, self.cur_entity, self.module_depth, self.parse_depth )
-                           
-                            #if module depth is set we are parsing a module, if it matches depth we must be done traversing     
+                            # if module depth is set we are parsing a module, if it matches depth we must be done traversing     
                             if self.parse_depth == self.module_depth and self.cur_module is not None:
-                               
-                                #make a new "module" container object to store what we found in file 
+                            
+
+                                # make a new "module" container object to store what we found in file 
+                                # make it when we exit because all the constituent pieces will be scanned at this point 
                                 new_mod = kicad_module()
                                 new_mod.name = self.cur_module
                                 self.modules.append( new_mod )
 
-                                print("we are out of module %s"%self.cur_module)
-                                
                                 #step out of the module 
                                 self.module_depth = 0
                                 self.cur_module = None 
                                 
+                            #-------------------------------
+                            # if module depth is non zero we are parsing a module  
+                            # most of the parsing happens in this block 
+                            if self.module_depth>0:
+                               #  print("we are in a module %s"%self.cur_module) 
 
 
-                            #if we found a module - store the depth it was found at and the name     
+                                if tok[1:] == 'at' and self.oneup_entity == 'module':
+                                    print("MODULE %s AT %s %s" %(self.cur_module, toked[i+1], toked[i+2]) ) 
+
+                                if tok[1:] == 'at' and self.oneup_entity == 'pad':
+                                    #new_pad = kicad_pad()
+                                    print("PAD %s AT %s %s" %(self.cur_module, toked[i+1], toked[i+2]) ) 
+
+                            #-------------------------------
+                            # if we found a module - store the depth it was found at and the name     
                             if tok[1:] == 'module':
                                 self.module_depth = self.parse_depth 
                                 self.cur_module = self.scrub(toked[i+1])
 
+
+                            #-------------------------------
+                            #parsing objects outside of modules 
+                            if tok[1:] == 'start' and self.oneup_entity == 'gr_line':
+                                print("GR LINE start", toked[i+1], toked[i+2]  ) 
+                            if tok[1:] == 'end' and self.oneup_entity == 'gr_line':
+                                print("GR LINE end", toked[i+1], toked[i+2]  ) 
+
+
+                            #-------------------------------                                
                             self.parse_depth += 1
+
+                        # if we encounter a ")" - go up one in the parse                            
                         for ct in re.findall('\)',tok):
+                            
+
+                            if self.oneup_entity is not None:
+                                # if they are the same - we returned from an entity 
+                                #if self.cur_entity != self.oneup_entity:
+                                #    print("BACK OUT FROM %s INTO %s"% (self.cur_entity, self.oneup_entity ) )
+                                
+                                # go "oneup" in history      
+                                self.cur_entity = self.oneup_entity 
+                            
                             self.parse_depth -= 1
                   
 
