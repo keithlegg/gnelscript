@@ -57,7 +57,7 @@ class generate_gcode(object):
 ##------------------------------------------
 
 
-class gcode_to_polyline(object3d):
+class gcode(object3d):
 
     def __init__(self):
         super().__init__()  

@@ -22,7 +22,7 @@ from pygfx.kicad_ops import *
 from pygfx.milling_ops import * 
 
 
-gc_poly = gcode_to_polyline()
+gc_poly = gcode()
 
 #gc_poly.load_gcode('gcode/ngc/3dtest.ngc')
 #gc_poly.load_gcode('gcode/ngc/arcspiral.ngc')
@@ -58,7 +58,9 @@ kicad.load_kicadpcb('gcode/kicad/sample1.kicad_pcb')
 #kicad.load_kicadpcb('gcode/kicad/simple.kicad_pcb')
 
 kicad.process()
- 
+
+kicad.save_3d_obj('kicad.obj') 
+
 #kicad.show_modules()
 #-------------------------------
 

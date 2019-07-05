@@ -3,26 +3,43 @@ import re
 
 
 #from pygfx.obj3d import object3d
-from pygfx.milling_ops import gcode_to_polyline
+from pygfx.milling_ops import gcode
 
 
-class kicad_pad(object):
-    """container for a kicad pad"""    
-    def __init__(self):
-        self.name = ''
-        self.size = 0
-        self.xcoord = 0
-        self.ycoord = 0
+## class kicad_line(object):
+##     """container for a kicad pad"""    
+##     def __init__(self):
+##         self.width    = 0
+##         self.start_xy = []
+##         self.end_xy   = []
+## 
+## class kicad_pad(object):
+##     """container for a kicad pad"""    
+##     def __init__(self):
+##         self.name   = ''
+##         self.size   = 0
+##         self.xcoord = 0
+##         self.ycoord = 0
+## 
+## class kicad_module(object):
+##     """container for a kicad module"""
+##     def __init__(self):
+##         self.name  = ''
+##         self.lines = []
+##         self.pads  = []
 
-class kicad_module(object):
-    """container for a kicad module"""
-    def __init__(self):
-        self.name = ''
-        self.line_data = []
 
 
+"""
+    <- point_operator (contains math_util)
+      <- polygon_operator 
+        <- object3d 
+          <- gcode 
+            <- pcbfile 
+"""
 
-class pcbfile(gcode_to_polyline):
+
+class pcbfile(gcode):
 
     def __init__(self):
         super().__init__()  
@@ -50,11 +67,28 @@ class pcbfile(gcode_to_polyline):
         for m in self.modules:
             print(m.name)
 
+    def save_3d_obj(self, name):
+       self.save(name)
+
     ##############
     def load_kicadpcb(self, filename):
         """ a parser that is not recursive, but clever enough to scan all the 
             file entities and know what module they are in 
-        """
+        """ 
+        
+        var_module_name  = ''
+        var_module_pos   = []
+        var_module_lines = []
+
+        var_pad_name     = ''
+        var_pad_size     = 0
+        var_pad_xcoord   = 0
+        var_pad_ycoord   = 0
+
+        var_line_width    = 0
+        var_line_start_xy = []
+        var_line_end_xy   = []
+
 
         f = open(filename, 'r')
         for line in f:
@@ -78,10 +112,11 @@ class pcbfile(gcode_to_polyline):
 
                                 # make a new "module" container object to store what we found in file 
                                 # make it when we exit because all the constituent pieces will be scanned at this point 
-                                new_mod = kicad_module()
-                                new_mod.name = self.cur_module
-                                self.modules.append( new_mod )
-
+                                #new_mod = kicad_module()
+                                #new_mod.name = self.cur_module
+                                #self.modules.append( new_mod )
+                                
+                                #------ 
                                 #step out of the module 
                                 self.module_depth = 0
                                 self.cur_module = None 
@@ -108,12 +143,21 @@ class pcbfile(gcode_to_polyline):
 
 
                             #-------------------------------
-                            #parsing objects outside of modules 
+                            # parsing objects happens outside of modules 
                             if tok[1:] == 'start' and self.oneup_entity == 'gr_line':
-                                print("GR LINE start", toked[i+1], toked[i+2]  ) 
+                                #print("GR LINE start", toked[i+1], toked[i+2]  ) 
+                                var_line_start_xy = [toked[i+1], toked[i+2]]
                             if tok[1:] == 'end' and self.oneup_entity == 'gr_line':
-                                print("GR LINE end", toked[i+1], toked[i+2]  ) 
-
+                                #print("GR LINE end", toked[i+1], toked[i+2]  ) 
+                                var_line_end_xy   = [toked[i+1], toked[i+2]]
+                            
+                            if  var_line_start_xy and var_line_end_xy:
+                                print("build a line from %s to %s"%(var_line_start_xy, var_line_end_xy) )
+                                
+                                pts =[ (self.scrub(var_line_start_xy[0]), self.scrub(var_line_start_xy[1]),0) , 
+                                       (self.scrub(var_line_end_xy[0])  , self.scrub(var_line_end_xy[1])  ,0) ]
+                                poly = [(1,2)]
+                                self.insert_polygons(poly, pts)                                
 
                             #-------------------------------                                
                             self.parse_depth += 1
@@ -150,7 +194,7 @@ class pcbfile(gcode_to_polyline):
         out = out.strip()
         out = out.replace(')','')
         out = out.replace(' ','')
-        out = out.replace('-','_')
+        out = out.replace('-','')
         out = out.replace('\"','')
         out = out.replace('\'','')
         return out
