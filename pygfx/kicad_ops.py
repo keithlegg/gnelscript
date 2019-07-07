@@ -34,8 +34,8 @@ from pygfx.milling_ops import gcode
     <- point_operator (contains math_util)
       <- polygon_operator 
         <- object3d 
-          <- gcode 
-            <- pcbfile 
+          <- gcode (linuxcnc)
+            <- pcbfile  (kicad)
 """
 
 
@@ -62,12 +62,36 @@ class pcbfile(gcode):
         self.object_units  = 'cm'
 
         #self.GLOBAL_SCALE = 0.3904 # unit conversion (cm to mills?)
+
+    ##############
+    def show_geom(self):
+        #call the inherited polygon "show" method
+        self.show()
+
     ##############
     def show_modules(self):
         for m in self.modules:
             print(m.name)
 
     def save_3d_obj(self, name):
+       
+       #make sure we have numeric data not strings
+       #they are string because we parsed from a file 
+       newpts = []
+
+       print( self.points )
+
+       for pt in self.points:
+           print('## pt ',pt)  
+           tmp = [] 
+           for n in pt:
+              tmp.append(float(n) )  
+           newpts.append( tmp )
+
+       self.points = newpts 
+
+       self.scale_pts( ( -1.0,-1.0, 1.0) )  
+
        self.save(name)
 
     ##############
@@ -147,37 +171,41 @@ class pcbfile(gcode):
 
 
                             #-------------------------------
-                            
-                            
+                            # parsing objects outside of modules 
 
-                            # parsing objects happens outside of modules 
+                            #-------------------
+                            # arc parsing 
                             if tok[1:] == 'start' and self.oneup_entity == 'gr_arc':
                                 print("gr_arc start", toked[i+1], toked[i+2]  ) 
 
+                            #-------------------
+                            # via parsing 
                             if tok[1:] == 'start' and self.oneup_entity == 'via':
                                 print("via start", toked[i+1], toked[i+2]  ) 
 
+                            #-------------------
+                            # polygon parsing 
                             if tok[1:] == 'pts' and self.oneup_entity == 'gr_poly':
                                 print("gr_poly start", toked[i+1], toked[i+2]  ) 
 
-
+                            #-------------------
+                            # circle parsing 
                             if tok[1:] == 'center' and self.oneup_entity == 'gr_circle':
                                 print("gr_circle ", toked[i+1], toked[i+2]  ) 
 
+                            #-------------------
 
-                            # Segment parsing 
+                            # segment parsing 
                             if tok[1:] == 'start' and self.oneup_entity == 'segment':
                                 print("segment start ", toked[i+1], toked[i+2]  ) 
                                 var_segment_start  = [toked[i+1], toked[i+2]]
-                            
                             if tok[1:] == 'end' and self.oneup_entity == 'segment':
                                 print("segment end ", toked[i+1], toked[i+2]  ) 
                                 var_segment_end  = [toked[i+1], toked[i+2]]
 
-
                             if  var_segment_start and var_segment_end:
-                                pts =[ (self.scrub(var_segment_start[0]), self.scrub(var_segment_start[1]),0) , 
-                                       (self.scrub(var_segment_end[0])  , self.scrub(var_segment_end[1])  ,0) ]
+                                pts =[ (self.scrub(var_segment_start[0]), self.scrub(var_segment_start[1])  ,0) , 
+                                       (self.scrub(var_segment_end[0])  , self.scrub(var_segment_end[1])    ,0) ]
                                 poly = [(1,2)]
                                 self.insert_polygons(poly, pts)   
                                 
@@ -198,8 +226,8 @@ class pcbfile(gcode):
                             if  var_line_start_xy and var_line_end_xy:
                                 print("build a line from %s to %s"%(var_line_start_xy, var_line_end_xy) )
                                 
-                                pts =[ (self.scrub(var_line_start_xy[0]), self.scrub(var_line_start_xy[1]),0) , 
-                                       (self.scrub(var_line_end_xy[0])  , self.scrub(var_line_end_xy[1])  ,0) ]
+                                pts =[ (self.scrub(var_line_start_xy[0]), self.scrub(var_line_start_xy[1]  ,0)) , 
+                                       (self.scrub(var_line_end_xy[0])  , self.scrub(var_line_end_xy[1])   ,0) ]
                                 poly = [(1,2)]
                                 self.insert_polygons(poly, pts)   
                                 
@@ -262,57 +290,50 @@ class pcbfile(gcode):
         pass
 
 
-    ##############
-    def process(self):
-        """ take loaded text data and parse it looking for info to build pads and lines objects with """
-
-        #(module KL_ALPS_10KPOT
-        #part_grp = cmds.group( em=True, name='null1' )
-
-        for l in  self.file_contents:
-            linedata =  l.strip().split('(fp_line ')
-
-            sx = 0
-            sy = 0
-            ex = 0
-            ey = 0
-
-            padx = 0
-            pady = 0
-            dia_padx = 0 #use same value x and y 
-
-            ######################             
-            #build layers and assign names to them
-            #color like kicad 
-
-            ###################### 
-            #build pads and display as NURBS circles
-            if len(linedata)<=1:
-                parse_pads = linedata[0].split(' ')
-                if parse_pads[0]=='(pad':
-                    padx = self.scrub(parse_pads[5])
-                    pady = self.scrub(parse_pads[6])
-
-                    print( 'pad found at %s %s'%(padx,pady) )
-                    
-                    if parse_pads[7]=='(size':
-                        dia_padx = parse_pads[8]  
-                        #dia_pady = parse_pads[9]  
-
-            ###################### 
-            #import line segments as first degree NURBS curve segments
-            if len(linedata)>1:
-                vtxdata = linedata[1].split()
-                
-                #print linedata
-
-                if vtxdata[0]=='(start':
-                    sx = self.scrub(vtxdata[1])
-                    sy = self.scrub(vtxdata[2])  
-                if vtxdata[3]=='(end':
-                    ex = self.scrub(vtxdata[4])
-                    ey = self.scrub(vtxdata[5]) 
-                #print( 'the line is %s %s %s %s '%(sx,sy,ex,ey))  
+    ## ##############
+    ## def process(self):
+    ##     """ 
+    ##     depreciated - original parser code,  not really needed  
+    ##     quick and dirty maya script to get kicad footprints into 3D 
+    ##     see https://github.com/keithlegg/import_kicad_maya3d for more info 
+    ##
+    ##     take loaded text data and parse it looking for info to build pads and lines objects with """
+    ##     #(module KL_ALPS_10KPOT
+    ##     #part_grp = cmds.group( em=True, name='null1' )
+    ##     for l in  self.file_contents:
+    ##         linedata =  l.strip().split('(fp_line ')
+    ##         sx = 0
+    ##         sy = 0
+    ##         ex = 0
+    ##         ey = 0
+    ##         padx = 0
+    ##         pady = 0
+    ##         dia_padx = 0 #use same value x and y 
+    ##         ######################             
+    ##         #build layers and assign names to them
+    ##         #color like kicad 
+    ##         ###################### 
+    ##         #build pads and display as NURBS circles
+    ##         if len(linedata)<=1:
+    ##             parse_pads = linedata[0].split(' ')
+    ##             if parse_pads[0]=='(pad':
+    ##                 padx = self.scrub(parse_pads[5])
+    ##                 pady = self.scrub(parse_pads[6])
+    ##                 print( 'pad found at %s %s'%(padx,pady) )
+    ##                 if parse_pads[7]=='(size':
+    ##                     dia_padx = parse_pads[8]  
+    ##                     #dia_pady = parse_pads[9]  
+    ##         ###################### 
+    ##         #import line segments as first degree NURBS curve segments
+    ##         if len(linedata)>1:
+    ##             vtxdata = linedata[1].split()
+    ##             if vtxdata[0]=='(start':
+    ##                 sx = self.scrub(vtxdata[1])
+    ##                 sy = self.scrub(vtxdata[2])  
+    ##             if vtxdata[3]=='(end':
+    ##                 ex = self.scrub(vtxdata[4])
+    ##                 ey = self.scrub(vtxdata[5]) 
+    ##             #print( 'the line is %s %s %s %s '%(sx,sy,ex,ey))  
             
 
 

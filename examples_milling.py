@@ -59,7 +59,8 @@ kicad = pcbfile()
 kicad.load_kicadpcb('gcode/kicad/cnc1.kicad_pcb')
 
 
-kicad.process()
+# kicad.show_geom()
+
 
 
 kicad.save_3d_obj('kicad.obj') 

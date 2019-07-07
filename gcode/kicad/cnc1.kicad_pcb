@@ -1,0 +1,36 @@
+(kicad_pcb (version 20171130) (host pcbnew 5.0.0-rc2-unknown-b37969f~65~ubuntu16.04.1)
+
+
+
+  (net_class Default "This is the default net class."
+    (clearance 0.2)
+    (trace_width 0.25)
+    (via_dia 0.8)
+    (via_drill 0.4)
+    (uvia_dia 0.3)
+    (uvia_drill 0.1)
+  )
+
+  (gr_arc (start 13.9 26.65) (end 4.700001 28.699999) (angle -137.4565864) (layer F.SilkS) (width 0.2))
+  (gr_poly (pts (xy -0.8 0.8) (xy 5.85 7.45) (xy 18.35 5.1) (xy 24.2 0.9) (xy 20.4 -4.05) (xy 13.8 -6.35) (xy 7.95 -6.25) (xy -0.5 -3.15) (xy -2.45 -0.4)) (layer F.SilkS) (width 0.15))
+  (gr_circle (center 22.35 17.2) (end 23.05 11.2) (layer F.SilkS) (width 0.2))
+
+  (segment (start 15.15 41.8) (end 5.25 41.8) (width 0.25) (layer F.Cu) (net 0))
+  (segment (start 5.25 41.8) (end -7.15 29.4) (width 0.25) (layer F.Cu) (net 0))
+  (segment (start -7.15 29.4) (end -7.15 11.8) (width 0.25) (layer F.Cu) (net 0))
+  (segment (start -7.15 11.8) (end -9.7 9.25) (width 0.25) (layer F.Cu) (net 0))
+  
+  (via (at -0.05 9.25) (size 0.8) (drill 0.4) (layers F.Cu B.Cu) (net 0))
+  (via (at 2.6 16.1) (size 0.8) (drill 0.4) (layers F.Cu B.Cu) (net 0))
+  (via (at -0.4 20.75) (size 0.8) (drill 0.4) (layers F.Cu B.Cu) (net 0))
+  (via (at 5.7 21.65) (size 0.8) (drill 0.4) (layers F.Cu B.Cu) (net 0))
+  (via (at 10.05 17.05) (size 0.8) (drill 0.4) (layers F.Cu B.Cu) (net 0))
+
+  (segment (start -0.05 9.25) (end -0.05 10.6) (width 0.25) (layer F.Cu) (net 0))
+  (segment (start 2.6 13.25) (end 2.6 16.1) (width 0.25) (layer F.Cu) (net 0))
+  (segment (start -0.05 10.6) (end 2.6 13.25) (width 0.25) (layer F.Cu) (net 0))
+  (segment (start -0.4 20.75) (end 1.65 20.75) (width 0.25) (layer F.Cu) (net 0))
+  (segment (start 5.35 17.05) (end 10.05 17.05) (width 0.25) (layer F.Cu) (net 0))
+  (segment (start 1.65 20.75) (end 5.35 17.05) (width 0.25) (layer F.Cu) (net 0))
+
+)
