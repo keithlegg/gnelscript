@@ -53,11 +53,14 @@ kicad = pcbfile()
 
 #kicad.load_gcode('gcode/ngc/3D_Chips.ngc')
 
-kicad.load_kicadpcb('gcode/kicad/sample1.kicad_pcb')
+#kicad.load_kicadpcb('gcode/kicad/sample1.kicad_pcb')
 #kicad.load_kicadpcb('gcode/kicad/zipper.kicad_pcb')
 #kicad.load_kicadpcb('gcode/kicad/simple.kicad_pcb')
+kicad.load_kicadpcb('gcode/kicad/cnc1.kicad_pcb')
+
 
 kicad.process()
+
 
 kicad.save_3d_obj('kicad.obj') 
 

@@ -76,18 +76,21 @@ class pcbfile(gcode):
             file entities and know what module they are in 
         """ 
         
-        var_module_name  = ''
-        var_module_pos   = []
-        var_module_lines = []
+        var_module_name    = ''
+        var_module_pos     = []
+        var_module_lines   = []
 
-        var_pad_name     = ''
-        var_pad_size     = 0
-        var_pad_xcoord   = 0
-        var_pad_ycoord   = 0
+        var_pad_name       = ''
+        var_pad_size       = 0
+        var_pad_xcoord     = 0
+        var_pad_ycoord     = 0
 
-        var_line_width    = 0
-        var_line_start_xy = []
-        var_line_end_xy   = []
+        var_segment_start  = []
+        var_segment_end    = []
+
+        var_line_width     = 0
+        var_line_start_xy  = []
+        var_line_end_xy    = []
 
 
         f = open(filename, 'r')
@@ -135,6 +138,7 @@ class pcbfile(gcode):
                                     #new_pad = kicad_pad()
                                     print("PAD %s AT %s %s" %(self.cur_module, toked[i+1], toked[i+2]) ) 
 
+
                             #-------------------------------
                             # if we found a module - store the depth it was found at and the name     
                             if tok[1:] == 'module':
@@ -143,7 +147,47 @@ class pcbfile(gcode):
 
 
                             #-------------------------------
+                            
+                            
+
                             # parsing objects happens outside of modules 
+                            if tok[1:] == 'start' and self.oneup_entity == 'gr_arc':
+                                print("gr_arc start", toked[i+1], toked[i+2]  ) 
+
+                            if tok[1:] == 'start' and self.oneup_entity == 'via':
+                                print("via start", toked[i+1], toked[i+2]  ) 
+
+                            if tok[1:] == 'pts' and self.oneup_entity == 'gr_poly':
+                                print("gr_poly start", toked[i+1], toked[i+2]  ) 
+
+
+                            if tok[1:] == 'center' and self.oneup_entity == 'gr_circle':
+                                print("gr_circle ", toked[i+1], toked[i+2]  ) 
+
+
+                            # Segment parsing 
+                            if tok[1:] == 'start' and self.oneup_entity == 'segment':
+                                print("segment start ", toked[i+1], toked[i+2]  ) 
+                                var_segment_start  = [toked[i+1], toked[i+2]]
+                            
+                            if tok[1:] == 'end' and self.oneup_entity == 'segment':
+                                print("segment end ", toked[i+1], toked[i+2]  ) 
+                                var_segment_end  = [toked[i+1], toked[i+2]]
+
+
+                            if  var_segment_start and var_segment_end:
+                                pts =[ (self.scrub(var_segment_start[0]), self.scrub(var_segment_start[1]),0) , 
+                                       (self.scrub(var_segment_end[0])  , self.scrub(var_segment_end[1])  ,0) ]
+                                poly = [(1,2)]
+                                self.insert_polygons(poly, pts)   
+                                
+                                # reset for next line 
+                                var_segment_start = None                              
+                                var_segment_end = None  
+
+                            #-------------------
+
+                            # Line parsing  
                             if tok[1:] == 'start' and self.oneup_entity == 'gr_line':
                                 #print("GR LINE start", toked[i+1], toked[i+2]  ) 
                                 var_line_start_xy = [toked[i+1], toked[i+2]]
@@ -157,7 +201,11 @@ class pcbfile(gcode):
                                 pts =[ (self.scrub(var_line_start_xy[0]), self.scrub(var_line_start_xy[1]),0) , 
                                        (self.scrub(var_line_end_xy[0])  , self.scrub(var_line_end_xy[1])  ,0) ]
                                 poly = [(1,2)]
-                                self.insert_polygons(poly, pts)                                
+                                self.insert_polygons(poly, pts)   
+                                
+                                # reset for next line 
+                                var_line_start_xy = None                              
+                                var_line_end_xy = None  
 
                             #-------------------------------                                
                             self.parse_depth += 1
