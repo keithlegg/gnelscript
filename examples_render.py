@@ -7,8 +7,8 @@ from pygfx.point_ops import *
 from pygfx.math_ops import  *
 from pygfx.obj3d import  *
 
-
-from pygfx.raytrace import  *
+if NUMPY_IS_LOADED:
+    from pygfx.raytrace import  *
 
 
 
@@ -52,20 +52,16 @@ def basic_animation():
     ropr.anim(objs=[obj], init_rots=(0,0,0), linethick=5, numframes=5, scale=150 )
 #    anim(self, objs, init_rots=(0,0,0), linethick=5, numframes=5, scale=150):
 
-# basic_animation()
 
 #######################################################
 
-# run the raytracer 
+if NUMPY_IS_LOADED:
+    # run the raytracer 
+    def raytrace():
+        
+        rtrace = raytracer() 
+        rtrace.save_image( rtrace.main() )
 
-def raytrace():
-    
-    rtrace = raytracer() 
-    rtrace.save_image( rtrace.main() )
- 
-
-
-raytrace() 
 
 
 #######################################################

@@ -465,8 +465,9 @@ class vec3(object):
         return type(self)(abs(self.x), abs(self.y), abs(self.z))
 
     def __add__(self, other):
-        if isinstance(other, np.ndarray):
-            return type(self)(self.x+other[0], self.y+other[1], self.z+other[2])
+        if NUMPY_IS_LOADED:
+            if isinstance(other, np.ndarray):
+                return type(self)(self.x+other[0], self.y+other[1], self.z+other[2])
         if isinstance(other, float) or isinstance(other, int):
             return type(self)(self.x+other, self.y+other, self.z+other)
         if isinstance(other, vec3):                    
@@ -475,8 +476,9 @@ class vec3(object):
             return type(self)(self.x+other[0], self.y+other[1], self.z+other[2])  
 
     def __sub__(self, other):
-        if isinstance(other, np.ndarray):
-            return type(self)(self.x-other[0], self.y-other[1], self.z-other[2])
+        if NUMPY_IS_LOADED:
+            if isinstance(other, np.ndarray):
+                return type(self)(self.x-other[0], self.y-other[1], self.z-other[2])
         if isinstance(other, float) or isinstance(other, int):
             return type(self)(self.x-other, self.y-other, self.z-other)
         if isinstance(other, vec3):                    
@@ -485,8 +487,9 @@ class vec3(object):
             return type(self)(self.x-other[0], self.y-other[1], self.z-other[2])  
 
     def __mul__(self, other):
-        if isinstance(other, np.ndarray):
-            return type(self)(self.x*other[0], self.y*other[1], self.z*other[2])
+        if NUMPY_IS_LOADED:
+            if isinstance(other, np.ndarray):
+                return type(self)(self.x*other[0], self.y*other[1], self.z*other[2])
         if isinstance(other, float) or isinstance(other, int):
             return type(self)(self.x*other, self.y*other, self.z*other)
         if isinstance(other, vec3):
@@ -614,10 +617,11 @@ class vec3(object):
             return (vecpt-pt) - ( np.dot((vecpt-pt), unitvec) ) * unitvec
         return None 
 
-    @property
-    def as_np(self):
-        """  get this vec3 as an np.array """ 
-        return self.copy(vtype='numpy')
+    if NUMPY_IS_LOADED:
+        @property
+        def as_np(self):
+            """  get this vec3 as an np.array """ 
+            return self.copy(vtype='numpy')
 
     def insert(self, iterable):
         """ convert an np.array, tuple or list  to vec3  
@@ -1461,8 +1465,8 @@ class matrix44(object):
 
             return  (outx, outy, outz, outw)
 
-
-        if isinstance(n, vec3) or isinstance(n, np.ndarray):
+   
+        if isinstance(n, vec3): # or isinstance(n, np.ndarray):
             # column major -                      why add the last 12,13,14 ? (affine?)            
             # outx = self.m[0] * n.x + self.m[4] * n.y + self.m[8]  * n.z     + self.m[12]
             # outy = self.m[1] * n.x + self.m[5] * n.y + self.m[9]  * n.z     + self.m[13]
