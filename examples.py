@@ -10,6 +10,17 @@ from pygfx.obj3d import  *
 
 
 
+## obj = object3d()
+## obj.load('objects/cube.obj')
+## #pids = obj.indexer( slice=(0,20), nth=4 ) 
+## geom = obj.sub_select_geom( slice=(0,'n') )
+## 
+## for g in geom:
+##     print(g)
+
+        
+PYCORE_OBJ_IN = 'objects/sphere.obj'
+PYCORE_OBJ_OUT = 'PYCORE.obj'
 
 
 #####################################################
@@ -20,11 +31,13 @@ def test_copysop():
         optional loop and increment 
     """
     obj = object3d() 
-    obj.load('objects/sphere.obj')
+    obj.load(PYCORE_OBJ_IN)
 
     #be cautious of large number of polys. It gets slow real quick!
-    obj.copy_sop(slice=(1,10), offset=(0,2,0), num=5, distance=.75)
-    obj.save('stax.obj')
+    obj.copy_sop(slice=(1,20), offset=(0,.5,0), num=2, distance=.5)
+    obj.save(PYCORE_OBJ_OUT)
+
+
 
 
 #####################################################
@@ -47,7 +60,7 @@ def test_rotate_points():
     #pts = [(2,2,2), (4,4,4), (8,8,8)]
     pts2 = obj.rotate_pts((45,45,45) )
     #print(pts2)
-    obj.save('foo.obj')
+    obj.save(PYCORE_OBJ_OUT)
 
 #####################################################
 def modify_part_of_an_object():
@@ -64,7 +77,7 @@ def modify_part_of_an_object():
 
     obj2 = object3d() 
     obj2.insert_polygons(geom[0], newpts  )      
-    obj2.save('sphere_modify.obj')
+    obj2.save(PYCORE_OBJ_OUT)
 
 #####################################################
 def triangulate_test():
@@ -76,7 +89,7 @@ def triangulate_test():
     obj.prim_circle() 
     obj.radial_triangulate_obj( offset=None)#as_new_obj=False
     #obj.radial_triangulate_obj()
-    obj.save('triangulated.obj')
+    obj.save(PYCORE_OBJ_OUT)
 
 #####################################################
 def multi_face_triangulate_offset():
@@ -97,7 +110,7 @@ def multi_face_triangulate_offset():
     #    print(i)
     #    obj.radial_triangulate_face(i, offset=n[1] , as_new_obj= True )
 
-    obj.save("durian_fruit.obj")
+    obj.save(PYCORE_OBJ_OUT)
 
 
 #####################################################
@@ -114,7 +127,7 @@ def circle_with_cube_all_pts():
         tmp.prim_cube(size=.05, pos=pt, rot=(ct,ct,ct), pivot='world')
         ct += 10
         obj.insert(tmp)  
-    obj.save("cubey.obj")
+    obj.save(PYCORE_OBJ_OUT)
 
 
 #####################################################
@@ -133,7 +146,7 @@ def spherical_to_point():
             pt=  sp.to_cartesian() 
             obj.prim_cube(pos=pt, size=.1, linecolor=(255,0,0), rot=(0,0,0), pivot='world')
 
-    obj.save('ball_of_cubes.obj') 
+    obj.save(PYCORE_OBJ_OUT) 
 
 
 
@@ -151,42 +164,42 @@ def object_primitives():
     do_flush = True
 
     obj.prim_line( axis=axis, pos=position, rot=rotation, size=size)
-    obj.save("new_line.obj")
+    obj.save(PYCORE_OBJ_OUT)
     if do_flush:
         obj.flush()
 
     obj.prim_triangle( axis=axis, pos=position, rot=rotation, size=size)
-    obj.save("new_triangle.obj")
+    obj.save(PYCORE_OBJ_OUT)
     if do_flush:
         obj.flush()
 
     obj.prim_quad( axis=axis, pos=position, rot=rotation, size=size)
-    obj.save("new_quad.obj")
+    obj.save(PYCORE_OBJ_OUT)
     if do_flush:
         obj.flush()
 
     obj.prim_circle( axis=axis, pos=position, dia=size) #rot=rotation
-    obj.save("new_circle.obj")
+    obj.save(PYCORE_OBJ_OUT)
     if do_flush:
         obj.flush()
 
     obj.prim_sphere(  pos=position, rot=rotation, size=size)
-    obj.save("new_sphere.obj")
+    obj.save(PYCORE_OBJ_OUT)
     if do_flush:
         obj.flush()
 
     obj.prim_locator(  pos=position, rot=rotation, size=size)
-    obj.save("new_locator.obj")
+    obj.save(PYCORE_OBJ_OUT)
     if do_flush:
         obj.flush()
 
     obj.prim_locator_xyz(  pos=position, rot=rotation, size=size)
-    obj.save("new_locator_xyz.obj")
+    obj.save(PYCORE_OBJ_OUT)
     if do_flush:
         obj.flush()
 
     obj.prim_cone( axis=axis, pos=position, dia=size) #rot=rotation
-    obj.save("new_cone.obj")
+    obj.save(PYCORE_OBJ_OUT)
     if do_flush:
         obj.flush()
 
@@ -210,7 +223,7 @@ def test_point_transform():
 
     obj.points = obj.xform_pts( (0,2,0),  pts=obj.points ) 
 
-    obj.save('ptgrp.obj')
+    obj.save(PYCORE_OBJ_OUT)
 
 
 
@@ -243,7 +256,7 @@ def model_geom_from_scratch():
     # see what we have done, or not done 
     obj.show() 
 
-    obj.save("my_new_object.obj")
+    obj.save(PYCORE_OBJ_OUT)
 
 
 
@@ -269,7 +282,7 @@ def model_obj_from_scratch():
     #add new polygon in a new "shell" 
     obj.insert_polygons( [(1,2,3,4)], [(3,3,3), (3,-4,5), (-4,-2.5,3.1), (6.2,-2.7,8)], asnew_shell=True)
 
-    obj.save("my_new_object.obj")
+    obj.save(PYCORE_OBJ_OUT)
 
 
 #####################################################
@@ -298,12 +311,12 @@ def model_geom_from_scratch_calc_normals():
 
     # see what we have done, or not done 
     # obj.show() 
-    obj.save("new_geom.obj")
+    obj.save(PYCORE_OBJ_OUT)
 
     #######################
     obj2 = object3d()
     obj2.vectorlist_to_obj([normal.normal]) #, pos=centroid)
-    obj2.save("new_normal.obj")
+    obj2.save(PYCORE_OBJ_OUT)
 
 #model_geom_from_scratch_calc_normals() 
 
@@ -327,7 +340,7 @@ def face_extrude():
             ct+=1
         obj.extrude_face(i, 10/i)
 
-    obj.save('extrudez.obj')
+    obj.save(PYCORE_OBJ_OUT)
 
 #####################################################
 
@@ -347,4 +360,4 @@ def circle_with_cube_all_pts():
         tmp.prim_cube(linecolor=(255,0,0), size=.05, pos=pt, rot=(ct,ct,ct), pivot='world')
         ct += 10
         obj.insert(tmp)  
-    obj.save("cube_pts.obj")
+    obj.save(PYCORE_OBJ_OUT)

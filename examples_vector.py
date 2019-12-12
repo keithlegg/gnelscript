@@ -8,11 +8,87 @@ from pygfx.render import *
 
 
 
-
+PYCORE_OBJ_IN = 'objects/sphere.obj'
+PYCORE_OBJ_OUT = 'PYCORE.obj'
 
 
 mu = math_util() 
 
+
+
+
+#####################################################
+def rotate_around_vec():
+    """ uses numpy!
+
+        test of function to generate a matrix 
+        that will rotate around a vector 
+
+        see also matrix.from_euler()
+
+    """
+
+    obj = object3d()
+
+    #add first vector that will be rotated Y axis
+    obj.one_vec_to_obj( (0,1,0) ) 
+    ptgrp = obj.get_pt_grp()    
+
+    # construct a matrix to transform them 
+    rotated_m33 = matrix33()
+    m = rotated_m33.from_vec3( vec3(1,0,0) , -45) 
+    
+    
+    # apply the matrix to the points in the model 
+    rotated_points = obj.apply_matrix_ptgrp(ptgrp, m33=m) 
+    obj.insert_pt_grp(rotated_points)
+
+    #add second vector to compare X axis *2 
+    obj.one_vec_to_obj( (2,0,0) )     
+    obj.save(PYCORE_OBJ_OUT)
+
+# rotate_around_vec()
+
+
+#####################################################
+
+def render_m33_as_vec3s(m33, transpose=False, vlist=None):
+    """ create renderable line geom to visualize a matrix 
+        vlist is an optional list of vectors to append 
+        to aid in visualizing 
+    """
+
+    # a=1,b=0,c=0,
+    # d=0,e=1,f=0,
+    # g=0,h=0,i=1):
+
+    if transpose:
+        v1 = vec3(m33[0], m33[3], m33[6])
+        v2 = vec3(m33[1], m33[4], m33[7])
+        v3 = vec3(m33[2], m33[5], m33[8])  
+    else:
+        v1 = vec3(m33[0], m33[1], m33[2])
+        v2 = vec3(m33[3], m33[4], m33[5])
+        v3 = vec3(m33[6], m33[7], m33[8])
+    
+    obj = object3d()
+    rendervecs = [v1,v2,v3]
+    rendervecs.extend(vlist)
+
+    obj.vectorlist_to_obj( rendervecs )
+    obj.save(PYCORE_OBJ_OUT)       
+
+
+
+def numpy_m33_fromvec():
+    my_m33 = matrix33()
+    axis = vec3(1,1,1)
+    m = my_m33.from_vec3( axis , 90 )
+
+    render_m33_as_vec3s(m, vlist=[axis])
+
+
+#####################################################
 
 def make_right_triangle(theta, obj=None):
     """ UNTESTED 
@@ -165,7 +241,7 @@ def unit_circle_viewer( ):
     #obj.calc_circle(dia=radius, axis='z', periodic=True, spokes=23)
     obj.prim_circle(dia=radius, axis='z', spokes=23)
 
-    obj.save('original_sin.obj')
+    obj.save(PYCORE_OBJ_OUT)
 
 
 # unit_circle_viewer()
@@ -193,9 +269,9 @@ def right_triangle_viewer( xcrd, ycrd ):
 
     #obj.calc_circle(dia=radius, axis='z', periodic=True, spokes=23)
     obj.prim_circle(dia=radius, axis='z', spokes=23)
-    obj.save('original_sin.obj')
+    obj.save(PYCORE_OBJ_OUT)
 
-# right_triangle_viewer(2,2)
+#right_triangle_viewer(2,2)
 
 
 #####################################################
@@ -211,10 +287,10 @@ def visualize_cross_product():
     obj.one_vec_to_obj( a.cross(b).normal )
     #obj.one_vec_to_obj( a.cross(b) )
 
-    obj.save('cross_product.obj')
+    obj.save(PYCORE_OBJ_OUT)
 
 
-visualize_cross_product()
+#visualize_cross_product()
 
 #####################################################
 
@@ -238,38 +314,11 @@ def offset_between_2vecs():
     #it becomes a lot more illustrative if we connect the two endpoints 
     obj.one_vec_to_obj( c, a )  
 
-    obj.save('offset_between.obj')
+    obj.save(PYCORE_OBJ_OUT)
 
 
 #offset_between_2vecs() 
 
-#####################################################
-def rotate_around_vec():
-    """ test of function to generate a matrix 
-        that will rotate around a vector 
-
-        see also matrix.from_euler()
-
-    """
-
-    obj = object3d()
-
-    #add first vector that will be rotated Y axis
-    obj.one_vec_to_obj( (0,1,0) ) 
-    ptgrp = obj.get_pt_grp()    
-
-    # construct a matrix to transform them 
-    rotated_m33 = matrix33()
-    m = rotated_m33.from_vec3( vec3(1,0,0) , -45) 
-    
-    
-    # apply the matrix to the points in the model 
-    rotated_points = obj.apply_matrix_ptgrp(ptgrp, m33=m) 
-    obj.insert_pt_grp(rotated_points)
-
-    #add second vector to compare X axis *2 
-    obj.one_vec_to_obj( (2,0,0) )     
-    obj.save('vectorDaCleaner.obj')
 
 
 #####################################################
@@ -293,7 +342,7 @@ def make_normal_all_faces():
 
     obj2 = object3d()    
     obj2.vectorlist_to_obj(vectors)
-    obj2.save('normals.obj') 
+    obj2.save(PYCORE_OBJ_OUT) 
 
 # make_normal_all_faces() 
 
@@ -321,7 +370,7 @@ def load_build_another_from_normals(objectpath):
 
         obj2.vectorlist_to_obj(edges[1])
 
-    obj2.save("all_face_normals.obj")
+    obj2.save(PYCORE_OBJ_OUT)
 
     ropr = simple_render()
     ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
@@ -354,7 +403,7 @@ def model_geom_from_scratch_calc_normals():
 
     # see what we have done, or not done 
     # obj.show() 
-    obj.save("new_geom.obj")
+    obj.save(PYCORE_OBJ_OUT)
 
     #######################
     obj2 = object3d()
@@ -400,7 +449,7 @@ def build_orthogonal_vector():
     #obj.one_vec_to_obj( d*-1 )   
     obj.one_vec_to_obj( d , pt1 )   
 
-    obj.save('perpendicular.obj')
+    obj.save(PYCORE_OBJ_OUT)
 
 
 # build_orthogonal_vector() 

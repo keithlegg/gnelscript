@@ -82,7 +82,7 @@ def pt_is_near(self, pt1, pt2, dist ):
 
 def select_by_location(self, select_type, pt_two, dist):
 
-def sub_select(self, slice=None, ids=None):
+def indexer(self, slice=None, ids=None):
 
 def geom_to_ptgrp(self, geom):
 

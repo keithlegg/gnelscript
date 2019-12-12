@@ -24,6 +24,8 @@ else:
 
 
 
+
+
 class point_operator(object):
     """ what became of the original point generator 
         deal with raw points, not geom, ptgrps, facgrps. JUST points 
@@ -309,14 +311,14 @@ class polygon_operator(point_operator):
   
         --------------------------------------------
 
-        GEOM                   = [ [], [] ]
+        POLY                   = [ FID, FID, ... ]
+        GEOM (just points)     = [ [(pt),(pt),(pt),(pt),... ] ]
         GEOM                   = [ [(poly),(poly),..], [(pt),(pt),(pt),(pt),... ] ]
-        GEOM (extended)        = [ [(poly),(poly),..], [(pt),(pt),(pt),(pt),... ] ]
+        GEOM extended          = [ [(poly),..], [(pt),... ] , [normal...], [uv,...], [color,...]   ]
 
         --------------------------------------------
         
         PTGRP                  = [ [ID,(PT)], [ID,(PT)] ]
-        PTGRP (extended)       = [ [ID,(PT)], [ID,(PT)] ,   [COLOR], [NORMAL], [META] ]        
 
         FACEGRP (not implemented)          = [ [ID,(POLY)], [ID,(POLY)], .. ]
 
@@ -357,6 +359,18 @@ class polygon_operator(point_operator):
         # "unavoidable side effect" variables 
         self.exprt_ply_idx   = 1     # obj is NOT zero indexed
         #self.exprt_pnt_idx   = 0    # pts ARE zero indexed (everything BUT .obj face idx's are)
+
+    @property
+    def lastpt(self):
+        return self.points[len(self.points)-1]
+
+    @property
+    def lastfid(self):
+        return self.polygons[len(self.polygons)-1]
+
+    @property
+    def numfids(self):
+        return len(self.polygons)-1
 
     ###############################################  
     def scribe(self, str):
@@ -650,21 +664,26 @@ class polygon_operator(point_operator):
 
 
     ###############################################         
-    def sub_select(self, slice=None, ids=None):
-        """ interface to get a list of IDS for whatever
-            this is simply a fast way to genrate a bunch of sequential numbers 
-            mostly for indexing a punch of things like faces, etc 
+    def indexer(self, ids=None, slice=None, unique=True, nth=None):
+        """ indexer 
+            
+            generate a fancy list of ints 
+
+            start with optional list of ids 
+            add in a slice 
+            choose to count by Nths, single or list of them 
+                - negative Nths remove 
+            unique is True by default - it guarantees each id is unique
+                - if off, an index will be repeated 
+
+         
         """
         pids = []
-  
-        # block the same face ID from being selected twice
-        # there may be cases where you WANT it twice 
-        optimize = True  
+ 
 
-        ####
         # insert list of individual ids first 
         if ids:
-            if optimize:
+            if unique:
                 for i in ids:
                     if i not in pids:
                         pids.append(i)
@@ -676,13 +695,29 @@ class polygon_operator(point_operator):
             tids = []
             # insert slice IDs (start-end range) 
             for i in range(slice[0], slice[1]+1):
-                if optimize:
+                if unique:
                     if i not in pids:
                         tids.append(i)
                 else: 
                     tids.append(i)
-      
             pids.extend(tids)
+        
+        # iterate that on Nth 
+        if nth:
+            new_pids = []
+            if type(nth)==int:
+                for i,pd in enumerate(pids):
+                    if i%nth==0:
+                        new_pids.append(pd)
+            #list Nth is experimental - needs more thought 
+            #now its a weird looping construct           
+            # if type(nth)==list:    
+            #     for n in nth:
+            #         for i,pd in enumerate(pids):
+            #             if i%n==0:
+            #                 new_pids.append(pd)
+            pids = new_pids
+        
 
         return pids 
 
@@ -726,10 +761,13 @@ class polygon_operator(point_operator):
         # relative, to each sub select 
         # other function can auto increment, thus allowing polygons reordering in chunks 
         self.exprt_ply_idx = 1
+        
+        if slice[1]=='n' or slice[1]=='N':
+            slice = (slice[0], self.numfids )
 
-        pids = self.sub_select(slice=slice, ids=ids)
+        pids = self.indexer(slice=slice, ids=ids)
 
-        # print('## debug, sub_select_geom pids : ', pids) 
+        # print('## debug, indexer_geom pids : ', pids) 
 
         for i in pids:
          
@@ -815,7 +853,7 @@ class polygon_operator(point_operator):
             return out
 
         else:
-            pids = self.sub_select( slice=slice, ids=ids)
+            pids = self.indexer( slice=slice, ids=ids)
 
             for p in pids:
                 out.append( [p, self.points[p]] )
@@ -830,7 +868,7 @@ class polygon_operator(point_operator):
             data format [ [ID, face] ]
 
         """
-        fids = self.sub_select( slice=slice, ids=ids)
+        fids = self.indexer( slice=slice, ids=ids)
 
 
         pass
@@ -1225,7 +1263,7 @@ class polygon_operator(point_operator):
         """
 
 
-        pids = self.sub_select( slice=slice, ids=ids) 
+        pids = self.indexer( slice=slice, ids=ids) 
 
         geom     = self.sub_select_geom( ids=pids, reindex=True )
         tmpnrmls = self.get_face_normal(fid=pids, unitlen=True) 
@@ -1586,6 +1624,9 @@ class polygon_operator(point_operator):
                                         # second slash delineated integer is face UV
                                         if tmp[1]: 
                                             uv_poly.append(int(tmp[1]))
+                                        
+                                        # third item is vertex normal 
+                                        #if tmp[2]: 
 
 
                                 else:    
@@ -1593,7 +1634,7 @@ class polygon_operator(point_operator):
 
                             self.polygons.append( poly )
                             self.uv_polys.append(uv_poly) 
-
+                             
                         # NORMALS
                         if tok[0]=='vn':
                             # debug - count the data being loaded and do sanity checks,
