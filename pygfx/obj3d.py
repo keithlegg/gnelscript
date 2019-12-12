@@ -2,8 +2,8 @@
 import math 
 
 
-from pygfx.point_ops import polygon_operator
-from pygfx.math_ops import vec3 
+from pyrender2.pygfx.point_ops import polygon_operator
+from pyrender2.pygfx.math_ops import vec3 
 
 
 ###############################################

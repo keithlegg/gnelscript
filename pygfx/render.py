@@ -1,11 +1,10 @@
 
 
-from pygfx.raster_ops import *
-from pygfx.point_ops import *
+from pyrender2.pygfx.raster_ops import *
+from pyrender2.pygfx.point_ops import *
 
-
-from pygfx.math_ops import math_util as mu
-from pygfx.math_ops import NUMPY_IS_LOADED
+from pyrender2.pygfx.math_ops import math_util as mu
+from pyrender2.pygfx.math_ops import NUMPY_IS_LOADED
 
 #from pygfx.math_ops import matrix33, vec2, vec3  
 

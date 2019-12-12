@@ -5,10 +5,11 @@ import math
 
 
 
+from pyrender2 import NUMPY_IS_LOADED
 
 
-from pygfx.math_ops import math_util as mu
-from pygfx.math_ops import NUMPY_IS_LOADED, matrix33, matrix44, vec2, vec3  
+from pyrender2.pygfx.math_ops import math_util as mu
+from pyrender2.pygfx.math_ops import NUMPY_IS_LOADED, matrix33, matrix44, vec2, vec3  
 
 
 
@@ -762,8 +763,9 @@ class polygon_operator(point_operator):
         # other function can auto increment, thus allowing polygons reordering in chunks 
         self.exprt_ply_idx = 1
         
-        if slice[1]=='n' or slice[1]=='N':
-            slice = (slice[0], self.numfids )
+        if slice:
+            if slice[1]=='n' or slice[1]=='N':
+                slice = (slice[0], self.numfids )
 
         pids = self.indexer(slice=slice, ids=ids)
 

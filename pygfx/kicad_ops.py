@@ -3,7 +3,7 @@ import re
 
 
 #from pygfx.obj3d import object3d
-from pygfx.milling_ops import gcode
+from pyrender2.pygfx.milling_ops import gcode
 
 
 ## class kicad_line(object):

@@ -3,7 +3,7 @@
 import math 
 import os 
 
-from pygfx.math_ops import math_util as mu
+from pyrender2.pygfx.math_ops import math_util as mu
 
 
 class point_operator_2d(object):

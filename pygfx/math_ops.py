@@ -5,10 +5,8 @@ import itertools
 import math
 import os
 
+from pyrender2 import NUMPY_IS_LOADED
 
-
-#kill switch for numpy integration 
-NUMPY_IS_LOADED = True 
 
 if NUMPY_IS_LOADED:
     # print(' ## debug - loading numpy module. ')
