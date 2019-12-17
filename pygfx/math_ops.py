@@ -1420,7 +1420,6 @@ class matrix44(object):
             ct = 0
             for lin in f.readlines():
                 c = lin.replace('\n','').split(' ')
-                print(c)
                 if ct==0:
                     self.m[0]=float(c[0])
                     self.m[1]=float(c[1])

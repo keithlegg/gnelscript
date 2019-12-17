@@ -319,7 +319,7 @@ class PixelOp (RasterObj):
     ################################################################# 
 
 
-    def render_line_2d(self, pts, invert_y=True, origin=(0,0), scale=10):
+    def render_line_2d(self, pts, invert_y=False, origin=(0,0), scale=10):
         """ this will draw a point in 2d from the center of the image 
             the only slightly special thing going on here is the scale factor 
             this allows for an image with variable grid size 
