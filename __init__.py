@@ -4,7 +4,7 @@
 
 
 #kill switch for numpy integration 
-NUMPY_IS_LOADED = False 
+NUMPY_IS_LOADED = True 
 
 
 

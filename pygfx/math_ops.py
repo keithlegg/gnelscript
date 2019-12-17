@@ -1414,6 +1414,36 @@ class matrix44(object):
         self.mu = math_util()
         self.m = [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p]
 
+    def load_file(self, filename, transpose=False):
+       if os.path.lexists(filename):
+            f = open( filename,"r", encoding='utf-8')
+            ct = 0
+            for lin in f.readlines():
+                c = lin.replace('\n','').split(' ')
+                print(c)
+                if ct==0:
+                    self.m[0]=float(c[0])
+                    self.m[1]=float(c[1])
+                    self.m[2]=float(c[2])
+                    self.m[3]=float(c[3])                                                        
+                if ct==1:
+                    self.m[4]=float(c[0])
+                    self.m[5]=float(c[1])
+                    self.m[6]=float(c[2])
+                    self.m[7]=float(c[3])  
+                if ct==2:
+                    self.m[8]=float(c[0])
+                    self.m[9]=float(c[1])
+                    self.m[10]=float(c[2])
+                    self.m[11]=float(c[3])  
+                if ct==3:
+                    self.m[12]=float(c[0])
+                    self.m[13]=float(c[1])
+                    self.m[14]=float(c[2])
+                    self.m[15]=float(c[3])  
+
+                ct += 1
+
     def __getitem__(self, index):
         return self.m[index]
 
