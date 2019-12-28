@@ -4,8 +4,8 @@ import os, sys, math
 
 from PIL import Image, ImageOps
 
-from pyrender2.pygfx.math_ops import  NUMPY_IS_LOADED
-from pyrender2.pygfx.point_ops_2d import point_operator_2d
+from gnelscript.pygfx.math_ops import  NUMPY_IS_LOADED
+from gnelscript.pygfx.point_ops_2d import point_operator_2d
 
 
 if NUMPY_IS_LOADED:

@@ -15,12 +15,12 @@ import numpy as np
 
 
 #required for framebuffer 
-from pyrender2.pygfx.raster_ops import *
+from gnelscript.pygfx.raster_ops import *
 
 #not required, but FUN! 
-#from pyrender2.pygfx.point_ops import *
-#from pyrender2.pygfx.math_ops import  *
-from pyrender2.pygfx.obj3d import  *
+#from gnelscript.pygfx.point_ops import *
+#from gnelscript.pygfx.math_ops import  *
+from gnelscript.pygfx.obj3d import  *
 
 export = object3d() 
 

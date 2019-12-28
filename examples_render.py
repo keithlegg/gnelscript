@@ -7,7 +7,7 @@ from pygfx.point_ops import *
 from pygfx.math_ops import  *
 from pygfx.obj3d import  *
 
-from pyrender2 import NUMPY_IS_LOADED
+from gnelscript import NUMPY_IS_LOADED
 
 if NUMPY_IS_LOADED:
     from pygfx.raytrace import  *

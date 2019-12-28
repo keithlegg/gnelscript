@@ -5,7 +5,7 @@ import itertools
 import math
 import os
 
-from pyrender2 import NUMPY_IS_LOADED
+from gnelscript import NUMPY_IS_LOADED
 
 
 if NUMPY_IS_LOADED:

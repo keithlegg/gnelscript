@@ -1,10 +1,10 @@
 
 
-from pyrender2.pygfx.raster_ops import *
-from pyrender2.pygfx.point_ops import *
+from gnelscript.pygfx.raster_ops import *
+from gnelscript.pygfx.point_ops import *
 
-from pyrender2.pygfx.math_ops import math_util as mu
-from pyrender2.pygfx.math_ops import NUMPY_IS_LOADED
+from gnelscript.pygfx.math_ops import math_util as mu
+from gnelscript.pygfx.math_ops import NUMPY_IS_LOADED
 
 #from pygfx.math_ops import matrix33, vec2, vec3  
 
@@ -687,7 +687,7 @@ class simple_render(object):
         """
             #buggy! 
 
-              File "XXXX/pyrender2/pygfx/point_ops.py", line 394, in z_sort
+              File "XXXX/gnelscript/pygfx/point_ops.py", line 394, in z_sort
                 tmp.sort(reverse=True)
             TypeError: '<' not supported between instances of 'list' and 'tuple'
        

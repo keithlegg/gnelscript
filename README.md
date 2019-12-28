@@ -1,7 +1,7 @@
 
-![alt text](https://github.com/keithlegg/pyrender2/blob/master/images/example/monkey_tex.png) 
+![alt text](https://github.com/keithlegg/gnelscript/blob/master/images/example/monkey_tex.png) 
 
-# pyrender2
+# gnelscript
 
 
 Render, 3D Model and composite images in pure python. 

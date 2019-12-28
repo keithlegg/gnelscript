@@ -5,11 +5,11 @@ import math
 
 
 
-from pyrender2 import NUMPY_IS_LOADED
+from gnelscript import NUMPY_IS_LOADED
 
 
-from pyrender2.pygfx.math_ops import math_util as mu
-from pyrender2.pygfx.math_ops import NUMPY_IS_LOADED, matrix33, matrix44, vec2, vec3  
+from gnelscript.pygfx.math_ops import math_util as mu
+from gnelscript.pygfx.math_ops import NUMPY_IS_LOADED, matrix33, matrix44, vec2, vec3  
 
 
 

@@ -10,11 +10,11 @@ import re
 
 import os 
 
-from pyrender2.pygfx.obj3d import object3d
+from gnelscript.pygfx.obj3d import object3d
 
 
 #from pygfx.gcode.bridgeport import  parser_commands
-from pyrender2.pygfx.gcode.linuxcnc import  parser_commands
+from gnelscript.pygfx.gcode.linuxcnc import  parser_commands
 
 
 
