@@ -1,9 +1,9 @@
 
 """
-from pygfx.render import *
-from pygfx.point_ops import *
-from pygfx.math_ops import  *
-from pygfx.obj3d import  *
+from gnelscript.pygfx.render import *
+from gnelscript.pygfx.point_ops import *
+from gnelscript.pygfx.math_ops import  *
+from gnelscript.pygfx.obj3d import  *
 """
 
 """ 
@@ -17,9 +17,9 @@ from pygfx.obj3d import  *
 
 #from pygfx.obj3d import  *
 
-from pygfx.kicad_ops import * 
+from gnelscript.pygfx.kicad_ops import * 
 
-from pygfx.milling_ops import * 
+from gnelscript.pygfx.milling_ops import * 
 
 
 gc_poly = gcode()
@@ -56,14 +56,14 @@ kicad = pcbfile()
 #kicad.load_kicadpcb('gcode/kicad/sample1.kicad_pcb')
 #kicad.load_kicadpcb('gcode/kicad/zipper.kicad_pcb')
 #kicad.load_kicadpcb('gcode/kicad/simple.kicad_pcb')
-kicad.load_kicadpcb('gcode/kicad/cnc1.kicad_pcb')
+#kicad.load_kicadpcb('gcode/kicad/cnc1.kicad_pcb')
 
 
 # kicad.show_geom()
 
 
 
-kicad.save_3d_obj('kicad.obj') 
+#kicad.save_3d_obj('kicad.obj') 
 
 #kicad.show_modules()
 #-------------------------------

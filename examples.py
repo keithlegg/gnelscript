@@ -1,9 +1,9 @@
 
 
-from pygfx.render import *
-from pygfx.point_ops import *
-from pygfx.math_ops import  *
-from pygfx.obj3d import  *
+from gnelscript.pygfx.render import *
+from gnelscript.pygfx.point_ops import *
+from gnelscript.pygfx.math_ops import  *
+from gnelscript.pygfx.obj3d import  *
 
 
 

@@ -1,9 +1,9 @@
 
-from pygfx.math_ops import  *
-from pygfx.raster_ops import *
-from pygfx.point_ops import *
-from pygfx.point_ops_2d import *
-from pygfx.obj3d import  *
+from gnelscript.pygfx.math_ops import  *
+from gnelscript.pygfx.raster_ops import *
+from gnelscript.pygfx.point_ops import *
+from gnelscript.pygfx.point_ops_2d import *
+from gnelscript.pygfx.obj3d import  *
 
 
 mu = math_util() 
