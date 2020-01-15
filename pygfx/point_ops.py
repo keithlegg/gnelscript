@@ -1697,12 +1697,14 @@ class polygon_operator(point_operator):
         #DEBUG - PUT MORE ERROR CHECKING ON VERTS, I HAD SOME BAD DATA GET THROUGH 
         #EX: - v 1 2 3) (4,5,6)
         for p in self.points:
-            if len(p) != 3:
+            if len(p) == 3:
+                buf.append('v %s %s %s'%( p[0], p[1], p[2]) ) #x y z components 
+            elif len(p) == 6:
+                buf.append('v %s %s %s %s %s %s'%( p[0], p[1], p[2], p[3], p[4], p[5]) ) #x y z components                 
+            else:
                 print('## object save - bad vertex coordinate ', p )
                 return None 
 
-            buf.append('v %s %s %s'%( p[0], p[1], p[2]) ) #x y z components 
-        
         buf.append('\n# Define the polygon geometry')
         buf.append('# No UV or normals at this time')
         for ply in self.polygons:
