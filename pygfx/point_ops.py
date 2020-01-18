@@ -46,7 +46,37 @@ class point_operator(object):
             if(t != tup):
                 out.append(t)
         return out
-            
+
+    def cubic_bezier(self, draw_steps, start, end, ctrl1, ctrl2):
+        """  """
+        
+        out = []
+       
+        
+        for i in range( draw_steps):
+            t = i / draw_steps
+            tt = t * t
+            ttt = tt * t
+            u = 1 - t
+            uu = u * u
+            uuu = uu * u
+
+            x = uuu * start[0];
+            x += 3 * uu * t * ctrl1[0]
+            x += 3 * u * tt * ctrl2[0]
+            x += ttt * end[0]
+
+            y = uuu * start[1]
+            y += 3 * uu * t * ctrl1[1]
+            y += 3 * u * tt * ctrl2[1]
+            y += ttt * end[1]
+
+            #width = Math.min(curve.startWidth + ttt * widthDelta, this.maxWidth);
+            #this._drawCurveSegment(x, y, width);
+            out.append( [x, y] )
+
+        return out
+
     def add_margin_bbox(self, bbox, size):
         """ return center (x,y) from two diagonal coordinates """
         
@@ -372,6 +402,10 @@ class polygon_operator(point_operator):
     @property
     def numfids(self):
         return len(self.polygons)-1
+
+    @property
+    def numpts(self):
+        return len(self.points)-1
 
     ###############################################  
     def scribe(self, str):
@@ -816,6 +850,22 @@ class polygon_operator(point_operator):
 
         return tmp
 
+
+    ###############################################  
+    def pts_to_ptgrp(self, pts):
+        """ 
+            pts is [pt, pt, pt  ]
+            ptgrp is [ [id, pt], [id, pt] ]
+
+        """
+
+        out = []
+        # print('############# ptgrp ', len(ptgrp), '  ', len(self.points) )  
+
+        for i,p in enumerate(pts):
+            out.append( [i,p] )  
+        return out   
+
     ###############################################  
     def insert_pt_grp(self, ptgrp):
         """ ptgrp is [ [id, pt], [id, pt] ]
@@ -824,14 +874,26 @@ class polygon_operator(point_operator):
         """
 
         out = []
+        
         # print('############# ptgrp ', len(ptgrp), '  ', len(self.points) )  
+         
 
         for p in ptgrp:
-            #print('### point ', p , len(self.points))
+            #print('### ptgrp pt ', p , len(self.points))
             # debug this runs out of range on last point 
             # KEEP ZERO INDEX for all but OBJ file? debug 
             self.points[p[0]] = p[1]
         return out    
+
+    ###############################################  
+    def append_pt_grp(self, ptgrp):
+        """ same as a list, but compatible with indexed point groups
+            ptgrp is [ [id, pt], [id, pt] ]
+        """
+        out = []
+        for p in ptgrp:
+            self.points.append(p[1]) 
+        return out 
 
     ###############################################  
     def get_pt_grp(self, slice=None, ids=None):
@@ -1158,15 +1220,20 @@ class polygon_operator(point_operator):
         rot_matrix = x_matrix * tmp_matr   
        
         ################################################
+        # if points passed in but no point group operate on pts
         if pts is not None and ptgrp is None: 
             return self.apply_matrix_pts(pts,  m44=rot_matrix)  
 
-        #if niether is specified, apply to whole object 
+        # if neither is specified, apply to whole object 
         if pts is None and ptgrp is None:
             ptgrp = self.get_pt_grp()    
 
+        # if point group is passed put output into that 
         rotated = self.apply_matrix_ptgrp(ptgrp, m44=rot_matrix) 
-        self.insert_pt_grp(rotated)
+        #self.insert_pt_grp(rotated)
+        self.append_pt_grp(rotated)
+
+
 
     ###############################################          
     def insert_polygons(self, plyids, points, asnew_shell=True, geom=None):
@@ -1218,6 +1285,48 @@ class polygon_operator(point_operator):
         
         if geom is not None:
             return geom
+
+    ###############################################  
+    def modulo(self, mod, pts):
+        """
+            iterate a "mass" of points by N and sperate into groups 
+        """
+
+        outarrays = []
+        newgrp = []
+
+        for i,p in enumerate(pts):
+           if i%mod==0:
+               outarrays.append(newgrp)
+               newgrp=[] 
+           else:
+               newgrp.append(p)
+        
+        return outarrays
+
+    ###############################################  
+    def revolve_points(self, numdivs, axis, pts):
+        
+        step = int(360/numdivs)
+
+        if axis == 'y':
+            for r in range(1, 360, step):
+                self.rotate_pts( (0,r,0), ptgrp=self.pts_to_ptgrp(pts) )
+        
+        return  self.modulo(numdivs, self.points) 
+
+
+
+    ###############################################  
+    def linegeom_fr_points(self, pts):
+        """ create renderable lines from array of pts 
+        """
+        for i in range(0,len(pts),2):
+            if i>0:
+                self.points.append(pts[i-1])
+                self.points.append(pts[i])
+                self.polygons.append([self.numfids+1, self.numfids+2])
+
 
     ###############################################  
     def extrude_face(self, f_id, distance):

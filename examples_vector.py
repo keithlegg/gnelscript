@@ -8,17 +8,32 @@ from gnelscript.pygfx.render import *
 
 
 
-PYCORE_OBJ_IN = 'objects/sphere.obj'
-PYCORE_OBJ_OUT = 'PYCORE.obj'
+# PYCORE_OBJ_IN = 'objects/sphere.obj'
+# PYCORE_OBJ_OUT = 'PYCORE.obj'
 
 
 mu = math_util() 
 
 
+# if __name__=="__main__":
+#     PYCORE_OBJ_IN   = sys.argv[1]
+#     PYCORE_GEOMPATH = "3d_obj"
+#     PYCORE_OBJ_OUT  = "%s/%s"%(PYCORE_GEOMPATH, "PYCORE.obj")
+#     PYCORE_BMP_OUT  = "py_render.bmp"
+#     M44_DISK_FILE = "camera_matrix.olm"
+#     # print("# PYCORE %s --> %s "% (PYCORE_OBJ_IN, PYCORE_OBJ_OUT) )
 
+
+# def show_env():
+#     print( PYCORE_OBJ_IN )
+#     print( PYCORE_GEOMPATH )
+#     print( PYCORE_OBJ_OUT )
+#     print( PYCORE_BMP_OUT )
+#     print( PYCORE_BMP_OUT )
+                
 
 #####################################################
-def rotate_around_vec():
+def rotate_around_vec(outfile):
     """ uses numpy!
 
         test of function to generate a matrix 
@@ -45,14 +60,14 @@ def rotate_around_vec():
 
     #add second vector to compare X axis *2 
     obj.one_vec_to_obj( (2,0,0) )     
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(outfile)
 
 # rotate_around_vec()
 
 
 #####################################################
 
-def render_m33_as_vec3s(m33, transpose=False, vlist=None):
+def render_m33_as_vec3s(m33, outfile, transpose=False, vlist=None):
     """ create renderable line geom to visualize a matrix 
         vlist is an optional list of vectors to append 
         to aid in visualizing 
@@ -76,7 +91,7 @@ def render_m33_as_vec3s(m33, transpose=False, vlist=None):
     rendervecs.extend(vlist)
 
     obj.vectorlist_to_obj( rendervecs )
-    obj.save(PYCORE_OBJ_OUT)       
+    obj.save(outfile)       
 
 
 
@@ -220,7 +235,7 @@ def angle_between_vectors():
 
 #####################################################
 
-def unit_circle_viewer( ):
+def unit_circle_viewer( outfile ):
     """ UNFINSIHED 
         playground for sin, cos, tan , etc 
         good for looking at polar coords as well 
@@ -241,7 +256,7 @@ def unit_circle_viewer( ):
     #obj.calc_circle(dia=radius, axis='z', periodic=True, spokes=23)
     obj.prim_circle(dia=radius, axis='z', spokes=23)
 
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(outfile)
 
 
 # unit_circle_viewer()
@@ -249,7 +264,7 @@ def unit_circle_viewer( ):
 #####################################################
 
 
-def right_triangle_viewer( xcrd, ycrd ):
+def right_triangle_viewer( xcrd, ycrd, outfile):
     """ UNFINSIHED 
         playground for sin, cos, tan , etc 
         good for looking at polar coords as well 
@@ -269,14 +284,14 @@ def right_triangle_viewer( xcrd, ycrd ):
 
     #obj.calc_circle(dia=radius, axis='z', periodic=True, spokes=23)
     obj.prim_circle(dia=radius, axis='z', spokes=23)
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save( outfile )
 
 #right_triangle_viewer(2,2)
 
 
 #####################################################
     
-def visualize_cross_product():
+def visualize_cross_product( outfile ):
     obj = object3d()
     a = vec3(-1,0,1)
     b = vec3(1,0,1)
@@ -287,14 +302,14 @@ def visualize_cross_product():
     obj.one_vec_to_obj( a.cross(b).normal )
     #obj.one_vec_to_obj( a.cross(b) )
 
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save( outfile )
 
 
 #visualize_cross_product()
 
 #####################################################
 
-def offset_between_2vecs():
+def offset_between_2vecs( outfile):
     """ create a vector representing offset between two points """
 
     obj = object3d()
@@ -314,7 +329,7 @@ def offset_between_2vecs():
     #it becomes a lot more illustrative if we connect the two endpoints 
     obj.one_vec_to_obj( c, a )  
 
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(outfile)
 
 
 #offset_between_2vecs() 
@@ -323,13 +338,13 @@ def offset_between_2vecs():
 
 #####################################################
 
-def make_normal_all_faces():
+def make_normal_all_faces( infile, outfile ):
     """ the zero indexing is a big problem  
         all functions should use zero indexing, but OBJ face indices are 1 indexed
         not sure how to handle it, but need to get it sorted 
     """
     obj = object3d() 
-    obj.load('objects/sphere.obj')
+    obj.load( infile )
 
     vectors = [] 
 
@@ -342,12 +357,12 @@ def make_normal_all_faces():
 
     obj2 = object3d()    
     obj2.vectorlist_to_obj(vectors)
-    obj2.save(PYCORE_OBJ_OUT) 
+    obj2.save( outfile ) 
 
 # make_normal_all_faces() 
 
 #####################################################
-def load_build_another_from_normals(objectpath):
+def load_build_another_from_normals(infile, outfile):
     """ load an object, 
         turn its normals into another line object, 
         render and save image and new object 
@@ -356,7 +371,7 @@ def load_build_another_from_normals(objectpath):
     """
 
     obj = object3d()
-    obj.load(objectpath)
+    obj.load(infile)
 
     obj2 = object3d()
 
@@ -370,7 +385,7 @@ def load_build_another_from_normals(objectpath):
 
         obj2.vectorlist_to_obj(edges[1])
 
-    obj2.save(PYCORE_OBJ_OUT)
+    obj2.save(outfile)
 
     ropr = simple_render()
     ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
