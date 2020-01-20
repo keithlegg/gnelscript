@@ -47,8 +47,189 @@ class point_operator(object):
                 out.append(t)
         return out
 
-    def cubic_bezier(self, draw_steps, start, end, ctrl1, ctrl2):
-        """  """
+    def test_data_grid(self, width, height, divs):
+        out = []
+
+        va = []
+
+        for u in range(0, width, divs):
+            va = []
+            for v in range(0, height, divs):
+                va.append(v)
+                 
+            out.append(va)     
+
+        return out
+
+    ###############################################         
+    def indexer(self, ids=None, slice=None, unique=True, nth=None):
+        """ indexer 
+            
+            generate a fancy list of ints 
+
+            start with optional list of ids 
+            add in a slice 
+            choose to count by Nths, single or list of them 
+                - negative Nths remove 
+            unique is True by default - it guarantees each id is unique
+                - if off, an index will be repeated 
+
+         
+        """
+        pids = []
+ 
+
+        # insert list of individual ids first 
+        if ids:
+            if unique:
+                for i in ids:
+                    if i not in pids:
+                        pids.append(i)
+            else: 
+                pids.extend(ids)            
+        #### 
+        # then do the slice
+        if slice:
+            tids = []
+            # insert slice IDs (start-end range) 
+            for i in range(slice[0], slice[1]+1):
+                if unique:
+                    if i not in pids:
+                        tids.append(i)
+                else: 
+                    tids.append(i)
+            pids.extend(tids)
+        
+        # iterate that on Nth 
+        if nth:
+            new_pids = []
+            if type(nth)==int:
+                for i,pd in enumerate(pids):
+                    if i%nth==0:
+                        new_pids.append(pd)
+            #list Nth is experimental - needs more thought 
+            #now its a weird looping construct           
+            # if type(nth)==list:    
+            #     for n in nth:
+            #         for i,pd in enumerate(pids):
+            #             if i%n==0:
+            #                 new_pids.append(pd)
+            pids = new_pids
+        
+
+        return pids 
+
+    ###############################################  
+    def modulo(self, mod, pts):
+        """
+            iterate a "mass" of points by N and sperate into groups 
+        """
+
+        outarrays = []
+        newgrp = []
+
+        for i,p in enumerate(pts):
+           if i%mod==0:
+               outarrays.append(newgrp)
+               newgrp=[] 
+           else:
+               newgrp.append(p)
+        
+        return outarrays
+
+    def print_gridinfo(self, grid_array):
+        print("number of columns " , len(grid_array) )
+        for column in grid_array:
+            print("number of rows " , len(column) )
+ 
+
+    def print_grid(self, grid_array):
+        for column in grid_array:
+            #print("number of rows " , len(column) )
+            print( column)   
+        
+
+    def get_grid_column(self, grid_array , colidx):
+        #print("number of columns " , len(grid_array) )
+        
+        out = []
+        for u,column in enumerate(grid_array):
+            for v,row in enumerate(column):
+                #print("number of rows " , len(column) )
+                if v == colidx:
+                    out.append(row)  
+
+        return out 
+
+    def get_grid_row(self, grid_array , rowidx):
+        #print("number of columns " , len(grid_array) )
+        
+        out = []
+        for u,column in enumerate(grid_array):
+            for v,row in enumerate(column):
+                #print("number of rows " , len(column) )
+                if u == rowidx:
+                    out.append(row)  
+
+        return out 
+
+
+    def cubic_bezier2d(self, draw_steps, start, end, ctrl1, ctrl2):
+        """  2D spline 
+            pretty much what it says it does 
+        """
+        out = []
+            
+        for i in range( draw_steps):
+            t = i / draw_steps
+            tt = t * t
+            ttt = tt * t
+            u = 1 - t
+            uu = u * u
+            uuu = uu * u
+
+            x = uuu * start[0];
+            x += 3 * uu * t * ctrl1[0]
+            x += 3 * u * tt * ctrl2[0]
+            x += ttt * end[0]
+
+            y = uuu * start[1]
+            y += 3 * uu * t * ctrl1[1]
+            y += 3 * u * tt * ctrl2[1]
+            y += ttt * end[1]
+
+
+            out.append( [x, y] )
+
+        return out
+
+    def draw_splines(self, curves, drawctrls=False, drawhulls=False):
+        """ render a spline made of multipe cubic bezier curves
+            
+            ARGS:
+                curves - array of [start, ctrl1 , ctrl2, end ]
+
+        """
+        
+        for c in curves:    
+            size = .1
+
+            if drawctrls:
+                self.prim_locator_color(pos=c[0] , rot=(0,0,0), size=size) # start 
+                self.prim_locator_color(pos=c[1] , rot=(0,0,0), size=size) # ctrl1
+                self.prim_locator_color(pos=c[2] , rot=(0,0,0), size=size) # ctrl2
+                self.prim_locator_color(pos=c[3] , rot=(0,0,0), size=size) # end
+
+            if drawhulls:
+                self.linegeom_fr_points( [c[0], c[1], c[2], c[3]], color=(0,255,0) ) 
+
+            curvepts = self.cubic_bezier(15, c[0], c[1], c[2], c[3])
+            self.linegeom_fr_points( curvepts ) 
+
+    def cubic_bezier(self, draw_steps, start, ctrl1, ctrl2, end):
+        """  2D spline 
+            pretty much what it says it does 
+        """
         
         out = []
        
@@ -71,9 +252,12 @@ class point_operator(object):
             y += 3 * u * tt * ctrl2[1]
             y += ttt * end[1]
 
-            #width = Math.min(curve.startWidth + ttt * widthDelta, this.maxWidth);
-            #this._drawCurveSegment(x, y, width);
-            out.append( [x, y] )
+            z = uuu * start[2]
+            z += 3 * uu * t * ctrl1[2]
+            z += 3 * u * tt * ctrl2[2]
+            z += ttt * end[2]
+
+            out.append( [x, y, z] )
 
         return out
 
@@ -264,6 +448,9 @@ class point_operator(object):
 
     ############################################### 
     def triangle_mean_z(self, triangle):
+        """ this is pointless and you should use centroid instead 
+            basicaly this is a "Z only" centroid 
+        """
         z1 = triangle[0][2]
         z2 = triangle[1][2]
         z3 = triangle[2][2]
@@ -271,13 +458,17 @@ class point_operator(object):
 
     ###############################################  
     def cvt_2d_to_3d(self, points):
-        """ convert 2d points into 3d by adding an empty z axis """
+        """ convert a list of 2d points into 3d by adding an empty z axis """
 
         newpts = []
         for pt in points:
             newpts.append( (pt[0], pt[1], 0)   )
         return newpts
 
+    def cvt_2dpt_to_3dpt(self, pt):
+        """ convert a single 2d point into 3d with empty z axis """
+        return (pt[0], pt[1], 0) 
+ 
     ############################################### 
     def locate_pt_along3d(self, x1, y1, z1, x2, y2, z2, num):
         """
@@ -312,7 +503,7 @@ class polygon_operator(point_operator):
 
         GEOM and GROUPS should really be another object type
 
-        I was torn between simplicity of code anf keeping a flat structure
+        I was torn between simplicity of code and keeping a flat structure
         My reasoning was that if you have a format made of arrays of numbers 
         it offers more flexiblity for importing from other languages, formats, text files, etc  
 
@@ -391,25 +582,42 @@ class polygon_operator(point_operator):
         self.exprt_ply_idx   = 1     # obj is NOT zero indexed
         #self.exprt_pnt_idx   = 0    # pts ARE zero indexed (everything BUT .obj face idx's are)
 
+ 
     @property
     def lastpt(self):
+        """ get the highest indexed point geom in this object """
         return self.points[len(self.points)-1]
 
     @property
     def lastfid(self):
+        """ get the highest indexed face index in this object """
         return self.polygons[len(self.polygons)-1]
 
     @property
     def numfids(self):
+        """ get the total number of face indices in this object (-1 because of 0 index)"""
         return len(self.polygons)-1
 
     @property
     def numpts(self):
+        """ get the total number of points in this object (-1 because of 0 index)"""        
         return len(self.points)-1
 
     ###############################################  
     def scribe(self, str):
         print(str)
+
+    ###############################################          
+    def flush(self):
+        """ set all geometry to a clean state """
+
+        self.points          = [] 
+        self.polygons        = []      
+        self.normals         = []
+        self.face_uvs        = []
+
+        self.exprt_ply_idx   = 1 #obj is NOT zero indexed
+        #self.exprt_pnt_idx   = 0 #pts ARE zero indexed (everything BUT .obj face idx's are)
 
     ###############################################  
     def z_sort(self, reverse=False):
@@ -459,17 +667,7 @@ class polygon_operator(point_operator):
         self.polygons = out
         #return out
 
-    ###############################################          
-    def flush(self):
-        """ set all geometry to a clean state """
 
-        self.points          = [] 
-        self.polygons        = []      
-        self.normals         = []
-        self.face_uvs        = []
-
-        self.exprt_ply_idx   = 1 #obj is NOT zero indexed
-        #self.exprt_pnt_idx   = 0 #pts ARE zero indexed (everything BUT .obj face idx's are)
 
     ###############################################  
     def inspect_geom(self, geom):
@@ -601,20 +799,6 @@ class polygon_operator(point_operator):
         y = sum(ptsy)/len(ptsy)
         z = sum(ptsz)/len(ptsz)
         return [x,y,z]
-
-    ###############################################  
-    def calc_tripoly_normal(self, three_pts, unitlen):
-        """  create a normal vector (vec3) from 3 points that represent a polygon  """
-
-        v1=vec3();v2=vec3()
-        v3=vec3();v4=vec3()
-
-        v1.insert( three_pts[0] )
-        v2.insert( three_pts[1] )
-        v3.insert( three_pts[2] )  
-
-        return self.three_vec3_to_normal(v1, v2, v3, unitlen=unitlen)
-
     ###############################################
     def three_vec3_to_normal(self, v1, v2, v3, unitlen=False):
         """ take 3 vec3 objects and return a face normal """
@@ -629,6 +813,24 @@ class polygon_operator(point_operator):
             f_nrml = a.cross(b)          
         
         return f_nrml 
+
+    ###############################################  
+    def calc_tripoly_normal(self, three_pts, unitlen):
+        """  create a normal vector (vec3) from 3 points that represent a polygon  
+             uses the internal function that requires vectors instead of points
+             it allows "raw" point data to interface to tha
+        """
+
+        v1=vec3();v2=vec3()
+        v3=vec3();v4=vec3()
+
+        v1.insert( three_pts[0] )
+        v2.insert( three_pts[1] )
+        v3.insert( three_pts[2] )  
+
+        return self.three_vec3_to_normal(v1, v2, v3, unitlen=unitlen)
+
+
 
     ###############################################
     def any_pt_is_near(self, pt_list, pt2, dist ):
@@ -698,63 +900,7 @@ class polygon_operator(point_operator):
         return None
 
 
-    ###############################################         
-    def indexer(self, ids=None, slice=None, unique=True, nth=None):
-        """ indexer 
-            
-            generate a fancy list of ints 
 
-            start with optional list of ids 
-            add in a slice 
-            choose to count by Nths, single or list of them 
-                - negative Nths remove 
-            unique is True by default - it guarantees each id is unique
-                - if off, an index will be repeated 
-
-         
-        """
-        pids = []
- 
-
-        # insert list of individual ids first 
-        if ids:
-            if unique:
-                for i in ids:
-                    if i not in pids:
-                        pids.append(i)
-            else: 
-                pids.extend(ids)            
-        #### 
-        # then do the slice
-        if slice:
-            tids = []
-            # insert slice IDs (start-end range) 
-            for i in range(slice[0], slice[1]+1):
-                if unique:
-                    if i not in pids:
-                        tids.append(i)
-                else: 
-                    tids.append(i)
-            pids.extend(tids)
-        
-        # iterate that on Nth 
-        if nth:
-            new_pids = []
-            if type(nth)==int:
-                for i,pd in enumerate(pids):
-                    if i%nth==0:
-                        new_pids.append(pd)
-            #list Nth is experimental - needs more thought 
-            #now its a weird looping construct           
-            # if type(nth)==list:    
-            #     for n in nth:
-            #         for i,pd in enumerate(pids):
-            #             if i%n==0:
-            #                 new_pids.append(pd)
-            pids = new_pids
-        
-
-        return pids 
 
     ############################################### 
     def geom_to_ptgrp(self, geom):
@@ -798,7 +944,7 @@ class polygon_operator(point_operator):
         self.exprt_ply_idx = 1
         
         if slice:
-            if slice[1]=='n' or slice[1]=='N':
+            if slice[1]=='n' or slice[1]=='N' or slice[1]>self.numfids:
                 slice = (slice[0], self.numfids )
 
         pids = self.indexer(slice=slice, ids=ids)
@@ -1013,24 +1159,24 @@ class polygon_operator(point_operator):
         # get the data we want         
         reindex_id = [] 
 
-        # print('## $$$$ fid %s data %s '% ( fid,   polygr[fid-1]) ) 
-        if self.verify_geom([polygr,pointgr]) is False:
+        if self.verify_geom( [polygr, pointgr] ) is False:
             return None 
+        
+        if fid<len(polygr):  
+            for v_id in polygr[fid]:
+                # keep a count of points stored to use as new index
+                reindex_id.append(int(self.exprt_ply_idx ))
+                # store points that are indexed in geom 
+                tmp_pts.append(pointgr[v_id-1]) #data is NOT zero index but all else IS 
+                self.exprt_ply_idx +=1
 
-        # print( '########## ', polygr , fid )
-
-        for v_id in polygr[fid]:
-            # keep a count of points stored to use as new index
-            reindex_id.append(int(self.exprt_ply_idx ))
-            # store points that are indexed in geom 
-            tmp_pts.append(pointgr[v_id-1]) #data is NOT zero index but all else IS 
-            self.exprt_ply_idx +=1
-
-        # geom is always [ [(poly),..], [(point),(point),...]  ]
-        if reindex is False:
-            return [[polygr[fid]]     , tmp_pts]
-        if reindex is True:
-            return [[tuple(reindex_id)] , tmp_pts]
+            # geom is always [ [(poly),..], [(point),(point),...]  ]
+            if reindex is False:
+                return [[polygr[fid]]     , tmp_pts]
+            if reindex is True:
+                return [[tuple(reindex_id)] , tmp_pts]
+        
+        return None 
 
     ###############################################  
     def get_face_normal(self, fid=None, unitlen=False ):
@@ -1230,8 +1376,9 @@ class polygon_operator(point_operator):
 
         # if point group is passed put output into that 
         rotated = self.apply_matrix_ptgrp(ptgrp, m44=rot_matrix) 
-        #self.insert_pt_grp(rotated)
-        self.append_pt_grp(rotated)
+        
+        self.insert_pt_grp(rotated)
+        #self.append_pt_grp(rotated)
 
 
 
@@ -1286,46 +1433,106 @@ class polygon_operator(point_operator):
         if geom is not None:
             return geom
 
-    ###############################################  
-    def modulo(self, mod, pts):
-        """
-            iterate a "mass" of points by N and sperate into groups 
-        """
 
-        outarrays = []
-        newgrp = []
+    def add_poly_frpts(self, pts):
+        """ build a new polygon and auto-step the fids """
+        npts = self.numpts 
+        self.points.extend(pts)
+        self.polygons.append( [npts+1,npts+2,npts+3] )
 
-        for i,p in enumerate(pts):
-           if i%mod==0:
-               outarrays.append(newgrp)
-               newgrp=[] 
-           else:
-               newgrp.append(p)
-        
-        return outarrays
+
 
     ###############################################  
     def revolve_points(self, numdivs, axis, pts):
         
         step = int(360/numdivs)
-
+ 
+        out = []
         if axis == 'y':
             for r in range(1, 360, step):
-                self.rotate_pts( (0,r,0), ptgrp=self.pts_to_ptgrp(pts) )
-        
-        return  self.modulo(numdivs, self.points) 
+                #self.rotate_pts( (0,r,0), ptgrp=self.pts_to_ptgrp(pts) )
+                out.append(self.rotate_pts( (0,r,0), pts=pts) )
+
+        return out
+        #return  self.modulo(numdivs, self.points) 
 
 
 
     ###############################################  
-    def linegeom_fr_points(self, pts):
-        """ create renderable lines from array of pts 
+    def linegeom_fr_points(self, pts, color=(100,0,100), periodic=False ):
+        """ create renderable lines from array of 3D pts 
         """
-        for i in range(0,len(pts),2):
+        lptidx = self.numpts
+        for i in range(len(pts)):
             if i>0:
-                self.points.append(pts[i-1])
-                self.points.append(pts[i])
-                self.polygons.append([self.numfids+1, self.numfids+2])
+                pt1 = pts[i-1]
+                pt2 = pts[i]
+               
+                self.points.append( (pt1[0], pt1[1], pt1[2], color[0], color[1], color[2]) ); lptidx+=1
+                self.points.append( (pt2[0], pt2[1], pt2[2], color[0], color[1], color[2]) ); lptidx+=1 
+                self.polygons.append([lptidx-1, lptidx])
+            
+        if periodic:
+                pt1 = pts[0]
+                pt2 = pts[len(pts)-1]            
+                self.points.append( (pt1[0], pt1[1], pt1[2], color[0], color[1], color[2]) ); lptidx+=1
+                self.points.append( (pt2[0], pt2[1], pt2[2], color[0], color[1], color[2]) ); lptidx+=1 
+                self.polygons.append([lptidx-1, lptidx])
+
+    def lathe(self, pts, num):
+
+        # use readable indices for testing iterator
+        # pt_grid = [ ['a','b','c','d'],
+        #             ['e','f','g','h'],
+        #             ['i','j','k','l'],
+        #             ['m','n','o','p'] ]
+        #  print('##################\n\n')
+        # self.print_grid(pt_grid)
+
+        pt_grid = self.revolve_points( num, 'y', pts )
+
+        #view hulls for debugging
+        #for n in range(num):
+        #    rows = self.get_grid_column( pt_grid , n)
+        #    cols = self.get_grid_row( pt_grid    , n)
+        #    self.linegeom_fr_points( rows )
+        #    self.linegeom_fr_points( cols )                
+        lastuv  = []
+        for u in range(num):
+            for v in range(num):
+                if u>0 and v>0:
+                    tri1 = []
+                    tri1.append( pt_grid[u][v]    )
+                    tri1.append( pt_grid[u-1][v-1])
+                    tri1.append( pt_grid[u][v-1]  )
+                    self.add_poly_frpts(tri1)
+                    tri2 = []
+                    tri2.append( pt_grid[u-1][v]  )
+                    tri2.append( pt_grid[u-1][v-1])
+                    tri2.append( pt_grid[u][v]    )
+                    self.add_poly_frpts(tri2)
+                
+                #if last row connect back to the first     
+                if u==num -1:
+                    if v>0:
+                        tri2 = []
+                        tri2.append( pt_grid[u][v-1] )
+                        tri2.append( pt_grid[0][v] )
+                        tri2.append( pt_grid[u][v]   )
+                        self.add_poly_frpts(tri2)
+                    if v<num-1:
+                        #print("U %s V %s "%(u,v))
+                        tri1 = []
+                        tri1.append( pt_grid[0][v+1] )
+                        tri1.append( pt_grid[u][v]   )
+                        tri1.append( pt_grid[0][v]   )
+                        self.add_poly_frpts(tri1)
+
+
+
+
+
+
 
 
     ###############################################  
@@ -1634,10 +1841,12 @@ class polygon_operator(point_operator):
 
         fix = []
 
-        for pt in self.points:
-
+        for i,pt in enumerate(self.points):
+            
+            if pt is None:
+                self.scribe("pt idx %s is None"%i )
             #iftype ==  <class 'tuple'>
-            if len(pt)==0:
+            elif len(pt)==0:
                 self.scribe('found bad data - empty vertex')
              
             #CASE     
