@@ -203,16 +203,20 @@ class point_operator(object):
 
         return out
 
-    def draw_splines(self, curves, drawctrls=False, drawhulls=False):
+    def draw_splines(self, num, curves, drawctrls=False, drawhulls=False):
         """ render a spline made of multipe cubic bezier curves
             
             ARGS:
                 curves - array of [start, ctrl1 , ctrl2, end ]
 
         """
+
         
+        size = .1
+
         for c in curves:    
-            size = .1
+            
+            print("### KURBE ", c )
 
             if drawctrls:
                 self.prim_locator_color(pos=c[0] , rot=(0,0,0), size=size) # start 
@@ -223,7 +227,7 @@ class point_operator(object):
             if drawhulls:
                 self.linegeom_fr_points( [c[0], c[1], c[2], c[3]], color=(0,255,0) ) 
 
-            curvepts = self.cubic_bezier(15, c[0], c[1], c[2], c[3])
+            curvepts = self.cubic_bezier(num, c[0], c[1], c[2], c[3])
             self.linegeom_fr_points( curvepts ) 
 
     def cubic_bezier(self, draw_steps, start, ctrl1, ctrl2, end):
@@ -365,7 +369,8 @@ class point_operator(object):
     ############################################### 
     def calc_circle(self, pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
         """ spokes = num spokes 
-            raw points, not geometry is build in point generators  
+            
+            point generators build raw points, not renderable geometry    
         """
 
         px=0
@@ -1435,11 +1440,17 @@ class polygon_operator(point_operator):
 
 
     def add_poly_frpts(self, pts):
-        """ build a new polygon and auto-step the fids """
+        """ build a new triangle and auto-step the fids """
         npts = self.numpts 
         self.points.extend(pts)
         self.polygons.append( [npts+1,npts+2,npts+3] )
 
+
+    def add_quad_frpts(self, pts):
+        """ build a new 4 sided polygon and auto-step the fids """
+        npts = self.numpts 
+        self.points.extend(pts)
+        self.polygons.append( [npts+1,npts+2,npts+3, npts+4])
 
 
     ###############################################  
@@ -1480,6 +1491,7 @@ class polygon_operator(point_operator):
                 self.polygons.append([lptidx-1, lptidx])
 
     def lathe(self, pts, num):
+        """ spin a set of 3d points 360 degrees and make a renderable surface """
 
         # use readable indices for testing iterator
         # pt_grid = [ ['a','b','c','d'],
@@ -1491,13 +1503,15 @@ class polygon_operator(point_operator):
 
         pt_grid = self.revolve_points( num, 'y', pts )
 
+        #print( pt_grid )
+
         #view hulls for debugging
         #for n in range(num):
         #    rows = self.get_grid_column( pt_grid , n)
         #    cols = self.get_grid_row( pt_grid    , n)
         #    self.linegeom_fr_points( rows )
         #    self.linegeom_fr_points( cols )                
-        lastuv  = []
+       
         for u in range(num):
             for v in range(num):
                 if u>0 and v>0:
@@ -1521,16 +1535,34 @@ class polygon_operator(point_operator):
                         tri2.append( pt_grid[u][v]   )
                         self.add_poly_frpts(tri2)
                     if v<num-1:
-                        #print("U %s V %s "%(u,v))
                         tri1 = []
                         tri1.append( pt_grid[0][v+1] )
                         tri1.append( pt_grid[u][v]   )
                         tri1.append( pt_grid[0][v]   )
                         self.add_poly_frpts(tri1)
 
+    def lathe2(self, pts, num):
+        """ attempt to build quads instead of tris"""
+        pt_grid = self.revolve_points( num, 'y', pts )
 
-
-
+        for u in range(num):
+            for v in range(num):
+                if u>0 and v>0:
+                    tri1 = []
+                    tri1.append( pt_grid[u][v]    )
+                    tri1.append( pt_grid[u][v-1]  )
+                    tri1.append( pt_grid[u-1][v-1])
+                    tri1.append( pt_grid[u-1][v]  )
+                    self.add_quad_frpts(tri1)
+                    #self.linegeom_fr_points(tri1, color=(100,0,100) )
+                
+                #if last row connect back to the first     
+                if u==num -1:
+                    tri1.append( pt_grid[u][v]    )
+                    tri1.append( pt_grid[u][0]  )
+                    tri1.append( pt_grid[u-1][0])
+                    tri1.append( pt_grid[u-1][v]  )
+                    self.add_quad_frpts(tri1)
 
 
 
