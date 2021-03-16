@@ -27,7 +27,7 @@ RAD_TO_DEG = 57.29577951  # radian = degree * (PI/180)
 ###############################################
 class math_util(object):    
     """ general math library - may contain some of the same functions 
-        as the vecotr and matrix objects, but those will be implemented 
+        as the vector and matrix objects, but those will be implemented 
         to operate relative to themselves, these will work more generally
 
         for example self.dot_vec3() will be vec3.dot , etc 

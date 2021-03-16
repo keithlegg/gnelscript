@@ -23,6 +23,11 @@ else:
 
 
 
+def printgeom(geom):
+    for i,fid in enumerate(geom[0]):
+        print( " f_id %s - %s"%(i,fid))
+    for pt in geom[1]:
+        print( " pt %s"%str(pt) )
 
 
 
@@ -62,18 +67,22 @@ class point_operator(object):
         return out
 
     ###############################################         
-    def indexer(self, ids=None, slice=None, unique=True, nth=None):
-        """ indexer 
-            
-            generate a fancy list of ints 
+    def indexer(self, ids=None, span=None, unique=True, nth=None):
+        """ generates a fancy list of positive ints (indeces)
 
-            start with optional list of ids 
-            add in a slice 
+            the idea is to additively build up a list of ids 
+            you can start with an optional list of ids,
+            then add in a range.  
+
+            span   - batch add numbers in a [start, end] [start,end] 
             choose to count by Nths, single or list of them 
-                - negative Nths remove 
+                    - negative Nths remove 
             unique is True by default - it guarantees each id is unique
-                - if off, an index will be repeated 
+                    - if off, an index will be repeated 
 
+            nth - skipover N indices while iterating. Outputs two lists ,
+                  the "goods" and the "bads"
+ 
          
         """
         pids = []
@@ -88,54 +97,56 @@ class point_operator(object):
             else: 
                 pids.extend(ids)            
         #### 
-        # then do the slice
-        if slice:
+        # then do the span
+        if span and len(span)>1:
             tids = []
-            # insert slice IDs (start-end range) 
-            for i in range(slice[0], slice[1]+1):
+            # insert span IDs (start-end range) 
+            for i in range(span[0], span[1]+1):
                 if unique:
                     if i not in pids:
                         tids.append(i)
                 else: 
                     tids.append(i)
             pids.extend(tids)
-        
+
+        ####        
         # iterate that on Nth 
         if nth:
-            new_pids = []
-            if type(nth)==int:
-                for i,pd in enumerate(pids):
-                    if i%nth==0:
-                        new_pids.append(pd)
-            #list Nth is experimental - needs more thought 
-            #now its a weird looping construct           
-            # if type(nth)==list:    
-            #     for n in nth:
-            #         for i,pd in enumerate(pids):
-            #             if i%n==0:
-            #                 new_pids.append(pd)
-            pids = new_pids
+            if nth<len(pids):
+                new_pids = []
+                rejects = []
+                if type(nth)==int:
+                    for i,pd in enumerate(pids):
+                        if i%nth==0:
+                            new_pids.append(pd)
+                        else:
+                            rejects.append(pd)
+
+                pids = [new_pids,rejects] 
         
 
         return pids 
 
     ###############################################  
-    def modulo(self, mod, pts):
+    def chunker(self, mod, pts):
         """
-            iterate a "mass" of points by N and sperate into groups 
+            iterate a "mass" of points by N and sperate into N sized groups 
         """
 
         outarrays = []
         newgrp = []
-
         for i,p in enumerate(pts):
            if i%mod==0:
-               outarrays.append(newgrp)
+               newgrp.append(p)
+               if len(newgrp)>1:
+                   outarrays.append(newgrp)
                newgrp=[] 
            else:
                newgrp.append(p)
         
         return outarrays
+
+    ############################################### 
 
     def print_gridinfo(self, grid_array):
         print("number of columns " , len(grid_array) )
@@ -952,7 +963,7 @@ class polygon_operator(point_operator):
             if slice[1]=='n' or slice[1]=='N' or slice[1]>self.numfids:
                 slice = (slice[0], self.numfids )
 
-        pids = self.indexer(slice=slice, ids=ids)
+        pids = self.indexer(span=slice, ids=ids)
 
         # print('## debug, indexer_geom pids : ', pids) 
 
@@ -1145,7 +1156,7 @@ class polygon_operator(point_operator):
             geom - act on a geom obj passed in, or on self
         """
 
-        tmp_pts = []
+
        
         
         # validate inputs 
@@ -1161,25 +1172,54 @@ class polygon_operator(point_operator):
             polygr  = geom[0]  #faces and polys common indexed    
             pointgr = geom[1]        
 
-        # get the data we want         
-        reindex_id = [] 
 
         if self.verify_geom( [polygr, pointgr] ) is False:
             return None 
         
-        if fid<len(polygr):  
-            for v_id in polygr[fid]:
-                # keep a count of points stored to use as new index
-                reindex_id.append(int(self.exprt_ply_idx ))
-                # store points that are indexed in geom 
-                tmp_pts.append(pointgr[v_id-1]) #data is NOT zero index but all else IS 
-                self.exprt_ply_idx +=1
+        #if type(fid) is list:
+        if type(fid) is int:
+            fid = [fid]
 
-            # geom is always [ [(poly),..], [(point),(point),...]  ]
-            if reindex is False:
-                return [[polygr[fid]]     , tmp_pts]
-            if reindex is True:
-                return [[tuple(reindex_id)] , tmp_pts]
+        tmp_pts = []
+        out_geom = [[],[]]
+
+        for f_id in fid: 
+            reindex_id = []             
+            if f_id<len(polygr):  
+                for v_id in polygr[f_id]:
+                    # keep a count of points stored to use as new index
+                    reindex_id.append(int(self.exprt_ply_idx ))
+                    # store points that are indexed in geom 
+                    tmp_pts.append(pointgr[v_id-1]) #data is NOT zero index but all else IS 
+                    self.exprt_ply_idx +=1
+                
+                # geom is always [ [(poly),..], [(point),(point),...]  ]
+                if reindex is False:
+                    ##return [[polygr[f_id]]     , tmp_pts]
+                    out_geom[0].append(polygr[f_id])
+                if reindex is True:
+                    ##return [[tuple(reindex_id)] , tmp_pts]
+                    out_geom[0].append(tuple(reindex_id))
+            
+            out_geom[1] = tmp_pts
+
+
+        return out_geom
+ 
+
+
+  
+        ## for v_id in polygr[fid]:
+        ##     # keep a count of points stored to use as new index
+        ##     reindex_id.append(int(self.exprt_ply_idx ))
+        ##     # store points that are indexed in geom 
+        ##     tmp_pts.append(pointgr[v_id-1]) #data is NOT zero index but all else IS 
+        ##     self.exprt_ply_idx +=1
+        ## # geom is always [ [(poly),..], [(point),(point),...]  ]
+        ## if reindex is False:
+        ##     return [[polygr[fid]]     , tmp_pts]
+        ## if reindex is True:
+        ##     return [[tuple(reindex_id)] , tmp_pts]
         
         return None 
 
@@ -1613,7 +1653,7 @@ class polygon_operator(point_operator):
         """
 
 
-        pids = self.indexer( slice=slice, ids=ids) 
+        pids = self.indexer( span=slice, ids=ids) 
 
         geom     = self.sub_select_geom( ids=pids, reindex=True )
         tmpnrmls = self.get_face_normal(fid=pids, unitlen=True) 
@@ -2080,7 +2120,7 @@ class polygon_operator(point_operator):
         for s in buf:
             output=output+s+'\n'
 
-        self.scribe('###file "%s" saved' % filename)
+        self.scribe('### file "%s" saved' % filename)
 
         #save it to disk now
         fobj = open( filename,"w") #encoding='utf-8'
