@@ -92,8 +92,9 @@ class point_operator(object):
         if ids:
             if unique:
                 for i in ids:
-                    if i not in pids:
-                        pids.append(i)
+                    if type(i) is int:    
+                        if i not in pids:
+                            pids.append(i)
             else: 
                 pids.extend(ids)            
         #### 
@@ -973,7 +974,7 @@ class polygon_operator(point_operator):
             # the only way to do this right is make get_face_geom() smarter
             # it needs to have slicing and not select the same thing twice 
             geom = self.get_face_geom(i, reindex=reindex)
-            out_poly.append(geom[0][0])
+            out_poly.append(geom[0])
             for pt in geom[1]:
                 out_pts.append(pt)               
 
@@ -1101,39 +1102,23 @@ class polygon_operator(point_operator):
 
     ###############################################  
     def get_geom_edges(self, geom ):
-        """ THIS WHOLE THING IS KINDA BROKEN!
-
-            GEOM format is supposed to be a OBJ in memory
-            it is wonky to begin with 
-            
-            This is even more wonky, it is pairing the points instead of keeping them single list
-
-            Also - only works on a single polygon geom object 
-            DEBUG - make work with multiple 
-
+        """ 
+            takes a geom object and returns another geom of the edges 
+            it does this by iterating polhy indices in groups of 2 
         """
 
         out_edge_ids = []
         out_edge_pts = []
          
-        ply = geom[0][0]
+        polys = geom[0][0]
 
-        for idx in ply:
-            #print('### POLY DATA   ', ply , type(ply) )
-            #print('### POINTS LEN  ', ply , type(geom[1]) )
-
-            # iterate by two and store segments
-            out_edge_ids.append((  ply[idx-2]           ,ply[idx-1]              )) # poly index
-            
-            # THIS IS WRONG?? DEBUG - IT MAKES PAIRS OF POINTS 
-            # THIS BREAKS FROM THE CONVENTION OF SINGLE INDEXED POINTS ! 
-            out_edge_pts.append((  geom[1][ply[idx-1]-2], geom[1][ply[idx-1]-1]  )) # point index
-            
-            # THIS IS A HALFWAY FIXED SINGLE INDEXED POINT 
-            #out_edge_pts.append(  geom[1][ply[idx-1]-2] ) # edge start point
-            #out_edge_pts.append(  geom[1][ply[idx-1]-1] ) # edge end point  
-
-
+        for ply in polys:
+            #print('### POLY     ', ply   )
+            #print('### POINTS   ', geom[1] , type(geom[1]) )
+            for idx in range(len(ply)):
+                # iterate by two and store segments
+                out_edge_ids.append((  ply[idx-1]            ,ply[idx]              )) # poly index
+                out_edge_pts.append((  geom[1][ply[idx-1]-2] , geom[1][ply[idx-1]-1]  )) # point index
         return [out_edge_ids, out_edge_pts]
 
     ###############################################  

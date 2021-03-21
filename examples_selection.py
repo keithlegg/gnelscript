@@ -15,7 +15,7 @@ def extract_by_copy_hack():
     """
 
     obj = object3d()
-    obj.load('objects/kube.obj')
+    obj.load('3d_obj/kube.obj')
 
     # duplicate all points with out thinking about it 
     all_pts = obj.points
@@ -40,7 +40,7 @@ def extract_by_copy_hack():
 
 
 #####################################################
-def slice_extract_and_makenew():
+def slice_extract_and_makenew(outfile):
     """ load two models, extract parts of them using the subselect tool 
         subselect grabs polys and points at the same time, with option to reindex
          
@@ -48,30 +48,57 @@ def slice_extract_and_makenew():
 
         weld them into a new model 
         fekkin awesome mate!  
+    
+        ##!! DEBUG DEPRECATION 
+        PYCORE EXTRACT USES NEW get_face_geom - probably better 
+           
+           sub_select_geom should be rewritten to use that 
+           maybe support mulitple groups like 
+           [ [1-5],[9-12], etc ]
+
+        ## or you can use indexer for more power 
+
+        obj2.insert(geom)
+        
+        pids = obj.indexer( ids=[5,10])
+        geom = obj.get_face_geom( pids, reindex=True )
+        obj2.insert(geom)
+
     """
     
     obj = object3d() 
-    obj.load('objects/sphere2.obj')
-    geom = obj.sub_select_geom( slice=(1,50), ids=[53,55,73], reindex=True)
-
-    obj3 = object3d() 
-    obj3.load('objects/monkey.obj')
-    geom2 = obj3.sub_select_geom( slice=(3,100) , ids=[101,105,148], reindex=True)
+    obj.load('3d_obj/sphere2.obj')
 
     obj2 = object3d() 
-    ## weld two models together 
-    obj2.insert_polygons(geom[0], geom[1]  ) 
-    obj2.insert_polygons(geom2[0], geom2[1]  )
 
-    obj2.save('new.obj')
+    obj3 = object3d() 
+    obj3.load('3d_obj/monkey.obj')
+
+    ## weld two models together 
+    #geom = obj.sub_select_geom( slice=(1,50), ids=[53,55,73], reindex=True)
+    #geom2 = obj3.sub_select_geom( slice=(3,100) , ids=[101,105,148], reindex=True)    
+    #obj2.insert_polygons(geom[0], geom[1]  ) 
+    #obj2.insert_polygons(geom2[0], geom2[1]  )
+
+    pids = obj.indexer( ids=[53,55,73],span=[1,50])
+    geom = obj.get_face_geom( pids, reindex=True )
+    obj2.insert(geom)
+
+    pids = obj3.indexer( ids=[101,105,148],span=[3,100])
+    geom2 = obj3.get_face_geom( pids, reindex=True )
+    
+    obj2.insert(geom)    
+    obj2.insert(geom2)
+
+    obj2.save( outfile )
 
 #####################################################
-def test_subsel_point_transform(): 
+def test_subsel_point_transform(outfile): 
     """ example of translate, rotate, scale of a point group 
         translate tools work with "ptgroups", or raw points 
     """
     obj = object3d()
-    obj.load('objects/monkey.obj')
+    obj.load('3d_obj/monkey.obj')
 
     ptgrp = obj.get_pt_grp( slice=(1,300) )
     xformed_pts = obj.scale_pts(2.5, ptgrp=ptgrp)   
@@ -82,7 +109,7 @@ def test_subsel_point_transform():
     ptgrp = obj.get_pt_grp( slice=(1,100) )
     xformed_pts = obj.xform_pts( (0,2,0),  ptgrp=ptgrp) 
 
-    obj.save('ptgrp.obj')
+    obj.save(outfile)
 
 
 
@@ -93,7 +120,7 @@ def modify_a_subselect():
     """ UNFINSIHED ! """
 
     obj = object3d()
-    #obj.load('objects/sphere.obj')
+    #obj.load('3d_obj/sphere.obj')
     obj.load('kube.obj')
 
     geom = obj.sub_select_geom( slice=[1,5]  , reindex=True )
@@ -125,7 +152,7 @@ def select_polygons_spatially( from_pt, dist ):
 
     """
     obj = object3d() 
-    obj.load('objects/monkey.obj')
+    obj.load('3d_obj/monkey.obj')
 
     #define the point to use 
     #from_pt = (2, 1, 4)

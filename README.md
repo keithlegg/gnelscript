@@ -46,6 +46,27 @@ you chain them together.
 
 
 
+Overall structure
+
+    can be used along side numpy or standalone
+    inside the __init__ file there is a global NUMPY_IS_LOADED to enable/disable the components that use numpy 
+
+    The object inheritance of a gnelscript 3D object is as follows:
+    
+    |-math_ops           - just what it says. Vectors, Matricies, all the boring math stuff that everything is built on
+       |-point_ops       - functions to work with coordinates directly
+       |                 - geometry is stored as vertex arrays and face indexes with a flat structure to interface to outside data easily 
+       |-polygon_ops     - deals with polygon indices, point indices 
+           |-object3d    - deals with groups of polygons, loading, saving, ect 
+           
+ 
+
+    The elegance of the design is you can use operators directly, or use the objects without thinking about them.
+    Every object has all operators already inside it, so things can be pluged together like legos. 
+    This was very much inspired by the genius of Side Effects Houdini. 
+
+
+
 
 
 
