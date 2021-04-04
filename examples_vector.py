@@ -88,32 +88,35 @@ def render_m33_as_vec3s(m33, outfile, transpose=False, vlist=None):
     
     obj = object3d()
     rendervecs = [v1,v2,v3]
-    rendervecs.extend(vlist)
+    if vlist:
+        rendervecs.extend(vlist)
 
     obj.vectorlist_to_obj( rendervecs )
     obj.save(outfile)       
 
 
 
-def numpy_m33_fromvec():
+def numpy_m33_fromvec(outfile):
     my_m33 = matrix33()
     axis = vec3(1,1,1)
     m = my_m33.from_vec3( axis , 90 )
 
-    render_m33_as_vec3s(m, vlist=[axis])
+    render_m33_as_vec3s(m, outfile, transpose=False, vlist=[axis])
 
 
 #####################################################
 
-def make_right_triangle(theta, obj=None):
+def make_right_triangle(outfile, theta):
     """ UNTESTED 
-        calulate three 3D vectors to form a right triangle based on a theta angle 
+        calculate three 3D vectors to form a right triangle based on a theta angle 
         
         if object is passed in : 
             bake those vectors into a 3d line geometry 
             insert a 3D cube at the point the triangle meets the unit circle 
 
     """
+    obj = object3d()
+
     x = math.cos(mu.dtr( theta) )    
     y = math.sin(mu.dtr( theta) ) 
 
@@ -157,6 +160,7 @@ def make_right_triangle(theta, obj=None):
         obj.one_vec_to_obj(adaj)
         obj.one_vec_to_obj(oppos, adaj)
 
+    obj.save(outfile)
 
 #####################################################
 def homogeneous_test():
@@ -433,7 +437,7 @@ def model_geom_from_scratch_calc_normals():
 
 #####################################################
 
-def build_orthogonal_vector():
+def build_orthogonal_vector(outfile):
     """ treats the "line" as an infinite vector 
 
     """
@@ -442,11 +446,11 @@ def build_orthogonal_vector():
     com = vec3() #container for commands
 
     # the point we are "looking" from 
-    pt1 = vec3(-1,1,-4)
+    pt1 = vec3(-.1,.1,-.4)
     obj.prim_cube(pos=pt1,size=.05,linecolor=(255,0,0),rot=(0,0,0),pivot='world')
 
     # the point of the line origin
-    pt2 = vec3(10,-5, 17)
+    pt2 = vec3(.1,-.5, .17)
     obj.prim_cube(pos=pt2,size=.1,linecolor=(255,0,0),rot=(0,0,0),pivot='world')    
     
     # the line, needs to be normalized for the math to work  
@@ -464,7 +468,7 @@ def build_orthogonal_vector():
     #obj.one_vec_to_obj( d*-1 )   
     obj.one_vec_to_obj( d , pt1 )   
 
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(outfile)
 
 
 # build_orthogonal_vector() 

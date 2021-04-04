@@ -93,8 +93,8 @@ def quaternion_test():
 #test of 3D arrow primitive model 
 
 
-def place_obect_on_vector():
-    """ how to we place objects on an arbirtary  3D vector in space? 
+def place_obect_on_vector(outfile):
+    """ how do we place objects on an arbirtary  3D vector in space? 
         various tests to answer that question. 
 
         Techniques explored are:
@@ -127,7 +127,7 @@ def place_obect_on_vector():
     ##---------------- 
     # from matrix object     
     m33 = matrix33() 
-    # m33.from_euler(45,0,0) 
+    m33.from_euler(90,0,-90) 
 
     ##---------------- 
 
@@ -152,7 +152,7 @@ def place_obect_on_vector():
 
     ##----------------  
     obj.points = obj.apply_matrix_pts( obj.points, m33=m33, m44=None)
-    obj.save('arrow.obj')
+    obj.save(outfile)
 
 
     # q.to_m33(self, trans_type='inertial2obj'):

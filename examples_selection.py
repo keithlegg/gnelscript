@@ -9,13 +9,13 @@ from gnelscript.pygfx.obj3d import  *
 
 
 #####################################################
-def extract_by_copy_hack():
+def extract_by_copy_hack(outfile):
     """ *slightly* higher level than raw geom 
         use the face lookup util to get the geom by face index 
     """
 
     obj = object3d()
-    obj.load('3d_obj/kube.obj')
+    obj.load('3d_obj/sphere.obj')
 
     # duplicate all points with out thinking about it 
     all_pts = obj.points
@@ -34,7 +34,7 @@ def extract_by_copy_hack():
         obj2.polygons.extend(ply)        
 
 
-    obj2.save('kube_modify.obj')
+    obj2.save(outfile)
 
 
 
@@ -82,7 +82,7 @@ def slice_extract_and_makenew(outfile):
 
     pids = obj.indexer( ids=[53,55,73],span=[1,50])
     geom = obj.get_face_geom( pids, reindex=True )
-    obj2.insert(geom)
+
 
     pids = obj3.indexer( ids=[101,105,148],span=[3,100])
     geom2 = obj3.get_face_geom( pids, reindex=True )
@@ -100,13 +100,13 @@ def test_subsel_point_transform(outfile):
     obj = object3d()
     obj.load('3d_obj/monkey.obj')
 
-    ptgrp = obj.get_pt_grp( slice=(1,300) )
+    ptgrp = obj.get_pt_grp( span=(1,300) )
     xformed_pts = obj.scale_pts(2.5, ptgrp=ptgrp)   
 
-    ptgrp = obj.get_pt_grp( slice=(1,300) )
+    ptgrp = obj.get_pt_grp( span=(1,300) )
     xformed_pts = obj.rotate_pts((0,30,0),  ptgrp=ptgrp)
 
-    ptgrp = obj.get_pt_grp( slice=(1,100) )
+    ptgrp = obj.get_pt_grp( span=(1,100) )
     xformed_pts = obj.xform_pts( (0,2,0),  ptgrp=ptgrp) 
 
     obj.save(outfile)
@@ -116,31 +116,31 @@ def test_subsel_point_transform(outfile):
 #######################################################
 
 
-def modify_a_subselect():
+def modify_a_subselect(outfile):
     """ UNFINSIHED ! """
 
     obj = object3d()
     #obj.load('3d_obj/sphere.obj')
-    obj.load('kube.obj')
+    obj.load('3d_obj/cube.obj')
 
-    geom = obj.sub_select_geom( slice=[1,5]  , reindex=True )
+    geom = obj.sub_select_geom( span=[1,5]  , reindex=True )
 
     # rotate_pts( rot, pts=None, ptgrp=None):
     newpts = obj.rotate_pts(rot=(45,45,45), pts=geom[1])
 
     print(geom)
-    geom2 = obj.sub_select_geom( slice=[5,6]  , reindex=True )
+    geom2 = obj.sub_select_geom( span=[5,6]  , reindex=True )
     #newpts2 = obj.rotate_pts((-45,0,45), points=geom2[1])
 
     obj2 = object3d() 
     #obj2.insert_polygons(geom[0], newpts  )      
     obj2.insert_polygons(geom2[0], geom2[1], asnew_shell=False  ) 
     # obj2.insert_polygons(geom2[0], newpts2  , asnew_shell=False) 
-    obj2.save('kube_modify.obj')
+    obj2.save(outfile)
 
 
 #######################################################
-def select_polygons_spatially( from_pt, dist ):
+def select_polygons_spatially( outfile, from_pt, dist ):
     """ 
         calculate the vector from face normal to a fixed point
         if the angle is within a threshold, select the face
@@ -171,13 +171,15 @@ def select_polygons_spatially( from_pt, dist ):
     
     # save the geometry that was determined to be "near" the point 
     obj2.insert_polygons(geom[0], geom[1]  ) 
-    obj2.save('polygons_near.obj')
+    obj2.save('3d_obj/selected.obj')
+    #obj2.save(outfile)
 
     #pull the vectors out of a work buffer to visualize what the tool is doing     
     # #dump the vectors in the work buffer to a new object 
     obj3 = object3d() 
     obj3.vectorlist_to_obj( obj.vec_buffer )
-    obj3.save('dist_vectors.obj')
+    #obj3.save('3d_obj/dist_vectors.obj')
+    obj3.save(outfile)
 
 
 #select_polygons_spatially( (2, 1, -4) , 4.5)

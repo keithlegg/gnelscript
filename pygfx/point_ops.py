@@ -12,6 +12,22 @@ from gnelscript.pygfx.math_ops import math_util as mu
 from gnelscript.pygfx.math_ops import NUMPY_IS_LOADED, matrix33, matrix44, vec2, vec3  
 
 
+"""
+
+    There are two types of geometry container 
+
+    GEOM         -  [[face ids], [vertices] ]
+        geom type is a 3d model basically obj format in memory 
+        it is the simplest way to define a 3d model. It is two arrays, face ids and vertices 
+
+    POINT GROUPS -  [ [ID, (X,Y,Z)], ... ] 
+        a point group is another type of container (DEBUG partially implemented)
+        it is only points with a an ID for each point
+        it is a way to work with partial objects and not loose the ID of each point 
+
+            
+
+"""
 
 
 
@@ -684,8 +700,6 @@ class polygon_operator(point_operator):
         self.polygons = out
         #return out
 
-
-
     ###############################################  
     def inspect_geom(self, geom):
         """ analyze a GEOM object and see how it is constructed """
@@ -816,6 +830,7 @@ class polygon_operator(point_operator):
         y = sum(ptsy)/len(ptsy)
         z = sum(ptsz)/len(ptsz)
         return [x,y,z]
+
     ###############################################
     def three_vec3_to_normal(self, v1, v2, v3, unitlen=False):
         """ take 3 vec3 objects and return a face normal """
@@ -846,8 +861,6 @@ class polygon_operator(point_operator):
         v3.insert( three_pts[2] )  
 
         return self.three_vec3_to_normal(v1, v2, v3, unitlen=unitlen)
-
-
 
     ###############################################
     def any_pt_is_near(self, pt_list, pt2, dist ):
@@ -882,8 +895,6 @@ class polygon_operator(point_operator):
     ############################################### 
     ############################################### 
     # selection and inspection tools
-       
-
     def select_by_location(self, select_type, pt_two, dist):
         """ UNFINISHED - seems to be selecting the wrong faces 
             subselct is wonky in a bunch of ways DEBUG 
@@ -916,9 +927,6 @@ class polygon_operator(point_operator):
 
         return None
 
-
-
-
     ############################################### 
     def geom_to_ptgrp(self, geom):
         """ convert one weird data type into another 
@@ -930,7 +938,7 @@ class polygon_operator(point_operator):
         return out     
 
     ###############################################  
-    def sub_select_geom(self, slice=None, ids=None, reindex=False):
+    def sub_select_geom(self, span=None, ids=None, reindex=False):
         """ 
             make work with xform_pts, rotate_pts, scale_pts 
 
@@ -941,7 +949,7 @@ class polygon_operator(point_operator):
             # it will give you 24 points instead of 8 
 
 
-            slice - tuple of (start,end)  
+            span - tuple of (start,end)  
             ids   - list of single ids 
 
             quick select chunks of geometry to feed into other tools: 
@@ -960,11 +968,11 @@ class polygon_operator(point_operator):
         # other function can auto increment, thus allowing polygons reordering in chunks 
         self.exprt_ply_idx = 1
         
-        if slice:
-            if slice[1]=='n' or slice[1]=='N' or slice[1]>self.numfids:
-                slice = (slice[0], self.numfids )
+        if span:
+            if span[1]=='n' or span[1]=='N' or span[1]>self.numfids:
+                span = (span[0], self.numfids )
 
-        pids = self.indexer(span=slice, ids=ids)
+        pids = self.indexer(span=span, ids=ids)
 
         # print('## debug, indexer_geom pids : ', pids) 
 
@@ -1013,7 +1021,6 @@ class polygon_operator(point_operator):
 
         return tmp
 
-
     ###############################################  
     def pts_to_ptgrp(self, pts):
         """ 
@@ -1059,7 +1066,7 @@ class polygon_operator(point_operator):
         return out 
 
     ###############################################  
-    def get_pt_grp(self, slice=None, ids=None):
+    def get_pt_grp(self, span=None, ids=None):
         """ gets a point group, 
             a point group is a list of  
 
@@ -1074,20 +1081,20 @@ class polygon_operator(point_operator):
 
         out = []
 
-        if slice is None and ids is None:
+        if span is None and ids is None:
             for i,p in enumerate( self.points ):
                 out.append([i,p])  
             return out
 
         else:
-            pids = self.indexer( slice=slice, ids=ids)
+            pids = self.indexer( span=span, ids=ids)
 
             for p in pids:
                 out.append( [p, self.points[p]] )
             return out      
 
     ###############################################  
-    def get_face_group(self, slice=None, ids=None):
+    def get_face_group(self, span=None, ids=None):
         """ UNFINISHED 
             get a face group, a list of faces and IDS so 
             we can process them and put them back 
@@ -1095,7 +1102,7 @@ class polygon_operator(point_operator):
             data format [ [ID, face] ]
 
         """
-        fids = self.indexer( slice=slice, ids=ids)
+        fids = self.indexer( span=span, ids=ids)
 
 
         pass
@@ -1425,11 +1432,12 @@ class polygon_operator(point_operator):
              geom            - geom to insert into, instead of object.polygons, object.points
                                if true, will return the geom object when done 
 
+             if points are 2D - automatically insert in 3D on the 0 Z axis
         """
 
         #if isinstance(points, vec3):
         #    self.points.extend(points)
-        
+
         ######### 
         # append polygons 
         for poly in plyids:
@@ -1456,7 +1464,17 @@ class polygon_operator(point_operator):
             if isinstance(points, tuple) or isinstance(points, list):
                 # do the insert operation
                 if geom is None:
-                    self.points.extend(points)
+
+                    #look at first point and assume all data is similar
+                    #if it is 2d add a zero Z axis 
+                    if len(points[0])==2:
+                        print("data appears to be 2D")
+                        for i,pt in enumerate(points):
+                            self.points.append( (points[i][0], points[i][1],0) )
+
+                    if len(points[0])==3:
+                        self.points.extend(points)
+
                 else:
                     geom[1].extend(points)
         
@@ -1491,8 +1509,6 @@ class polygon_operator(point_operator):
 
         return out
         #return  self.modulo(numdivs, self.points) 
-
-
 
     ###############################################  
     def linegeom_fr_points(self, pts, color=(100,0,100), periodic=False ):
@@ -1588,9 +1604,6 @@ class polygon_operator(point_operator):
                     tri1.append( pt_grid[u-1][0])
                     tri1.append( pt_grid[u-1][v]  )
                     self.add_quad_frpts(tri1)
-
-
-
 
     ###############################################  
     def extrude_face(self, f_id, distance):

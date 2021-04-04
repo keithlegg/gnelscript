@@ -89,10 +89,29 @@ class pcbfile(gcode):
            newpts.append( tmp )
 
        self.points = newpts 
-
-       self.scale_pts( ( -1.0,-1.0, 1.0) )  
+ 
+       self.scale_pts( ( -.1,-.1,.1) ) 
 
        self.save(name)
+
+
+    def read_pcb(self,infile):
+        #(gr_line (start 99.695 105.41) (end 119.38 149.86) (layer Dwgs.User) (width 0.15) (tstamp 6068B63B))
+        #(gr_line (start 160.02 134.62) (end 99.695 105.41) (layer Dwgs.User) (width 0.15))
+        #(gr_line (start 174.625 131.445) (end 160.02 134.62) (layer Dwgs.User) (width 0.15))
+        #(gr_line (start 107.95 97.155) (end 174.625 131.445) (layer Dwgs.User) (width 0.15))
+        #(gr_line (start 126.365 17.78) (end 107.95 97.155) (layer Dwgs.User) (width 0.15))
+        #(gr_line (start 114.3 24.765) (end 126.365 17.78) (layer Dwgs.User) (width 0.15))
+        #(gr_line (start 97.155 99.06) (end 114.3 24.765) (layer Dwgs.User) (width 0.15))
+        #(gr_line (start 73.66 38.735) (end 97.155 99.06) (layer Dwgs.User) (width 0.15))
+        #(gr_line (start 61.595 43.815) (end 73.66 38.735) (layer Dwgs.User) (width 0.15))
+        #(gr_line (start 97.155 152.4) (end 61.595 43.815) (layer Dwgs.User) (width 0.15))
+        #(gr_line (start 119.38 149.86) (end 97.155 152.4) (layer Dwgs.User) (width 0.15))
+        #(via (at 139.7 76.835) (size 0.8) (drill 0.4) (layers F.Cu B.Cu) (net 0))
+        #(via (at 153.035 88.9) (size 0.8) (drill 0.4) (layers F.Cu B.Cu) (net 0))
+        #(via (at 149.225 99.695) (size 0.8) (drill 0.4) (layers F.Cu B.Cu) (net 0))
+        pass
+
 
     ##############
     def load_kicadpcb(self, filename):
@@ -226,9 +245,14 @@ class pcbfile(gcode):
                             if  var_line_start_xy and var_line_end_xy:
                                 print("build a line from %s to %s"%(var_line_start_xy, var_line_end_xy) )
                                 
-                                pts =[ (self.scrub(var_line_start_xy[0]), self.scrub(var_line_start_xy[1]  ,0)) , 
-                                       (self.scrub(var_line_end_xy[0])  , self.scrub(var_line_end_xy[1])   ,0) ]
+                                pts =[ (self.fl_scrub(var_line_start_xy[0]), self.fl_scrub(var_line_start_xy[1]  )) , 
+                                       (self.fl_scrub(var_line_end_xy[0])  , self.fl_scrub(var_line_end_xy[1])   ) ]
                                 poly = [(1,2)]
+                                # print( self.fl_scrub(var_line_start_xy[0]) )
+                                # print( self.fl_scrub(var_line_start_xy[1]) )
+                                # print( self.fl_scrub(var_line_end_xy[0]) )
+                                # print( self.fl_scrub(var_line_end_xy[1]) )
+                                                                                                                                
                                 self.insert_polygons(poly, pts)   
                                 
                                 # reset for next line 
@@ -270,11 +294,16 @@ class pcbfile(gcode):
         out = out.strip()
         out = out.replace(')','')
         out = out.replace(' ','')
-        out = out.replace('-','')
         out = out.replace('\"','')
         out = out.replace('\'','')
         return out
-    
+
+    ##############
+    #@property
+    def fl_scrub(self, inp):
+        out = self.scrub(inp)
+        return float(out)
+
     ##############    
     def do_shift(self, group):
         """ transform data operation after loading but before buidling 

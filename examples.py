@@ -12,8 +12,8 @@ from gnelscript.pygfx.obj3d import  *
 
 ## obj = object3d()
 ## obj.load('objects/cube.obj')
-## #pids = obj.indexer( slice=(0,20), nth=4 ) 
-## geom = obj.sub_select_geom( slice=(0,'n') )
+## #pids = obj.indexer( span=(0,20), nth=4 ) 
+## geom = obj.sub_select_geom( span=(0,'n') )
 ## 
 ## for g in geom:
 ##     print(g)
@@ -34,7 +34,7 @@ def test_copysop():
     obj.load(PYCORE_OBJ_IN)
 
     #be cautious of large number of polys. It gets slow real quick!
-    obj.copy_sop(slice=(1,20), offset=(0,.5,0), num=2, distance=.5)
+    obj.copy_sop(span=(1,20), offset=(0,.5,0), num=2, distance=.5)
     obj.save(PYCORE_OBJ_OUT)
 
 
@@ -64,7 +64,7 @@ def test_rotate_points():
 
 #####################################################
 def modify_part_of_an_object():
-    """ extract a slice of polygons
+    """ extract a span of polygons
         spatially trasform them
         insert result into a new object  
     """
@@ -72,7 +72,7 @@ def modify_part_of_an_object():
     obj = object3d()
     obj.load('objects/sphere.obj')
 
-    geom = obj.sub_select_geom( slice=(10,50), reindex=True )
+    geom = obj.sub_select_geom( span=(10,50), reindex=True )
     newpts = obj.rotate_pts((45,45,45), pts=geom[1])
 
     obj2 = object3d() 
