@@ -18,7 +18,6 @@ from gnelscript.pygfx.obj3d import  *
 #from pygfx.obj3d import  *
 
 from gnelscript.pygfx.kicad_ops import * 
-
 from gnelscript.pygfx.milling_ops import * 
 
 

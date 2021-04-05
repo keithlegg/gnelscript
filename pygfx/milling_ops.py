@@ -12,6 +12,9 @@ import os
 
 from gnelscript.pygfx.obj3d import object3d
 
+from gnelscript.pygfx.point_ops import *
+
+
 
 #from pygfx.gcode.bridgeport import  parser_commands
 from gnelscript.pygfx.gcode.linuxcnc import  parser_commands
@@ -48,6 +51,45 @@ Z  Z axis of machine
 
 """
 
+"""
+    FROM http://linuxcnc.org/docs/html/gcode.html
+
+
+  G0    Rapid Move
+  G1    Linear Move
+  G2, G3  I J K or R, P Arc Move
+  G4  P Dwell
+  G5  I J P Q Cubic Spline
+  G5.1  I J Quadratic Spline
+  G5.2  P L NURBS
+  G38.2 - G38.5   Straight Probe
+  G33 K ($) Spindle Synchronized Motion
+  G33.1 K ($) Rigid Tapping
+  G80     Cancel Canned Cycle
+
+
+  G81 R L (P) Drilling Cycle
+  G82 R L (P) Drilling Cycle, Dwell
+  G83 R L Q Drilling Cycle, Peck
+  G84 R L (P) ($) Right-hand Tapping Cycle, Dwell
+  G73 R L Q Drilling Cycle, Chip Breaking
+  G74 R L (P) ($) Left-hand Tapping Cycle, Dwell
+  G85 R L (P) Boring Cycle, Feed Out
+  G89 R L (P) Boring Cycle, Dwell, Feed Out
+  G76 P Z I J R K Q H L E ($) Threading Cycle
+
+
+  G90, G91    Distance Mode
+  G90.1, G91.1    Arc Distance Mode
+  G7    Lathe Diameter Mode
+  G8    Lathe Radius Mode
+
+  M3, M4, M5  S ($)   Spindle Control
+  M19 R Q (P) ($) Orient Spindle
+  G96, G97    S D ($) Spindle Control Mode
+
+"""
+
 # COMMENT = ';' # bridgeport uses this 
 
 COMMENT = '('    # linuxcnc uses this 
@@ -79,8 +121,56 @@ PARAM   = '#<'   # parameter (variable) , followed with brackets
 
 class generate_gcode(object):
     def __init__(self):
-        pass
+        self.coords = []
+        self.outfile = []
+
+    def savengc(self, filename):
+        print(os.getcwd() )
+
+        fobj = open( filename,"w") #encoding='utf-8'
+        for line in self.outfile: 
+            fobj.write(line+'\n')
+        fobj.close()
+
+
+    def lineartest(self):
+        pop = point_operator()
+        #calc_circle(self, pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
+        circ_pts = pop.calc_circle()
+
+
+        # n099    (This is a test plot nc program to be run on backplot)
+        # n100    (Author Ray Henry 10-Feb-2000)
+        # n101    g20
+        # n102    g0 x0 y0 z0 f30
+        # n103    x1 y1(start xy circle)
+        # n104    g17 g02 i.5 j.5
+        # n106    g0 z.1 (add xy lettering)
+        # n107    y1.75
+        # n108    z0
+        # n109    g1 y1.25 x1.4
+        # n110    y1.5 x1.2
+        # n111    y1.25 x1
+        # n112    y1.75 x1.4
+        self.outfile.append('g20')                  #inches for unit 
+        self.outfile.append('g0 x0 y0 z0 f30')      #rapid move to 0 
+        for i,pt in enumerate(circ_pts):
+            if i==0:
+                self.outfile.append( 'g1 x%s y%s'%(pt[0], pt[1]) )
+            else:    
+                self.outfile.append( 'g1 x%s y%s'%(pt[0], pt[1]) )
+
+        #rapid move at end 
+        #self.outfile.append('g0z1')
+        self.outfile.append('g0 x0 y0 z0 f30')      #rapid move to 0 
+
+        #program end 
+        self.outfile.append('%')
+        self.outfile.append('m2')
         
+
+
+
 
 ##------------------------------------------
 
@@ -223,15 +313,15 @@ class gcode(object3d):
 
     def load_gcode(self, filename):
 
-        #if os.path.lexists(filename) == 0:
-        #    self.scribe("%s DOES NOT EXIST !! "%filename )
-        #    #raise
+        if os.path.lexists(filename) == 0:
+            self.scribe("%s DOES NOT EXIST !! "%filename )
+            #raise
             
         if os.path.lexists(filename):
             f = open( filename,"r", encoding='utf-8')
             contents = f.readlines()
 
- 
+
             #scan entire file for parametrs first 
             for lin in contents:
                 self.parse_params(lin)

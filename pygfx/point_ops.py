@@ -60,6 +60,30 @@ class point_operator(object):
         self.vec2     = vec2()     
         self.vec3     = vec3()      
 
+    def apply_matrix_pts(self, pts, m33=None, m44=None):
+        """ 
+            DEBUG BAD INTERFACE! 
+             
+            batch mutliply points by a matrix 
+            used for translate, rotate, and scaling. 
+            
+            Can be used for many other things as well.  
+
+        """
+      
+        tmp_buffer = [] 
+
+        # apply the transform here
+        for pt in pts:  
+
+            if m33 is not None:
+                tmp_buffer.append( m33 * pt )
+            if m44 is not None:
+                tmp_buffer.append( m44 * pt )
+
+        return tmp_buffer
+
+
     def tuple_pop(self, listTuples, tup):
         """ take a list of tuples, remove one by filtering it out and return the rest back """
         out = []
@@ -431,8 +455,9 @@ class point_operator(object):
                 out.append( (px, py, pz))                
             dit+=degs
         
-        out = self.xform_pts( pos, out) 
-        out = self.rotate_pts(rot, out) 
+        #out = self.xform_pts( pos, out) 
+        #out = self.rotate_pts(rot, out) 
+        out = self.trs_points(out, translate=pos, rotate=rot)
 
         if periodic:
             out.append( out[0] )
@@ -523,6 +548,73 @@ class point_operator(object):
         return pts_created
 
 
+    ############################################### 
+    def trs_points(self, pts, translate=(0,0,0), rotate=(0,0,0),scale=(1,1,1) ):
+        #UNTESTED 
+
+        #######################
+        #ROTATE FIRST 
+
+        rx=rotate[0]
+        ry=rotate[1]
+        rz=rotate[2]
+
+        # degree to radian function 
+        dtr = self.mu.dtr
+
+        # build rotationY (see diagram above) 
+        y_matrix =  self.m44.identity
+        y_matrix[0]  =  math.cos(dtr( ry ))
+        y_matrix[2]  = -math.sin(dtr( ry ))
+        y_matrix[8]  =  math.sin(dtr( ry ))
+        y_matrix[10] =  math.cos(dtr( ry ))
+              
+        # build rotationZ (see diagram above) 
+        z_matrix    =  self.m44.identity
+        z_matrix[0] =  math.cos(dtr( rz ))
+        z_matrix[1] =  math.sin(dtr( rz ))
+        z_matrix[4] = -math.sin(dtr( rz ))
+        z_matrix[5] =  math.cos(dtr( rz ))
+        tmp_matr = y_matrix * z_matrix
+
+        # build rotationX (see diagram above) 
+        x_matrix =  self.m44.identity
+        x_matrix[5]  =   math.cos(dtr( rx )) 
+        x_matrix[6]  =   math.sin(dtr( rx )) 
+        x_matrix[9]  =  -math.sin(dtr( rx ))
+        x_matrix[10] =   math.cos(dtr( rx ))
+
+        rot_matrix = self.m44.identity
+        rot_matrix = x_matrix * tmp_matr   
+ 
+        rotated = self.apply_matrix_pts (pts, m44=rot_matrix) 
+
+        ###############################
+        #TRANSLATE SECOND 
+        tmp = []
+        for pt in pts: 
+            x = pt[0] + translate[0]
+            y = pt[1] + translate[1]
+            z = pt[2] + translate[2]
+            tmp.append( (x,y,z) )
+
+        pts = tmp 
+
+        ###############################
+        #SCALE LAST 
+    
+        # build a scale matrix 
+        sc_m33 = self.m33.identity
+        sc_m33[0]  = scale[0]
+        sc_m33[4]  = scale[1]
+        sc_m33[8]  = scale[2]    
+         
+        ################################################
+        pts = self.apply_matrix_pts(pts, m33=sc_m33)  # m44=sc_m44 
+        
+        return pts 
+
+ 
 
 ###############################################
 class polygon_operator(point_operator):
@@ -1266,29 +1358,6 @@ class polygon_operator(point_operator):
     ############################################### 
     # operators that modify geometry data and/or build new geom 
 
-    ############################################### 
-    def apply_matrix_pts(self, pts, m33=None, m44=None):
-        """ 
-            DEBUG BAD INTERFACE! 
-             
-            batch mutliply points by a matrix 
-            used for translate, rotate, and scaling. 
-            
-            Can be used for many other things as well.  
-
-        """
-      
-        tmp_buffer = [] 
-
-        # apply the transform here
-        for pt in pts:  
-
-            if m33 is not None:
-                tmp_buffer.append( m33 * pt )
-            if m44 is not None:
-                tmp_buffer.append( m44 * pt )
-
-        return tmp_buffer
     
     ############################################### 
     def apply_matrix_ptgrp(self, ptgrp, m33=None, m44=None):
@@ -1468,7 +1537,7 @@ class polygon_operator(point_operator):
                     #look at first point and assume all data is similar
                     #if it is 2d add a zero Z axis 
                     if len(points[0])==2:
-                        print("data appears to be 2D")
+                        #print("data appears to be 2D")
                         for i,pt in enumerate(points):
                             self.points.append( (points[i][0], points[i][1],0) )
 
