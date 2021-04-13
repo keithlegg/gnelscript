@@ -91,6 +91,9 @@ class pcbfile(gcode):
         self.ch = .5      # cut height 
         self.hp = (0,0,0) # home position 
 
+        self.scale =  -0.0393701 #mm to inch
+        #self.scale =  1
+
     ##############
     def show_geom(self):
         #call the inherited polygon "show" method
@@ -117,16 +120,20 @@ class pcbfile(gcode):
 
     ##############
     def export_ngc(self, filename):
-        scale = 0.0393701 #mm to inch
+        """ conveert the raw pointes read from kicad into a usuable  path(s) with retract 
+        """
+        
         lastpt = (0,0,0)
 
         self.outfile = []
         
         self.outfile.append('(exported with gnelscript kicad_ops )')
-        self.outfile.append('(linear scale set to %s of internal coordinates)'%scale )
+        self.outfile.append('(linear scale set to %s of internal coordinates)'%self.scale )
         self.outfile.append('  ')
 
         self.outfile.append('g20')                  #inches for unit 
+        
+        #move to origin ? 
         self.outfile.append('g0 x%s y%s z%s f30'% ( self.hp[0], self.hp[1], self.rh) )   #rapid move to 0 
         self.ngc_to_obj.append( ( self.hp[0], self.hp[1], self.rh) ) 
 
@@ -138,16 +145,19 @@ class pcbfile(gcode):
 
         # build the gcode up with simple linear movements 
         for fill_poly in self.filled_polys:
+            print("EXPORT PHIL POLY ", fill_poly )
+
             pt1 = fill_poly[0] 
-            self.outfile.append('x%s y%s z%s'% (  round(pt1[0]*scale,6) , round(pt1[1]*scale,6), self.rh ) )  #first point at retract height   
+            self.outfile.append('x%s y%s z%s'% (  round(pt1[0]*self.scale,6) , round(pt1[1]*self.scale,6), self.rh ) )  #first point at retract height   
             self.ngc_to_obj.append( ( self.hp[0], self.hp[1], self.rh) ) 
 
             for i,pt in enumerate(fill_poly):
-                self.outfile.append( 'x%s y%s z%s'%( round(pt[0]*scale,6) , round(pt[1]*scale,6), self.ch ) )
-                self.ngc_to_obj.append( ( round(pt[0]*scale,6) , round(pt[1]*scale,6), self.ch ) )             
-                lastpt =( round(pt[0]*scale,6) , round(pt[1]*scale,6), self.ch )
+                self.outfile.append( 'x%s y%s z%s'%( round(pt[0]*self.scale,6) , round(pt[1]*self.scale,6), self.ch ) )
+                self.ngc_to_obj.append( ( round(pt[0]*self.scale,6) , round(pt[1]*self.scale,6), self.ch ) )             
+                lastpt =( round(pt[0]*self.scale,6) , round(pt[1]*self.scale,6), self.ch )
 
             self.outfile.append('g0z%s'% ( self.rh ) )  #retract in between cuts
+            self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.ch)   ) 
             self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.rh)   ) 
 
             self.outfile.append('  ')
@@ -158,20 +168,21 @@ class pcbfile(gcode):
 
         # build the gcode up with simple linear movements 
         for fill_poly in self.gr_polys:
-            pt1 = fill_poly[0]            
-            self.outfile.append('x%s y%s z%s'% (  round(pt1[0]*scale,6) , round(pt1[1]*scale,6), self.rh ) )  #first point at retract height              
-            self.ngc_to_obj.append( ( round(pt1[0]*scale,6) , round(pt1[1]*scale,6), self.rh ) )             
-            
-            for i,pt in enumerate(fill_poly):
-                self.outfile.append( 'x%s y%s z%s'%( round(pt[0]*scale,6) , round(pt[1]*scale,6), self.ch ) )
-                self.ngc_to_obj.append( ( round(pt1[0]*scale,6) , round(pt1[1]*scale,6), self.ch ) )                   
-                lastpt = ( round(pt1[0]*scale,6) , round(pt1[1]*scale,6), self.ch )
+            if len(fill_poly):
+                pt1 = fill_poly[0]            
+                self.outfile.append('x%s y%s z%s'% (  round(pt1[0]*self.scale,6) , round(pt1[1]*self.scale,6), self.rh ) )  #first point at retract height              
+                self.ngc_to_obj.append( ( round(pt1[0]*self.scale,6) , round(pt1[1]*self.scale,6), self.rh ) )             
+                
+                for i,pt in enumerate(fill_poly):
+                    self.outfile.append( 'x%s y%s z%s'%( round(pt[0]*self.scale,6) , round(pt[1]*self.scale,6), self.ch ) )
+                    self.ngc_to_obj.append( ( round(pt[0]*self.scale,6) , round(pt[1]*self.scale,6), self.ch ) )                   
+                    lastpt = ( round(pt1[0]*self.scale,6) , round(pt1[1]*self.scale,6), self.ch )
 
-            self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.rh)   )                 
-            self.outfile.append('g0z%s'% ( self.rh ) )  #retract in between cuts
-            #self.ngc_to_obj.append(  ) 
+                self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.ch)   ) 
+                self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.rh)   )                 
+                self.outfile.append('g0z%s'% ( self.rh ) )  #retract in between cuts
 
-            self.outfile.append('  ')
+                self.outfile.append('  ')
 
         ####        
         # self.outfile.append('(exporting segments )')
@@ -179,6 +190,9 @@ class pcbfile(gcode):
         #### 
         # rapid move at end 
         self.outfile.append('m2') #program end
+
+        print('#####################')
+        print(self.ngc_to_obj)
 
         #########################
 
@@ -196,23 +210,16 @@ class pcbfile(gcode):
     ##############
     def save_3d_obj(self, name):
         """ dump a bunch of 3d poonts as a giant line to visualize in gnolmec"""   
+        self.points = self.ngc_to_obj
 
-        newpts = []
-        scale = 0.0393701 #mm to inch
+        # make a series of connected lines from points  
+        for i,pt in enumerate(self.ngc_to_obj):
+            if i>0 and i<len(self.ngc_to_obj):
+                poly = (i,i+1)
+                self.polygons.append( poly ) 
 
-        ptstmp = self.ngc_to_obj
-        self.points = []
-
-        for i,pt in enumerate(ptstmp):
-            if i>0:
-                pts =[ (ptstmp[i-1][0], ptstmp[i-1][1], ptstmp[i-1][2]  ) , 
-                       (  ptstmp[i][0], ptstmp[i][1], ptstmp[i][2] ) ]
-                poly = [(1,2)]
-                
-                self.insert_polygons(poly, pts) 
-                #print(self.points[i][0]) 
         
-        #self.scale_pts(scale)
+        #self.scale_pts(self.scale)
         self.save(name)
 
 
@@ -237,7 +244,7 @@ class pcbfile(gcode):
     ##############
     def load_kicadpcb(self, filename):
         """ a parser that is not recursive, but clever enough to scan all the 
-            file entities and know what module they are in 
+            entities in the file that have coordinates and store then in a list with a type identifier 
         """ 
         
         var_module_name    = ''
@@ -258,239 +265,51 @@ class pcbfile(gcode):
 
 
         f = open(filename, 'r')
-        for line in f:
+
+        geometry = []
+
+        for lc,line in enumerate(f):
             if '(' in line or ')' in line:
-                toked = line.split(' ') 
-                for i,tok in enumerate(toked):
+                newpoly =[]
+                linetoked = line.split(' ') 
+                cleanspaces = []
+                for t in linetoked:
+                    if t!='':
+                        cleanspaces.append( self.scrub(t) )
+
+                firstelem = self.scrub(cleanspaces[0]) 
+                if firstelem!='':
+                    newpoly.append(firstelem)
+
+                for i,tok in enumerate(cleanspaces):
                     if tok !='':
-                        cleaned = self.scrub(tok[1:])
-                         
-                        # if we encounter a "(" - go deeper into the parse
-                        for ct in re.findall('\(',tok):
-                            
-                            #print("DEEPER '%s'"%cleaned )
+                        if tok == 'xy':   
+                            newpoly.append( (float(self.scrub(cleanspaces[i+1]))  , float(self.scrub(cleanspaces[i+2]) )) ) 
 
-                            if 'polygon' == cleaned:
-                                print('#  parse a polygon ')
-                                self.parsing_fillpolygon = True
-                            if 'filled_polygon' in cleaned:
-                                print('#  parse a filled polygon ')
-                                self.parsing_fillpolygon = True
-                            if 'gr_polygon' in cleaned:
-                                print('#  parse a graphic polygon ')                                
-                                self.parsing_fillpolygon = True                                
+                        if tok == 'start':   
+                            newpoly.append( (float(self.scrub(cleanspaces[i+1]))  , float(self.scrub(cleanspaces[i+2]) )) ) 
+                        if tok == 'end':   
+                            newpoly.append( (float(self.scrub(cleanspaces[i+1]))  , float(self.scrub(cleanspaces[i+2]) )) ) 
 
+                        if tok == 'center':   
+                            newpoly.append( (float(self.scrub(cleanspaces[i+1]))  , float(self.scrub(cleanspaces[i+2]) )) ) 
 
-                            # often, we only care about the entity immediately above current. store what it is 
-                            if self.cur_entity is not None:
-                                self.oneup_entity = self.cur_entity
-
-                            self.cur_entity = self.scrub(cleaned) #name of entity immediately after "("
-
-                            # # polygon 
-                            # if self.cur_entity=='polygon':
-                            #     print("CUR ENTITY", self.cur_entity) 
-                            # # graphic polygon 
-                            # if self.cur_entity=='gr_poly':
-                            #     print("CUR ENTITY", self.cur_entity) 
-                            # # filled polygon 
-                            # if self.cur_entity=='filled_polygon':
-                            #     print("CUR ENTITY", self.cur_entity)
-
-
-                            # if module depth is set we are parsing a module, if it matches depth we must be done traversing     
-                            if self.parse_depth == self.module_depth and self.cur_module is not None:
-                            
-
-                                # make a new "module" container object to store what we found in file 
-                                # make it when we exit because all the constituent pieces will be scanned at this point 
-                                #new_mod = kicad_module()
-                                #new_mod.name = self.cur_module
-                                #self.modules.append( new_mod )
-                                
-                                #------ 
-                                #step out of the module 
-                                self.module_depth = 0
-                                self.cur_module = None 
-                                
-                            #-------------------------------
-                            #-------------------------------
-                            # if module depth is non zero we are parsing a module  
-                            # most of the parsing happens in this block 
-                            if self.module_depth>0:
-                               #  print("we are in a module %s"%self.cur_module) 
-
-
-                                if cleaned == 'at' and self.oneup_entity == 'module':
-                                    # print("MODULE %s AT %s %s" %(self.cur_module, toked[i+1], toked[i+2]) ) 
-                                    self.cur_module_pos = [toked[i+1], toked[i+2] ] 
-                                    #self.cur_module = self.oneup_entity
-
-                                if cleaned == 'at' and self.oneup_entity == 'pad':
-                                    #new_pad = kicad_pad()
-                                    
-                                    #print("PAD %s AT %s %s" %(self.cur_module, toked[i+1], toked[i+2]) ) 
-                                    #print("pad is relative to module %s position %s %s "% (self.cur_module, self.cur_module_pos[0], self.cur_module_pos[1]) ) 
-                                    
-                                    pass
-
-
-
-                            #-------------------------------
-                            #-------------------------------
-                            # if we found a module - store the depth it was found at and the name     
-                            if cleaned == 'module':
-                                self.module_depth = self.parse_depth 
-                                self.cur_module = self.scrub(toked[i+1])   
-                                #print("MODULE FOUND %s "%self.cur_module )
-
-                            #print(toked)
-                            if cleaned == 'xy':
-                                for i,chunk in enumerate(toked):
-                                    if chunk!='':
-                                        if 'xy' in chunk:
-                                            xcoord = float(self.scrub(toked[i+1])) 
-                                            ycoord = float(self.scrub(toked[i+2]))
-
-                                            if self.parsing_fillpolygon:
-                                                if self.oneup_entity == 'pts':
-                                                    self.fill_polygon_buffer.append( (xcoord, ycoord) )
-
-                                            if self.parsing_grpolygon:
-                                                if self.oneup_entity == 'pts':
-                                                    self.gr_polygon_buffer.append( (xcoord, ycoord) )
-
-                                            if self.parsing_polygon:
-                                                if self.oneup_entity == 'pts':
-                                                    self.polygon_buffer.append( (xcoord, ycoord) )
-
-                            #-------------------------------
-                            # parsing objects outside of modules  (SEGMENTS, VIAS, ETC)
-
-                            #-------------------
-                            # arc parsing 
-                            if cleaned == 'start' and self.oneup_entity == 'gr_arc':
-                                print("gr_arc start", toked[i+1], toked[i+2]  ) 
-
-                            #-------------------
-                            # via parsing 
-                            if cleaned == 'start' and self.oneup_entity == 'via':
-                                print("via start", toked[i+1], toked[i+2]  ) 
-
-                            #-------------------
-                            # polygon parsing 
-                            if cleaned == 'pts' and self.oneup_entity == 'gr_poly':
-                                print("gr_poly start", toked[i+1], toked[i+2]  ) 
-
-                            #-------------------
-                            # circle parsing 
-                            if cleaned == 'center' and self.oneup_entity == 'gr_circle':
-                                print("gr_circle ", toked[i+1], toked[i+2]  ) 
-
-                            #-------------------
-
-                            # segment parsing 
-                            if cleaned == 'start' and self.oneup_entity == 'segment':
-                                #print("segment start ", toked[i+1], toked[i+2]  ) 
-                                var_segment_start  = [toked[i+1], toked[i+2]]
-                            if cleaned == 'end' and self.oneup_entity == 'segment':
-                                #print("segment end ", toked[i+1], toked[i+2]  ) 
-                                var_segment_end  = [toked[i+1], toked[i+2]]
-
-                            if  var_segment_start and var_segment_end:
-
-                                # #save the geometry into a 3D model 
-                                # pts =[ (self.scrub(var_segment_start[0]), self.scrub(var_segment_start[1])  ,0) , 
-                                #        (self.scrub(var_segment_end[0])  , self.scrub(var_segment_end[1])    ,0) ]
-                                # poly = [(1,2)]
-                                # self.insert_polygons(poly, pts)   
-
-
-                                # reset for next line 
-                                var_segment_start = None                              
-                                var_segment_end = None  
-
-                            #-------------------
-
-                            # Line parsing  
-                            if cleaned == 'start' and self.oneup_entity == 'gr_line':
-                                #print("GR LINE start", toked[i+1], toked[i+2]  ) 
-                                var_line_start_xy = [toked[i+1], toked[i+2]]
-                            if cleaned == 'end' and self.oneup_entity == 'gr_line':
-                                #print("GR LINE end", toked[i+1], toked[i+2]  ) 
-                                var_line_end_xy   = [toked[i+1], toked[i+2]]
-                            
-                            if  var_line_start_xy and var_line_end_xy:
-                                #print("build a line from %s to %s"%(var_line_start_xy, var_line_end_xy) )
-                                
-                                pts =[ (self.fl_scrub(var_line_start_xy[0]), self.fl_scrub(var_line_start_xy[1]  )) , 
-                                       (self.fl_scrub(var_line_end_xy[0])  , self.fl_scrub(var_line_end_xy[1])   ) ]
-                                poly = [(1,2)]
-                                # print( self.fl_scrub(var_line_start_xy[0]) )
-                                # print( self.fl_scrub(var_line_start_xy[1]) )
-                                # print( self.fl_scrub(var_line_end_xy[0]) )
-                                # print( self.fl_scrub(var_line_end_xy[1]) )
-                                                                                                                                
-                                self.insert_polygons(poly, pts)   
-                                
-                                # reset for next line 
-                                var_line_start_xy = None                              
-                                var_line_end_xy = None  
-
-                            #-------------------------------                                
-                            self.parse_depth += 1
-
-                        # if we encounter a ")" - go up one in the parse                            
-                        for ct in re.findall('\)',tok):
-                            
-                            #use these to store what we are reading in 
-                            
-                            ################
-                            #if we finished parsing a filled polygon - dump the buffer and reset 
-                            if self.parsing_fillpolygon == True:
-                                self.filled_polys.append(self.fill_polygon_buffer) 
-                                self.fill_polygon_buffer = [] # reset buffer for next polygon 
-                                self.parsing_fillpolygon = False
-                                print('# end fill polygon parse ')
-
-                            ################
-                            #if we finished parsing a GR polygon - dump the buffer and reset 
-                            if self.parsing_grpolygon == True:
-                                self.gr_polygon_buffer.append(self.gr_polygon_buffer) 
-                                self.gr_polygon_buffer = [] # reset buffer for next polygon 
-                                self.parsing_grpolygon = False
-                                print('# end graphic polygon parse ')
-
-
-                            ################
-                            #if we finished parsing a GR polygon - dump the buffer and reset 
-                            if self.parsing_polygon == True:
-                                self.ki_polygons.append(self.polygon_buffer) 
-                                self.polygon_buffer = [] # reset buffer for next polygon 
-                                self.parsing_polygon = False
-                                print('# end polygon parse ')
-
-                            #segments are on one line so no need to store state 
-                            #self.parsing_segment = False  
-                    
-                            if self.oneup_entity is not None:
-                                # if they are the same - we returned from an entity 
-                                #if self.cur_entity != self.oneup_entity:
-                                #    print("BACK OUT FROM %s INTO %s"% (self.cur_entity, self.oneup_entity ) )
-                                
-                                # go "oneup" in history      
-                                self.cur_entity = self.oneup_entity 
-                            
-                            self.parse_depth -= 1
-                  
-
-        if self.parse_depth != 0:
-            print("ERROR - UNEVEN NUMBER OF PARENTHESIS IN FILE! ")
-            exit()            
-
-
-
-            #self.file_contents.append(line)
+                if len(newpoly)>2:  
+                    geometry.append(newpoly)
+        ####################
+        #not perfect - it will miss things that are longer than one line!
+        
+        print('######## num geometry elements read ', len(geometry ) )
+        for p in geometry:
+            tmp = []
+            print("### ", p )
+            if len(p):
+                if p[0] =='gr_poly':
+                    tmp.extend(p[1:])
+        
+            self.gr_polys.append(tmp)
+        
+        print(self.gr_polys)
 
     ##############
     #@property
@@ -499,6 +318,7 @@ class pcbfile(gcode):
 
         out = inp.lower()
         out = out.strip()
+        out = out.replace('(','')
         out = out.replace(')','')
         out = out.replace(' ','')
         out = out.replace('\"','')
