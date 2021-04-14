@@ -145,7 +145,6 @@ class pcbfile(gcode):
 
         # build the gcode up with simple linear movements 
         for fill_poly in self.filled_polys:
-            print("EXPORT PHIL POLY ", fill_poly )
 
             pt1 = fill_poly[0] 
             self.outfile.append('x%s y%s z%s'% (  round(pt1[0]*self.scale,6) , round(pt1[1]*self.scale,6), self.rh ) )  #first point at retract height   
@@ -156,10 +155,12 @@ class pcbfile(gcode):
                 self.ngc_to_obj.append( ( round(pt[0]*self.scale,6) , round(pt[1]*self.scale,6), self.ch ) )             
                 lastpt =( round(pt[0]*self.scale,6) , round(pt[1]*self.scale,6), self.ch )
 
-            self.outfile.append('g0z%s'% ( self.rh ) )  #retract in between cuts
-            self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.ch)   ) 
-            self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.rh)   ) 
 
+            self.outfile.append( 'x%s y%s z%s'%(lastpt[0], lastpt[1], self.ch) )
+            self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.ch)   ) 
+
+            self.outfile.append('g0z%s'% ( self.rh ) )  #retract in between cuts
+            self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.rh)   ) 
             self.outfile.append('  ')
 
         ####
@@ -168,8 +169,10 @@ class pcbfile(gcode):
 
         # build the gcode up with simple linear movements 
         for fill_poly in self.gr_polys:
+
             if len(fill_poly):
-                pt1 = fill_poly[0]            
+                pt1 = fill_poly[0] 
+
                 self.outfile.append('x%s y%s z%s'% (  round(pt1[0]*self.scale,6) , round(pt1[1]*self.scale,6), self.rh ) )  #first point at retract height              
                 self.ngc_to_obj.append( ( round(pt1[0]*self.scale,6) , round(pt1[1]*self.scale,6), self.rh ) )             
                 
@@ -178,8 +181,12 @@ class pcbfile(gcode):
                     self.ngc_to_obj.append( ( round(pt[0]*self.scale,6) , round(pt[1]*self.scale,6), self.ch ) )                   
                     lastpt = ( round(pt1[0]*self.scale,6) , round(pt1[1]*self.scale,6), self.ch )
 
-                self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.ch)   ) 
-                self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.rh)   )                 
+                self.ngc_to_obj.append( (round(fill_poly[0][0]*self.scale,6), round(fill_poly[0][1]*self.scale,6), self.ch)   ) 
+                self.outfile.append( 'x%s y%s z%s'%( (round(fill_poly[0][0]*self.scale,6), round(fill_poly[0][1]*self.scale,6), self.ch) ) )
+
+                self.ngc_to_obj.append( (round(fill_poly[0][0]*self.scale,6), round(fill_poly[0][1]*self.scale,6), self.rh)   )   
+                self.outfile.append( 'x%s y%s z%s'%( (round(fill_poly[0][0]*self.scale,6), round(fill_poly[0][1]*self.scale,6), self.rh) ) )
+
                 self.outfile.append('g0z%s'% ( self.rh ) )  #retract in between cuts
 
                 self.outfile.append('  ')
@@ -191,8 +198,8 @@ class pcbfile(gcode):
         # rapid move at end 
         self.outfile.append('m2') #program end
 
-        print('#####################')
-        print(self.ngc_to_obj)
+        #print('#####################')
+        #print(self.ngc_to_obj)
 
         #########################
 
@@ -302,14 +309,13 @@ class pcbfile(gcode):
         print('######## num geometry elements read ', len(geometry ) )
         for p in geometry:
             tmp = []
-            print("### ", p )
+            #print("### ", p )
             if len(p):
                 if p[0] =='gr_poly':
                     tmp.extend(p[1:])
         
             self.gr_polys.append(tmp)
         
-        print(self.gr_polys)
 
     ##############
     #@property
