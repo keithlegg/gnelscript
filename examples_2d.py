@@ -28,6 +28,7 @@ def render_texture_map(input_img, gridsize=50):
 
 
 
+
 ###################################################
 def render_2d_vector(v1, gridsize=50):
     """draw a vector and tell us the angle of it in degrees
