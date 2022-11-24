@@ -60,8 +60,13 @@ class RasterObj(object):
         self.res_x = rx
         self.res_y = ry 
 
-    def empty_buffer(self):
-        return Image.new(self.bitmode, (self.res_x, self.res_y) )
+    def empty_buffer(self, color):
+        image =  Image.new(self.bitmode, (self.res_x, self.res_y) )
+        dpix = image.load() 
+        for x in range(self.res_x):
+            for y in range(self.res_y):
+                dpix[ x, y ] = color
+        return image  
 
     def create_buffer(self, rx, ry):
         self.res_x = rx
@@ -746,15 +751,25 @@ class PixelOp (RasterObj):
             color_diffs.append((color_diff, color))
         return min(color_diffs)[1]
 
-    def extract_by_color(self, path, name, color, framebuffer=None):
-        """return a new image that matches a color ignoring all others """
+    def extract_by_color(self, path, name, color, slowmode=False, exactcolor=False, invert=False, framebuffer=None):
+        """ INVERT IS BROKEN - FIX IT DEBUG !
+            self.empty_buffer() MAY ALSO BE BROKEN - THINK MORE ABOUT IT 
+
+            return a new image that matches a color ignoring all others 
+
+        """
+
         if framebuffer:
             self.read_buffer(framebuffer)
         else:
             framebuffer= self.fb
 
-        new_fb = self.empty_buffer() 
     
+        if invert:
+            new_fb = self.empty_buffer( (255,255,255, 255) ) 
+        else:
+            new_fb = self.empty_buffer(  (0,0,0,255) ) 
+
         siz = framebuffer.size
         
         src_pix = framebuffer.load() 
@@ -764,13 +779,27 @@ class PixelOp (RasterObj):
             for y in range(siz[1]):
 
                 ## reeeeaaallly slow because it iterates ALL pixels with math on each one 
-                if self.color_distance(src_pix[ x, y ], color)<100: 
-                     #extract actual color
-                     #dpix[ x, y ]=color
-     
-                     #extract into white on black
-                     dpix[ x, y ]=(255,255,255)
+                ## should poduce a better image because it will average colors into one 
+                if slowmode: 
+                    if self.color_distance(src_pix[ x, y ], color)<100: 
+                         if exactcolor:
+                             dpix[ x, y ]=color
+                         else:  
+                             dpix[ x, y ]=(255,255,255)
+                    else:
+                        if invert: 
+                             dpix[ x, y ]=(255,255,255)
 
+                #fast but only catches colors that match exactly 
+                else: 
+                    if src_pix[ x, y ] == color: 
+                         if exactcolor:
+                             dpix[ x, y ]=color
+                         else:  
+                             dpix[ x, y ]=(255,255,255)
+                    else:
+                        if invert: 
+                             dpix[ x, y ]=(255,0,255)
 
         new_fb.save("%s/%s.bmp"%(path,name) ) 
 

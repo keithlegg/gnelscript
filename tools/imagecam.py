@@ -23,7 +23,9 @@ from gnelscript.pygfx.point_ops_2d import *
 
 mu = math_util() 
 
-potrace_command = "WHERE_YOU_PUT/potrace"
+
+#you need to install and confifgure this tool 
+potrace_command = "potrace"
 
 
 
@@ -99,21 +101,33 @@ def firstpass( iters, chops, inputfile, outputfolder, outputfile ):
 
 
 
-def secondpass(inputimage, outputimage):
+def secondpass(inputimage, outputpath, numbands, fast=False):
     #from stack overflow  - attempt to get most common colors in an image 
 
-    NUM_CLUSTERS = 5
 
     im = Image.open(inputimage )
 
-    #im = im.resize((150, 150))      # optional, to reduce time
+    if fast:
+        im = im.resize((300, 300))      # optional, to reduce time
 
     ar = np.asarray(im)
     shape = ar.shape
     ar = ar.reshape(scipy.product(shape[:2]), shape[2]).astype(float)
 
-    codes, dist = scipy.cluster.vq.kmeans(ar, NUM_CLUSTERS)
-    print('cluster centres:\n', codes)
+    codes, dist = scipy.cluster.vq.kmeans(ar, numbands)
+
+    colorfile = '%s/commonbands.txt'%outputpath
+    print("writing color bands %s"%colorfile)
+
+    f = open(colorfile, "a")
+
+    #write a file - make a list of RGB ints to read in later 
+    for i,clr in enumerate(codes):
+        f.write("%s %s %s %s \n"%(i, int(clr[0]), int(clr[1]), int(clr[2])) )
+    f.close()
+
+    print(codes)
+
 
     vecs, dist = scipy.cluster.vq.vq(ar, codes)         # assign codes
 
@@ -128,10 +142,12 @@ def secondpass(inputimage, outputimage):
     c = ar.copy()
     for i, code in enumerate(codes):
         c[scipy.r_[scipy.where(vecs==i)],:] = code
-    imageio.imwrite('%s_commonbands.png'%outputimage, c.reshape(*shape).astype(np.uint8))
+
+    print("writing file ", '%s/commonbands.png'%outputpath) 
+    imageio.imwrite('%s/commonbands.png'%outputpath, c.reshape(*shape).astype(np.uint8))
 
 
-def thirdpass( inputfile, outputfolder  ):
+def thirdpass( inputfile, outputfolder, fastmode=False  ):
     """ break an already posterized image into seperate iamges X colors """
 
     import subprocess
@@ -148,28 +164,30 @@ def thirdpass( inputfile, outputfolder  ):
     vwidth = int(width/chops)
     vheight = int(height/chops) 
 
-    ## colors = [ 
-    ##        ["black" ,  (  0  , 0  , 0   ) ],
-    ##        ["red"   ,  (  255, 0  , 0   ) ],
-    ##        ["green" ,  (  0  , 255, 0   ) ],
-    ##        ["blue"  ,  (  0  , 0  , 255 ) ],
-    ##        ["white" ,  (  255, 255, 255 ) ],
-    ##        ]
+    ##populate this from the output of second pass to get the five best tasty colors I know 
+    ## colors= [  ["a", (78,27,40)],
+    ##            ["b", (163,91,94)],
+    ##            ["c", (14,4,12)],
+    ##            ["d", (254,246,241)],
+    ##            ["e", (243,162,158)],
+    ##          ]
 
-    colors= [ ["a", (0,0,0)],
-               ##["b", (7,3,2)],
-               ##["c", (94,96,82)],
-               ##["d", (98,79,7)],
-               ["e", (255,255,255)],
-             ]
+    colorfile = '%s/commonbands.txt'%outputfolder
+
+    print("loading rgb commonbands file %s"%colorfile )
+
+    colors = [] 
+
+    f = open(colorfile, "r")
+    for x in f:
+        l = x.split(' ')
+        colors.append( [l[0], (int(l[1]), int(l[2]), int(l[3]) ) ] ) 
 
     for c in colors:
-        simg.extract_by_color( outputfolder, c[0], c[1] )
-
+        #extract_by_color( path, name, color, slowmode, exactcolor, invert, framebuffer)
+        simg.extract_by_color( outputfolder, c[0], c[1], False, False, False, False )
         command = [potrace_command, "%s/%s.bmp"%(outputfolder, c[0] ), "-b", "dxf", "-W", str(vwidth), "-H", str(vheight), "-t", str(tsize)]
-        
-        print(command)
-
+        #print(command)
         subprocess.run(command)
 
 
@@ -177,28 +195,16 @@ def thirdpass( inputfile, outputfolder  ):
 
 ##----------------------------------------------------
 
+## (iteration , scaling(divs) , in, out )
+#firstpass(10, 250, "images/in/wyoming.jpg", "images/out", "output")
 
-#firstpass(10, "images/stop.webp", "poster", "postergirl")
-#firstpass(10, "images/d.jpg",     "poster", "postergirl")
-#firstpass(2, "images/refer.jpg",  "poster", "postergirl")
-
-
-#firstpass(10, 250, "images/me2.jpg", "poster", "postergirl")
-
-# ( /usr/local/opt/python@3.10/bin/python3.10 ./imagecam.py ) 
-
-#secondpass("images/me4.png", "poster" )
-
-##
+##   /usr/local/opt/python@3.10/bin/python3.10 ./imagecam.py  
+#secondpass("images/out/wy.bmp", "images/out" , 10, False)
 
 
-simg = PixelOp()
-color = [(255,255,255)]
+#set the RGB values from last tool and run this 
+thirdpass( "images/out/commonbands.png",  "images/out" )
 
-#print( simg.closest_color(color, (128,128,128))) 
-
-
-#print( simg.color_distance((0,100,80), (0,100,100))) 
 
 
 
