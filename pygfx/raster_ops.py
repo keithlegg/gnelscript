@@ -2,6 +2,8 @@
 
 import os, sys, math
 
+from math import sqrt
+
 from PIL import Image, ImageOps
 
 from gnelscript.pygfx.math_ops import  NUMPY_IS_LOADED
@@ -46,6 +48,9 @@ class RasterObj(object):
         else:    
             self.fb.save(name)
 
+    #def image_from_bytes(self, bytes_data):
+    #    self.fb = Image.open( bytes_data )
+
     def load(self, name):
         self.fb = Image.open(name)
         self.res_x = self.fb.size[0]
@@ -54,6 +59,9 @@ class RasterObj(object):
     def set_res(self, rx, ry):
         self.res_x = rx
         self.res_y = ry 
+
+    def empty_buffer(self):
+        return Image.new(self.bitmode, (self.res_x, self.res_y) )
 
     def create_buffer(self, rx, ry):
         self.res_x = rx
@@ -700,6 +708,71 @@ class PixelOp (RasterObj):
         for pt in range(len(pts)):
             self.draw_fill_circle( pts[pt][0], pts[pt][1], 5, color, framebuffer)
         
+
+
+    def color_distance(self, rgb1, rgb2):
+        """ number between 0 and 440 ish """
+
+        if len(rgb1)==3:
+            r,  g,   b = rgb1
+        if len(rgb1)==4:
+            r,  g,   b, a  = rgb1
+
+        if len(rgb2)==3:
+            cr, cg, cb = rgb2
+        if len(rgb2)==4:
+            cr, cg, cb, ca = rgb2
+
+        return sqrt((r - cr)**2 + (g - cg)**2 + (b - cb)**2)
+
+
+    def closest_color(self, colors, rgb):
+        """
+        https://stackoverflow.com/questions/54242194/python-find-the-closest-color-to-a-color-from-giving-list-of-colors
+
+        colors = (
+            (181, 230, 99),
+            (23, 186, 241),
+            (99, 23, 153),
+            (231, 99, 29),
+        )
+        """
+
+        r, g, b = rgb
+        color_diffs = []
+        for color in colors:
+            cr, cg, cb = color
+            color_diff = sqrt((r - cr)**2 + (g - cg)**2 + (b - cb)**2)
+            color_diffs.append((color_diff, color))
+        return min(color_diffs)[1]
+
+    def extract_by_color(self, path, name, color, framebuffer=None):
+        """return a new image that matches a color ignoring all others """
+        if framebuffer:
+            self.read_buffer(framebuffer)
+        else:
+            framebuffer= self.fb
+
+        new_fb = self.empty_buffer() 
+    
+        siz = framebuffer.size
+        
+        src_pix = framebuffer.load() 
+        dpix    = new_fb.load() 
+
+        for x in range(siz[0]):
+            for y in range(siz[1]):
+
+                ## reeeeaaallly slow because it iterates ALL pixels with math on each one 
+                if self.color_distance(src_pix[ x, y ], color)<100: 
+                     #extract actual color
+                     #dpix[ x, y ]=color
+     
+                     #extract into white on black
+                     dpix[ x, y ]=(255,255,255)
+
+
+        new_fb.save("%s/%s.bmp"%(path,name) ) 
 
 
 
