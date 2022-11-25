@@ -92,7 +92,6 @@ class pcbfile(gcode):
         self.hp = (0,0,0) # home position 
 
         self.scale =  -0.0393701 #mm to inch
-        #self.scale =  1
 
     ##############
     def show_geom(self):
@@ -120,7 +119,7 @@ class pcbfile(gcode):
 
     ##############
     def export_ngc(self, filename):
-        """ conveert the raw pointes read from kicad into a usuable  path(s) with retract 
+        """ convert the raw points read from kicad into a usuable  path(s) with retract 
         """
         
         lastpt = (0,0,0)

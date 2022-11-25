@@ -1,9 +1,15 @@
+""" 
+general tools for grids, coordinates and a little GIS even 
 
+"""
 
 
 import os, sys, math
 
-from pygfx.point_ops import PointOperator
+
+from gnelscript.pygfx.point_ops import *
+
+
 
 
 
@@ -22,7 +28,7 @@ def arc_to_degree(NS, degrees, minutes, seconds, EW):
         outdegrees = degrees
         outdegrees = outdegrees + (minutes*.0166667) #1/60
         outdegrees = outdegrees + (seconds*.0166667*.0166667) #1/60
-     if NS =='s':
+    if NS =='s':
         outdegrees = 180.0
         outdegrees = outdegrees + degrees
         outdegrees = outdegrees + (minutes*.0166667) #1/60

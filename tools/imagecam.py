@@ -1,11 +1,26 @@
-from __future__ import print_function
+#from __future__ import print_function
+""" 
+
+requires 
+   Python:
+       scipy 
+       numpy
+       geojson 
+
+   Bin:   
+      potrace 
+
+"""
+
 import binascii
 import struct
-from PIL import Image
+
+
 import numpy as np
 import scipy
 import scipy.misc
 import scipy.cluster
+
 
 ###
 
@@ -15,10 +30,14 @@ from PIL import Image, ImageFilter, ImageEnhance, ImageOps
 
 from gnelscript.pygfx.math_ops import  *
 from gnelscript.pygfx.raster_ops import *
-from gnelscript.pygfx.point_ops_2d import *
 
-#from pygfx.point_ops import *
-#from pygfx.obj3d import  *
+#from gnelscript.pygfx.point_ops_2d import *
+#from gnelscript.pygfx.point_ops import *
+
+from gnelscript.pygfx.kicad_ops import *
+from gnelscript.pygfx.gis_vector_ops import *
+from gnelscript.pygfx.obj3d import  *
+
 
 
 mu = math_util() 
@@ -164,6 +183,9 @@ def thirdpass( inputfile, outputfolder, fastmode=False  ):
     vwidth = int(width/chops)
     vheight = int(height/chops) 
 
+    #fileformat = "dxf" 
+    fileformat = "geojson" 
+
     ##populate this from the output of second pass to get the five best tasty colors I know 
     ## colors= [  ["a", (78,27,40)],
     ##            ["b", (163,91,94)],
@@ -186,9 +208,11 @@ def thirdpass( inputfile, outputfolder, fastmode=False  ):
     for c in colors:
         #extract_by_color( path, name, color, slowmode, exactcolor, invert, framebuffer)
         simg.extract_by_color( outputfolder, c[0], c[1], False, False, False, False )
-        command = [potrace_command, "%s/%s.bmp"%(outputfolder, c[0] ), "-b", "dxf", "-W", str(vwidth), "-H", str(vheight), "-t", str(tsize)]
+        command = [potrace_command, "%s/%s.bmp"%(outputfolder, c[0] ), "-b", fileformat, "-W", str(vwidth), "-H", str(vheight), "-t", str(tsize)]
         #print(command)
         subprocess.run(command)
+
+
 
 
 
@@ -196,20 +220,90 @@ def thirdpass( inputfile, outputfolder, fastmode=False  ):
 ##----------------------------------------------------
 
 ## (iteration , scaling(divs) , in, out )
-#firstpass(10, 250, "images/in/wyoming.jpg", "images/out", "output")
+#firstpass(10, 250, "images/in/doorbuster.jpg", "images/out", "output")
 
 ##   /usr/local/opt/python@3.10/bin/python3.10 ./imagecam.py  
-#secondpass("images/out/wy.bmp", "images/out" , 10, False)
+#secondpass("images/out/doorbuster.bmp", "images/out" , 10, False)
 
 
 #set the RGB values from last tool and run this 
-thirdpass( "images/out/commonbands.png",  "images/out" )
+#thirdpass( "images/out/commonbands.png",  "images/out" )
+
+
+##   /usr/local/opt/python@3.10/bin/python3.10 ./imagecam.py 
+#geojson_to_obj('images/out/0.json','')
 
 
 
 
 
+def kicad_test():
+    """ experiment to parse a kicad pcb file and export it to gcode """
+    kicadproj = '/Users/klegg/serv/camtest'
+    #kicadproj = '/Users/klegg/serv/SID_DUINO3'
 
+
+    tokens = kicadproj.split(os.sep) 
+    projname = tokens[len(tokens)-1]
+    pcbname = projname+'.kicad_pcb'
+
+    kiparser = pcbfile()
+
+    #kiparser.load_gcode('gcode/ngc/3D_Chips.ngc')
+    kiparser.load_kicadpcb(kicadproj+os.sep+pcbname)
+
+    # pts = kiparser.calc_circle(pos=(-2,5,0), dia=30, spokes=5)
+    # kiparser.filled_polys.append(pts) 
+    # pts = kiparser.calc_circle(pos=(1,1,0), dia=60, spokes=11)
+    # kiparser.gr_polys.append(pts) 
+
+    show = False 
+
+    if show:
+        kiparser.bufferinfo()
+        kiparser.showbuffers()
+        kiparser.show_geom()
+
+    #kiparser.export_ngc('cineballz.ngc')
+    #kiparser.save_3d_obj('cineballs.obj')
+
+
+
+#kicad_test()
+
+
+def ngc_test():
+    """ build a generic tool to process vector data 
+       - NGC export 
+       - OBJ export 
+       - geoJSON imnport 
+       - ??? SWISS ARMY ROSETTA STONE   
+    """
+
+    kicadproj = '/Users/klegg/serv/camtest'
+    #kicadproj = '/Users/klegg/serv/SID_DUINO3'
+
+
+    tokens = kicadproj.split(os.sep) 
+    projname = tokens[len(tokens)-1]
+    pcbname = projname+'.kicad_pcb'
+
+    kiparser = generic_ngc()
+
+    
+    #kiparser.load_kicadpcb(kicadproj+os.sep+pcbname)
+    
+    kiparser.load_geojson('images/out/0.json')
+
+
+    for line in kiparser.gr_polys:
+        print(line) 
+
+
+    kiparser.export_ngc('alive.ngc')
+    kiparser.save_3d_obj('cineballs.obj')
+
+ngc_test()
 
 
 
