@@ -1,10 +1,9 @@
 import geojson
 
 
-
 from gnelscript.pygfx.grid_ops import  *
-
 from gnelscript.pygfx.obj3d import  *
+
 
 
 

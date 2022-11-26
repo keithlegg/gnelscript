@@ -191,7 +191,7 @@ def test_matrix22(gridsize=50):
 def test_2d_object(gridsize=50):
     """ first test of new 2D object """
 
-    obj = object2d() 
+    obj = object25d() 
 
     #you can load a 3D object, Z axis gets ignored
     obj.load('objects/sphere.obj')

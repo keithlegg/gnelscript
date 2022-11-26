@@ -872,7 +872,19 @@ class polygon_operator(point_operator):
     #    """ check for geometry that is not connected, if any found, break it off """
 
     ###############################################     
-    def calc_bbox(self, prgrp=None, facgrp=None ):
+    def calc_bbox_2d(self, ptgrp=None, facgrp=None ):
+        """ UNFINISHED  
+            get the boudning area of an object or face(s)
+        """
+        maxx = 0
+        maxy = 0
+        maxz = 0
+        
+        for p in self.points:
+            print(p)
+
+    ###############################################     
+    def calc_bbox(self, ptgrp=None, facgrp=None ):
         """ UNFINISHED  
             get the boudning area of an object or face(s)
         """
