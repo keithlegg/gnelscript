@@ -56,7 +56,7 @@ COMMON_EXT = 'png'
 ##----------------------------------------------------
 
 
-def firstpass( iters, chops, inputfile, outputfolder, outputfile ):
+def firstpass( iters, blur, contrast, bright, chops, inputfile, outputfolder, outputfile ):
     """
         try to break a bitmap up into the most basic shapes of color regions 
 
@@ -68,9 +68,9 @@ def firstpass( iters, chops, inputfile, outputfolder, outputfile ):
 
     simg = Image.open( inputfile )
 
-    blur = 2.0 
-    contrast = 1.2 
-    bright = 1.1 
+    # blur = 2.0 
+    # contrast = 1.2 
+    # bright = 1.1 
 
     do_posterize = False 
     do_potrace = False 
@@ -99,8 +99,8 @@ def firstpass( iters, chops, inputfile, outputfolder, outputfile ):
         simg = cont_en.enhance(contrast)
         
         ### bright pass  
-        #bright_en = ImageEnhance.Brightness(simg)
-        #simg = bright_en.enhance(.8)
+        bright_en = ImageEnhance.Brightness(simg)
+        simg = bright_en.enhance(bright)
         
         simg.save( "%s/%s_%d.%s"%(outputfolder, outputfile,i,"bmp") )
 
@@ -166,7 +166,7 @@ def secondpass(inputimage, outputpath, numbands, fast=False):
     imageio.imwrite('%s/commonbands.png'%outputpath, c.reshape(*shape).astype(np.uint8))
 
 
-def thirdpass( inputfile, outputfolder, fastmode=False  ):
+def thirdpass( inputfile, outputfolder, fileformat, fastmode=False  ):
     """ break an already posterized image into seperate iamges X colors """
 
     import subprocess
@@ -183,8 +183,9 @@ def thirdpass( inputfile, outputfolder, fastmode=False  ):
     vwidth = int(width/chops)
     vheight = int(height/chops) 
 
+    
     #fileformat = "dxf" 
-    fileformat = "geojson" 
+    #fileformat = "geojson" 
 
     ##populate this from the output of second pass to get the five best tasty colors I know 
     ## colors= [  ["a", (78,27,40)],
@@ -219,58 +220,29 @@ def thirdpass( inputfile, outputfolder, fastmode=False  ):
 
 ##----------------------------------------------------
 
-## (iteration , scaling(divs) , in, out )
-#firstpass(10, 250, "images/in/doorbuster.jpg", "images/out", "output")
+## (iteration , blur , contrast, bright, scaling(divs) , in, out )
+#firstpass(10, 0, 1, 1, 250, "images/in/oil.png", "images/out", "output")
 
+#firstpass(10, 0, 1.5, 1.5, 250, "images/in/oil.png", "images/out", "output")
+#firstpass(10, 1.5, 1.5, 1, 250, "images/in/band.jpg", "images/out", "output")
+
+
+##----------------------------------------------------
 ##   /usr/local/opt/python@3.10/bin/python3.10 ./imagecam.py  
-#secondpass("images/out/doorbuster.bmp", "images/out" , 10, False)
+#secondpass("images/out/band.bmp", "images/out" , 8, False)
 
 
+##----------------------------------------------------
 #set the RGB values from last tool and run this 
-#thirdpass( "images/out/commonbands.png",  "images/out" )
+#thirdpass( "images/out/commonbands.png", "images/out", "dxf" )
+#thirdpass( "images/out/commonbands.png",  "images/out" , "geojson")
 
-
-##   /usr/local/opt/python@3.10/bin/python3.10 ./imagecam.py 
-#geojson_to_obj('images/out/0.json','')
-
+#thirdpass( "images/out/commonbands.png",  "images/out" , "geojson")
 
 
 
 
-def kicad_test():
-    """ experiment to parse a kicad pcb file and export it to gcode """
-    kicadproj = '/Users/klegg/serv/camtest'
-    #kicadproj = '/Users/klegg/serv/SID_DUINO3'
-
-
-    tokens = kicadproj.split(os.sep) 
-    projname = tokens[len(tokens)-1]
-    pcbname = projname+'.kicad_pcb'
-
-    kiparser = pcbfile()
-
-    #kiparser.load_gcode('gcode/ngc/3D_Chips.ngc')
-    kiparser.load_kicadpcb(kicadproj+os.sep+pcbname)
-
-    # pts = kiparser.calc_circle(pos=(-2,5,0), dia=30, spokes=5)
-    # kiparser.filled_polys.append(pts) 
-    # pts = kiparser.calc_circle(pos=(1,1,0), dia=60, spokes=11)
-    # kiparser.gr_polys.append(pts) 
-
-    show = False 
-
-    if show:
-        kiparser.bufferinfo()
-        kiparser.showbuffers()
-        kiparser.show_geom()
-
-    #kiparser.export_ngc('cineballz.ngc')
-    #kiparser.save_3d_obj('cineballs.obj')
-
-
-
-#kicad_test()
-
+##----------------------------------------------------
 
 def ngc_test():
     """ build a generic tool to process vector data 
@@ -280,31 +252,56 @@ def ngc_test():
        - ??? SWISS ARMY ROSETTA STONE   
     """
 
-    kicadproj = '/Users/klegg/serv/camtest'
-    #kicadproj = '/Users/klegg/serv/SID_DUINO3'
-
-
-    tokens = kicadproj.split(os.sep) 
-    projname = tokens[len(tokens)-1]
-    pcbname = projname+'.kicad_pcb'
+    ## kicadproj = '/Users/klegg/serv/camtest'
+    ## kicadproj = '/Users/klegg/serv/SID_DUINO3'
+    ## tokens = kicadproj.split(os.sep) 
+    ## projname = tokens[len(tokens)-1]
+    ## pcbname = projname+'.kicad_pcb'
 
     kiparser = generic_ngc()
-
     
-    #kiparser.load_kicadpcb(kicadproj+os.sep+pcbname)
-    
-    kiparser.load_geojson('images/out/0.json')
+    kiparser.load_geojson('images/out/0.json', 0)
+    #kiparser.load_geojson('images/out/1.json', 0)
+    #kiparser.load_geojson('images/out/2.json', 0)
+    #kiparser.load_geojson('images/out/3.json', 0)
+    #kiparser.load_geojson('images/out/4.json', 0)
+    #kiparser.load_geojson('images/out/5.json', 0)
+    #kiparser.load_geojson('images/out/6.json', 0)                    
+    #kiparser.load_geojson('images/out/7.json', 0)
 
 
-    for line in kiparser.gr_polys:
-        print(line) 
+    print("gr_poly buffer has %s polygons "%len(kiparser.gr_polys) )
 
+    #if you want to export NGC from kicad    
+    #kiparser.load_kicadpcb()
 
-    kiparser.export_ngc('alive.ngc')
-    kiparser.save_3d_obj('cineballs.obj')
+    #if you want to export NGC/OBJ from geojson 
+    #kiparser.calulate_paths()
+    #kiparser.save_3d_obj('stopoil.obj')
+
+    #if you want to export OBJ without retracts from geojson 
+    kiparser.save_3d_obj('stopoil.obj')
+
 
 ngc_test()
 
+
+
+# TODO 
+
+""" 
+
+ establish end orientation and scale of vectors related to CNC 
+
+ build tools to scale, rotate, flip, etc if not already 
+
+ re learn what tools I have already  
+
+
+
+
+
+"""
 
 
 
