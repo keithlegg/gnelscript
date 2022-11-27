@@ -15,7 +15,7 @@ you chain them together.
 
 
 
-   Organized by the following modules:
+    Organized by the following modules:
        -  math_ops         - math, vectors, matrices, the core logic of it all  
        -  point_ops        - points, polygons, and objects, the "brains" of geometry processing
        -  point_ops_2d     - 2d points, polygons
@@ -28,7 +28,7 @@ you chain them together.
        -  kicad_ops        - parse the kicad pcb format for CNC/CAM related stuff. Experimental.
        -  gis_vector_ops   - GIS data import and export. Experimental.
 
-   Example files are split up by type:
+    Example files are split up by type:
        -  examples            - examples of geometry processing
        -  examples_2d         - examples of 2D rendering and 2D vector processing 
        -  examples_render     - examples of 3D rendering 
@@ -36,7 +36,7 @@ you chain them together.
        -  examples_vector     - examples of 3D vector processing
 
 
-   Stuff you can ignore for now :
+    Stuff you can ignore for now :
        -  examples_milling  - examples of G-code related tools. CNC and CAM in the future?
        -  examples_wip      - work in progess examples 
        -  unit_tests        - not done yet 
