@@ -31,12 +31,13 @@ from PIL import Image, ImageFilter, ImageEnhance, ImageOps
 from gnelscript.pygfx.math_ops import  *
 from gnelscript.pygfx.raster_ops import *
 
-#from gnelscript.pygfx.point_ops_2d import *
-#from gnelscript.pygfx.point_ops import *
+from gnelscript.pygfx.point_ops_2d import *
+from gnelscript.pygfx.point_ops import *
+from gnelscript.pygfx.obj3d import  *
 
 from gnelscript.pygfx.kicad_ops import *
 from gnelscript.pygfx.gis_vector_ops import *
-from gnelscript.pygfx.obj3d import  *
+
 
 
 
@@ -55,39 +56,50 @@ COMMON_EXT = 'png'
 
 ##----------------------------------------------------
 
-
-def firstpass( iters, blur, contrast, bright, chops, inputfile, outputfolder, outputfile ):
+def firstpass_bw( iters, blur, contrast, bright, chops, inputfile, outputfolder, outputfile ):
     """
-        try to break a bitmap up into the most basic shapes of color regions 
+        UNTESTED 
+        try to break a BW bitmap up into the most basic shapes of color regions 
 
     """
-    import subprocess
-     
-    # max_zones = 5 
-    # luminance = .5 
-
     simg = Image.open( inputfile )
 
-    # blur = 2.0 
-    # contrast = 1.2 
-    # bright = 1.1 
+    simg = simg.convert('L') # convert 8 bit
 
     do_posterize = False 
     do_potrace = False 
-    
-    tsize = 10 #suppress "turd" size - speckles 
-
-    
-    posterfile = "%s/%s_%d.%s"%(outputfolder, outputfile,1,"bmp")
-
 
     width = int(simg.width/chops)
     height = int(simg.height/chops) 
 
-    #simg = simg.filter(ImageFilter.GaussianBlur(radius = blur))
-    ##contrast pass 
-    #cont_en = ImageEnhance.Contrast(simg)
-    #simg = cont_en.enhance(2)
+
+    for i in range(iters):
+        
+        ### blur pass
+        simg = simg.filter( ImageFilter.GaussianBlur(radius=blur) )
+        
+        ### contrast pass 
+        cont_en = ImageEnhance.Contrast(simg)
+        simg = cont_en.enhance(contrast)
+        
+        ### bright pass  
+        bright_en = ImageEnhance.Brightness(simg)
+        simg = bright_en.enhance(bright)
+
+        copy = simg.convert("RGBA")        
+        copy.save( "%s/%s_%d.%s"%(outputfolder, outputfile,i,"bmp") )
+
+
+##----------------------------------------------------
+def firstpass( iters, blur, contrast, bright, chops, inputfile, outputfolder, outputfile ):
+    """
+        try to break a color bitmap up into the most basic shapes of color regions 
+
+    """
+    simg = Image.open( inputfile )
+
+    width = int(simg.width/chops)
+    height = int(simg.height/chops) 
 
     for i in range(iters):
         
@@ -104,21 +116,23 @@ def firstpass( iters, blur, contrast, bright, chops, inputfile, outputfolder, ou
         
         simg.save( "%s/%s_%d.%s"%(outputfolder, outputfile,i,"bmp") )
 
-    if do_posterize:
-        simg = ImageOps.posterize(simg, bits=1)
-        simg.save( posterfile)
+    # stuff below not really used - moved to second and third pass functions 
+    #do_posterize = False 
+    #do_potrace = False 
+    #tsize = 10 #suppress "turd" size - speckles 
+    # import subprocess
+    # posterfile = "%s/%s_%d.%s"%(outputfolder, outputfile,1,"bmp")
+    # if do_posterize:
+    #     simg = ImageOps.posterize(simg, bits=1)
+    #     simg.save( posterfile)
+    # if do_potrace:
+    #     #"-i" -invert 
+    #     command = [potrace_command, posterfile, "-b", "svg", "-W", str(width), "-H", str(height), "-t", str(tsize)]
+    #     print(command)
+    #     subprocess.run(command)
 
-    if do_potrace:
-        
-        #"-i" -invert 
 
-        command = [potrace_command, posterfile, "-b", "svg", "-W", str(width), "-H", str(height), "-t", str(tsize)]
-        
-        print(command)
-
-        subprocess.run(command)
-
-
+##----------------------------------------------------
 
 def secondpass(inputimage, outputpath, numbands, fast=False):
     #from stack overflow  - attempt to get most common colors in an image 
@@ -165,8 +179,9 @@ def secondpass(inputimage, outputpath, numbands, fast=False):
     print("writing file ", '%s/commonbands.png'%outputpath) 
     imageio.imwrite('%s/commonbands.png'%outputpath, c.reshape(*shape).astype(np.uint8))
 
+##----------------------------------------------------
 
-def thirdpass( inputfile, outputfolder, fileformat, fastmode=False  ):
+def thirdpass( inputfile, outputfolder, fileformat, po_invert=False, fastmode=False  ):
     """ break an already posterized image into seperate iamges X colors """
 
     import subprocess
@@ -209,7 +224,10 @@ def thirdpass( inputfile, outputfolder, fileformat, fastmode=False  ):
     for c in colors:
         #extract_by_color( path, name, color, slowmode, exactcolor, invert, framebuffer)
         simg.extract_by_color( outputfolder, c[0], c[1], False, False, False, False )
-        command = [potrace_command, "%s/%s.bmp"%(outputfolder, c[0] ), "-b", fileformat, "-W", str(vwidth), "-H", str(vheight), "-t", str(tsize)]
+        if po_invert:
+            command = [potrace_command, "%s/%s.bmp"%(outputfolder, c[0] ), "-i", "-b", fileformat, "-W", str(vwidth), "-H", str(vheight), "-t", str(tsize)]        
+        else:    
+            command = [potrace_command, "%s/%s.bmp"%(outputfolder, c[0] ), "-b", fileformat, "-W", str(vwidth), "-H", str(vheight), "-t", str(tsize)]
         #print(command)
         subprocess.run(command)
 
@@ -219,17 +237,18 @@ def thirdpass( inputfile, outputfolder, fileformat, fastmode=False  ):
 
 
 ##----------------------------------------------------
-
+##   /usr/local/opt/python@3.10/bin/python3.10 ./imagecam.py  
+#firstpass_bw(10, 1.5, 1.5, 1, 250, "images/in/art.jpg", "images/out", "output")
 ## (iteration , blur , contrast, bright, scaling(divs) , in, out )
 #firstpass(10, 0, 1, 1, 250, "images/in/oil.png", "images/out", "output")
 
-#firstpass(10, 0, 1.5, 1.5, 250, "images/in/oil.png", "images/out", "output")
-#firstpass(10, 1.5, 1.5, 1, 250, "images/in/band.jpg", "images/out", "output")
+#firstpass(10, 1.5, 1.2, 1, 250, "images/in/er.jpg", "images/out", "output")
+
 
 
 ##----------------------------------------------------
 ##   /usr/local/opt/python@3.10/bin/python3.10 ./imagecam.py  
-#secondpass("images/out/band.bmp", "images/out" , 8, False)
+#secondpass("images/out/er.bmp", "images/out" , 16, False)
 
 
 ##----------------------------------------------------
@@ -237,7 +256,7 @@ def thirdpass( inputfile, outputfolder, fileformat, fastmode=False  ):
 #thirdpass( "images/out/commonbands.png", "images/out", "dxf" )
 #thirdpass( "images/out/commonbands.png",  "images/out" , "geojson")
 
-#thirdpass( "images/out/commonbands.png",  "images/out" , "geojson")
+#thirdpass( "images/out/commonbands.png",  "images/out" , "dxf")
 
 
 
@@ -283,7 +302,50 @@ def ngc_test():
     kiparser.save_3d_obj('stopoil.obj')
 
 
-ngc_test()
+ 
+
+
+
+############################
+
+
+#kiparser = generic_ngc()
+#kiparser.load_geojson('images/out/0.json', 0)
+#kiparser.export_ngc("foo.ngc")
+#kiparser.save_3d_obj('3d_obj/stopoil.obj')
+
+
+
+
+
+
+
+#pop3 = object3d()
+#pts = [(-1,0,0),(1,0,0)]
+#c = pop3.calc_line_length(pts)
+
+#print(c)
+
+
+
+
+
+#for f in dir(pop3):
+#    print(f)
+
+
+
+
+
+
+#obj3 = object3d()
+#obj3.show()
+
+
+
+#pop2 = point_operator_2d()
+#obj2 = object25d()
+#obj2.show()
 
 
 

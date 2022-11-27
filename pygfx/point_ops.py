@@ -14,7 +14,9 @@ from gnelscript.pygfx.math_ops import NUMPY_IS_LOADED, matrix33, matrix44, vec2,
 
 """
 
-    There are two types of geometry container 
+    defined objects:
+
+    BBOX - 
 
     GEOM         -  [[face ids], [vertices] ]
         geom type is a 3d model basically obj format in memory 
@@ -83,9 +85,18 @@ class point_operator(object):
 
         return tmp_buffer
 
-
     def tuple_pop(self, listTuples, tup):
-        """ take a list of tuples, remove one by filtering it out and return the rest back """
+        """ take a list of tuples, remove one by filtering it out and return the rest back 
+
+
+            tups = [(1,1), (2,2), (2,3), (42,23)]
+            ids = pop3.tuple_pop(tups, (1,1) )
+            print(ids)
+
+            output: [(2, 2), (2, 3), (42, 23)]
+
+        """
+
         out = []
         for t in listTuples:
             if(t != tup):
@@ -93,6 +104,20 @@ class point_operator(object):
         return out
 
     def test_data_grid(self, width, height, divs):
+        """ 
+            usage
+                pop3 = point_operator()
+                ids = pop3.test_data_grid( 5,5,1)
+                print(ids)
+
+                output= [ [0, 1, 2, 3, 4], 
+                          [0, 1, 2, 3, 4], 
+                          [0, 1, 2, 3, 4], 
+                          [0, 1, 2, 3, 4], 
+                          [0, 1, 2, 3, 4] ]
+
+        """
+
         out = []
 
         va = []
@@ -106,7 +131,7 @@ class point_operator(object):
 
         return out
 
-    ###############################################         
+    ##-------------------------------------------##         
     def indexer(self, ids=None, span=None, unique=True, nth=None):
         """ generates a fancy list of positive ints (indeces)
 
@@ -115,16 +140,38 @@ class point_operator(object):
             then add in a range.  
 
             span   - batch add numbers in a [start, end] [start,end] 
-            choose to count by Nths, single or list of them 
-                    - negative Nths remove 
+                     choose to count by Nths, single or list of them 
+                     negative Nths remove 
+
             unique is True by default - it guarantees each id is unique
                     - if off, an index will be repeated 
 
             nth - skipover N indices while iterating. Outputs two lists ,
                   the "goods" and the "bads"
  
-         
+            ------------------------------------------
+
+            usage:
+
+            idz = range(1,20)
+            ids = pop3.indexer( ids=idz, span=None, unique=True, nth=None)
+            ouputs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+
+            ids = [41,52,75]
+            span = [2,15]
+            ids = pop3.indexer( ids=ids, span=span, unique=True, nth=None)
+            ouputs: [41, 52, 75, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+
+            ids = [41,52,75]
+            span = [2,15]
+            ids = pop3.indexer( ids=ids, span=span, unique=True, nth=5)
+            outputs: [[41, 4, 9, 14], [52, 75, 2, 3, 5, 6, 7, 8, 10, 11, 12, 13, 15]]
+
+
         """
+
         pids = []
  
 
@@ -168,10 +215,18 @@ class point_operator(object):
 
         return pids 
 
-    ###############################################  
-    def chunker(self, mod, pts):
+    ##-------------------------------------------##  
+    def chunker(self, pts, mod):
         """
-            iterate a "mass" of points by N and sperate into N sized groups 
+            iterate a "mass" of points by N and separate into N sized groups 
+            omits leftovers that dont fit 
+
+            usage:
+                pop3 = point_operator()
+                pts = [1,2,3,4,5,6,7,8,9,0]
+                out = pop3.chunker(pts, 7) 
+                output: [[2, 3, 4, 5, 6, 7, 8]]
+
         """
 
         outarrays = []
@@ -187,23 +242,42 @@ class point_operator(object):
         
         return outarrays
 
-    ############################################### 
-
+    ##-------------------------------------------##
     def print_gridinfo(self, grid_array):
+        """ 
+
+            usage:
+                pop3 = point_operator()
+                ids = pop3.test_data_grid( 5,5,1)
+                pop3.print_gridinfo(ids)
+
+        """
         print("number of columns " , len(grid_array) )
         for column in grid_array:
             print("number of rows " , len(column) )
- 
-
+    ##-------------------------------------------## 
     def print_grid(self, grid_array):
+        """
+            usage:        
+                pop3 = point_operator()
+                ids = pop3.test_data_grid( 5,5,1)
+                pop3.print_grid(ids)   
+
+        """
         for column in grid_array:
             #print("number of rows " , len(column) )
             print( column)   
-        
-
+    ##-------------------------------------------##        
     def get_grid_column(self, grid_array , colidx):
-        #print("number of columns " , len(grid_array) )
-        
+        """
+            usage:        
+                pop3 = point_operator()
+                ids = pop3.test_data_grid( 5,5,1)
+                out = pop3.get_grid_column(ids , 2)
+                print(out)
+
+        """
+    
         out = []
         for u,column in enumerate(grid_array):
             for v,row in enumerate(column):
@@ -213,7 +287,15 @@ class point_operator(object):
 
         return out 
 
+    ##-------------------------------------------##
     def get_grid_row(self, grid_array , rowidx):
+        """
+            usage:
+                pop3 = point_operator()
+                ids = pop3.test_data_grid( 5,5,1)
+                out = pop3.get_grid_row(ids , 2)
+                print(out)       
+        """
         #print("number of columns " , len(grid_array) )
         
         out = []
@@ -225,7 +307,7 @@ class point_operator(object):
 
         return out 
 
-
+    ##-------------------------------------------##
     def cubic_bezier2d(self, draw_steps, start, end, ctrl1, ctrl2):
         """  2D spline 
             pretty much what it says it does 
@@ -254,34 +336,8 @@ class point_operator(object):
             out.append( [x, y] )
 
         return out
-
-    def draw_splines(self, num, curves, drawctrls=False, drawhulls=False):
-        """ render a spline made of multipe cubic bezier curves
-            
-            ARGS:
-                curves - array of [start, ctrl1 , ctrl2, end ]
-
-        """
-
-        
-        size = .1
-
-        for c in curves:    
-            
-            print("### KURBE ", c )
-
-            if drawctrls:
-                self.prim_locator_color(pos=c[0] , rot=(0,0,0), size=size) # start 
-                self.prim_locator_color(pos=c[1] , rot=(0,0,0), size=size) # ctrl1
-                self.prim_locator_color(pos=c[2] , rot=(0,0,0), size=size) # ctrl2
-                self.prim_locator_color(pos=c[3] , rot=(0,0,0), size=size) # end
-
-            if drawhulls:
-                self.linegeom_fr_points( [c[0], c[1], c[2], c[3]], color=(0,255,0) ) 
-
-            curvepts = self.cubic_bezier(num, c[0], c[1], c[2], c[3])
-            self.linegeom_fr_points( curvepts ) 
-
+    
+    ##-------------------------------------------##
     def cubic_bezier(self, draw_steps, start, ctrl1, ctrl2, end):
         """  2D spline 
             pretty much what it says it does 
@@ -317,8 +373,39 @@ class point_operator(object):
 
         return out
 
+    ##-------------------------------------------##
+    def draw_splines(self, num, curves, drawctrls=False, drawhulls=False):
+        """ render a spline made of multiple cubic bezier curves
+            
+            ARGS:
+                curves - array of [start, ctrl1 , ctrl2, end ]
+
+        """
+
+        
+        size = .1
+
+        for c in curves:    
+            
+            print("### KURBE ", c )
+
+            if drawctrls:
+                self.prim_locator_color(pos=c[0] , rot=(0,0,0), size=size) # start 
+                self.prim_locator_color(pos=c[1] , rot=(0,0,0), size=size) # ctrl1
+                self.prim_locator_color(pos=c[2] , rot=(0,0,0), size=size) # ctrl2
+                self.prim_locator_color(pos=c[3] , rot=(0,0,0), size=size) # end
+
+            if drawhulls:
+                self.linegeom_fr_points( [c[0], c[1], c[2], c[3]], color=(0,255,0) ) 
+
+            curvepts = self.cubic_bezier(num, c[0], c[1], c[2], c[3])
+            self.linegeom_fr_points( curvepts ) 
+
+    ##-------------------------------------------##            
     def add_margin_bbox(self, bbox, size):
-        """ return center (x,y) from two diagonal coordinates """
+        """ return center (x,y) from two diagonal coordinates 
+
+        """
         
         out = []
         out.append( bbox[0]-size  ) 
@@ -327,6 +414,7 @@ class point_operator(object):
         out.append( bbox[3]+size  )
         return out
 
+    ##-------------------------------------------##
     def extents_fr_bbox(self, bbox, offset=None):
         """ return center (x,y) from a tuple of 4 numbers (PIL bbox [left, top, right, bottom]) 
             offset (int) adds a margin to the size of the page edges 
@@ -348,24 +436,8 @@ class point_operator(object):
 
         return out
 
-    def closest_to_axis(self, points, val, axis):
-        """ return the closest point to X OR Y """
-        
-        tmpsort = []
 
-        for pt in points:
-            if axis=='x':
-                sp = ( val ,pt[1]  )
-            if axis=='y':
-                sp = ( pt[0]  ,val )
-
-            tmpsort.append( (self.calc_line_length(pt[0], pt[1], sp[0], sp[1] ), pt) )
-        
-        ###
-        tmpsort.sort()
-        return tmpsort[0][1]
-
-    ############################################### 
+    ##-------------------------------------------## 
     def calc_square_diag(self, tl, br):
         """ creates 4 coordinates representing an extent box from a diagonal coordinate pair """ 
         out =[]  
@@ -376,7 +448,7 @@ class point_operator(object):
 
         return out
 
-    ############################################### 
+    ##-------------------------------------------##
     def calc_square_pt(self, size, origin=None ):
         """ UNTESTED 
             DEBUG - this is unclamped  
@@ -398,7 +470,7 @@ class point_operator(object):
             out.append( ( -size, -size)  )
         return out
 
-    ###############################################     
+    ##-------------------------------------------##    
     def calc_bbox_pt(self, size, origin=None ):
         """ DEBUG - this is unclamped!
             calc extents for a square (left, upper, right, and lower)
@@ -418,7 +490,7 @@ class point_operator(object):
             out.append(  size  ) #south
         return out
 
-    ############################################### 
+    ##-------------------------------------------##
     def calc_circle(self, pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
         """ spokes = num spokes 
             
@@ -464,7 +536,7 @@ class point_operator(object):
 
         return out
  
-    ############################################### 
+    ##-------------------------------------------##
     def sort_3_distances(self, mode, coords):
         """ take 3 XY points (triangle) and get the distances between all 3 
             return the sorted distances represented as two coordinate pairs
@@ -504,30 +576,23 @@ class point_operator(object):
                 tmp.append(y)
         return tmp
 
-    ############################################### 
-    def triangle_mean_z(self, triangle):
-        """ this is pointless and you should use centroid instead 
-            basicaly this is a "Z only" centroid 
-        """
-        z1 = triangle[0][2]
-        z2 = triangle[1][2]
-        z3 = triangle[2][2]
-        return (z1+z2+z3)/3
-
-    ###############################################  
+    ##-------------------------------------------##  
     def cvt_2d_to_3d(self, points):
-        """ convert a list of 2d points into 3d by adding an empty z axis """
+        """ convert a single (tuple) or multiple (list) 2d points 
+            into 3d by adding an empty z axis 
+        """
 
-        newpts = []
-        for pt in points:
-            newpts.append( (pt[0], pt[1], 0)   )
-        return newpts
+        if type(points) is tuple:
+            return (pt[0], pt[1], 0) 
+        else:
+            newpts = []
+            for pt in points:
+                newpts.append( (pt[0], pt[1], 0)   )
+            return newpts
+        return None
 
-    def cvt_2dpt_to_3dpt(self, pt):
-        """ convert a single 2d point into 3d with empty z axis """
-        return (pt[0], pt[1], 0) 
  
-    ############################################### 
+    ##-------------------------------------------##
     def locate_pt_along3d(self, x1, y1, z1, x2, y2, z2, num):
         """
             given two 3D points, return a series of N number connecting points in 3D 
@@ -548,7 +613,7 @@ class point_operator(object):
         return pts_created
 
 
-    ############################################### 
+    ##-------------------------------------------##
     def trs_points(self, pts, translate=(0,0,0), rotate=(0,0,0),scale=(1,1,1) ):
         #UNTESTED 
 
@@ -616,7 +681,9 @@ class point_operator(object):
 
  
 
-###############################################
+##-------------------------------------------##
+##-------------------------------------------##    
+
 class polygon_operator(point_operator):
     """ polygon operator - should be called GEOM operator 
 
@@ -728,11 +795,11 @@ class polygon_operator(point_operator):
         """ get the total number of points in this object (-1 because of 0 index)"""        
         return len(self.points)-1
 
-    ###############################################  
+    ##-------------------------------------------##  
     def scribe(self, str):
         print(str)
 
-    ###############################################          
+    ##-------------------------------------------##           
     def flush(self):
         """ set all geometry to a clean state """
 
@@ -744,7 +811,7 @@ class polygon_operator(point_operator):
         self.exprt_ply_idx   = 1 #obj is NOT zero indexed
         #self.exprt_pnt_idx   = 0 #pts ARE zero indexed (everything BUT .obj face idx's are)
 
-    ###############################################  
+    ##-------------------------------------------##  
     def z_sort(self, reverse=False):
         """ return a sorted list of polygons by average Z coordinate 
             lowest z value is (closest?) to camera 
@@ -792,7 +859,7 @@ class polygon_operator(point_operator):
         self.polygons = out
         #return out
 
-    ###############################################  
+    ##-------------------------------------------##  
     def inspect_geom(self, geom):
         """ analyze a GEOM object and see how it is constructed """
 
@@ -807,8 +874,8 @@ class polygon_operator(point_operator):
         for i, poly in enumerate(geom[0]):
             print (' poly %s is type %s and has %s items '% (i,type(poly), len(poly)) )
 
-    ###############################################  
-    def verify_geom(self, geom):
+    ##-------------------------------------------##  
+    def verify_geom(self, geom, verbose=True):
         """ check that indices are within range for data 
             
             WELL FORMED GEOM IS: 
@@ -820,8 +887,6 @@ class polygon_operator(point_operator):
  
         """
         
-        verbose = True
-
         if geom is None:
             if verbose:
                 print('## debug verify geom is none ')
@@ -857,21 +922,21 @@ class polygon_operator(point_operator):
                     return False       
         return True 
 
-    ############################################### 
+    ##-------------------------------------------## 
     #def grow_selection(self, ptgrp, facgrp, u_num, v_num):
 
-    ############################################### 
+    ##-------------------------------------------## 
     #def weld_edges(self, obj):
 
-    ############################################### 
+    ##-------------------------------------------##  
     #def scan_shells(self, obj):
     #    """ look for all the chunks of geometry that are not connected """
 
-    ###############################################  
+    ##-------------------------------------------##   
     #def poly_seperate(self, obj):
     #    """ check for geometry that is not connected, if any found, break it off """
 
-    ###############################################     
+    ##-------------------------------------------##     
     def calc_bbox_2d(self, ptgrp=None, facgrp=None ):
         """ UNFINISHED  
             get the boudning area of an object or face(s)
@@ -883,7 +948,7 @@ class polygon_operator(point_operator):
         for p in self.points:
             print(p)
 
-    ###############################################     
+    ##-------------------------------------------##     
     def calc_bbox(self, ptgrp=None, facgrp=None ):
         """ UNFINISHED  
             get the boudning area of an object or face(s)
@@ -895,15 +960,7 @@ class polygon_operator(point_operator):
         for p in self.points:
             print(p)
 
-    ###############################################  
-    #def get_edge_centroid(self, f_id , e_id):
-    #    pass
-    
-    ############################################### 
-    #def get_obj_centroid(self, prgrp=None, facgrp=None):
-    #    pass
-
-    ############################################### 
+    ##-------------------------------------------##  
     def _reindex_ply(self, f_idx, offset):
         """ only used with obj.append() 
 
@@ -916,28 +973,69 @@ class polygon_operator(point_operator):
            out_face.append(i+offset)
         return tuple(out_face)
 
-    ###############################################   
+    ##-------------------------------------------##   
+    #def get_edge_centroid(self, f_id , e_id):
+    #    pass
+    
+    ##-------------------------------------------##  
+    #def get_obj_centroid(self, prgrp=None, facgrp=None):
+    #    pass
+
+
+    ##-------------------------------------------## 
+    
+    #def triangle_mean_z(self, triangle):
+    #    """ this is pointless and you should use centroid instead 
+    #        basicaly this is a "Z only" centroid 
+    #    """
+    #    z1 = triangle[0][2]
+    #    z2 = triangle[1][2]
+    #    z3 = triangle[2][2]
+    #    return (z1+z2+z3)/3
+
+    ##-------------------------------------------##   
     def centroid_pts(self, pts):
         """ get 3D center of a list of points 
             (average of a list of XYZ points) 
+
+            usage:
+
+                pop3 = object3d()
+                pts = [(-1,0,0),(1,0,0)]
+                c = pop3.centroid_pts(pts)
+                print(c)
+
         """
 
         ptsx = []
         ptsy = []
         ptsz = []
+
         for pt in pts:
             ptsx.append(pt[0])
             ptsy.append(pt[1])
-            ptsz.append(pt[2])            
+            ptsz.append(pt[2])  
+
         #average them 
         x = sum(ptsx)/len(ptsx)
         y = sum(ptsy)/len(ptsy)
         z = sum(ptsz)/len(ptsz)
         return [x,y,z]
 
-    ###############################################
+    ##-------------------------------------------## 
     def three_vec3_to_normal(self, v1, v2, v3, unitlen=False):
-        """ take 3 vec3 objects and return a face normal """
+        """ take 3 vec3 objects and return a face normal 
+
+            usage:
+                pop3 = object3d()
+
+                v1 = vec3(-1,0,0)
+                v2 = vec3(1,1,0)
+                v3 = vec3(1,0,0)
+
+                n = pop3.three_vec3_to_normal(v1, v2, v3)
+
+        """
 
         # calculate the face normal  
         a = v1 - v2
@@ -950,15 +1048,15 @@ class polygon_operator(point_operator):
         
         return f_nrml 
 
-    ###############################################  
+    ##-------------------------------------------##  
     def calc_tripoly_normal(self, three_pts, unitlen):
         """  create a normal vector (vec3) from 3 points that represent a polygon  
              uses the internal function that requires vectors instead of points
-             it allows "raw" point data to interface to tha
+             it allows "raw" point data to interface to that
+             
         """
 
-        v1=vec3();v2=vec3()
-        v3=vec3();v4=vec3()
+        v1=vec3();v2=vec3();v3=vec3(); 
 
         v1.insert( three_pts[0] )
         v2.insert( three_pts[1] )
@@ -966,7 +1064,7 @@ class polygon_operator(point_operator):
 
         return self.three_vec3_to_normal(v1, v2, v3, unitlen=unitlen)
 
-    ###############################################
+    ##-------------------------------------------## 
     def any_pt_is_near(self, pt_list, pt2, dist ):
         """ run pt_is_near() for a list of points, 
             exiting if any are within distance
@@ -977,7 +1075,7 @@ class polygon_operator(point_operator):
                 return True   
         return False
 
-    ###############################################
+    ##-------------------------------------------## 
     def pt_is_near(self, pt1, pt2, dist ):
         """ compare two 3D points and return True if they are within 
             the specified distance to each other 
@@ -996,8 +1094,8 @@ class polygon_operator(point_operator):
             return True   
         return False
 
-    ############################################### 
-    ############################################### 
+    ##-------------------------------------------## 
+    ##-------------------------------------------##  
     # selection and inspection tools
     def select_by_location(self, select_type, pt_two, dist):
         """ UNFINISHED - seems to be selecting the wrong faces 
@@ -1031,7 +1129,7 @@ class polygon_operator(point_operator):
 
         return None
 
-    ############################################### 
+    ##-------------------------------------------## 
     def geom_to_ptgrp(self, geom):
         """ convert one weird data type into another 
         """
@@ -1041,7 +1139,7 @@ class polygon_operator(point_operator):
             out.append( [1, g[1][i]] )
         return out     
 
-    ###############################################  
+    ##-------------------------------------------##  
     def sub_select_geom(self, span=None, ids=None, reindex=False):
         """ 
             make work with xform_pts, rotate_pts, scale_pts 
@@ -1092,7 +1190,7 @@ class polygon_operator(point_operator):
 
         return ( out_poly, out_pts )
 
-    ###############################################  
+    ##-------------------------------------------##  
     def get_pt_ids(self, fids=None):
         """ lookup point indices (poly) from a list of face IDs 
         """
@@ -1107,7 +1205,7 @@ class polygon_operator(point_operator):
         
         return out_poly 
 
-    ###############################################  
+    ##-------------------------------------------##   
     def get_face_pts(self, fid):
         """ lookup and return the point geometry of a face from a face ID
             for fancier features look at get_face_geom() 
@@ -1125,7 +1223,7 @@ class polygon_operator(point_operator):
 
         return tmp
 
-    ###############################################  
+    ##-------------------------------------------##   
     def pts_to_ptgrp(self, pts):
         """ 
             pts is [pt, pt, pt  ]
@@ -1140,7 +1238,7 @@ class polygon_operator(point_operator):
             out.append( [i,p] )  
         return out   
 
-    ###############################################  
+    ##-------------------------------------------##   
     def insert_pt_grp(self, ptgrp):
         """ ptgrp is [ [id, pt], [id, pt] ]
             this will overwrite internal geometry with point group geometry 
@@ -1159,7 +1257,7 @@ class polygon_operator(point_operator):
             self.points[p[0]] = p[1]
         return out    
 
-    ###############################################  
+    ##-------------------------------------------##  
     def append_pt_grp(self, ptgrp):
         """ same as a list, but compatible with indexed point groups
             ptgrp is [ [id, pt], [id, pt] ]
@@ -1169,7 +1267,7 @@ class polygon_operator(point_operator):
             self.points.append(p[1]) 
         return out 
 
-    ###############################################  
+    ##-------------------------------------------##  
     def get_pt_grp(self, span=None, ids=None):
         """ gets a point group, 
             a point group is a list of  
@@ -1197,7 +1295,7 @@ class polygon_operator(point_operator):
                 out.append( [p, self.points[p]] )
             return out      
 
-    ###############################################  
+    ##-------------------------------------------##  
     def get_face_group(self, span=None, ids=None):
         """ UNFINISHED 
             get a face group, a list of faces and IDS so 
@@ -1211,7 +1309,7 @@ class polygon_operator(point_operator):
 
         pass
 
-    ###############################################  
+    ##-------------------------------------------##  
     def get_geom_edges(self, geom ):
         """ 
             takes a geom object and returns another geom of the edges 
@@ -1232,7 +1330,7 @@ class polygon_operator(point_operator):
                 out_edge_pts.append((  geom[1][ply[idx-1]-2] , geom[1][ply[idx-1]-1]  )) # point index
         return [out_edge_ids, out_edge_pts]
 
-    ###############################################  
+    ##-------------------------------------------##   
     def get_face_edges(self, fid, reindex=False, geom=None):
         """ UNTESTED 
             return [[VTX_IDS], [VTX_PTS]]
@@ -1242,7 +1340,7 @@ class polygon_operator(point_operator):
             geom = self.get_face_geom(fid, reindex=True)  # [[poly idx], [pt data]] 
         return self.get_geom_edges(geom)
 
-    ###############################################  
+    ##-------------------------------------------##  
     def get_face_geom(self, fid,  reindex=False, geom=None):
         """ lookup and return the polygon indices and points for a single polygon 
 
@@ -1252,9 +1350,6 @@ class polygon_operator(point_operator):
             geom - act on a geom obj passed in, or on self
         """
 
-
-       
-        
         # validate inputs 
         #if fid<1 or fid > self.numply:
         #    print('# get_face_geom- bad face index : %s'%fid)
@@ -1319,7 +1414,7 @@ class polygon_operator(point_operator):
         
         return None 
 
-    ###############################################  
+    ##-------------------------------------------##   
     def get_face_normal(self, fid=None, unitlen=False ):
         """ lookup a face(s) and calculate a face normal(s) for it  
             only tested for 3 or 4 sided polygon 
@@ -1357,7 +1452,7 @@ class polygon_operator(point_operator):
         else:
             return out   
 
-    ###############################################        
+    ##-------------------------------------------##         
     def get_face_centroid(self, fid):
         """ lookup a face by id, return a 3d point representing the center
             wont work on nasty concave bad topology
@@ -1366,12 +1461,12 @@ class polygon_operator(point_operator):
         pts = self.get_face_pts(fid)
         return self.centroid_pts(pts) 
 
-    ############################################### 
-    ############################################### 
+    ##-------------------------------------------## 
+    ##-------------------------------------------##  
     # operators that modify geometry data and/or build new geom 
 
     
-    ############################################### 
+    ##-------------------------------------------##  
     def apply_matrix_ptgrp(self, ptgrp, m33=None, m44=None):
         """ same as apply_matrix_pts() but for point groups 
 
@@ -1401,7 +1496,7 @@ class polygon_operator(point_operator):
             out.append( [pt_ids[i],p ] ) 
         return out
 
-    ###############################################  
+    ##-------------------------------------------##   
     def scale_pts(self, amt, pts=None, ptgrp=None ):
 
         # build a scale matrix 
@@ -1440,7 +1535,7 @@ class polygon_operator(point_operator):
         scaled = self.apply_matrix_ptgrp(ptgrp, m33=sc_m33)  # m44=sc_m44
         self.insert_pt_grp(scaled)
 
-    ###############################################  
+    ##-------------------------------------------##   
     def rotate_pts(self, rot, pts=None, ptgrp=None):
         """  
             rotate some points with a matrix
@@ -1500,7 +1595,7 @@ class polygon_operator(point_operator):
 
 
 
-    ###############################################          
+    ##-------------------------------------------##          
     def insert_polygons(self, plyids, points, asnew_shell=True, geom=None):
         """  
              Insert NEW geometry into this object
@@ -1562,14 +1657,14 @@ class polygon_operator(point_operator):
         if geom is not None:
             return geom
 
-
+    ##-------------------------------------------## 
     def add_poly_frpts(self, pts):
         """ build a new triangle and auto-step the fids """
         npts = self.numpts 
         self.points.extend(pts)
         self.polygons.append( [npts+1,npts+2,npts+3] )
-
-
+    
+    ##-------------------------------------------## 
     def add_quad_frpts(self, pts):
         """ build a new 4 sided polygon and auto-step the fids """
         npts = self.numpts 
@@ -1577,8 +1672,12 @@ class polygon_operator(point_operator):
         self.polygons.append( [npts+1,npts+2,npts+3, npts+4])
 
 
-    ###############################################  
+    ##-------------------------------------------##  
     def revolve_points(self, numdivs, axis, pts):
+        """ simple lathe function 
+
+        """
+
         
         step = int(360/numdivs)
  
@@ -1591,7 +1690,7 @@ class polygon_operator(point_operator):
         return out
         #return  self.modulo(numdivs, self.points) 
 
-    ###############################################  
+    ##-------------------------------------------##  
     def linegeom_fr_points(self, pts, color=(100,0,100), periodic=False ):
         """ create renderable lines from array of 3D pts 
         """
@@ -1612,6 +1711,7 @@ class polygon_operator(point_operator):
                 self.points.append( (pt2[0], pt2[1], pt2[2], color[0], color[1], color[2]) ); lptidx+=1 
                 self.polygons.append([lptidx-1, lptidx])
 
+    ##-------------------------------------------## 
     def lathe(self, pts, num):
         """ spin a set of 3d points 360 degrees and make a renderable surface """
 
@@ -1663,6 +1763,7 @@ class polygon_operator(point_operator):
                         tri1.append( pt_grid[0][v]   )
                         self.add_poly_frpts(tri1)
 
+    ##-------------------------------------------## 
     def lathe2(self, pts, num):
         """ attempt to build quads instead of tris"""
         pt_grid = self.revolve_points( num, 'y', pts )
@@ -1686,7 +1787,7 @@ class polygon_operator(point_operator):
                     tri1.append( pt_grid[u-1][v]  )
                     self.add_quad_frpts(tri1)
 
-    ###############################################  
+    ##-------------------------------------------##  
     def extrude_face(self, f_id, distance):
  
         geom  = self.sub_select_geom(ids=[f_id] , reindex=True)
@@ -1724,7 +1825,7 @@ class polygon_operator(point_operator):
         # transformed face along normal (cap polygon) 
         self.insert_polygons(geom[0], moved, asnew_shell=True) 
 
-    ###############################################  
+    ##-------------------------------------------##  
     def copy_sop(self, slice=None, ids=None, reindex=False, offset=(0,1,0), rot=(0,0,0), num=2, distance=2):
         """ UNFINISHED ,  mimmic the copy SOP in Houdini 
              
@@ -1763,7 +1864,7 @@ class polygon_operator(point_operator):
                 # DEBUG - this seems not right, grinds to a halt on 20+ polygons
                 self.insert_polygons(geom[0], newpts  ) 
 
-    ############################################### 
+    ##-------------------------------------------## 
     def xform_pts(self, pos, pts=None, ptgrp=None):
         """ shift points without using a matrix 
             if no points are specified - apply to whole object 
@@ -1801,7 +1902,7 @@ class polygon_operator(point_operator):
 
         self.insert_pt_grp(tmp_buffer)
 
-    ############################################### 
+    ##-------------------------------------------##  
     def radial_triangulate_face(self, fid, offset=None, as_new_obj=False ):
         """ put a vertex at the center of polygon 
             then form triangles in a circle 
@@ -1854,7 +1955,7 @@ class polygon_operator(point_operator):
         else:    
             self.insert_polygons(out_polys, out_pts)
 
-    ############################################### 
+    ##-------------------------------------------## 
     def radial_triangulate_obj(self, as_new_obj=False, offset=None ):
         """ put a vertex at the center of polygon 
             then form triangles in a circle 
@@ -1903,7 +2004,7 @@ class polygon_operator(point_operator):
         else:    
             self.insert_polygons(out_polys, out_pts)
 
-    ############################################### 
+    ##-------------------------------------------## 
     def triangulate(self, force=False, offset=(0,0,0)):
         """ 
             Only works on 3 or 4 sided polygons. 3 are passed unchanged, 4 are triangulated  
@@ -1937,7 +2038,7 @@ class polygon_operator(point_operator):
                 # overwrite old data 
                 self.polygons = out_polys
 
-    ############################################### 
+    ##-------------------------------------------##  
     def poly_loft(self, obj2, as_new_obj=True):
         """ UNFINISHED 
             assume two profiles have been passed in with identical polygon ordering 
@@ -1981,8 +2082,8 @@ class polygon_operator(point_operator):
         else:    
             self.insert_polygons(new_plys, new_pts)
 
-    ###############################################  
-    ############################################### 
+    ##-------------------------------------------##   
+    ##-------------------------------------------## 
     #file IO / mesh analysis, etc 
 
     def repair(self):
@@ -2011,8 +2112,7 @@ class polygon_operator(point_operator):
                 fix.append( pt )
         self.points = fix
 
-    ############################################### 
-
+    ##-------------------------------------------## 
     #load/dump numbered point caches and reload - very powerful idea!
     def load(self, filename, doflush=True):
         """ 
@@ -2143,7 +2243,7 @@ class polygon_operator(point_operator):
                         #    print('Parameter space vertices found ', tok)
                                
 
-    ###############################################  
+    ##-------------------------------------------## 
 
     def save(self, filename, as_lines=False):
         """ format the data so blender (or anything else) can read it  

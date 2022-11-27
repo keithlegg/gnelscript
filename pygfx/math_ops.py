@@ -33,7 +33,7 @@ class math_util(object):
         for example self.dot_vec3() will be vec3.dot , etc 
     """
 
-    ####################################
+    ##-------------------------------------------##
 
     # # iterate through rows of X
     # for i in range(len(X)):
@@ -43,7 +43,7 @@ class math_util(object):
     #        for k in range(len(Y)):
     #            result[i][j] += X[i][k] * Y[k][j]
 
-    ####################################
+    ##-------------------------------------------##
 
     # def matmult(a,b):
     #     zip_b = zip(*b)
@@ -52,38 +52,51 @@ class math_util(object):
     #     return [[sum(ele_a*ele_b for ele_a, ele_b in zip(row_a, col_b)) 
     #              for col_b in zip_b] for row_a in a]
 
+    ##-------------------------------------------##
+    def calc_line_length(self, x1, y1, x2, y2):
+        """ distance between two points 
+            DEBUG -- make work in 2d and 3d!
+            DEBUG -- merge with -  self.calc_line_length(pt1[0], pt1[1], pt2[0], pt2[1] )
 
+        """
+        return math.sqrt( ((x1-x2)**2)+ ((y1-y2)**2) )
+
+    ##-------------------------------------------##        
     def dot_vec3 (self, v1, v2):
          """ scalar - mag but not direction """
          return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2] 
 
+    ##-------------------------------------------##
     def cross_vec3 (self, v1, v2):
         return (v1[1]*v2[2]-v1[2]*v2[1], v1[2]*v2[0]-v1[0]*v2[2], v1[0]*v2[1]-v1[1]*v2[0])
 
+    ##-------------------------------------------##
     def dtr (self, deg ):
        return deg * DEG_TO_RAD
 
+    ##-------------------------------------------##
     def rtd (self, rad ):
        return rad * RAD_TO_DEG
-
+    
+    ##-------------------------------------------##
     def dtr_vec3(self, invec):
         return ( self.dtr( invec[0] ),
                  self.dtr( invec[1] ),
                  self.dtr( invec[2] ),
                )
-
+    ##-------------------------------------------##
     def rtd_vec3(self, invec):
         return ( self.rtd( invec[0] ),
                  self.rtd( invec[1] ),
                  self.rtd( invec[2] ),
                )
-
+    ##-------------------------------------------##
     def vect_add(self, v1, v2):
         return [v1[0]+v2[0], v1[0]+v2[1], v1[2]+v2[2]]
-
+    ##-------------------------------------------##
     def mult_scalar (self, scalar, v):
         return [v[0]*scalar, v[1]*scalar, v[2]*scalar ]
-
+    ##-------------------------------------------##
     def mult_m33_vec3(self, m, v):
         """ multiplies a 3X3 matrix by a 3D vector - returns a vector tuple 
             NUMPY DOT is the same as multiplying 
@@ -94,7 +107,7 @@ class math_util(object):
         outz = m[2] * v[0] + m[5] * v[1] + m[8] * v[2] 
           
         return  (outx, outy, outz)
-
+    ##-------------------------------------------##
     def mult_m44_vec3(self, m, v):
         """ multiplies a 4X4 matrix by a 3D vector - returns a vector tuple """
         
@@ -103,15 +116,7 @@ class math_util(object):
         outz = m[2]*v[0] + m[6]*v[1] + m[10] * v[2]+m[14]
           
         return  (outx, outy, outz)
-
-    def calc_line_length(self, x1, y1, x2, y2):
-        """ distance between two points 
-            DEBUG -- make work in 2d and 3d!
-            DEBUG -- merge with -  self.calc_line_length(pt1[0], pt1[1], pt2[0], pt2[1] )
-
-        """
-        return math.sqrt( ((x1-x2)**2)+ ((y1-y2)**2) )
-
+    ##-------------------------------------------##
     def mult_mat33(self, m, n):
         """ multiply two 3X3 matricies together """
         return [
@@ -125,7 +130,7 @@ class math_util(object):
                 m[6]*n[1] + m[7]*n[4] + m[8]*n[7],
                 m[6]*n[2] + m[7]*n[5] + m[8]*n[8]   
                ]        
-
+    ##-------------------------------------------##
     def mult_mat44(self, m, n):
         """multiply two 4X4 matricies together """
         return [
@@ -147,7 +152,7 @@ class math_util(object):
                 m[12]*n[3] + m[13]*n[7] + m[14]*n[11] + m[15]*n[15]
                ]
 
-
+    ##-------------------------------------------##
     def normalize_vec3(self, in_vec):
         try:
            invLength = 1.0/math.sqrt(in_vec[0]*in_vec[0] + in_vec[1]*in_vec[1]+ in_vec[2]*in_vec[2])
@@ -156,7 +161,7 @@ class math_util(object):
            print('normalize_vec3: divide by zero error.') 
            return [0,0,1]
 
-
+    ##-------------------------------------------##
     def mul_square_matrices(self, m1, m2):
         
         """
@@ -178,7 +183,7 @@ class math_util(object):
         """
         pass
 
-
+    ##-------------------------------------------##
     def matrix_adjoint(self, m44, size):
         
         """
@@ -230,7 +235,7 @@ class math_util(object):
         #cMatrix = transpose( $cMatrix, $size );
         return cMatrix
 
-
+    ##-------------------------------------------##
 
     def matrix_invert(self, aMatrix, size):
         
@@ -253,7 +258,7 @@ class math_util(object):
 
         return iMatrix;
 
-
+    ##-------------------------------------------##
     def matrix_rotate(self, aMatrix, size):
         
         """
@@ -449,7 +454,11 @@ class vec2(object):
         self.x *= invLength
         self.y *= invLength
 
-###############################################
+
+
+##-------------------------------------------##
+##-------------------------------------------##
+
 class vec3(object):    
 
     def __init__(self,x=0,y=0,z=0):
@@ -591,12 +600,16 @@ class vec3(object):
 
         pass
 
-
     def between(self, pt2):
         """ given 2 points in 3D, create a 3D vector 
             representing the offset between them 
 
             doesnt get much easier than this, just subtract 
+             
+            usage: 
+                v1 = vec3(0,0,0)
+                v2 = vec3(1,1,1)
+                print(v2.between(v1) )
 
         """
    
@@ -641,14 +654,14 @@ class vec3(object):
 
  
     def copy(self, vtype=None):
-        if vtype is None:
+        if vtype == None:
             return type(self)(self.x,self.y,self.z)
 
-        if vtype is 'tuple':
+        if vtype == 'tuple':
             return ( (self.x,self.y,self.z) )
 
         if NUMPY_IS_LOADED:    
-            if vtype is 'numpy':
+            if vtype == 'numpy':
                 return np.array( (self.x,self.y,self.z) )
 
     @property
@@ -809,7 +822,10 @@ class vec3(object):
 
         return None 
 
-###############################################
+
+##-------------------------------------------##
+##-------------------------------------------##
+
 class vec4(object):
     """ untested - 
         homogeneous coordinate experiment  
@@ -904,7 +920,10 @@ class vec4(object):
 #[xyzw]∗⎡⎣⎢⎢⎢m00m10m20m30m01m11m21m31m02m12m22m32m03m13m23m33⎤⎦⎥⎥⎥
 #x′=x∗m00+y∗m10+z∗m20+w∗m30y′=x∗m01+y∗m11+z∗m21+w∗m31z′=x∗m02+y∗m12+z∗m22+w∗m32w′=x∗m03+y∗m13+z∗m23+w∗m33
 
-###############################################
+
+##-------------------------------------------##
+##-------------------------------------------##
+
 class matrix22(object):
     """ 2D matrix experiment """
 
@@ -1004,7 +1023,10 @@ class matrix22(object):
             tmp_buffer.append( self * pt )
         return tmp_buffer
 
-###############################################
+
+##-------------------------------------------##
+##-------------------------------------------##
+
 class matrix33(object):
     """ 3X3 matrix from pure python 
         limited support to interface to numpy arrays
@@ -1385,7 +1407,10 @@ class matrix33(object):
         ############ 
         return rotation_33.batch_mult_pts(points)
 
-###############################################
+
+##-------------------------------------------##
+##-------------------------------------------##
+
 class matrix44(object):
     """ 4X4 matrix from pure python 
         limited support to interface to numpy arrays 
@@ -1845,7 +1870,9 @@ class matrix44(object):
         #print(m)
         return m
 
-###############################################
+##-------------------------------------------##
+##-------------------------------------------##
+
 class quaternion(object):
     """ UNTESTED
         first stab at quaternion 
@@ -2161,7 +2188,10 @@ class quaternion(object):
         
         return result
 
-###############################################
+
+##-------------------------------------------##
+##-------------------------------------------##
+
 class spherical(object):
     """ UNTESTED -   polar and spherical coordinates 
 
