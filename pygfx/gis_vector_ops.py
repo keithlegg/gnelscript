@@ -1,6 +1,7 @@
 import geojson
 
 
+
 from gnelscript.pygfx.grid_ops import  *
 from gnelscript.pygfx.obj3d import  *
 
@@ -20,8 +21,8 @@ class generic_ngc(object3d):
         self.ngc_to_obj    = []
         self.filled_polys  = []  #list of list of points 
 
-        self.rh = .1     # retract height 
-        self.ch = .5      # cut height 
+        self.rh = 1.5     # retract height 
+        self.ch = 1       # cut height 
         self.hp = (0,0,0) # home position 
 
     ##-------------------------------##
@@ -37,26 +38,38 @@ class generic_ngc(object3d):
         out = out.replace('\'','')
         return out
 
-    ##############
-    def save_3d_obj(self, name):
+    def grpts(self, pts):
+        """ insert points into gr_polys 
+            fix rounding errors 
+            fix anything else .... 
+
+        """
+
+        clean = self.clean_points(pts) 
+        self.gr_polys.append(clean)
+
+    ##-------------------------------##
+    def save_3d_obj(self, name, export_retracts=True):
         """ dump a bunch of 3d pionts as a giant line to visualize in gnolmec"""   
-        
-        export_retracts = False
         
         print("exporting %s polygons "%len(self.gr_polys))
 
+        last_idx = 0
 
         if export_retracts == False:
             #this will make a pretty OBJ without retracts 
             
-            idx = 1  
+            idx = 0  
             for jpoly in self.gr_polys:
+                last_idx = len(self.points)
                 self.points.extend(jpoly)
 
                 for i,pt in enumerate(jpoly):
                     if i>0 and i<len(jpoly):
-                        poly = (i,i+1)
+                        poly = (idx+i,idx+i+1)
                         self.polygons.append( poly ) 
+                
+
 
 
         if export_retracts == True: 
@@ -71,7 +84,9 @@ class generic_ngc(object3d):
 
         #self.scale_pts(self.scale)
         self.save(name)
-        
+
+
+
     ##-------------------------------##
     def load_geojson(self, inputfile, zaxis, getone=None):
         """ parse a geojson file - store points in arrays in GR_POLY buffer """
@@ -86,6 +101,7 @@ class generic_ngc(object3d):
         features = gj['features'] 
  
         if getone:
+            print("#load_geojson getone mode ", getone) 
             if getone>len(features):
                 return "getone out of range "
 
@@ -98,11 +114,12 @@ class generic_ngc(object3d):
                 tmp_poly = [] 
 
                 #no getone is all features 
-                if getone ==None:
+                if getone == None:
                     for pt in coord:
                         if type(pt[0])==float and type(pt[1])==float:
                             tmp_poly.append( (pt[0], pt[1], zaxis) )
                             ptidx += 1  
+                
                 #getone is single for now - specify a feature ID to pull 
                 if getone:
                     if i == getone: 
@@ -112,7 +129,8 @@ class generic_ngc(object3d):
                                 ptidx += 1                      
 
                 #print("loaded %s points in polygon "%len(tmp_poly)) 
-                self.gr_polys.append(tmp_poly) 
+                if tmp_poly:
+                    self.gr_polys.append(tmp_poly) 
             plyidx += 1 
         
         print("loaded %s polygons from %s "%(plyidx,inputfile)) 
@@ -186,14 +204,33 @@ class generic_ngc(object3d):
             self.gr_polys.append(tmp)
 
     ##-------------------------------##
-    def calulate_paths(self):
+    def calulate_paths(self, do_retracts=True):
         """ 
             DEBUG - it seems that this just makes a single line with retract caclulated  
             convert the raw points read from kicad into a usuable path(s) with retract 
-        """
-        
-        do_retract = False 
 
+            https://linuxcnc.org/docs/html/gcode/g-code.html
+
+            Top 10 tasty GCODE commands:
+                
+                S - surface speed
+                G20 (Use inch)
+                G21 (Use mm)
+                G90 (Set Absolute Coordinates)
+
+                G0 -  Rapid Move
+                G1 -  Linear Move
+
+                M3, M4, M5  S ($)   Spindle Control
+                M6 - 
+                M9 - 
+                M3 - 
+
+
+                M2 - program end 
+
+        """
+    
         lastpt = (0,0,0)
 
         self.outfile = []
@@ -206,11 +243,12 @@ class generic_ngc(object3d):
         
         ##-----------------------------------------##
 
-        #move to origin ? 
+        #move to origin  
         self.outfile.append('g0 x%s y%s z%s f30'% ( self.hp[0], self.hp[1], self.rh) )   #rapid move to 0 
         self.ngc_to_obj.append( ( self.hp[0], self.hp[1], self.rh) ) 
 
-        self.outfile.append('g0z%s'% ( self.rh ) )  #retract in between cuts
+        if do_retracts:
+            self.outfile.append('g0z%s'% ( self.rh ) )  #retract in between cuts
    
         ##-----------------------------------------##
         self.outfile.append('  ')
@@ -218,23 +256,23 @@ class generic_ngc(object3d):
 
         ##-----------------------------------------##
         # build the gcode up with simple linear movements 
+
+        ###################################################
+
         for fill_poly in self.filled_polys:
-
-            if do_retract:
+            if do_retracts:
                 pt1 = fill_poly[0] 
-                self.outfile.append('x%s y%s z%s'% (  round(pt1[0]*self.scale,6) , round(pt1[1]*self.scale,6), self.rh ) )  #first point at retract height   
+                self.outfile.append('G0 x%s y%s z%s'% (  pt1[0], pt1[1], self.rh ) )  #first point at retract height   
                 self.ngc_to_obj.append( ( self.hp[0], self.hp[1], self.rh) ) 
-
+            
             for i,pt in enumerate(fill_poly):
-                self.outfile.append( 'x%s y%s z%s'%( round(pt[0]*self.scale,6) , round(pt[1]*self.scale,6), self.ch ) )
-                self.ngc_to_obj.append( ( round(pt[0]*self.scale,6) , round(pt[1]*self.scale,6), self.ch ) )             
-                lastpt =( round(pt[0]*self.scale,6) , round(pt[1]*self.scale,6), self.ch )
+                self.outfile.append( 'G1 x%s y%s z%s'%( pt[0], pt[1], self.ch ) )
+                self.ngc_to_obj.append( ( pt[0], pt[1], self.ch ) )             
+                lastpt =( round(pt[0]*self.scale,pl) , pt[1], self.ch )
 
-
-            self.outfile.append( 'x%s y%s z%s'%(lastpt[0], lastpt[1], self.ch) )
+            self.outfile.append( 'G0 x%s y%s z%s'%(lastpt[0], lastpt[1], self.ch) )
             self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.ch)   ) 
-
-            if do_retract:
+            if do_retracts:
                 self.outfile.append('g0z%s'% ( self.rh ) )  #retract in between cuts
                 self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.rh)   ) 
                 self.outfile.append('  ')
@@ -242,9 +280,9 @@ class generic_ngc(object3d):
         ####
         self.outfile.append('  ')
         self.outfile.append('(exporting graphic polygons )')
+        
+        ####################################################
 
-
-        ##-----------------------------------------##
         # graphical polygons - build the gcode up with simple linear movements
         for gr_poly in self.gr_polys:
 
@@ -252,24 +290,27 @@ class generic_ngc(object3d):
                 pt1 = gr_poly[0] 
 
                 #### first point at retract height 
-                if do_retract:
+                if do_retracts:
                     #move to first point RH 
-                    self.outfile.append('x%s y%s z%s'% (  round(pt1[0]*self.scale,6) , round(pt1[1]*self.scale,6), self.rh ) )               
-                    self.ngc_to_obj.append( ( round(pt1[0]*self.scale,6) , round(pt1[1]*self.scale,6), self.rh ) )             
-                
-                # iterate points in polygon 
+                    self.outfile.append('x%s y%s z%s'% (  pt1[0] , pt1[1], self.rh ) )               
+                    self.ngc_to_obj.append( ( pt1[0], pt1[1], self.rh ) )             
+
+                ## iterate points in polygon 
+                self.outfile.append( 'G1' )
                 for i,pt in enumerate(gr_poly):
-                    self.outfile.append( 'x%s y%s z%s'%( round(pt[0]*self.scale,6) , round(pt[1]*self.scale,6), self.ch ) )
-                    self.ngc_to_obj.append( ( round(pt[0]*self.scale,6) , round(pt[1]*self.scale,6), self.ch ) )                   
+                    self.outfile.append( 'x%s y%s z%s'%( pt[0], pt[1], self.ch ) )
+                    self.ngc_to_obj.append( (pt[0], pt[1], self.ch) )                   
                     #lastpt = ( round(pt1[0]*self.scale,6) , round(pt1[1]*self.scale,6), self.ch )
+                
+                self.outfile.append( 'G0' )
 
                 # move to last point at CH  
-                #self.ngc_to_obj.append( (round(gr_poly[0][0]*self.scale,6), round(gr_poly[0][1]*self.scale,6), self.ch)   ) 
-                #self.outfile.append( 'x%s y%s z%s'%( (round(gr_poly[0][0]*self.scale,6), round(gr_poly[0][1]*self.scale,6), self.ch) ) )
+                #self.ngc_to_obj.append( (gr_poly[0][0], gr_poly[0][1], self.ch))   
+                #self.outfile.append( 'x%s y%s z%s'%( (gr_poly[0][0], gr_poly[0][1], self.ch) ) )
 
-                if do_retract:
-                    self.ngc_to_obj.append( (round(gr_poly[0][0]*self.scale,6), round(gr_poly[0][1]*self.scale,6), self.rh)   )   
-                    self.outfile.append( 'x%s y%s z%s'%( (round(gr_poly[0][0]*self.scale,6), round(gr_poly[0][1]*self.scale,6), self.rh) ) )
+                if do_retracts:
+                    self.ngc_to_obj.append( (gr_poly[0][0], gr_poly[0][1], self.rh)  )
+                    self.outfile.append( 'x%s y%s z%s'%( gr_poly[0][0], gr_poly[0][1], self.rh) )
 
                     #### retract in between cuts
                     self.outfile.append('g0z%s'% ( self.rh ) )  

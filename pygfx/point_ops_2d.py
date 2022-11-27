@@ -358,3 +358,90 @@ class point_operator_2d(object):
 
 
 
+
+
+
+
+
+class polygon_operator_2d(point_operator_2d):
+
+
+    def __init__(self):
+        super().__init__()  
+
+        self.points          = []    # list of tuples of XYZ points per vertex         -  [(x,y,z), (x,y,z)]  
+        self.polygons        = []    # list of tuples for 2 or more vertex connections -  [(1,2,5,8) , (1,2)] 
+
+        self.vec_buffer      = []  # vector work buffer - scratch area to store vectors for operations 
+
+        # render properties embedded in geometry 
+        self.linecolors = None       # iterable of colors for lines 
+        self.linecolor  = (0,240,00)
+        self.vtxcolor   = (0,240,00)
+
+        # "unavoidable side effect" variables 
+        self.exprt_ply_idx   = 1     # obj is NOT zero indexed
+        #self.exprt_pnt_idx   = 0    # pts ARE zero indexed (everything BUT .obj face idx's are)      
+
+    ##-------------------------------------------## 
+    def reset(self):
+        self.rot          = [0,0]
+        self.pos          = [0,0]
+        self.scale        = [1,1]
+
+
+    ##-------------------------------------------## 
+    def show(self):
+        data = []
+ 
+        tris = 0
+        quads = 0
+        other = 0        
+        for p in self.polygons:
+            if len(p)==3:
+                tris+=1
+            elif len(p)==4:
+                quads+=1  
+            else:
+                other+=1
+
+        data.append('\n############################')
+        data.append('  position      : %s %s %s'%( self.pos[0], self.pos[1]     ))
+        data.append('  rotation      : %s %s %s'%( self.rot[0], self.rot[1]     ))
+        data.append('  scale         : %s %s %s'%( self.scale[0], self.scale[1] ))
+        data.append(' --------------------------- ' )        
+        #data.append('  num face normals   : %s' %  self.numfacnrml )   
+        #data.append('  num verts          : %s' %  self.numpts     )
+        #data.append('  num polygons       : %s' %  self.numply     )
+        data.append(' --------------------------- ' )         
+        data.append('  num triangles      : %s' %  tris  )
+        data.append('  num quads          : %s' %  quads )  
+        data.append('  num other          : %s' %  other ) 
+        data.append('############################\n')
+
+        for d in data:
+            print(d) 
+
+
+    ##-------------------------------------------## 
+
+
+
+    ##-------------------------------------------## 
+    
+
+
+    ##-------------------------------------------## 
+
+
+
+
+    ##-------------------------------------------## 
+    
+
+
+    ##-------------------------------------------## 
+
+
+
+

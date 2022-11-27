@@ -1,3 +1,11 @@
+
+
+""" 
+DEBUG NOT DONE - JUST COPIED FROM OBJECT3D
+"""
+
+
+
 class object25d(point_operator_2d):
     """
         2.5D object - modeled after obj3d but much simpler
@@ -28,7 +36,7 @@ class object25d(point_operator_2d):
         self.scale        = [1,1,1]
 
 
-    ###############################################  
+    ##-------------------------------------------##  
     def show(self):
         data = []
  
@@ -91,7 +99,7 @@ class object25d(point_operator_2d):
     #     pass
 
 
-    ###############################################  
+    ##-------------------------------------------##  
 
     def load(self, filename):
         ## copied from pointgen 3d 
@@ -159,7 +167,7 @@ class object25d(point_operator_2d):
                             self.polygons.append( poly )
                             self.uv_polys.append(uv_poly) 
 
-    ###############################################  
+    ##-------------------------------------------##  
 
     def save(self, filename, as_lines=False):
         ## copied from pointgen 3d 
@@ -212,7 +220,8 @@ class object25d(point_operator_2d):
 
 
 
-###################################################
+##-------------------------------------------##
+##-------------------------------------------##
 
 class tnode(object):
     def __init__(self):
@@ -226,6 +235,8 @@ class tnode(object):
         self.x = x
         self.y = y
 
+
+##-------------------------------------------##
 
 def fractal(tree, depth, maxdepth):
 
@@ -278,6 +289,7 @@ def fractal(tree, depth, maxdepth):
         depth += 1
         fractal(tree, depth, maxdepth)        
 
+##-------------------------------------------##
 
 def tree_to_lines(tree):
     """ iterate a tree and get the points XY coords to draw"""

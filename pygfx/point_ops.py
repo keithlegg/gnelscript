@@ -62,6 +62,26 @@ class point_operator(object):
         self.vec2     = vec2()     
         self.vec3     = vec3()      
 
+    def csp(self, pt):
+        """ clean single point to 8 places of precision  
+               -remove scientific notation (exponents)
+               -?? 
+        """
+
+        return (f'{pt[0]:.8f}',f'{pt[1]:.8f}')
+
+    def cf(self, pts):
+        """ clean float data 
+               -remove scientific notation (exponents)
+               -?? 
+        """
+        outpts = []
+        
+        for pt in pts:
+            print(self.csp(pt))
+            outpts.append(self.csp(pt))
+        return outputs
+
     def apply_matrix_pts(self, pts, m33=None, m44=None):
         """ 
             DEBUG BAD INTERFACE! 
@@ -404,7 +424,7 @@ class point_operator(object):
     ##-------------------------------------------##            
     def add_margin_bbox(self, bbox, size):
         """ return center (x,y) from two diagonal coordinates 
-
+            assuming a bbox is [left, top, right, bottom ] it "grows" the size of it 
         """
         
         out = []
@@ -596,6 +616,10 @@ class point_operator(object):
     def locate_pt_along3d(self, x1, y1, z1, x2, y2, z2, num):
         """
             given two 3D points, return a series of N number connecting points in 3D 
+
+            usage:
+
+
         """
 
         pts_created = []
@@ -794,6 +818,26 @@ class polygon_operator(point_operator):
     def numpts(self):
         """ get the total number of points in this object (-1 because of 0 index)"""        
         return len(self.points)-1
+
+
+    def clean_points(self, pts=None):
+        """ get rid of the pesky exponect/scientific notation on large/small floats 
+         
+            -2.692345105448116e-09 , etc  
+
+        """
+        
+        cleaned = []
+        if pts==None:
+            #print(self.points)
+            for pt in self.points:
+                cleaned.append( self.csp(pt) )
+            self.points = cleaned
+        else:
+            #print(pts)
+            for pt in pts:
+                cleaned.append( self.csp(pt) )            
+            return cleaned
 
     ##-------------------------------------------##  
     def scribe(self, str):

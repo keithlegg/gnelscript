@@ -1,4 +1,14 @@
-class object25d(point_operator_2d):
+
+
+import math 
+
+
+from gnelscript.pygfx.point_ops_2d import polygon_operator_2d
+from gnelscript.pygfx.math_ops import vec3 
+
+
+
+class object25d(polygon_operator_2d):
     """
         2.5D object - modeled after obj3d but much simpler
         
@@ -28,7 +38,7 @@ class object25d(point_operator_2d):
         self.scale        = [1,1,1]
 
 
-    ###############################################  
+    ##-------------------------------------------## 
     def show(self):
         data = []
  
@@ -64,6 +74,7 @@ class object25d(point_operator_2d):
         for d in data:
             print(d) 
 
+    ##-------------------------------------------##
     def prim_square(self,  pos=(0,0,0), rot=(0,0,0), size=1):
         pts = [] 
 
@@ -77,7 +88,7 @@ class object25d(point_operator_2d):
         self.points.extend(pts)
         self.polygons.append( (1,2,3,4) )
 
-
+    ##-------------------------------------------##
     def prim_triangle(self, pos=(0,0,0), rot=(0,0,0), size=1):
         pts =  [(-size,0,0), (0,size,0), (size,0,0) ]
         poly = [(1,2,3)]
@@ -91,7 +102,7 @@ class object25d(point_operator_2d):
     #     pass
 
 
-    ###############################################  
+    ##-------------------------------------------##  
 
     def load(self, filename):
         ## copied from pointgen 3d 
@@ -159,7 +170,7 @@ class object25d(point_operator_2d):
                             self.polygons.append( poly )
                             self.uv_polys.append(uv_poly) 
 
-    ###############################################  
+    ##-------------------------------------------##  
 
     def save(self, filename, as_lines=False):
         ## copied from pointgen 3d 
@@ -212,7 +223,8 @@ class object25d(point_operator_2d):
 
 
 
-###################################################
+##-------------------------------------------##
+##-------------------------------------------##
 
 class tnode(object):
     def __init__(self):

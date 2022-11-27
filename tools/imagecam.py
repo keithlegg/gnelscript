@@ -33,13 +33,22 @@ from gnelscript.pygfx.raster_ops import *
 
 from gnelscript.pygfx.point_ops_2d import *
 from gnelscript.pygfx.point_ops import *
+
 from gnelscript.pygfx.obj3d import  *
+from gnelscript.pygfx.obj25d import  *
+
 
 from gnelscript.pygfx.kicad_ops import *
 from gnelscript.pygfx.gis_vector_ops import *
 
 
 
+from gnelscript.examples.selection import * 
+#from gnelscript.examples.milling import *
+#from gnelscript.examples.raster import *
+#from gnelscript.examples.render import *
+#from gnelscript.examples.vector import *
+#from gnelscript.examples.wip import *
 
 mu = math_util() 
 
@@ -52,6 +61,30 @@ potrace_command = "potrace"
 COMMON_IN  = 'foobar'
 COMMON_OUT = 'rasterfoo'
 COMMON_EXT = 'png'
+
+
+
+##----------------------------------------------------
+##   /usr/local/opt/python@3.10/bin/python3.10 ./imagecam.py  
+#firstpass_bw(10, 1.5, 1.5, 1, 250, "images/in/art.jpg", "images/out", "output")
+## (iteration , blur , contrast, bright, scaling(divs) , in, out )
+#firstpass(10, 0, 1, 1, 250, "images/in/oil.png", "images/out", "output")
+
+#firstpass(10, 1.5, 1.2, 1, 250, "images/in/er.jpg", "images/out", "output")
+
+
+
+##----------------------------------------------------
+##   /usr/local/opt/python@3.10/bin/python3.10 ./imagecam.py  
+#secondpass("images/out/er.bmp", "images/out" , 16, False)
+
+
+##----------------------------------------------------
+#set the RGB values from last tool and run this 
+#thirdpass( "images/out/commonbands.png", "images/out", "dxf" )
+#thirdpass( "images/out/commonbands.png",  "images/out" , "geojson")
+
+#thirdpass( "images/out/commonbands.png",  "images/out" , "dxf")
 
 
 ##----------------------------------------------------
@@ -236,134 +269,11 @@ def thirdpass( inputfile, outputfolder, fileformat, po_invert=False, fastmode=Fa
 
 
 
-##----------------------------------------------------
-##   /usr/local/opt/python@3.10/bin/python3.10 ./imagecam.py  
-#firstpass_bw(10, 1.5, 1.5, 1, 250, "images/in/art.jpg", "images/out", "output")
-## (iteration , blur , contrast, bright, scaling(divs) , in, out )
-#firstpass(10, 0, 1, 1, 250, "images/in/oil.png", "images/out", "output")
-
-#firstpass(10, 1.5, 1.2, 1, 250, "images/in/er.jpg", "images/out", "output")
-
-
-
-##----------------------------------------------------
-##   /usr/local/opt/python@3.10/bin/python3.10 ./imagecam.py  
-#secondpass("images/out/er.bmp", "images/out" , 16, False)
-
-
-##----------------------------------------------------
-#set the RGB values from last tool and run this 
-#thirdpass( "images/out/commonbands.png", "images/out", "dxf" )
-#thirdpass( "images/out/commonbands.png",  "images/out" , "geojson")
-
-#thirdpass( "images/out/commonbands.png",  "images/out" , "dxf")
-
-
-
-
-##----------------------------------------------------
-
-def ngc_test():
-    """ build a generic tool to process vector data 
-       - NGC export 
-       - OBJ export 
-       - geoJSON imnport 
-       - ??? SWISS ARMY ROSETTA STONE   
-    """
-
-    ## kicadproj = '/Users/klegg/serv/camtest'
-    ## kicadproj = '/Users/klegg/serv/SID_DUINO3'
-    ## tokens = kicadproj.split(os.sep) 
-    ## projname = tokens[len(tokens)-1]
-    ## pcbname = projname+'.kicad_pcb'
-
-    kiparser = generic_ngc()
-    
-    kiparser.load_geojson('images/out/0.json', 0)
-    #kiparser.load_geojson('images/out/1.json', 0)
-    #kiparser.load_geojson('images/out/2.json', 0)
-    #kiparser.load_geojson('images/out/3.json', 0)
-    #kiparser.load_geojson('images/out/4.json', 0)
-    #kiparser.load_geojson('images/out/5.json', 0)
-    #kiparser.load_geojson('images/out/6.json', 0)                    
-    #kiparser.load_geojson('images/out/7.json', 0)
-
-
-    print("gr_poly buffer has %s polygons "%len(kiparser.gr_polys) )
-
-    #if you want to export NGC from kicad    
-    #kiparser.load_kicadpcb()
-
-    #if you want to export NGC/OBJ from geojson 
-    #kiparser.calulate_paths()
-    #kiparser.save_3d_obj('stopoil.obj')
-
-    #if you want to export OBJ without retracts from geojson 
-    kiparser.save_3d_obj('stopoil.obj')
-
-
- 
-
-
-
-############################
-
-
-#kiparser = generic_ngc()
-#kiparser.load_geojson('images/out/0.json', 0)
-#kiparser.export_ngc("foo.ngc")
-#kiparser.save_3d_obj('3d_obj/stopoil.obj')
 
 
 
 
 
-
-
-#pop3 = object3d()
-#pts = [(-1,0,0),(1,0,0)]
-#c = pop3.calc_line_length(pts)
-
-#print(c)
-
-
-
-
-
-#for f in dir(pop3):
-#    print(f)
-
-
-
-
-
-
-#obj3 = object3d()
-#obj3.show()
-
-
-
-#pop2 = point_operator_2d()
-#obj2 = object25d()
-#obj2.show()
-
-
-
-# TODO 
-
-""" 
-
- establish end orientation and scale of vectors related to CNC 
-
- build tools to scale, rotate, flip, etc if not already 
-
- re learn what tools I have already  
-
-
-
-
-
-"""
 
 
 
