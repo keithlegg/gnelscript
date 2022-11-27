@@ -12,9 +12,8 @@ requires
 
 """
 
-import binascii
-import struct
-
+##-- 
+import imageio
 
 import numpy as np
 import scipy
@@ -22,9 +21,13 @@ import scipy.misc
 import scipy.cluster
 
 
-###
+##-- 
+
+import binascii
+import struct
 
 import sys
+import subprocess
 
 from PIL import Image, ImageFilter, ImageEnhance, ImageOps
 
@@ -149,20 +152,11 @@ def firstpass( iters, blur, contrast, bright, chops, inputfile, outputfolder, ou
         
         simg.save( "%s/%s_%d.%s"%(outputfolder, outputfile,i,"bmp") )
 
-    # stuff below not really used - moved to second and third pass functions 
-    #do_posterize = False 
-    #do_potrace = False 
-    #tsize = 10 #suppress "turd" size - speckles 
-    # import subprocess
     # posterfile = "%s/%s_%d.%s"%(outputfolder, outputfile,1,"bmp")
     # if do_posterize:
     #     simg = ImageOps.posterize(simg, bits=1)
     #     simg.save( posterfile)
-    # if do_potrace:
-    #     #"-i" -invert 
-    #     command = [potrace_command, posterfile, "-b", "svg", "-W", str(width), "-H", str(height), "-t", str(tsize)]
-    #     print(command)
-    #     subprocess.run(command)
+
 
 
 ##----------------------------------------------------
@@ -194,7 +188,6 @@ def secondpass(inputimage, outputpath, numbands, fast=False):
 
     print(codes)
 
-
     vecs, dist = scipy.cluster.vq.vq(ar, codes)         # assign codes
 
     # counts, bins = scipy.histogram(vecs, len(codes))    # count occurrences
@@ -203,8 +196,6 @@ def secondpass(inputimage, outputpath, numbands, fast=False):
     # colour = binascii.hexlify(bytearray(int(c) for c in peak)).decode('ascii')
     # print('most frequent is %s (#%s)' % (peak, colour))
 
-    import imageio
-    
     c = ar.copy()
     for i, code in enumerate(codes):
         c[scipy.r_[scipy.where(vecs==i)],:] = code
@@ -216,8 +207,6 @@ def secondpass(inputimage, outputpath, numbands, fast=False):
 
 def thirdpass( inputfile, outputfolder, fileformat, po_invert=False, fastmode=False  ):
     """ break an already posterized image into seperate iamges X colors """
-
-    import subprocess
 
     simg = PixelOp()
     simg.load( inputfile )
@@ -358,11 +347,6 @@ def conv_image_to_module(image, module_name, scale_factor):
     module += footer % {"name": module_name}
     return module, (scale_factor * w, scale_factor * h)
 
-
-
-
-
-
 ##----------------------------------------------------
 
 def vectorizer(inputfile, outputfile=None):
@@ -382,11 +366,6 @@ def vectorizer(inputfile, outputfile=None):
 
     # Saving the Image Under the name Edge_Sample.png
     image.save("%s%d.%s" % ("%s/%s"%(output,"edge_detect"),1,COMMON_EXT) )
-
-
-
-
-
 
 ##----------------------------------------------------
 
