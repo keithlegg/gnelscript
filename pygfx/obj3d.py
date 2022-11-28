@@ -28,6 +28,15 @@ class object3d(polygon_operator):
         self.pos          = [0,0,0]
         self.scale        = [1,1,1]
 
+
+    @property
+    def rotation(self):
+        return self.rot
+
+    @property
+    def position(self):
+        return self.pos
+
     ############################################### 
     def copy(self):
         new = type(self)()

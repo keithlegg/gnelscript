@@ -16,9 +16,11 @@ from gnelscript.pygfx.math_ops import NUMPY_IS_LOADED, matrix33, matrix44, vec2,
 
     defined objects:
 
-    BBOX - 
+    BBOX - 2D left, top, right, bottom on Z axis 
+    
+    BBOX3 - 3D left, top , right, bottom, fromt, back on Z axis 
 
-    GEOM         -  [[face ids], [vertices] ]
+    GEOM  -  [[face ids], [vertices] ]
         geom type is a 3d model basically obj format in memory 
         it is the simplest way to define a 3d model. It is two arrays, face ids and vertices 
 
@@ -62,24 +64,30 @@ class point_operator(object):
         self.vec2     = vec2()     
         self.vec3     = vec3()      
 
-    def csp(self, pt):
-        """ clean single point to 8 places of precision  
-               -remove scientific notation (exponents)
-               -?? 
-        """
+    def csp_str(self, pt):
+        """ clean single point - tuple of 2 or 3 floats
+            destructive command - cleans floats for export but will loose precision 
+            only run when object is exported 
 
-        return (f'{pt[0]:.8f}',f'{pt[1]:.8f}')
+             clean single point to 8 places of precision  
+               -remove scientific notation (exponents)
+
+        """
+        if len(pt)==2:
+            return (f'{pt[0]:.8f}',f'{pt[1]:.8f}')
+        else:    
+            return (f'{pt[0]:.8f}',f'{pt[1]:.8f}',f'{pt[2]:.8f}')
 
     def cf(self, pts):
         """ clean float data 
+            destructive command - cleans floats for export but will loose precision 
+            only run when object is exported 
                -remove scientific notation (exponents)
-               -?? 
         """
         outpts = []
         
         for pt in pts:
-            print(self.csp(pt))
-            outpts.append(self.csp(pt))
+            outpts.append( f'{pt:.8f}' )
         return outputs
 
     def apply_matrix_pts(self, pts, m33=None, m44=None):
@@ -105,9 +113,8 @@ class point_operator(object):
 
         return tmp_buffer
 
-    def tuple_pop(self, listTuples, tup):
+    def tuple_pop(self, listups, tup):
         """ take a list of tuples, remove one by filtering it out and return the rest back 
-
 
             tups = [(1,1), (2,2), (2,3), (42,23)]
             ids = pop3.tuple_pop(tups, (1,1) )
@@ -118,7 +125,7 @@ class point_operator(object):
         """
 
         out = []
-        for t in listTuples:
+        for t in listups:
             if(t != tup):
                 out.append(t)
         return out
@@ -435,9 +442,13 @@ class point_operator(object):
         return out
 
     ##-------------------------------------------##
-    def extents_fr_bbox(self, bbox, offset=None):
-        """ return center (x,y) from a tuple of 4 numbers (PIL bbox [left, top, right, bottom]) 
-            offset (int) adds a margin to the size of the page edges 
+    def extents_fr_bbox(self, bbox, offset=None, periodic=False):
+        """ return pt geom from a bbox  
+            
+            args:
+               bbox   - iterable of 4 numbers (PIL bbox [left, top, right, bottom]) 
+               offset - (int) adds a margin to the size of the page edges 
+
         """
         
         out = []
@@ -446,13 +457,17 @@ class point_operator(object):
             out.append( (bbox[2], bbox[1]) ) #top right
             out.append( (bbox[2], bbox[3]) ) #bottom right
             out.append( (bbox[0], bbox[3]) ) #bottom left
-        
+            if periodic:
+                out.append( (bbox[0], bbox[1]) ) #top left                
+
         #increase the margins, (pixels are indexed with top left at 0,0)
         if offset:
             out.append( (bbox[0]-offset , bbox[1]-offset ) ) #top left
             out.append( (bbox[2]-offset , bbox[1]+offset ) ) #top right
             out.append( (bbox[2]+offset , bbox[3]+offset ) ) #bottom right
             out.append( (bbox[0]-offset , bbox[3]-offset ) ) #bottom left
+            if periodic:
+                out.append( (bbox[0]-offset , bbox[1]-offset ) ) #top left
 
         return out
 
@@ -492,8 +507,13 @@ class point_operator(object):
 
     ##-------------------------------------------##    
     def calc_bbox_pt(self, size, origin=None ):
-        """ DEBUG - this is unclamped!
+        """ 
+            BBOX is 2D on Z axis 
+
+            DEBUG - this is unclamped!
             calc extents for a square (left, upper, right, and lower)
+
+
         """
                 
         out =[]  
@@ -638,7 +658,7 @@ class point_operator(object):
 
 
     ##-------------------------------------------##
-    def trs_points(self, pts, translate=(0,0,0), rotate=(0,0,0),scale=(1,1,1) ):
+    def trs_points(self, pts, translate=(0,0,0), rotate=(0,0,0), scale=(1,1,1) ):
         #UNTESTED 
 
         #######################
@@ -820,10 +840,16 @@ class polygon_operator(point_operator):
         return len(self.points)-1
 
 
-    def clean_points(self, pts=None):
-        """ get rid of the pesky exponect/scientific notation on large/small floats 
-         
-            -2.692345105448116e-09 , etc  
+    def clean_pts_str(self, pts=None):
+        """ 
+            returns clamped strings from float, should work with 2D or 3D points 
+
+            destructive - may loose precision - only run for exporting 
+            get rid of the pesky exponect/scientific notation on large/small floats 
+
+            usage:
+                pts = x.clean_pts_str([(-2.692345105448116e-09, 10.692345105448116e-09)])
+                print(pts)
 
         """
         
@@ -831,12 +857,12 @@ class polygon_operator(point_operator):
         if pts==None:
             #print(self.points)
             for pt in self.points:
-                cleaned.append( self.csp(pt) )
+                cleaned.append( self.csp_str(pt) )
             self.points = cleaned
         else:
             #print(pts)
             for pt in pts:
-                cleaned.append( self.csp(pt) )            
+                cleaned.append( self.csp_str(pt) )            
             return cleaned
 
     ##-------------------------------------------##  
@@ -983,6 +1009,7 @@ class polygon_operator(point_operator):
     ##-------------------------------------------##     
     def calc_bbox_2d(self, ptgrp=None, facgrp=None ):
         """ UNFINISHED  
+            BBOX is 2D on Z axis 
             get the boudning area of an object or face(s)
         """
         maxx = 0

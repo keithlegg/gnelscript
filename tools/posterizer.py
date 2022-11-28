@@ -43,68 +43,49 @@ from gnelscript.tools.imagecam import *
 def vector_magic():
     kiparser = generic_ngc()
 
+    ##-- 
 
-    #indexer(ids=None, span=None, unique=True, nth=None):
+    #indexer(ids=None, span=None, unique=True, nth=None)
     ids = kiparser.indexer(span=[1,2])
-    kiparser.load_geojson('images/out/0.json', 0, getfids=None, getids=None)
 
+    ##-- 
 
-    #kiparser.load_geojson('images/out/0.json', 0, getids=ids)
+    kiparser.load_geojson('images/out/2.json', 0, getfids=None, getids=None)
+    #kiparser.load_geojson('images/out/3.json', 0, getfids=None, getids=None)
 
-    #kiparser.load_geojson('images/out/0.json', 0)
+    ##--
+    bbox = kiparser.calc_bbox_pt(2, (5,5))
+    pts = kiparser.cvt_2d_to_3d(kiparser.extents_fr_bbox(bbox, periodic=True))
+    
+    #debug - need to solve the clean_pts_str debacle?
+    kiparser.gr_polys.append(pts)
 
-    #kiparser.load_geojson('images/out/2.json', 0)
-    #kiparser.load_geojson('images/out/3.json', 0)
+    ##--
+    bbox = kiparser.calc_bbox_pt(1.75, (-3,3))
+    pts = kiparser.cvt_2d_to_3d(kiparser.extents_fr_bbox(bbox, periodic=True))
+    
+    #debug - need to solve the clean_pts_str debacle?    
+    kiparser.gr_polys.append(pts)
 
-    #pts = kiparser.cvt_2d_to_3d(kiparser.extents_fr_bbox([2,2,2,2], 3))
-    #kiparser.gr_polys.append(pts) 
+    #print(pts)
+    #kiparser.grply_inspect()
+    #kiparser.cvt_grpoly_obj3d()
+    #kiparser.save("3d_obj/foo.obj")
 
-    #kiparser.gr_polys.append( [(-1, -1, 0), (-1, 5, 0), (5, 5, 0), (4, -4, 4), 
-    #                           (5, 5, 5),   (6, 6, 6),  (7, 7, 7), (8, 8, 0)] ) 
+    #scale if you want to 
+    gs = kiparser.global_scale
+    xformed = []
+    for ply in kiparser.gr_polys:
+        xformed.append(kiparser.trs_points( ply, translate=(0,0,0), rotate=(0,0,0), scale=(gs,gs,gs) ))
+    kiparser.gr_polys = xformed
 
-
-
-
-
-    # kiparser.rh = .01     # retract height 
-    # kiparser.ch = .1       # cut height 
-    # kiparser.hp = (0,0,0) # home position 
-
-    # calc_circle(self, pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
-
-    # pts = kiparser.calc_circle(pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23)
-    # kiparser.gr_polys.append(pts)
-
-
-    # pts = kiparser.calc_circle(pos=(2,0,0), rot=(0,0,0), dia=.5, axis='z', periodic=True, spokes=8)
-    # kiparser.grpts(pts)
-
-    #pts = kiparser.locate_pt_along3d(0,0,0,5,5,5,8)
-    #kiparser.gr_polys.extend([pts])
-
-
-
-    print("gr_poly buffer has %s polygons "%len(kiparser.gr_polys) )
-    print(len(kiparser.gr_polys))
-
-
-
-    #if you want to export NGC/OBJ from geojson 
-
-    #kiparser.calulate_paths( do_retracts=False)
-    #kiparser.save_3d_obj('3d_obj/foo.obj', export_retracts=False)
-
-    kiparser.calulate_paths()
-    kiparser.save_3d_obj('3d_obj/foo.obj')
-
+    kiparser.calculate_paths()
+    #kiparser.save_line_obj('3d_obj/foo.obj')
     kiparser.export_ngc("foo.ngc")
-
-    #if you want to export OBJ without retracts from geojson
-    #kiparser.calulate_paths(do_retract=False) 
-    #kiparser.save_3d_obj('3d_obj/foo.obj')
 
 
  
+
 
 
 vector_magic()

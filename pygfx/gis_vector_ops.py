@@ -16,11 +16,13 @@ class generic_ngc(object3d):
         super().__init__()  
         self.loadbuffer    = []  #list of list of points 
         self.gr_polys      = []  #list of list of points 
-        self.scale =  -0.0393701 #mm to inch
         
         # GEOM ARRAYS for export   
         self.ngc_to_obj    = []
         self.filled_polys  = []  #list of list of points 
+
+
+        self.global_scale =  0.0393701 #inch to mm 
 
         self.rh = 1.5     # retract height 
         self.ch = 1       # cut height 
@@ -39,57 +41,97 @@ class generic_ngc(object3d):
         out = out.replace('\'','')
         return out
 
-    def grpts(self, pts):
-        """ insert points into gr_polys 
-            fix rounding errors 
-            fix anything else .... 
-
-        """
-
-        clean = self.clean_points(pts) 
-        self.gr_polys.append(clean)
+    ## def insert_pts(self, pts):
+    ##     """ insert points into gr_polys 
+    ##         fix rounding errors 
+    ##         fix anything else .... 
+    ##     """
+    ##     self.gr_polys.append(clean)
 
     ##-------------------------------##
-    def save_3d_obj(self, name, export_retracts=True):
-        """ dump a bunch of 3d pionts as a giant line to visualize in gnolmec"""   
-        
-        print("exporting %s polygons "%len(self.gr_polys))
-
-        last_idx = 0
-
-        if export_retracts == False:
-            #this will make a pretty OBJ without retracts 
+    def save_line_obj(self, name):
+        """ dump a bunch of 3d points as a giant line to visualize in gnolmec 
             
-            idx = 0  
-            for jpoly in self.gr_polys:
-                last_idx = len(self.points)
-                self.points.extend(jpoly)
+            do_retracts iterates the gr_polys buffer (not working yet)
+            otherwise it iterates the ngc_to_obj buffer 
 
-                for i,pt in enumerate(jpoly):
-                    if i>0 and i<len(jpoly):
-                        poly = (idx+i,idx+i+1)
-                        self.polygons.append( poly ) 
-                
+        """   
+        
+        #print("exporting %s polygons "%len(self.gr_polys))
 
+        # make a series of connected lines from points 
+        self.points = self.clean_pts_str(self.ngc_to_obj)
 
-
-        if export_retracts == True: 
-            # make a series of connected lines from points 
-            self.points = self.ngc_to_obj
-
-            for i,pt in enumerate(self.ngc_to_obj):
-                if i>0 and i<len(self.ngc_to_obj):
-                    poly = (i,i+1)
-                    self.polygons.append( poly ) 
-
+        for i,pt in enumerate(self.ngc_to_obj):
+            if i>0 and i<len(self.ngc_to_obj):
+                poly = (i,i+1)
+                self.polygons.append( poly ) 
 
         #self.scale_pts(self.scale)
         self.save(name)
 
     ##-------------------------------##
-    def get_geojson_info(self, inputfile):
-        #return info about how many features, sub features, etc are in a file 
-        pass 
+    def cvt_grpoly_obj3d(self, index=None):
+        """ 
+            load gr_polys into standard 3d data so we can run ops on it 
+        """   
+        
+        print("converting %s polygons "%len(self.gr_polys))
+
+        idx = 0  
+        lidx = 0 #last indexd 
+        
+        for ig, grpoly in enumerate(self.gr_polys):
+            
+            # if index 
+
+            if index is None:
+                polygons = []
+                for ip, pt in enumerate(grpoly):
+                    idx = ip+lidx
+                    polygons.append( (idx, idx+1) ) #2 point polygon indeces
+
+                
+                self.polygons.append(polygons)
+                
+                self.points.extend(self.clean_points(grpoly))
+                lidx = len(grpoly)
+
+                #print(grpoly) 
+
+
+        #print(self.rotation)
+        self.show() 
+
+
+    ##-------------------------------##
+    def grply_inspect(self, index=None):
+        """
+            #return info about how many features, sub features, etc are in a file 
+            
+            args:
+                index is positive int or iterable 
+
+            todo:
+                slice , index 
+                get extents 
+                get centroid 
+                get as vectors 
+
+        """
+    
+        print("##------------##")
+
+        if index == None:
+            print("gr_poly buffer has %s polygons "%len(self.gr_polys) )
+            for i,p in enumerate(self.gr_polys):
+                print("    feature %s has %s points"%(i, len(p)))
+                print(p)
+
+        else:
+            pass 
+
+
 
     ##-------------------------------##
     def load_geojson(self, inputfile, zaxis, getfids=None, getids=None):
@@ -243,7 +285,7 @@ class generic_ngc(object3d):
             self.gr_polys.append(tmp)
 
     ##-------------------------------##
-    def calulate_paths(self, do_retracts=True):
+    def calculate_paths(self, do_retracts=True):
         """ 
             DEBUG - it seems that this just makes a single line with retract caclulated  
             convert the raw points read from kicad into a usuable path(s) with retract 
@@ -269,13 +311,13 @@ class generic_ngc(object3d):
                 M2 - program end 
 
         """
-    
+
         lastpt = (0,0,0)
 
         self.outfile = []
         
         self.outfile.append('(exported with gnelscript kicad_ops )')
-        self.outfile.append('(linear scale set to %s of internal coordinates)'%self.scale )
+        self.outfile.append('(linear scale set to %s of internal coordinates)'%self.global_scale )
         self.outfile.append('  ')
 
         self.outfile.append('g20')                  #inches for unit 
@@ -298,6 +340,7 @@ class generic_ngc(object3d):
 
         ###################################################
 
+        #DEBUG - FILL_POLYS ARE A LAYOVER FROM KICAD STUFF - UNTESTED 
         for fill_poly in self.filled_polys:
             if do_retracts:
                 pt1 = fill_poly[0] 
@@ -307,7 +350,7 @@ class generic_ngc(object3d):
             for i,pt in enumerate(fill_poly):
                 self.outfile.append( 'G1 x%s y%s z%s'%( pt[0], pt[1], self.ch ) )
                 self.ngc_to_obj.append( ( pt[0], pt[1], self.ch ) )             
-                lastpt =( round(pt[0]*self.scale,pl) , pt[1], self.ch )
+                lastpt =( round(pt[0]*self.global_scale,pl) , pt[1], self.ch )
 
             self.outfile.append( 'G0 x%s y%s z%s'%(lastpt[0], lastpt[1], self.ch) )
             self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.ch)   ) 
@@ -326,7 +369,18 @@ class generic_ngc(object3d):
         for gr_poly in self.gr_polys:
             self.outfile.append('(exporting new polygon )')
             if len(gr_poly):
-                pt1 = gr_poly[0] 
+            
+                
+                ##-- 
+                #DEBUG - need to sort out clean points - want to run as close rto final xport 
+                #it looses precision 
+
+                # no formatting (full precision)
+                pt1 = gr_poly[0]
+                # do round to get rid of bad string formatting ( exponent in floats) 
+                #pt1 = self.clean_pts_str(gr_poly[0])
+
+                ##-- 
 
                 #### first point at retract height 
                 if do_retracts:
@@ -339,7 +393,7 @@ class generic_ngc(object3d):
                 for i,pt in enumerate(gr_poly):
                     self.outfile.append( 'x%s y%s z%s'%( pt[0], pt[1], self.ch ) )
                     self.ngc_to_obj.append( (pt[0], pt[1], self.ch) )                   
-                    #lastpt = ( round(pt1[0]*self.scale,6) , round(pt1[1]*self.scale,6), self.ch )
+                    #lastpt = ( round(pt1[0]*self.global_scale,6) , round(pt1[1]*self.global_scale,6), self.ch )
                 
                 self.outfile.append( 'G0' )
 
@@ -366,10 +420,6 @@ class generic_ngc(object3d):
 
     ##-------------------------------##
     def export_ngc(self, filename):
- 
-        #build the paths - follow all the paths and add retract in (as a simple test to get started) 
-        self.calulate_paths() 
-
 
         fobj = open( filename,"w") #encoding='utf-8'
         for line in self.outfile: 
@@ -377,10 +427,11 @@ class generic_ngc(object3d):
         fobj.close()
 
 
+    ##-------------------------------##
+    def import_ngc(self, filename):
+        """ DEBUG - NOT WORKING OR TESTED """
         f = open(filename, 'r')
-
         geometry = []
-
         for lc,line in enumerate(f):
             if '(' in line or ')' in line:
                 newpoly =[]
@@ -409,6 +460,7 @@ class generic_ngc(object3d):
 
                 if len(newpoly)>2:  
                     geometry.append(newpoly)
+
         ####################
         #not perfect - it will miss things that are longer than one line!
         
