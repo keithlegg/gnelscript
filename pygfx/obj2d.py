@@ -30,14 +30,14 @@ class object2d(point_operator_2d):
         self.points          = []    # list of tuples of XYZ points per vertex         -  [(x,y,z), (x,y,z)]  
         self.polygons        = []    # list of tuples for 2 or more vertex connections -  [(1,2,5,8) , (1,2)] 
 
-        self.rot             = [0,0,0]
-        self.pos             = [0,0,0]
-        self.scale           = [1,1,0]
+        self.rot             = [0,0]
+        self.pos             = [0,0]
+        self.scale           = [1,1]
 
     def reset(self):
-        self.rot          = [0,0,0]
-        self.pos          = [0,0,0]
-        self.scale        = [1,1,1]
+        self.rot          = [0,0]
+        self.pos          = [0,0]
+        self.scale        = [1,1]
 
 
     ##-------------------------------------------##  
@@ -56,9 +56,9 @@ class object2d(point_operator_2d):
                 other+=1
 
         data.append('\n############################')
-        data.append('  position      : %s %s %s'%( self.pos[0], self.pos[1], self.pos[2]) )
-        data.append('  rotation      : %s %s %s'%( self.rot[0], self.rot[1], self.rot[2]) )
-        data.append('  scale         : %s %s %s'%( self.scale[0], self.scale[1], self.scale[2]) )
+        data.append('  position      : %s %s %s'%( self.pos[0], self.pos[1]) )
+        data.append('  rotation      : %s %s %s'%( self.rot[0], self.rot[1]) )
+        data.append('  scale         : %s %s %s'%( self.scale[0], self.scale[1]) )
         data.append(' --------------------------- ' )        
         data.append('  num face normals   : %s' %  self.numfacnrml )   
         data.append('  num verts          : %s' %  self.numpts     )
@@ -76,21 +76,22 @@ class object2d(point_operator_2d):
         for d in data:
             print(d) 
 
+
     def prim_square(self,  pos=(0,0,0), rot=(0,0,0), size=1):
         pts = [] 
 
         #keep Z but leave it zero
-        pts.append((-size, -size, 0))  
-        pts.append((-size,  size, 0))  
-        pts.append(( size,  size, 0)) 
-        pts.append(( size, -size, 0)) 
+        pts.append((-size, -size))  
+        pts.append((-size,  size))  
+        pts.append(( size,  size)) 
+        pts.append(( size, -size)) 
 
         #not a good solution - this doesnt take into account existing geom 
         self.points.extend(pts)
         self.polygons.append( (1,2,3,4) )
 
 
-    def prim_triangle(self, pos=(0,0,0), rot=(0,0,0), size=1):
+    def prim_triangle(self, pos=(0,0), rot=(0,0), size=1):
         pts =  [(-size,0,0), (0,size,0), (size,0,0) ]
         poly = [(1,2,3)]
 

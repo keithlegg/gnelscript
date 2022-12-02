@@ -237,7 +237,7 @@ class raytracer(object):
         return img 
 
     def save_image(self, pixdata):
-        fb = PixelOp()   
+        fb = pixel_op()   
         #fb = RasterObj()
         fb.create_buffer(self.w, self.h)
 

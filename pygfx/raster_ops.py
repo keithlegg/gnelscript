@@ -10,7 +10,6 @@ from gnelscript.pygfx.math_ops import  NUMPY_IS_LOADED
 from gnelscript.pygfx.point_ops_2d import point_operator_2d
 
 
-
 if NUMPY_IS_LOADED:
     import numpy as np  
 else:
@@ -18,8 +17,7 @@ else:
 
 
 
-
-class RasterObj(object):
+class raster_obj(object):
     
     def __init__(self):
         self.ptgen = point_operator_2d()
@@ -30,6 +28,18 @@ class RasterObj(object):
         self.bitmode = 'RGBA' #PIL mode
         self.fb = None #main framebuffer  
  
+    @property  
+    def extents(self):
+        return self.ptgen.calc_square_diag( (0,0), (self.size[0],self.size[1]) )  
+
+    @property  
+    def center(self):
+        return ( int(self.res_x/2), int(self.res_y/2) ) 
+
+    @property  
+    def size(self):
+        return ( self.fb.size )   
+
     def log_msg(self, *args ):
         if self.debug_msg:
             msg=''
@@ -62,6 +72,18 @@ class RasterObj(object):
         self.res_y = ry 
 
     def empty_buffer(self, color):
+        """ make a new PIL Image that has the same properties of this one 
+            fill with a color 
+            
+            usage:
+                ro = raster_obj()
+                ro.create_buffer(800,600)
+                ro.save("images/out/foobar.jpg", noalpha=True)
+                po = ro.empty_buffer( (255,255,0) )
+                po.convert('RGB').save("images/out/foobar2.jpg", noalpha=True)
+
+        """
+        
         image =  Image.new(self.bitmode, (self.res_x, self.res_y) )
         dpix = image.load() 
         for x in range(self.res_x):
@@ -70,6 +92,15 @@ class RasterObj(object):
         return image  
 
     def create_buffer(self, rx, ry):
+        """ create a brand new image in memory  
+
+            usage:
+
+                ro = raster_obj()
+                ro.create_buffer(800,600)
+                ro.save("images/out/foobar.jpg", noalpha=True)
+
+        """        
         self.res_x = rx
         self.res_y = ry        
         self.fb = Image.new(self.bitmode, (self.res_x, self.res_y) )
@@ -81,25 +112,17 @@ class RasterObj(object):
         self.res_y = pilBuffer.size[1] 
         #print("debug raster op buffer read ", self.fb.show() )
 
-    @property  
-    def extents(self):
-        return self.ptgen.calc_square_diag( (0,0), (self.size[0],self.size[1]) )  
-
-    @property  
-    def center(self):
-        return ( int(self.res_x/2), int(self.res_y/2) ) 
-
-    @property  
-    def size(self):
-        return ( self.fb.size )      
-
-    def invert(self):
+    def invert_bw(self):
+        self.invert()
         if self.fb.mode != 'L':
             self.fb = self.fb.convert('L')
-        self.fb= ImageOps.invert(self.fb)  
-        
-        if self.fb.mode != 'RGBA':
-            self.fb = self.fb.convert('RGBA')
+
+    def invert(self):
+        if self.fb.mode == 'RGB':
+            self.fb= ImageOps.invert(self.fb)
+        if self.fb.mode == 'RGBA':
+            self.fb= ImageOps.invert(self.fb)            
+            #self.fb = self.fb.convert('RGBA')
 
     def cvt_1bit(self):    
         #img.point(lambda x: bool(x))
@@ -109,9 +132,11 @@ class RasterObj(object):
     def cvt_24bit_alpha(self):    
         self.fb = self.fb.convert("RGBA")
     
+    ##---------------------------------------------##     
     def cvt_24bit(self):    
         self.fb = self.fb.convert("RGB")
 
+    ##---------------------------------------------## 
     def get_pix(self, pt ):
         """ DEBUG - add a "wrap around feature  
             if a pixel is requested out of bounds - loop around to start 
@@ -129,18 +154,23 @@ class RasterObj(object):
             #print( '## error V get pix ', pt, get_pt)
 
         return self.fb.getpixel(tuple(get_pt)) 
-
+    
+    ##---------------------------------------------## 
     def set_pix(self, pt , color ):
         dpix = self.fb.load()
         dpix[pt[0], pt[1]] = color
-     
+    
+    ##---------------------------------------------##  
     def rotate_pil_raw(self, rotation):
+        
         #rotate and expand - nothing else
         self.fb = self.fb.rotate(rotation, expand=1)        
         self.res_x = self.fb.size[0]
         self.res_y = self.fb.size[1] 
     
+    ##---------------------------------------------## 
     def rotate_pil(self, rotation):
+        
         #rotate, expand and composite white in the empty areas
         if self.fb.mode != 'RGBA':
             self.fb = self.fb.convert('RGBA')
@@ -152,9 +182,10 @@ class RasterObj(object):
         fff = Image.new('RGBA', rot.size, (255,)*4) #white mask to composite
         self.fb = Image.composite(rot, fff, rot)
 
+    ##---------------------------------------------## 
     def add_margins(self, size):
-        old_size = self.fb.size
 
+        old_size = self.fb.size
         new_size = (old_size[0]+size, old_size[1]+size)
 
         #new_im = Image.new(self.fb.mode, new_size)    #for black
@@ -163,9 +194,9 @@ class RasterObj(object):
         new_im.paste(self.fb, (new_size[0]-old_size[0])/2, (new_size[1]-old_size[1])/2  )
         new_im.show()
 
+    ##---------------------------------------------## 
     def get_island(self, offset=None):
-        """ I dont like that it has to convert type to do this - debug make a copy of self? 
-           
+        """       
             this uses PIL.getbbox to exclude "empty" data from the edges of an image  
         """
 
@@ -178,13 +209,13 @@ class RasterObj(object):
         if offset:
             return self.ptgen.extents_fr_bbox(inside_data, offset)
 
-
+    ##---------------------------------------------## 
     def crop_island(self, margin=None):
-        
         """ crop out the image borders with no data in them 
             optional margin will buffer the image borders with white 
             nagative margins will trim the image edges
         """
+    
         #you cant invert an image with alpha in PIL  
         self.cvt_24bit() #first we convert to RGB 
        
@@ -216,16 +247,35 @@ class RasterObj(object):
                 self.res_x = bg_w
                 self.res_y = bg_h 
 
+    ##---------------------------------------------## 
+    def crop_pt(self, size, pt_coord):
+        """
+        # crop area from point
 
-    def crop_pt(self, pt_coord, size):
-        #crop area from point
+        usage: 
+            ro = raster_obj()
+            ro.load("images/in/refer.jpg")
+            out = ro.crop_pt( 400, ro.center) 
+            out.save("images/out/foobar.png")       
+        """
         xtntx = tuple(self.ptgen.calc_bbox( size, pt_coord) )
         if xtntx[0]<0 or xtntx[1]<0  or xtntx[2]>self.res_x  or xtntx[3]>self.res_y:
             print('# ERROR raster_ops.crop_pt - out of image bounds') 
-        return self.fb.crop( xtntx )  
-      
+ 
+        #self.fb = self.fb.crop( xtntx )
+        return self.fb.crop( xtntx )
+
+    ##---------------------------------------------##       
     def crop_corner(self, size, mode):
+        """
         #crop the corners in a square 
+
+        usage:
+            ro = raster_obj()
+            ro.load("images/in/refer.jpg")
+            out = ro.crop_corner( 100, 'bl') 
+            out.save("images/out/foobar.png")        
+        """
         if mode == 'bl':
             xtntx = (0, self.res_y - size, size, self.res_y)
         if mode == 'tl':
@@ -236,23 +286,35 @@ class RasterObj(object):
             xtntx = (self.res_x - size, self.res_y - size, self.res_x, self.res_y)                  
 
         return self.fb.crop( xtntx ) 
+
+
+
         
-class PixelOp (RasterObj):
+class pixel_op (raster_obj):
     """ 
         Pixel operator with raster goodies for drawing and sampling pixels 
         TODO:
            deal with cases where the sampling runs off the page 
     """
-    
+
+    ##---------------------------------------------##     
     def __init__(self):
         super().__init__()  
         self.filter = pixelFilter() 
-        #super(PixelOp , self).__init__() 
+        #super(pixel_op , self).__init__() 
 
+    ##---------------------------------------------## 
     def graticule(self, spacing=10, scale=1):
         """  make a graticule grid  
             start at center and go out from there based on spacing value
             spacing is in pixels 
+  
+            usage:
+                ro = pixel_op()
+                ro.create_buffer(800,800)
+                ro.graticule()
+                ro.save("images/out/foobar.png")
+
         """
         
         clr_backg = (0,50,90)
@@ -304,6 +366,7 @@ class PixelOp (RasterObj):
         #put a dot at the center
         self.draw_fill_circle(self.center[0],self.center[0], 2, (200,255,0) ) 
 
+    ##---------------------------------------------## 
     def draw_cntr_line(self, points, color=(0,255,200), size=1, mag=1, framebuffer=None):
         """ DEBUG use offset feature of connect_the_dots  """
         
@@ -319,7 +382,7 @@ class PixelOp (RasterObj):
             framebuffer = self.fb
         self.connect_the_dots( tmp, color, size, origin=(self.center[0] ,self.center[1]), framebuffer=framebuffer)
 
-
+    ##---------------------------------------------## 
     def draw_cntr_pt(self, dot, size=1, origin=(0,0), color=(255,0,0), framebuffer=None):
         """ draw a point relative to center of image """
 
@@ -329,10 +392,7 @@ class PixelOp (RasterObj):
         #put a dot at the center
         self.draw_fill_circle(sp, ep, size, color ) 
 
-
-    ################################################################# 
-
-
+    ##---------------------------------------------## 
     def render_line_2d(self, pts, invert_y=False, origin=(0,0), scale=10):
         """ this will draw a point in 2d from the center of the image 
             the only slightly special thing going on here is the scale factor 
@@ -356,7 +416,7 @@ class PixelOp (RasterObj):
         #print('### ', pts )
         self.connect_the_dots( transformed_pts, (230, 200, 0 ), 1 )
 
-
+    ##---------------------------------------------## 
     def render_point_2d(self, vec, invert_y=True, origin=(0,0), scale=10, dotsize=3):
         """ this will draw a point in 2d from the center of the image 
             the only slightly special thing going on here is the scale factor 
@@ -375,7 +435,7 @@ class PixelOp (RasterObj):
 
         self.draw_fill_circle( x, y, dotsize, (230,0,0) ) 
 
-
+    ##---------------------------------------------## 
     def render_vector_2d(self, vec, invert_y=True, origin=(0,0), scale=10):
         """ this will draw a vector in 2d from the center of the image 
             the only slightly special thing going on here is the scale factor 
@@ -400,7 +460,7 @@ class PixelOp (RasterObj):
         #calc_angle = self.ptgen.old_calc_theta_vert( ( (self.center[0]+origin[0]), (self.center[1]+origin[1]) ),  (ex,ey) )
         # print("ANGLE OF VECTOR FROM VERTICAL (UP) %s" % calc_angle)
 
-
+    ##---------------------------------------------## 
     def render_obj_2d(self, obj, invert_y=True, origin=(0,0), scale=10):
         """ this will draw an obj file in orthogrphic 2d from the center of the image 
 
@@ -426,8 +486,7 @@ class PixelOp (RasterObj):
         #print('### ', pts )
         self.connect_the_dots( transformed_pts, (230, 200, 0 ), 1 )
 
-    ################################################################# 
-
+    ##---------------------------------------------## 
     def normal_to_color(self, norml):
         out = [0,0,0]
         
@@ -443,6 +502,7 @@ class PixelOp (RasterObj):
              out[2]=255             
         return tuple(out)
 
+    ##---------------------------------------------## 
     def tint(self, color, com):
         """ i needed a way to procedurally tweak color 
           used for the glowing neon line effect to darken linear borders
@@ -487,15 +547,18 @@ class PixelOp (RasterObj):
                 tmp =t[2]-amt
             return ( t[0], t[1], tmp )
   
+    ##---------------------------------------------## 
     def insert_numpy(self, data, brightness=255 ):
         for y,row in enumerate(data):
             for x,col in enumerate(row):
                 color = ( int(col[0]*brightness), int(col[1]*brightness), int(col[2]*brightness))
                 self.set_pix( (x, y) , color)
 
-
+    ##---------------------------------------------## 
     def insert_image(self, px, py, foregroundfile, backgroundfile, outfile):
-        """ Filename1 and 2 are input files; outfile is a path where results are saved (with extension)."""
+        """ Filename1 and 2 are input files; outfile is a path where results are saved (with extension).
+
+        """
 
         img = Image.open(foregroundfile ,'r')
         img_w, img_h = img.size
@@ -506,8 +569,11 @@ class PixelOp (RasterObj):
         bgimg.paste(img, (px, py ) )
         bgimg.save(outfile)
 
+    ##---------------------------------------------## 
     def fill_color(self, color, framebuffer=None):    
-        """ fills image with solid color """
+        """ fills image with solid color 
+
+        """
         
         if framebuffer:
             self.read_buffer(framebuffer)
@@ -519,6 +585,7 @@ class PixelOp (RasterObj):
             for y in range(self.res_y):
                 dpix[ x, y ] = color
 
+    ##---------------------------------------------## 
     def center_square(self, tl, br, color, framebuffer=None):  
         """ fills a centered square from the top left to bottom right corner """  
         
@@ -532,7 +599,8 @@ class PixelOp (RasterObj):
                     dpix[ x, y ] = color
                 #if y <self.res_y-br:
                 #    dpix[ x, y ] = color
-    
+
+    ##---------------------------------------------##     
     def vert_line(self, xloc, color, framebuffer=None):    
         """ draw vertical line across entire image """
         
@@ -546,7 +614,8 @@ class PixelOp (RasterObj):
             if x == xloc:
                 for y in range(self.res_y):
                     dpix[ x, y ] = color
-    
+
+    ##---------------------------------------------##     
     def horiz_line(self, yloc, color, framebuffer=None):    
         """ draw horizontal line across entire image """
         
@@ -561,6 +630,7 @@ class PixelOp (RasterObj):
                 for x in range(self.res_x):
                     dpix[ x, y ] = color
 
+    ##---------------------------------------------## 
     def vert_line_thick(self, xloc, width, color, framebuffer=None):    
         """ draw horizontal line with thickness """
         
@@ -576,6 +646,7 @@ class PixelOp (RasterObj):
                     for y in range(self.res_y):
                         dpix[ w, y ] = color
 
+    ##---------------------------------------------## 
     def batch_draw_pixels(self, data, framebuffer=None):
         """ draw scanned data back into an image [ (value, (x,y)) .. ] """
 
@@ -592,6 +663,7 @@ class PixelOp (RasterObj):
             if px[0] ==0:                
                 dpix[px[1][0], px[1][1]] = green
  
+    ##---------------------------------------------## 
     def draw_fill_circle(self, x_orig, y_orig, dia, color, framebuffer=None):
         if framebuffer:
             self.read_buffer(framebuffer)
@@ -600,7 +672,8 @@ class PixelOp (RasterObj):
 
         for x in range(dia):
             self.draw_circle( x_orig, y_orig, x, color, framebuffer)
-        
+    
+    ##---------------------------------------------##         
     def draw_circle(self, x_orig, y_orig, dia, color, framebuffer=None):
         plot_x = 0;plot_y = 0;
         if framebuffer:
@@ -621,21 +694,52 @@ class PixelOp (RasterObj):
                 dpix[ i[0], i[1] ]= color
             except IndexError:
                 pass
-        
-    def draw_points_batch(self, points, color, dia, framebuffer=None):
-        """ debug - add check to make sure it doesnt go off edge of page """
+
+    ##---------------------------------------------##         
+    def draw_points_batch(self, points, color, dia, origin=(0,0),framebuffer=None):
+        """ debug - add check to make sure it doesnt go off edge of page 
+
+            usage:
+                ro = pixel_op()
+                ro.create_buffer(800,800)
+                ro.graticule(spacing=100, scale=1)
+                pts = [(100,100),(-200,100), (-50,-100) ]
+                ro.draw_points_batch(pts, (255,0,0), 5, origin=ro.center )
+                ro.save("images/out/foobar.png")
+
+        """
 
         if framebuffer:
             self.read_buffer(framebuffer)
         else:
             framebuffer= self.fb
 
-        for pt in points:
-            self.draw_fill_circle(pt[0], pt[1], dia, color, framebuffer)
-    
+        for pt in range(len(points)):
+            p1 = list(points[pt])    
+
+            #shift to another place before drawing
+            #if origin[0]!=0 or origin[1]!=0:
+            p1[0] = p1[0]+origin[0]
+            p1[1] = p1[1]+origin[1]
+
+            print(pt)
+            print(p1)
+
+            self.draw_fill_circle(p1[0], p1[1], dia, color, framebuffer)
+
+    ##---------------------------------------------##     
     def connect_the_dots(self, points, color, thickness, origin=(0,0), framebuffer=None):
         """ debug - add check to make sure it doesnt go off edge of page 
                     clipping is a whole thing unto itself and maybe better put elsewhere? 
+
+            usage:
+                ro = pixel_op()
+                ro.create_buffer(800,800)
+                ro.graticule(spacing=100, scale=1)
+                pts = [(1,1),(-20,3), (-20,-10) ]
+                ro.connect_the_dots(pts, (255,0,0), 2, origin=ro.center )
+                ro.save("images/out/foobar.png")
+
         """
 
         if framebuffer:
@@ -659,10 +763,12 @@ class PixelOp (RasterObj):
             color=color
             self.draw_line(tuple(p1), tuple(p2), color, thickness, framebuffer)
             #count += 1
-    
+
+    ##---------------------------------------------##     
     def draw_vector(self, vec, color, thickness=0, framebuffer=None):
         self.draw_line(vec[0] , vec[1] , color, thickness, framebuffer  )
 
+    ##---------------------------------------------## 
     def draw_line(self, pt1, pt2, color, thickness=0, framebuffer=None):
         if framebuffer:
             self.read_buffer(framebuffer)
@@ -700,6 +806,7 @@ class PixelOp (RasterObj):
                         #print('clipping error, check yo coordinates dawg. ')
                         pass
 
+    ##---------------------------------------------## 
     def draw_pt_along_vector(self, pt1, pt2, num, color, dia=1, framebuffer=None):
         """ draw any number of points along a vector """
 
@@ -715,7 +822,7 @@ class PixelOp (RasterObj):
             self.draw_fill_circle( pts[pt][0], pts[pt][1], 5, color, framebuffer)
         
 
-
+    ##---------------------------------------------## 
     def color_distance(self, rgb1, rgb2):
         """ number between 0 and 440 ish """
 
@@ -730,8 +837,8 @@ class PixelOp (RasterObj):
             cr, cg, cb, ca = rgb2
 
         return sqrt((r - cr)**2 + (g - cg)**2 + (b - cb)**2)
-
-
+    
+    ##---------------------------------------------## 
     def closest_color(self, colors, rgb):
         """
         https://stackoverflow.com/questions/54242194/python-find-the-closest-color-to-a-color-from-giving-list-of-colors
@@ -752,6 +859,7 @@ class PixelOp (RasterObj):
             color_diffs.append((color_diff, color))
         return min(color_diffs)[1]
 
+    ##---------------------------------------------## 
     def extract_by_color(self, path, name, color, slowmode=False, exactcolor=False, invert=False, framebuffer=None):
         """ INVERT IS BROKEN - FIX IT DEBUG !
             self.empty_buffer() MAY ALSO BE BROKEN - THINK MORE ABOUT IT 
@@ -811,9 +919,9 @@ class PixelOp (RasterObj):
 
 
 
-class pycv(PixelOp):
+class pycv(pixel_op):
     """ sketch of a computer vision system to locate fiducuals 
-        moved into its own class from PixelOp
+        moved into its own class from pixel_op
     """
 
     def __init__(self):
@@ -979,7 +1087,7 @@ class pycv(PixelOp):
         return data_frames
    
     def circle_scan(self, x_orig, y_orig, dia, framebuffer=None):
-        """ orignial scoring tool, looks in a circle for dark pixles from a center point """
+        """ orignial scoring tool, looks in a circle for dark pixels from a center point """
         
         if framebuffer:
             self.read_buffer(framebuffer)

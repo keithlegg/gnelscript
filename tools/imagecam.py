@@ -213,7 +213,7 @@ def secondpass(inputimage, outputpath, numbands, fast=False):
 def thirdpass( inputfile, outputfolder, fileformat, bmpinvert=False, po_invert=False, fastmode=False  ):
     """ break an already posterized image into seperate images X colors """
 
-    simg = PixelOp()
+    simg = pixel_op()
     simg.load( inputfile )
 
     width  = int( simg.res_x )

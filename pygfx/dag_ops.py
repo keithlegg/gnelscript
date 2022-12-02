@@ -2,7 +2,7 @@ import codecs
 import os
 import re
 
-from pygfx.point_ops import *
+from gnelscript.pygfx.point_ops import *
 
   
 

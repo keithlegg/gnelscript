@@ -29,18 +29,60 @@ class point_operator_2d(object):
         return newfids 
     """
 
-    ##-------------------------------------------##     
-    def calc_bbox(self, ptgrp=None, facgrp=None ):
-        """ UNFINISHED  
-            BBOX is 2D on Z axis 
-            get the boudning area of an object or face(s)
+
+    ##-------------------------------------------##
+    def extents_fr_bbox(self, bbox, offset=None, periodic=False):
+        """ return pt geom from a bbox  
+            
+            args:
+               bbox   - iterable of 4 numbers (PIL bbox [left, top, right, bottom]) 
+               offset - (int) adds a margin to the size of the page edges 
+
         """
-        maxx = 0
-        maxy = 0
-        maxz = 0
         
-        for p in self.points:
-            print(p)
+        out = []
+        if not offset:
+            out.append( (bbox[0], bbox[1]) ) #top left
+            out.append( (bbox[2], bbox[1]) ) #top right
+            out.append( (bbox[2], bbox[3]) ) #bottom right
+            out.append( (bbox[0], bbox[3]) ) #bottom left
+            if periodic:
+                out.append( (bbox[0], bbox[1]) ) #top left                
+
+        #increase the margins, (pixels are indexed with top left at 0,0)
+        if offset:
+            out.append( (bbox[0]-offset , bbox[1]-offset ) ) #top left
+            out.append( (bbox[2]-offset , bbox[1]+offset ) ) #top right
+            out.append( (bbox[2]+offset , bbox[3]+offset ) ) #bottom right
+            out.append( (bbox[0]-offset , bbox[3]-offset ) ) #bottom left
+            if periodic:
+                out.append( (bbox[0]-offset , bbox[1]-offset ) ) #top left
+
+        return out
+
+    ##-------------------------------------------##    
+    def calc_bbox(self, size, origin=None ):
+        """ 
+            BBOX is 2D on Z axis 
+
+            DEBUG - this is unclamped!
+            calc extents for a square (left, upper, right, and lower)
+
+        """
+                
+        out =[]  
+        
+        if origin:
+            out.append(  origin[0]-size  ) #west
+            out.append(  origin[1]-size  ) #north
+            out.append(  origin[0]+size  ) #east
+            out.append(  origin[1]+size  ) #south
+        else:
+            out.append(  -size  ) #west
+            out.append(  -size  ) #north
+            out.append(  size  ) #east
+            out.append(  size  ) #south
+        return out
 
     ##-------------------------------------------##  
     def calc_line(self, x1, y1, x2, y2):        

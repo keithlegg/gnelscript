@@ -11,35 +11,9 @@ from gnelscript.pygfx.point_ops_2d import *
 
 mu = math_util() 
 
-
-
 COMMON_IN  = 'foobar'
 COMMON_OUT = 'rasterfoo'
 COMMON_EXT = 'png'
-
-##----------------------------------------------------
-
-
-
-
-
-
-##----------------------------------------------------
-def vectorize( inputfile, outputfile=None):
-    """
-        Experiment to to an "Adobe streamline" type tool 
-        Far from working, not even started. 
-
-        load image 
-        posterize 
-        sort pixels into those bands 
-        trace the chape of those bands and convert to vectors 
-    """
-
-    simg = Image.open( inputfile )
-  
-    dimg = ImageOps.posterize(simg, bits=1)
-    dimg.save("%s%d.%s" % (COMMON_OUT,1,COMMON_EXT) )
 
 
 
@@ -59,9 +33,9 @@ def generate_image(hres, yres, outputfile=None):
     color  = (0,0,255)
     color2 = (0,255,0)
 
-    #fb = RasterObj() 
+    #fb = raster_obj() 
  
-    fb = PixelOp()    
+    fb = pixel_op()    
     
 
     #fb.load(input_img)

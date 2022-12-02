@@ -295,7 +295,7 @@ def texmapping_test(fnum=1):
     # obj.rotate_pts( (180,0,0) )
 
     # load the texture to map to polygons 
-    img_op = PixelOp()   
+    img_op = pixel_op()   
     
     #img_op.load('tex.png') 
     img_op.load('images/uvmap_sm.jpg') 

@@ -1,5 +1,10 @@
 
 
+""" 
+DEBUG NOT DONE - JUST COPIED FROM OBJECT3D
+"""
+
+
 import math 
 
 
