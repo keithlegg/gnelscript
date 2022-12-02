@@ -18,22 +18,13 @@ COMMON_EXT = 'png'
 
 
 ##----------------------------------------------------
-def rasterize(in_img, out_img):
-    """ load a bitmap, do stuff and make another from it """
-    
-    # in_img 
-    # out_img
-    pass
-
-
-##----------------------------------------------------
 
 def generate_image(hres, yres, outputfile=None):
     
     color  = (0,0,255)
     color2 = (0,255,0)
 
-    #fb = raster_obj() 
+    #fb = raster_op() 
  
     fb = pixel_op()    
     
@@ -58,7 +49,7 @@ def generate_image(hres, yres, outputfile=None):
    
 
 
-#fb = generate_image(115,115, "neu.bmp")
+#pixop = generate_image(115,115, "neu.bmp")
 
 
 

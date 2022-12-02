@@ -1,4 +1,6 @@
 
+from PIL import Image 
+
 
 from gnelscript.pygfx.raster_ops import *
 from gnelscript.pygfx.point_ops import *
@@ -263,7 +265,10 @@ class simple_render(object):
 
 
             self.fb.connect_the_dots( [(cxmin,cymin),(cxmax,cymax)] , (0,255,0), 2  )   
-       
+    
+        #PIL USES TOP LEFT FOR (0,0) SO WE NEED TO FLIP TO CORRECT 
+        self.fb = self.fb.fb.transpose(Image.FLIP_LEFT_RIGHT) 
+
 
     ## ## ## ## ##  
     def project_points(self, object3d,  rx, ry, rz, scale, res_x=None, res_y=None):
@@ -475,6 +480,7 @@ class simple_render(object):
        
         if not object3d.points:
             print('## errror - object has no point geometry.')
+            return None
 
         #output image properties 
         res_x = self.res[0]
@@ -503,11 +509,11 @@ class simple_render(object):
                 
                 rndr_bfr.connect_the_dots( l, color, int(thick/2) )  #points, color, thickness
 
-                #save into vector buffer - this is wrong  
-                self.vec_fr_buffer.insert_line(l)
-                if i==len(self.rp)-1:
-                    #self.vec_fr_buffer.insert_line(l)
-                    print(self.rp) 
+                ## DEBUG FIGURE OUT HOW TO SAVE RENDER BUFFER AS 3D OBJECT    
+                ## self.vec_fr_buffer.insert_line(l)
+                ## if i==len(self.rp)-1:
+                ##     #self.vec_fr_buffer.insert_line(l)
+                ##     print(self.rp) 
 
         ###########################
         # render point geometry 

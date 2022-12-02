@@ -949,9 +949,12 @@ class polygon_operator(point_operator):
             tri = []
             for idx in p:
                 tri.append(self.points[idx-1])
-            mean = self.triangle_mean_z(tri)
             
-            if not  isinstance(mean,float):
+            
+            mean = self.triangle_mean_z(tri)
+            #mean = self.centroid_pts(tri)[2]
+
+            if not isinstance(mean,float):
                 print('error in  z_sort - mean is NOT float ', mean )
                 mean = 0.0 
             if isinstance(mean,float):
@@ -1089,14 +1092,14 @@ class polygon_operator(point_operator):
 
     ##-------------------------------------------## 
     
-    #def triangle_mean_z(self, triangle):
-    #    """ this is pointless and you should use centroid instead 
-    #        basicaly this is a "Z only" centroid 
-    #    """
-    #    z1 = triangle[0][2]
-    #    z2 = triangle[1][2]
-    #    z3 = triangle[2][2]
-    #    return (z1+z2+z3)/3
+    def triangle_mean_z(self, triangle):
+        """ center of a triangle in 3d - used for render z sort 
+            replace with centroid_pts() ??  
+        """
+        z1 = triangle[0][2]
+        z2 = triangle[1][2]
+        z3 = triangle[2][2]
+        return (z1+z2+z3)/3
 
     ##-------------------------------------------##   
     def centroid_pts(self, pts):

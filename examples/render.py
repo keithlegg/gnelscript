@@ -1,6 +1,8 @@
 
 import sys 
 
+from PIL import Image, ImageOps
+
 
 from gnelscript.pygfx.render import *
 from gnelscript.pygfx.point_ops import *
@@ -134,7 +136,11 @@ def vector_render(objfile):
 
 
 def three_renderers(objfile, fnum):
-    """ example of the 3 main ways to render  
+    """ PIL USES TOP LEFT AS (0,0)
+        BECAUSE OF THIS IMAGES APPEAR "UPSIDE DOWN"
+        YOU CAN SIMPLY HORIZONTAL FLIP AT THE END TO FIX THIS 
+
+        example of the 3 main ways to render  
             - single object 
             - multi object (single in a loop)
             - scanline 
@@ -142,7 +148,6 @@ def three_renderers(objfile, fnum):
 
     obj = object3d()
     obj.load(objfile)
-    #obj.load('original_sin.obj')
 
     #obj.xform_pts( (1, 1, 1) )
 
@@ -152,7 +157,7 @@ def three_renderers(objfile, fnum):
     ropr = simple_render()
 
     render_linecolor = (255,0,255)
-    render_scale = 100 
+    render_scale = 500 
 
     ##--------------------------------------##
 
@@ -164,8 +169,7 @@ def three_renderers(objfile, fnum):
     ## ropr.SHOW_EDGES         = True 
     ropr.SHOW_VTXS             = True 
     ropr.USE_PERSPECTIVE       = False
-
-
+    
     ##--------------------------------------##
 
     if ropr.USE_PERSPECTIVE:
@@ -190,9 +194,21 @@ def three_renderers(objfile, fnum):
 
     ##--------------------------------------##
 
+    ## ropr.render_normal_lines  = True 
+    ## ropr.SHOW_VEC_HITS        = False  #faces cover this up!
+    ## ropr.SHOW_FACES           = True
+    #ropr.SHOW_NORMALS         = True  
+    ## ropr.SHOW_SCREEN_CLIP     = False # broken 
+    ## ropr.DO_SCREEN_CLIP       = False # broken 
+
+    #ropr.COLOR_MODE         = 'normal'
+    #ropr.COLOR_MODE         = 'flat'
+
     ## scanline render 
-    # ropr.scanline(obj, render_scale) 
-    # ropr.save_image('simple_render.png')
+    po = pixel_op()
+    po.load("images/in/refer.jpg")
+    ropr.scanline(obj, render_scale, texmap=po) 
+    ropr.save_image('simple_scanline_%s.png'%fnum)
 
     ##--------------------------------------##
 
@@ -268,7 +284,7 @@ def animate_persp():
 
 #######################################################
 
-def texmapping_test(fnum=1):
+def texmapping_test(objfile, texfile, pathout, fnum=1):
     
     obj = object3d()
     
@@ -276,14 +292,14 @@ def texmapping_test(fnum=1):
     
     #obj.load('objects/cube.obj')    
     
-    obj.load('objects/monkey.obj')
+    obj.load(objfile)
     #obj.load('objects/sphere.obj')
     #obj.load('objects/cube.obj')
 
     #obj.prim_quad(axis='z',  pos=(0,0,0), rot=(0,0,0))
     obj.triangulate() 
     
-    obj.rotate_pts( (180, 45, 0) ) #for monkey ,teapot
+    obj.rotate_pts( (45, -45, 0) ) #for monkey ,teapot
     
     #obj.rotate_pts( (45, fnum, 45) ) 
     # obj.scale_pts((.5,fnum,.5))
@@ -298,7 +314,8 @@ def texmapping_test(fnum=1):
     img_op = pixel_op()   
     
     #img_op.load('tex.png') 
-    img_op.load('images/uvmap_sm.jpg') 
+    img_op.load(texfile) 
+
 
     #------------
     #you can do PIL operations on the images at anytime!
@@ -309,15 +326,13 @@ def texmapping_test(fnum=1):
     """
     #------------
 
-    render_scale = 100
+    render_scale = 10
     lightpos = (0, 1 ,3)
 
     ropr = simple_render()
-
  
     #ropr.COLOR_MODE = 'lighted'
     ropr.COLOR_MODE = 'lightedshaded'
-    
     ropr.SHOW_FACE_CENTER = False
     ropr.SHOW_EDGES       = False     
 
@@ -331,7 +346,7 @@ def texmapping_test(fnum=1):
         obj.points = obj.apply_matrix_pts(obj.points, m44=persp_m44)
 
     ropr.scanline(obj, render_scale, lightpos=lightpos, texmap=img_op ) 
-    ropr.save_image('simple_render_%s.png'%fnum)
+    ropr.save_image('%s/simple_render_%s.png'%(pathout,fnum))
 
 
 
@@ -362,8 +377,13 @@ def lighting_test( lightpos, fnum=1):
 
     obj = object3d()
 
-    obj.load('objects/teapot.obj')
     
+    obj.load('3d_obj/teapot.obj')
+    image = pixel_op()
+    image.load("images/uvmap_sm.jpg")
+
+
+
     #obj.rotate_pts( (180,0,0) )
     obj.scale_pts( (.5,.5,.5) )
 
@@ -390,7 +410,7 @@ def lighting_test( lightpos, fnum=1):
 
     #################
     ## scanline render 
-    ropr.scanline(obj, render_scale, lightpos=lightpos ) 
+    ropr.scanline(obj, render_scale, lightpos=lightpos, texmap=image.fb ) 
     ropr.save_image('simple_render_%s.png'%fnum)
 
     #################    
@@ -420,14 +440,14 @@ def lighting_test( lightpos, fnum=1):
         for v in  LV:    
             # vector from face center to light
             obj2.one_vec_to_obj( v[2] , pos=v[0] )  
-        obj2.save('light_to_face_vectors.obj')
+        obj2.save('light_to_face_vectors_%s.obj'%fnum)
         obj2.flush() 
 
         #----
         for v in  LV:  
             # unit length face normal, from world origin   
             obj2.one_vec_to_obj( v[1] , pos=v[0])  
-        obj2.save('face_normal_vectors.obj')
+        obj2.save('face_normal_vectors_%s.obj'%fnum)
         obj2.flush() 
 
         #----
@@ -442,7 +462,7 @@ def lighting_test( lightpos, fnum=1):
                 polys.append(  v[4] ) 
 
         obj2.insert_polygons(polys, obj.points) 
-        obj2.save('visible_faces.obj')
+        obj2.save('visible_faces_%s.obj'%fnum)
         obj2.flush() 
 
 

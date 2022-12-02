@@ -17,7 +17,7 @@ else:
 
 
 
-class raster_obj(object):
+class raster_op(object):
     
     def __init__(self):
         self.ptgen = point_operator_2d()
@@ -76,7 +76,7 @@ class raster_obj(object):
             fill with a color 
             
             usage:
-                ro = raster_obj()
+                ro = raster_op()
                 ro.create_buffer(800,600)
                 ro.save("images/out/foobar.jpg", noalpha=True)
                 po = ro.empty_buffer( (255,255,0) )
@@ -96,7 +96,7 @@ class raster_obj(object):
 
             usage:
 
-                ro = raster_obj()
+                ro = raster_op()
                 ro.create_buffer(800,600)
                 ro.save("images/out/foobar.jpg", noalpha=True)
 
@@ -253,7 +253,7 @@ class raster_obj(object):
         # crop area from point
 
         usage: 
-            ro = raster_obj()
+            ro = raster_op()
             ro.load("images/in/refer.jpg")
             out = ro.crop_pt( 400, ro.center) 
             out.save("images/out/foobar.png")       
@@ -271,7 +271,7 @@ class raster_obj(object):
         #crop the corners in a square 
 
         usage:
-            ro = raster_obj()
+            ro = raster_op()
             ro.load("images/in/refer.jpg")
             out = ro.crop_corner( 100, 'bl') 
             out.save("images/out/foobar.png")        
@@ -290,7 +290,7 @@ class raster_obj(object):
 
 
         
-class pixel_op (raster_obj):
+class pixel_op (raster_op):
     """ 
         Pixel operator with raster goodies for drawing and sampling pixels 
         TODO:
@@ -304,7 +304,7 @@ class pixel_op (raster_obj):
         #super(pixel_op , self).__init__() 
 
     ##---------------------------------------------## 
-    def graticule(self, spacing=10, scale=1):
+    def graticule(self, divs=10, spacing=None, scale=1):
         """  make a graticule grid  
             start at center and go out from there based on spacing value
             spacing is in pixels 
@@ -312,7 +312,7 @@ class pixel_op (raster_obj):
             usage:
                 ro = pixel_op()
                 ro.create_buffer(800,800)
-                ro.graticule()
+                ro.graticule(8,1)
                 ro.save("images/out/foobar.png")
 
         """
@@ -330,33 +330,40 @@ class pixel_op (raster_obj):
         self.fill_color( clr_backg )
 
         #optional zoom 
-        spacing = spacing*scale
+        if spacing:
+            spacing = spacing*scale
         res_x = self.res_x*scale
         res_y = self.res_y*scale
 
-        x = cen_x
-        while(x<self.res_x):
-            self.connect_the_dots( [(x, 0), (x, res_y)],
-                                    clr_lines, 1 )
-            x+=spacing
-       
-        x = cen_x
-        while(x>0):
-            self.connect_the_dots( [(x, 0), (x, res_y)],
-                                    clr_lines, 1 )
-            x-=spacing
+        #spacing puts lines at fixed spaces 
+        if spacing:
+            x = cen_x
+            while(x<self.res_x):
+                self.connect_the_dots( [(x, 0), (x, res_y)],
+                                        clr_lines, 1 )
+                x+=spacing
+           
+            x = cen_x
+            while(x>0):
+                self.connect_the_dots( [(x, 0), (x, res_y)],
+                                        clr_lines, 1 )
+                x-=spacing
 
-        y = cen_y
-        while(y>0):
-            self.connect_the_dots( [(0, y), (res_x, y)],
-                                    clr_lines, 1 )
-            y-=spacing
+            y = cen_y
+            while(y>0):
+                self.connect_the_dots( [(0, y), (res_x, y)],
+                                        clr_lines, 1 )
+                y-=spacing
 
-        y = cen_y
-        while(y<self.res_y):
-            self.connect_the_dots( [(0, y), (res_x, y)],
-                                    clr_lines, 1 )
-            y+=spacing
+            y = cen_y
+            while(y<self.res_y):
+                self.connect_the_dots( [(0, y), (res_x, y)],
+                                        clr_lines, 1 )
+                y+=spacing
+
+        #divs divides up the image based on num breaks
+        if divs:
+            pass
 
 
         #draw lines from center across image 
@@ -721,9 +728,6 @@ class pixel_op (raster_obj):
             #if origin[0]!=0 or origin[1]!=0:
             p1[0] = p1[0]+origin[0]
             p1[1] = p1[1]+origin[1]
-
-            print(pt)
-            print(p1)
 
             self.draw_fill_circle(p1[0], p1[1], dia, color, framebuffer)
 

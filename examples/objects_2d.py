@@ -48,7 +48,7 @@ def model_geom_from_scratch():
 ##-------------------------------------------## 
 def render_texture_map(input_img, gridsize=50):
     
-    fb = raster_obj() 
+    fb = raster_op() 
     #fb.load(input_img) 
 
     #fb.set_pix()
