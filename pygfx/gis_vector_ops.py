@@ -5,7 +5,15 @@ import geojson
 from gnelscript.pygfx.grid_ops import  *
 from gnelscript.pygfx.obj3d import  *
 
+from gnelscript.pygfx.raster_ops import  *
 
+
+
+
+
+
+#########################################################################
+#########################################################################
 
 
 
@@ -16,7 +24,12 @@ class generic_ngc(object3d):
         super().__init__()  
         self.loadbuffer    = []  #list of list of points 
         self.gr_polys      = []  #list of list of points 
-        
+
+        self.gr_sort       = []  #list of [(pt), (pts)]  
+        self.gr_sorted     = []  #list of [(pt), (pts)]
+
+        self.numexported = 0 
+
         # GEOM ARRAYS for export   
         self.ngc_to_obj    = []
         self.filled_polys  = []  #list of list of points 
@@ -27,6 +40,43 @@ class generic_ngc(object3d):
         self.rh = 1.5     # retract height 
         self.ch = 1       # cut height 
         self.hp = (0,0,0) # home position 
+
+    ##-------------------------------##
+    def showsortbuffer(self):
+        for ply in self.gr_sort:
+            print("%s %s %s "%(ply[0], ply[1], len(ply[2]) )) 
+
+    def load_sortbuffer(self):
+        #print("loading sort buffer ")
+
+        self.gr_polys = []
+        for ply in self.gr_sort:
+            self.gr_polys.append(ply[2])
+       
+        #print(" gr_sort buffer has %s polys in it "%len(self.gr_sort) )
+        #print(" gr_polys buffer has %s polys in it "%len(self.gr_polys) )
+       
+           
+    def index_grsort(self):
+        #print("indexing sort buffer ")
+        self.gr_sort   = []
+        self.gr_sorted = [] 
+        #print(" gr_polys buffer has %s polys in it "%len(self.gr_polys) )
+        for ply in self.gr_polys:
+            self.gr_sort.append([ply[0][0], ply[0][1], ply] )
+
+    def sort_grpolys(self, axis):
+        # list of [x,y, (pts)] #firstpt_x firstpt_y (pts)
+      
+        from operator import itemgetter
+        
+        if axis =="x":
+            self.gr_sort = sorted(self.gr_sort,key=itemgetter(0))
+        
+        if axis =="y":        
+            self.gr_sort = sorted(self.gr_sort,key=itemgetter(1))
+
+
 
     ##-------------------------------##
     def scrub(self, inp):
@@ -421,6 +471,7 @@ class generic_ngc(object3d):
     ##-------------------------------##
     def export_ngc(self, filename):
 
+        print("gr poly buffer has %s polys in it. "%(len(self.gr_polys)))
         fobj = open( filename,"w") #encoding='utf-8'
         for line in self.outfile: 
             fobj.write(line+'\n')

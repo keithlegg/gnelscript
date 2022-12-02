@@ -21,10 +21,18 @@ from gnelscript.pygfx.math_ops import NUMPY_IS_LOADED, matrix33, matrix44, vec2,
     BBOX3 - 3D left, top , right, bottom, fromt, back on Z axis 
 
     GEOM  -  [[face ids], [vertices] ]
+        simplest way to define a 3d model. It is two arrays, face ids and vertices
+        can be used to write translators to other formats  
         geom type is a 3d model basically obj format in memory 
-        it is the simplest way to define a 3d model. It is two arrays, face ids and vertices 
+
 
     POINT GROUPS -  [ [ID, (X,Y,Z)], ... ] 
+        
+        POINT GROUPS SHOULD BE ZERO INDEXED!
+        I think the choice was mad eto NOT zero index to make it simpler to insert them to others 
+        give this a big think 
+
+        add check in all feunctions to ensure this - fix all fucntions!
         a point group is another type of container (DEBUG partially implemented)
         it is only points with a an ID for each point
         it is a way to work with partial objects and not loose the ID of each point 
@@ -50,10 +58,44 @@ def printgeom(geom):
         print( " pt %s"%str(pt) )
 
 
+"""
+#upgrade to these objects instead of lists 
+class ptgrp(object):
+    def __init__(self):
+        ## store in zero index add function to get NON ZERO INDEXED
+        self.pts = [ ] #[idx, (pt), ..] 
+
+    def non_zero(self)
+        pass 
+    def centroid(self)
+        pass 
+    def bbox(self)
+        pass  
+
+
+class rawgeom(object):
+    def __init__(self):
+        self.points = []   
+        self.polys = [] 
+
+    def non_zero(self)
+        pass 
+    def centroid(self)
+        pass 
+    def bbox(self)
+        pass  
+    def load(self)
+        pass 
+
+"""
 
 
 class point_operator(object):
     """ what became of the original point generator 
+        
+         - merege this with PTGROUP by adding self.index [] ??
+         - or have new ptgroup inherit this object? 
+
         deal with raw points, not geom, ptgrps, facgrps. JUST points 
     """
 
@@ -64,6 +106,7 @@ class point_operator(object):
         self.vec2     = vec2()     
         self.vec3     = vec3()      
 
+    ##-------------------------------------------## 
     def csp_str(self, pt):
         """ clean single point - tuple of 2 or 3 floats
             destructive command - cleans floats for export but will loose precision 
@@ -77,7 +120,8 @@ class point_operator(object):
             return (f'{pt[0]:.8f}',f'{pt[1]:.8f}')
         else:    
             return (f'{pt[0]:.8f}',f'{pt[1]:.8f}',f'{pt[2]:.8f}')
-
+    
+    ##-------------------------------------------## 
     def cf(self, pts):
         """ clean float data 
             destructive command - cleans floats for export but will loose precision 
@@ -90,6 +134,7 @@ class point_operator(object):
             outpts.append( f'{pt:.8f}' )
         return outputs
 
+    ##-------------------------------------------## 
     def apply_matrix_pts(self, pts, m33=None, m44=None):
         """ 
             DEBUG BAD INTERFACE! 
@@ -113,6 +158,7 @@ class point_operator(object):
 
         return tmp_buffer
 
+    ##-------------------------------------------## 
     def tuple_pop(self, listups, tup):
         """ take a list of tuples, remove one by filtering it out and return the rest back 
 
@@ -130,6 +176,7 @@ class point_operator(object):
                 out.append(t)
         return out
 
+    ##-------------------------------------------## 
     def test_data_grid(self, width, height, divs):
         """ 
             usage
@@ -1007,19 +1054,6 @@ class polygon_operator(point_operator):
     #    """ check for geometry that is not connected, if any found, break it off """
 
     ##-------------------------------------------##     
-    def calc_bbox_2d(self, ptgrp=None, facgrp=None ):
-        """ UNFINISHED  
-            BBOX is 2D on Z axis 
-            get the boudning area of an object or face(s)
-        """
-        maxx = 0
-        maxy = 0
-        maxz = 0
-        
-        for p in self.points:
-            print(p)
-
-    ##-------------------------------------------##     
     def calc_bbox(self, ptgrp=None, facgrp=None ):
         """ UNFINISHED  
             get the boudning area of an object or face(s)
@@ -1311,7 +1345,7 @@ class polygon_operator(point_operator):
 
     ##-------------------------------------------##   
     def insert_pt_grp(self, ptgrp):
-        """ ptgrp is [ [id, pt], [id, pt] ]
+        """ ptgrp is [ [id, (pt)], [id, (pt)] ]
             this will overwrite internal geometry with point group geometry 
 
         """
@@ -1664,6 +1698,29 @@ class polygon_operator(point_operator):
         self.insert_pt_grp(rotated)
         #self.append_pt_grp(rotated)
 
+    ##-------------------------------------------##          
+    def insert_line(self, pts):
+        """ insert tuple into THIS object as a 3d line 
+            auto add it as another 2 point polygon  
+        """
+
+        lastidx = len(self.points)
+
+        # make sure num points is divisable byt two, or ignore last one? 
+        
+        #print(pts)
+
+        #look at first point and assume all data is similar
+        if len(pts[0])==2:
+            #print("insert_line: data appears to be 2D")
+            for i,pt in enumerate(pts):
+                if i>0:
+                    self.points.append( (pts[i][0], pts[i][1],0) )
+                    self.polygons.append( [lastidx+1, lastidx+2] ) 
+
+        if len(pts[0])==3:
+            self.points.extend(pts)
+
 
 
     ##-------------------------------------------##          
@@ -1686,7 +1743,7 @@ class polygon_operator(point_operator):
         #    self.points.extend(points)
 
         ######### 
-        # append polygons 
+        # append polygons (using existing point buffer)
         for poly in plyids:
             plytmp = []      
             for idx in poly:
@@ -1706,7 +1763,8 @@ class polygon_operator(point_operator):
                 geom[0].append( tuple(plytmp) )
 
         #########        
-        # append points,  only if new geom - just use python extend 
+        # append points,  only if new geom - 
+        # add new geom using python extend 
         if asnew_shell is True:
             if isinstance(points, tuple) or isinstance(points, list):
                 # do the insert operation
@@ -1715,7 +1773,7 @@ class polygon_operator(point_operator):
                     #look at first point and assume all data is similar
                     #if it is 2d add a zero Z axis 
                     if len(points[0])==2:
-                        #print("data appears to be 2D")
+                        #print("insert_polygons: data appears to be 2D")
                         for i,pt in enumerate(points):
                             self.points.append( (points[i][0], points[i][1],0) )
 
@@ -1937,14 +1995,16 @@ class polygon_operator(point_operator):
 
     ##-------------------------------------------## 
     def xform_pts(self, pos, pts=None, ptgrp=None):
-        """ shift points without using a matrix 
+        """ 
+            BROKEN - FIX 
+            shift points without using a matrix 
             if no points are specified - apply to whole object 
         """
-
+        
         ################################################
         if pts is not None and ptgrp is None: 
             out = []
-            for pt in pts: 
+            for pt in pts:
                 x = pt[0] + pos[0]
                 y = pt[1] + pos[1]
                 z = pt[2] + pos[2]
@@ -1956,23 +2016,25 @@ class polygon_operator(point_operator):
             # no args gets all the points of this object 
             ptgrp = self.get_pt_grp()    
 
-        pt_ids  = []
-        pt_data = []
+        if ptgrp:
+            pt_ids  = []
+            pt_data = []
+            tmp_buffer = [] 
 
-        tmp_buffer = [] 
-        for ptg in ptgrp:
-            pt_ids.append(  ptg[0] )
-            pt_data.append( ptg[1] )
-        
-        for i,pt in enumerate(pt_data):  
-            x = pt[0] + pos[0]
-            y = pt[1] + pos[1]
-            z = pt[2] + pos[2]
-            tmp_buffer.append( [i+1,(x,y,z)] )
+            for ptg in ptgrp:
+                pt_ids.append(  ptg[0] )
+                pt_data.append( ptg[1] )
             
+            for i,pt in enumerate(pt_data):  
+                x = pt[0] + pos[0]
+                y = pt[1] + pos[1]
+                z = pt[2] + pos[2]
+                tmp_buffer.append( [i+1,(x,y,z)] )
 
-        self.insert_pt_grp(tmp_buffer)
+            print(tmp_buffer)    
+            self.insert_pt_grp(tmp_buffer)
 
+        return None 
     ##-------------------------------------------##  
     def radial_triangulate_face(self, fid, offset=None, as_new_obj=False ):
         """ put a vertex at the center of polygon 

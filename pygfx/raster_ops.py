@@ -10,6 +10,7 @@ from gnelscript.pygfx.math_ops import  NUMPY_IS_LOADED
 from gnelscript.pygfx.point_ops_2d import point_operator_2d
 
 
+
 if NUMPY_IS_LOADED:
     import numpy as np  
 else:
@@ -765,10 +766,7 @@ class PixelOp (RasterObj):
             framebuffer= self.fb
 
     
-        if invert:
-            new_fb = self.empty_buffer( (255,255,255, 255) ) 
-        else:
-            new_fb = self.empty_buffer(  (0,0,0,255) ) 
+        new_fb = self.empty_buffer(  (0,0,0,255) ) 
 
         siz = framebuffer.size
         
@@ -786,9 +784,9 @@ class PixelOp (RasterObj):
                              dpix[ x, y ]=color
                          else:  
                              dpix[ x, y ]=(255,255,255)
-                    else:
-                        if invert: 
-                             dpix[ x, y ]=(255,255,255)
+                    #else:
+                    #    if invert: 
+                    #         dpix[ x, y ]=(255,255,255)
 
                 #fast but only catches colors that match exactly 
                 else: 
@@ -797,11 +795,18 @@ class PixelOp (RasterObj):
                              dpix[ x, y ]=color
                          else:  
                              dpix[ x, y ]=(255,255,255)
-                    else:
-                        if invert: 
-                             dpix[ x, y ]=(255,0,255)
+                    #else:
+                    #    if invert: 
+                    #         dpix[ x, y ]=(255,0,255)
 
-        new_fb.save("%s/%s.bmp"%(path,name) ) 
+        if invert:
+            new_fb = new_fb.convert('RGB')
+            print("INVERTING ", new_fb.mode)
+            im_invert = ImageOps.invert(new_fb)
+            im_invert.save("%s/%s.bmp"%(path,name) )
+
+        else:              
+            new_fb.save("%s/%s.bmp"%(path,name) ) 
 
 
 

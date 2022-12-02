@@ -10,7 +10,7 @@ from gnelscript.pygfx.obj3d import  *
 from gnelscript import NUMPY_IS_LOADED
 
 if NUMPY_IS_LOADED:
-    from pygfx.raytrace import  *
+    from gnelscript.tools.raytrace import  *
 
 
 
@@ -65,11 +65,75 @@ if NUMPY_IS_LOADED:
         rtrace.save_image( rtrace.main() )
 
 
+#######################################################
+def vector_render(objfile):
+    obj = object3d()
+    #obj.load(objfile)
+
+    obj.prim_triangle( "z", (0,0,0), (0,0,0)  )
+
+
+    #PIL Images have origin in top left - so flip 
+    #obj.rotate_pts( (0, 0, 180) )
+
+
+    #need to go back and check all functions in gnelscript
+    #make work in 2d too 
+
+    #GEOM types 
+    #BBOX types 
+    #PTGROUP types (zero index, option to shift)
+
+    
+    #XFROM_PTS IS BROKEN 
+    #transform half of picture width (in pixels) to get to center
+    #obj.xform_pts( (-200, -200, 0) )
+    
+    #TRS_POINTS SEEMS TO WORK 
+    #obj.trs_points( ply, translate=(0,0,0), rotate=(0,0,0), scale=(gs,gs,gs) ))
+    obj.points = obj.trs_points( obj.points, translate=(-3,-3,0) )
+
+
+    #obj.triangulate() 
+
+    ropr = simple_render()
+
+    render_linecolor = (255,0,255)
+    render_scale = 100 
+
+    ##--------------------------------------##
+
+    ## # some render properties you can tweak 
+    ## ropr.SHOW_EDGES         = False
+    ## ropr.SHOW_FACE_CENTER   = False
+    ## ropr.COLOR_MODE         = 'normal'
+    ropr.COLOR_MODE         = 'flat'
+    ropr.SHOW_EDGES         = True 
+    ropr.SHOW_VTXS             = True 
+    ropr.USE_PERSPECTIVE       = False
+
+
+    ##--------------------------------------##
+
+    if ropr.USE_PERSPECTIVE:
+        ropr.SHOW_VTXS = False
+        persp_m44 = matrix44()    
+        persp_m44 = persp_m44.buildPerspProjMat( 60, 1, 1, 10)
+        obj.points = obj.apply_matrix_pts(obj.points, m44=persp_m44)
+
+    # render single object 
+    ropr.render_obj((100,0,255), 1, 1, 1, 1, render_scale, object3d=obj)
+    ropr.save_image('simple_render_.png' )
+
+    ropr.vec_fr_buffer.show()
+    ropr.vec_fr_buffer.scale_pts((.01,.01,.01))
+    ropr.vec_fr_buffer.save("3d_obj/vec_buffer.obj")
+    
 
 #######################################################
 
 
-def three_renderers(fnum):
+def three_renderers(objfile, fnum):
     """ example of the 3 main ways to render  
             - single object 
             - multi object (single in a loop)
@@ -77,7 +141,7 @@ def three_renderers(fnum):
      """
 
     obj = object3d()
-    obj.load('objects/cube.obj')
+    obj.load(objfile)
     #obj.load('original_sin.obj')
 
     #obj.xform_pts( (1, 1, 1) )
@@ -90,7 +154,7 @@ def three_renderers(fnum):
     render_linecolor = (255,0,255)
     render_scale = 100 
 
-    ####
+    ##--------------------------------------##
 
     ## # some render properties you can tweak 
     ## ropr.SHOW_EDGES         = False
@@ -102,7 +166,8 @@ def three_renderers(fnum):
     ropr.USE_PERSPECTIVE       = False
 
 
-    ####
+    ##--------------------------------------##
+
     if ropr.USE_PERSPECTIVE:
         ropr.SHOW_VTXS = False
         persp_m44 = matrix44()    
@@ -113,7 +178,7 @@ def three_renderers(fnum):
     ropr.render_obj((100,0,255), 1, 1, 1, 1, render_scale, object3d=obj)
     ropr.save_image('simple_render_%s.png'%fnum)
     
-    ####
+    ##--------------------------------------##
 
     ##  render multiple objects
     ## obj2 = object3d()
@@ -123,12 +188,15 @@ def three_renderers(fnum):
     ## #                GS (  color,  rx, ry, rz, linethick, scale)
     ## ropr.render_multiobj( render_linecolor, 45, 45, 45, 4, render_scale) 
 
-    ####
+    ##--------------------------------------##
+
     ## scanline render 
     # ropr.scanline(obj, render_scale) 
     # ropr.save_image('simple_render.png')
 
+    ##--------------------------------------##
 
+    
 def animate_three_renders():
     for x in range(100):
         three_renderers(x)

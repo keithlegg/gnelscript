@@ -1,12 +1,16 @@
-
-
 """ 
 DEBUG NOT DONE - JUST COPIED FROM OBJECT3D
 """
 
+import math 
 
 
-class object25d(point_operator_2d):
+from gnelscript.pygfx.point_ops_2d import *
+from gnelscript.pygfx.obj2d import *
+
+
+
+class object2d(point_operator_2d):
     """
         2.5D object - modeled after obj3d but much simpler
         

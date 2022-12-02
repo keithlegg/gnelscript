@@ -45,6 +45,22 @@ class object3d(polygon_operator):
         return new
 
     ############################################### 
+    def insert_2pp(self, obj):
+        """ insert tuple as two point polygon (line) 
+            
+        """
+
+        # if tuple or list assume its [polyidx, points]
+        if isinstance(obj, tuple) or isinstance(obj, list):
+            if replace is True:
+                pass    
+                #self.points=obj[0]
+                #self.polygons=obj[1] 
+
+            else:
+                self.insert_polygons(obj[0], obj[1])
+
+    ############################################### 
     def insert(self, obj, replace=False):
         """ insert an objects geometry into this object 
             

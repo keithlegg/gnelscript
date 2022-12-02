@@ -127,9 +127,10 @@ def firstpass_bw( iters, blur, contrast, bright, chops, inputfile, outputfolder,
 
 
 ##----------------------------------------------------
+
 def firstpass( iters, blur, contrast, bright, chops, inputfile, outputfolder, outputfile ):
     """
-        try to break a color bitmap up into the most basic shapes of color regions 
+        filter out noise of an image but keep the main shapes and color regions 
 
     """
     simg = Image.open( inputfile )
@@ -162,7 +163,10 @@ def firstpass( iters, blur, contrast, bright, chops, inputfile, outputfolder, ou
 ##----------------------------------------------------
 
 def secondpass(inputimage, outputpath, numbands, fast=False):
-    #from stack overflow  - attempt to get most common colors in an image 
+    """
+    #from stack overflow  - get most common colors in an image 
+    
+    """
 
 
     im = Image.open(inputimage )
@@ -203,10 +207,11 @@ def secondpass(inputimage, outputpath, numbands, fast=False):
     print("writing file ", '%s/commonbands.png'%outputpath) 
     imageio.imwrite('%s/commonbands.png'%outputpath, c.reshape(*shape).astype(np.uint8))
 
+
 ##----------------------------------------------------
 
-def thirdpass( inputfile, outputfolder, fileformat, po_invert=False, fastmode=False  ):
-    """ break an already posterized image into seperate iamges X colors """
+def thirdpass( inputfile, outputfolder, fileformat, bmpinvert=False, po_invert=False, fastmode=False  ):
+    """ break an already posterized image into seperate images X colors """
 
     simg = PixelOp()
     simg.load( inputfile )
@@ -244,8 +249,10 @@ def thirdpass( inputfile, outputfolder, fileformat, po_invert=False, fastmode=Fa
         colors.append( [l[0], (int(l[1]), int(l[2]), int(l[3]) ) ] ) 
 
     for c in colors:
+        
         #extract_by_color( path, name, color, slowmode, exactcolor, invert, framebuffer)
-        simg.extract_by_color( outputfolder, c[0], c[1], False, False, False, False )
+        simg.extract_by_color( outputfolder, c[0], c[1], False, False, bmpinvert, False )
+
         if po_invert:
             command = [potrace_command, "%s/%s.bmp"%(outputfolder, c[0] ), "-i", "-b", fileformat, "-W", str(vwidth), "-H", str(vheight), "-t", str(tsize)]        
         else:    
@@ -254,18 +261,85 @@ def thirdpass( inputfile, outputfolder, fileformat, po_invert=False, fastmode=Fa
         subprocess.run(command)
 
 
+##----------------------------------------------------
 
 
+def geojson_to_ngc():
+    kiparser = generic_ngc()
+
+    ##-- 
+
+    #indexer(ids=None, span=None, unique=True, nth=None)
+    ids = kiparser.indexer(span=[1,2])
+
+    ##-- 
+
+    passnum = 1
+
+    
+    #kiparser.load_geojson('images/out/%s.json'%passnum, 0, getfids=None, getids=None)
+
+    kiparser.load_geojson('images/out/kmeans.geojson', 0, getfids=None, getids=None)
+
+    #kiparser.load_geojson('images/out/0.json', 0, getfids=None, getids=None)
+    #kiparser.load_geojson('images/out/1.json', 0, getfids=None, getids=None)
+    #kiparser.load_geojson('images/out/2.json', 0, getfids=None, getids=None)
+    #kiparser.load_geojson('images/out/3.json', 0, getfids=None, getids=None)
+    #kiparser.load_geojson('images/out/4.json', 0, getfids=None, getids=None)
+    #kiparser.load_geojson('images/out/5.json', 0, getfids=None, getids=None)
+                        
+    ##--
+    #bbox = kiparser.calc_bbox_pt(2, (5,5))
+    #pts = kiparser.cvt_2d_to_3d(kiparser.extents_fr_bbox(bbox, periodic=True))
+    #debug - need to solve the clean_pts_str debacle?
+    #kiparser.gr_polys.append(pts)
+
+    ##--
+    #bbox = kiparser.calc_bbox_pt(1.75, (-3,3))
+    #pts = kiparser.cvt_2d_to_3d(kiparser.extents_fr_bbox(bbox, periodic=True))
+    #debug - need to solve the clean_pts_str debacle?    
+    #kiparser.gr_polys.append(pts)
+
+    ##--
+    #print(pts)
+    #kiparser.grply_inspect()
+    #kiparser.cvt_grpoly_obj3d()
+    #kiparser.save("3d_obj/foo.obj")
+
+    ##-- 
+
+    # ADD BETTER TOOLS TO XFROM POINTS 
+
+    # ADD BETTER TOOLS OMIT POLYGONS  
+
+    # TODO ADD A SPATIAL POLYGON SORT TO REDUCE SPINDLE TRAVEL ON RETRACTS 
+
+    sort = False
+
+    if sort:
+        kiparser.index_grsort()
+
+        kiparser.sort_grpolys("x")
+        #kiparser.sort_grpolys("y")
+
+        #kiparser.showsortbuffer()
+
+        kiparser.load_sortbuffer()
 
 
+    ##--
+    #scale  
+    doscale=False 
+    if doscale: 
+        gs = kiparser.global_scale
+        xformed = []
+        for ply in kiparser.gr_polys:
+            xformed.append(kiparser.trs_points( ply, translate=(0,0,0), rotate=(0,0,0), scale=(gs,gs,gs) ))
+        kiparser.gr_polys = xformed
 
-
-
-
-
-
-
-
+    kiparser.calculate_paths()
+    #kiparser.save_line_obj('3d_obj/foo.obj')
+    kiparser.export_ngc("images/out/pass%s.ngc"%passnum)
 
 
 

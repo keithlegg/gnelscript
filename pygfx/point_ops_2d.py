@@ -29,6 +29,20 @@ class point_operator_2d(object):
         return newfids 
     """
 
+    ##-------------------------------------------##     
+    def calc_bbox(self, ptgrp=None, facgrp=None ):
+        """ UNFINISHED  
+            BBOX is 2D on Z axis 
+            get the boudning area of an object or face(s)
+        """
+        maxx = 0
+        maxy = 0
+        maxz = 0
+        
+        for p in self.points:
+            print(p)
+
+    ##-------------------------------------------##  
     def calc_line(self, x1, y1, x2, y2):        
         """ bresenham's algorithm 
             from http://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm
@@ -69,6 +83,7 @@ class point_operator_2d(object):
             points.reverse()
         return points
 
+    ##-------------------------------------------##  
     def aggregate_extents(self, points, offset=False):
         """ needs at least three points to work 
             take any number of points - (3 or more tuples of (x,y) ),  and find the min/max of all of them as a whole
@@ -98,7 +113,8 @@ class point_operator_2d(object):
                     maxy = p[1]+offset
 
         return [minx, miny, maxx, maxy ]
-        
+
+    ##-------------------------------------------##          
     def rotate_point_2d(self, point, pivot, angle, doRound=False):
         """ helper to rotate a single point in 2 dimensions """
         
@@ -115,6 +131,7 @@ class point_operator_2d(object):
         if doRound:
             return ( round(a + pivot[0]), round(b + pivot[1]) );
 
+    ##-------------------------------------------##  
     def batch_transform_pts_2d(self, pts, new_coord, doround=False):
         """ UNTESTED ? - takes a list of tuples and returns a shifted list of tuples , based on a tuple of (x,y) shift"""
 
@@ -126,12 +143,14 @@ class point_operator_2d(object):
                 out.append( ( int(pt[0]+ new_coord[0]), int(pt[1]+ new_coord[1]) ) )         
         return out
 
+    ##-------------------------------------------##  
     def batch_rotate_pts_2d(self, pts, pivot, angle, doround=False):
         out = []
         for pt in pts:
             out.append( self.rotate_point_2d(pt, pivot, angle, doround) )
         return out
 
+    ##-------------------------------------------##  
     def calc_circle_2d(self, x_orig, y_orig, dia, periodic=True, spokes=23):
         """ spokes = num spokes """
 
@@ -155,7 +174,7 @@ class point_operator_2d(object):
 
         return out
 
-
+    ##-------------------------------------------##  
     def pt_offset_to_line( self, vector, pt): # x3,y3 is the point
         """
            given a vector and a point, return a vector between them 
@@ -187,6 +206,7 @@ class point_operator_2d(object):
         #if you want to get distance
         #return math.sqrt(dx*dx + dy*dy)
 
+    ##-------------------------------------------##  
     def extract_pt_vector(self, vector, offset):
         """
           given a vector [(x,y), (x,y)] and an offset - return a point (x,y)
@@ -209,6 +229,7 @@ class point_operator_2d(object):
         ptY = b[1] + (calcY * offset)
         return (ptX, ptY)
 
+    ##-------------------------------------------##  
     def locate_pt_along(self, x1, y1, x2, y2, num):
         """ taken from my old 3d character rigging code (with the Z axis removed)
             this was used to place vertebra along a spine
@@ -225,6 +246,7 @@ class point_operator_2d(object):
             pts_created.append( (npos[0], npos[1]) )
         return pts_created
 
+    ##-------------------------------------------##  
     def calc_mid(self, pt1, pt2, num=1, doround=False):
         """ get the midpoint of a 2d vector """
 
@@ -234,6 +256,7 @@ class point_operator_2d(object):
         if not doround:
             return ( out[0][0], out[0][1] )
                 
+    ##-------------------------------------------##                  
     def old_calc_theta_vert(self, bot_xy, top_xy):
         try:
             a = bot_xy[1]-top_xy[1]  
@@ -247,6 +270,7 @@ class point_operator_2d(object):
             print('error calc angle - div by 0?') 
             return None 
 
+    ##-------------------------------------------##  
     def calc_theta_vert(self, start_xy, end_xy, corner, mode='relative'):
         """
            convert a 2 point line segment into a meaningful rotation value in degrees
@@ -353,13 +377,6 @@ class point_operator_2d(object):
                 r = 180  
                                                            
         return r
-
-
-
-
-
-
-
 
 
 
