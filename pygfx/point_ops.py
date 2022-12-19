@@ -1727,7 +1727,7 @@ class polygon_operator(point_operator):
 
 
     ##-------------------------------------------##          
-    def insert_polygons(self, plyids, points, asnew_shell=True, geom=None):
+    def insert_polygons(self, plyids, points, asnew_shell=True, geom=None, incrone=False):
         """  
              Insert NEW geometry into this object
              
@@ -1744,6 +1744,16 @@ class polygon_operator(point_operator):
 
         #if isinstance(points, vec3):
         #    self.points.extend(points)
+
+        newplyids = []
+        if incrone:
+            for pid in plyids:
+                tmp = []
+                for pt in pid:
+                    tmp.append(int(pt)+1)
+                newplyids.append(tmp)
+
+            plyids = newplyids
 
         ######### 
         # append polygons (using existing point buffer)

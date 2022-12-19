@@ -5,13 +5,15 @@ import itertools
 import math
 import os
 
-from gnelscript import NUMPY_IS_LOADED
+from gnelscript import NUMPY_IS_LOADED, SCIPY_IS_LOADED
 
 
 if NUMPY_IS_LOADED:
     # print(' ## debug - loading numpy module. ')
     import numpy as np             #for testing - remove later 
     from numpy.linalg import inv
+
+if SCIPY_IS_LOADED:    
     from scipy.linalg import expm
 
 else:
@@ -1282,7 +1284,7 @@ class matrix33(object):
         axis = vec3.as_np
         #tmpm33 = self.identity
 
-        if NUMPY_IS_LOADED:
+        if NUMPY_IS_LOADED and SCIPY_IS_LOADED:
             tmpm33 = expm(np.cross(np.eye(3), axis / np.linalg.norm(axis) * theta)) 
             return self.from_np(tmpm33)
         else:
