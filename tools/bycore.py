@@ -8,10 +8,15 @@
 # bpy.ops.mesh.primitive_cylinder_add(enter_editmode=False, align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
 # bpy.data.objects['Cylinder'].select_set(False); 
 
-
 import sys
-sys.path.append('/Users/keithlegg/gnolmec')
-sys.path.append('/Users/klegg/serv/gnolmec')
+
+
+TOOLPATH = 'PUT_YOUR_FILES_HERE'
+
+
+sys.path.append(TOOLPATH)
+
+BYCORE_OBJ_OUT= '%s/3d_obj/BYCORE.obj'%TOOLPATH
 
 
 from gnelscript.pygfx.math_ops import  *
@@ -27,13 +32,32 @@ import mathutils
 from bpy import context
 
 
-BYCORE_OBJ_OUT= '/Users/keithlegg/gnolmec/3d_obj/BYCORE.obj'
+
 
 """ 
 
 open in terminal to get python output 
 
 /Applications/Blender.app/Contents/MacOS/Blender
+
+
+#-------
+#notes from blender cam (not needed but relevant)
+
+https://github.com/vilemduha/blendercam/blob/master/documentation/Blendercam%20Installation.md
+
+
+If you are using a Blender with a bundled Python then packagers must be installed in the site-packages directory 
+of the bundled python. For Blender 2.8 only Shapely is needed. 
+To install it, open terminal, get to Blender directory and use PIP:
+
+cd /Applications/Blender.app/Contents/Resources/3.3/python/bin  
+
+./python3.10 -m ensurepip
+
+./python3.10 -m pip install shapely
+./python3.10 -m pip install pygeos
+
 
 """
 
@@ -106,6 +130,94 @@ open in terminal to get python output
 
 
 
+##---------------------------------------
+
+"""
+Setting bl_space_type = 'VIEW_3D' will place your panel within the 3dview. 
+You then set bl_region_type = 'TOOLS' to have it show in the tools region 
+while the less intuitive bl_region_type = 'UI' places it in the properties region.
+
+If you want to place a panel in the properties editor, you would set bl_space_type = 'PROPERTIES' 
+and bl_region_type = 'WINDOW', then you set bl_context to match the context you want it shown in  
+
+- Object, Scene, World, Modifier...
+
+Also remember that you need to register your panel class -
+"""
+
+
+class MyOperator(bpy.types.Operator):
+    bl_idname = "scene.myoperator"
+    bl_label = "export gnel"
+
+    def execute(self, context):
+        obj_to_gnel()
+        return {"FINISHED"}
+
+class View3DPanel:
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS'
+    
+    #bl_region_type = 'UI'
+    #bl_category = "Tool"
+
+    @classmethod
+    def poll(cls, context):
+        return (context.object is not None)
+
+
+class PanelOne(View3DPanel, bpy.types.Panel):
+    bl_idname = "VIEW3D_PT_test_1"
+    bl_label = "Tools"
+
+    def draw(self, context):
+        row = self.layout.row()
+        row.operator("scene.myoperator")        
+        self.layout.label(text="Small Class")
+
+"""
+class PanelTwo(View3DPanel, bpy.types.Panel):
+    bl_idname = "VIEW3D_PT_test_2"
+    bl_label = "toolz"
+    def draw(self, context):
+        self.layout.label(text="Also Small Class")
+"""
+
+bpy.utils.register_class(PanelOne)
+#bpy.utils.register_class(PanelTwo)
+bpy.utils.register_class(MyOperator)
+
+
+##---------------------------------------
+
+##---------------------------------------
+
+
+#TO ADD TO GNELSCRIPT  
+
+#cross section - start with a cube - then to a trapezoid cube, work up 
+#intersection  
+#projection  
+
+#extents_3d
+#extents_2d
+
+#subdiv 
+
+#spiral_2d( intersect_obj )
+
+#spiral_fill( shape, intersect  ) 
+
+#spiral_3d 
+
+
+
+
+
+
+
+##---------------------------------------
+
 def get_selection():
     """ get anything selected - object or component """
  
@@ -118,21 +230,37 @@ def get_selection():
     points = [] 
     
     if mode =='EDIT':
-        print("you are in edit mode ")
+        print("# you are in edit mode ")
         ob = context.edit_object
         
         edit_mesh = ob.data
+        # see: https://docs.blender.org/api/current/bmesh.types.html
         bm = bmesh.from_edit_mesh(edit_mesh)
 
         print("faces ", len(bm.faces))
+        if len(bm.faces):
+            for f in bm.faces:
+                if f.select:
+                    print(f.index)
+                    print(f.normal)
+                    print(f.loops)
 
         print("edges ", len(bm.edges))
-        
-        print("vertices ", len(bm.verts))
+        if len(bm.edges):
+            for e in bm.edges: 
+                if e.select:
+                    print(e.index)
+                    print(e.is_boundary)
 
+        print("vertices ", len(bm.verts))
+        if len(bm.verts):
+            for v in bm.verts:            
+                if v.select:
+                    print(v.index)                    
+                    print(v.co)
 
     if mode =='OBJECT':
-        print("you are in object mode ")
+        print("# you are in object mode ")
         obj = context.active_object
 
         faces = obj.data.polygons        
@@ -148,6 +276,8 @@ def get_selection():
         print("vertices ", len(vertices))
 
 
+get_selection()
+
 ##---------------------------------------
 
 def obj_to_gnel():
@@ -162,10 +292,16 @@ def obj_to_gnel():
         verts = obj.data.vertices
         for v in verts: 
             #blender vectors
+            
+            # matrix_parent_inverse
+            # matrix_local
+            # matrix_basis
+            # -  Matrix access to location, rotation and scale (including deltas), 
+            # -  before constraints and parenting are applied
+
             blvec = obj.matrix_world @ v.co
             #raw float data  
             gn_pts.append(blvec[:])
-
 
         #(reference a range of loops)
         faces = obj.data.polygons
