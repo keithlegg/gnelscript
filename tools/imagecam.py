@@ -286,12 +286,7 @@ def geojson_to_ngc(folder, fnames, onefile=False):
             kiparser.load_geojson('%s/%s'%(folder,file), 0, getfids=None, getids=None)
 
         if sort:
-            #DEBUG BROKEN 
-            #kiparser.index_grsort()
-            #kiparser.sort_grpolys("x")
-            #kiparser.sort_grpolys("y")
-            #kiparser.showsortbuffer()
-            #kiparser.load_sortbuffer()
+            #DEBUG BROKEN  - see below 
             pass 
 
         ##--
@@ -315,12 +310,11 @@ def geojson_to_ngc(folder, fnames, onefile=False):
             kiparser.load_geojson('%s/%s'%(folder,file), 0, getfids=None, getids=None)
             if sort:
                 kiparser.index_grsort()
-                #kiparser.sort_grpolys("x")
-                #kiparser.load_sortbuffer()
                 kiparser.export_sorted_centroids(fspl[0], folder)
                 kiparser.export_sorted_extents(fspl[0], folder)
-                
+                kiparser.show_buffers()
 
+                kiparser.make_grid(folder, 5, 5)
 
             ##--
             #scale  

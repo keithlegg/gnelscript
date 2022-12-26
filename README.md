@@ -1,4 +1,3 @@
-
 ![alt text](https://github.com/keithlegg/gnelscript/blob/master/images/example/monkey_tex.png) 
 
 # gnelscript
@@ -60,9 +59,9 @@ Overall structure:
 
     |-math_ops           - just what it says. Vectors, Matricies, all the boring math stuff that everything is built on
        |-point_ops       - functions to work with coordinates directly
-       |                 - geometry is stored as vertex arrays and face indexes with a flat structure to interface to outside data easily 
-       |-polygon_ops     - deals with polygon indices, point indices 
-           |-object      - deals with groups of polygons, loading, saving, ect 
+          |-polygon_ops     - deals with polygon indices, point indices 
+              |             - geometry is stored as vertex arrays and face indexes with a flat data structure  
+              |-object      - deals with groups of polygons, normals, polygon operators loading, saving, ect 
            
  
 

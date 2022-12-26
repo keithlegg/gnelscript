@@ -23,11 +23,12 @@ class generic_ngc(object3d):
 
     def __init__(self):
         super().__init__()  
+        self.tesl          = teselator()
         self.loadbuffer    = []  #list of list of points 
         self.gr_polys      = []  #list of list of points 
 
         self.gr_sort       = []  #list of [(pt), (pts)]  
-        self.gr_sorted     = []  #list of [(pt), (pts)]
+        self.cut_grid     = []    
 
         self.numexported = 0 
 
@@ -48,9 +49,95 @@ class generic_ngc(object3d):
         self.total_maxy = 0
 
     ##-------------------------------##
-    #def showsortbuffer(self):
-    #    for ply in self.gr_sort:
-    #        print("%s %s %s "%(ply[0], ply[1], len(ply[2]) )) 
+    # IDEA 
+
+    #1 - DAG - b tree 
+    #2 - parent geom to nodes - add matrix scenegraph  
+    #3-  crazy f-ing animation potential - vector ala cyriak  
+    
+    def set_extents(self, bbox):
+        """ set global extents for generating data 
+            based on PIL coordinate which is [left, top, right, bottom] 
+            [minx, miny, maxx, maxy]  
+        """
+        
+        self.total_minx = bbox[0]
+        self.total_miny = bbox[1]         
+        self.total_maxx = bbox[2]
+        self.total_maxy = bbox[3]
+
+    ##-------------------------------##
+    def make_grid(self, folder, xcuts, ycuts, bbox=None):
+        """ chop a square into smaller squares """
+
+
+
+        if bbox:
+            self.tesl.set_extents(bbox) 
+        else:
+            self.tesl.set_extents([self.total_minx, self.total_miny, self.total_maxx, self.total_maxy]) 
+
+        self.tesl.build_2d_cells(xcuts, ycuts)
+
+        export_gfx = True 
+        
+        ##---
+        if export_gfx:
+            #export cells as graphics  
+            features = []
+            for c in self.tesl.cells:
+                #DEBUG - points are not transformed - they always start at 0,0  
+                features.append(Feature(geometry=Point((c.coord_x+(c.width/2), c.coord_y+(c.height/2))), 
+                                        properties={"id":c.name} 
+                                       )
+                            )
+
+                coords = c.boundary_pts
+                features.append(Feature(geometry=LineString(coordinates=coords), 
+                              properties={"id" : 0 
+                                         }
+                              ) 
+                      )
+
+            # # #total extents  
+            # coords = self.extents_fr_bbox([self.total_minx,self.total_miny,self.total_maxx,self.total_maxy], periodic=True)
+            # features.append(Feature(geometry=LineString(coordinates=coords), 
+            #                      properties={"id" : 0 
+            #                                 }
+            #                      ) 
+            #              )
+
+
+            feature_collection = FeatureCollection(features)
+            with open('%s/_cells.json'%(folder), 'w') as f:
+                dump(feature_collection, f)
+
+
+    ##-------------------------------##
+    def sample_data(self):
+        # random = []
+        
+        # extents 
+        # self.total_minx 
+        # self.total_miny          
+        # self.total_maxx 
+        # self.total_maxy 
+
+        pass 
+
+
+
+
+    ##-------------------------------##
+    def show_buffers(self):
+
+        #[[id, centroid, extents, len, points ]
+        #for ply in self.gr_sort:
+        #    print("%s %s %s "%(ply[0], ply[1], len(ply[2]) )) 
+        print('#################')
+        print('size gr_polys %s'%len(self.gr_polys))
+        print('size gr_sort %s'%len(self.gr_sort))
+
 
     ##-------------------------------##
     # def load_sortbuffer(self):
@@ -80,12 +167,18 @@ class generic_ngc(object3d):
         features = []
 
         #[[id, centroid, extents, len, points ]]
-        #for i,s in enumerate(self.gr_sort):
-        #    features.append(Feature(geometry=LineString(coordinates=self.extents_fr_bbox(s[2])), properties={"id":i, "len" : len(s[4]) } ))
+        for i,s in enumerate(self.gr_sort):
+            #    features.append(Feature(geometry=LineString(coordinates=self.extents_fr_bbox(s[2])), properties={"id":i, "len" : len(s[4]) } ))
+            coords = self.extents_fr_bbox(s[2], periodic=True)
 
+            features.append(Feature(geometry=LineString(coordinates=coords), 
+                                 properties={"id" : 0 
+                                            }
+                                 ) 
+                         )
+
+        #total extents  
         coords = self.extents_fr_bbox([self.total_minx,self.total_miny,self.total_maxx,self.total_maxy], periodic=True)
-        #coords = self.extents_fr_bbox([(0,0),(1,1),(2,2)])
-
         features.append(Feature(geometry=LineString(coordinates=coords), 
                                 properties={"id" : 0 
                                            }
@@ -145,7 +238,7 @@ class generic_ngc(object3d):
             if maxy>self.total_maxy:
                 self.total_maxy=maxy
 
-            self.gr_sort.append([i, self.centroid_pts(ply) ,[minx,maxx,miny,maxy], len(ply), ply])
+            self.gr_sort.append([i, self.centroid_pts(ply) ,[minx,miny, maxx, maxy], len(ply), ply])
 
             #print("poly extents %s %s %s %s "%(minx, maxx, miny, maxy) )
             
@@ -158,8 +251,6 @@ class generic_ngc(object3d):
             print(gr)
         #b-space 
   
-
- 
 
 
     ##-------------------------------##
