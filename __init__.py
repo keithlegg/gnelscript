@@ -1,5 +1,7 @@
 
-#kill switch for numpy integration 
+
+
+# kill switch for numpy integration 
 NUMPY_IS_LOADED = True 
 
 SCIPY_IS_LOADED = False 

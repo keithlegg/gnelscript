@@ -264,7 +264,7 @@ def thirdpass( inputfile, outputfolder, fileformat, bmpinvert=False, po_invert=F
 ##----------------------------------------------------
 
 
-def geojson_to_ngc():
+def geojson_to_ngc(folder, fnames, onefile=False):
     kiparser = generic_ngc()
 
     ##-- 
@@ -276,18 +276,64 @@ def geojson_to_ngc():
 
     passnum = 1
 
-    
+    sort = True
+    doscale=False 
+
     #kiparser.load_geojson('images/out/%s.json'%passnum, 0, getfids=None, getids=None)
 
-    kiparser.load_geojson('images/out/kmeans.geojson', 0, getfids=None, getids=None)
+    if onefile:
+        for file in fnames:
+            kiparser.load_geojson('%s/%s'%(folder,file), 0, getfids=None, getids=None)
 
-    #kiparser.load_geojson('images/out/0.json', 0, getfids=None, getids=None)
-    #kiparser.load_geojson('images/out/1.json', 0, getfids=None, getids=None)
-    #kiparser.load_geojson('images/out/2.json', 0, getfids=None, getids=None)
-    #kiparser.load_geojson('images/out/3.json', 0, getfids=None, getids=None)
-    #kiparser.load_geojson('images/out/4.json', 0, getfids=None, getids=None)
-    #kiparser.load_geojson('images/out/5.json', 0, getfids=None, getids=None)
-                        
+        if sort:
+            #DEBUG BROKEN 
+            #kiparser.index_grsort()
+            #kiparser.sort_grpolys("x")
+            #kiparser.sort_grpolys("y")
+            #kiparser.showsortbuffer()
+            #kiparser.load_sortbuffer()
+            pass 
+
+        ##--
+        #scale  
+        if doscale: 
+            gs = kiparser.global_scale
+            xformed = []
+            for ply in kiparser.gr_polys:
+                xformed.append(kiparser.trs_points( ply, translate=(0,0,0), rotate=(0,0,0), scale=(gs,gs,gs) ))
+            kiparser.gr_polys = xformed
+
+        kiparser.calculate_paths()
+        #kiparser.save_line_obj('3d_obj/foo.obj')
+        kiparser.export_ngc("images/out/pass%s.ngc"%passnum)
+
+    #export each in a loop
+    else:                     
+        for file in fnames:
+            fspl = file.split('.')
+    
+            kiparser.load_geojson('%s/%s'%(folder,file), 0, getfids=None, getids=None)
+            if sort:
+                kiparser.index_grsort()
+                #kiparser.sort_grpolys("x")
+                #kiparser.load_sortbuffer()
+                kiparser.export_sorted_centroids(fspl[0], folder)
+                kiparser.export_sorted_extents(fspl[0], folder)
+                
+
+
+            ##--
+            #scale  
+            if doscale: 
+                gs = kiparser.global_scale
+                xformed = []
+                for ply in kiparser.gr_polys:
+                    xformed.append(kiparser.trs_points( ply, translate=(0,0,0), rotate=(0,0,0), scale=(gs,gs,gs) ))
+                kiparser.gr_polys = xformed
+            kiparser.calculate_paths()
+            #kiparser.save_line_obj('3d_obj/foo.obj')
+            kiparser.export_ngc("%s/%s.ngc"%(folder, fspl[0]) )
+
     ##--
     #bbox = kiparser.calc_bbox_pt(2, (5,5))
     #pts = kiparser.cvt_2d_to_3d(kiparser.extents_fr_bbox(bbox, periodic=True))
@@ -314,32 +360,7 @@ def geojson_to_ngc():
 
     # TODO ADD A SPATIAL POLYGON SORT TO REDUCE SPINDLE TRAVEL ON RETRACTS 
 
-    sort = False
 
-    if sort:
-        kiparser.index_grsort()
-
-        kiparser.sort_grpolys("x")
-        #kiparser.sort_grpolys("y")
-
-        #kiparser.showsortbuffer()
-
-        kiparser.load_sortbuffer()
-
-
-    ##--
-    #scale  
-    doscale=False 
-    if doscale: 
-        gs = kiparser.global_scale
-        xformed = []
-        for ply in kiparser.gr_polys:
-            xformed.append(kiparser.trs_points( ply, translate=(0,0,0), rotate=(0,0,0), scale=(gs,gs,gs) ))
-        kiparser.gr_polys = xformed
-
-    kiparser.calculate_paths()
-    #kiparser.save_line_obj('3d_obj/foo.obj')
-    kiparser.export_ngc("images/out/pass%s.ngc"%passnum)
 
 
 

@@ -11,3 +11,7 @@ cp tools/mycore.py ../
 
 #blender core 
 cp tools/bycore.py ../
+
+
+#INSTALL TOOLS 
+

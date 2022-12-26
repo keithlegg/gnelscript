@@ -1,4 +1,5 @@
 import geojson
+from geojson import Point, Feature, LineString, FeatureCollection, dump
 
 
 
@@ -41,41 +42,124 @@ class generic_ngc(object3d):
         self.ch = 1       # cut height 
         self.hp = (0,0,0) # home position 
 
+        self.total_minx = 0
+        self.total_miny = 0         
+        self.total_maxx = 0
+        self.total_maxy = 0
+
     ##-------------------------------##
-    def showsortbuffer(self):
-        for ply in self.gr_sort:
-            print("%s %s %s "%(ply[0], ply[1], len(ply[2]) )) 
+    #def showsortbuffer(self):
+    #    for ply in self.gr_sort:
+    #        print("%s %s %s "%(ply[0], ply[1], len(ply[2]) )) 
 
-    def load_sortbuffer(self):
-        #print("loading sort buffer ")
+    ##-------------------------------##
+    # def load_sortbuffer(self):
+    #     #print("loading sort buffer ")
+    #     self.gr_polys = []
+    #     for ply in self.gr_sort:
+    #         self.gr_polys.append(ply[2])
+    #     #print(" gr_sort buffer has %s polys in it "%len(self.gr_sort) )
+    #     #print(" gr_polys buffer has %s polys in it "%len(self.gr_polys) )
 
-        self.gr_polys = []
-        for ply in self.gr_sort:
-            self.gr_polys.append(ply[2])
-       
-        #print(" gr_sort buffer has %s polys in it "%len(self.gr_sort) )
-        #print(" gr_polys buffer has %s polys in it "%len(self.gr_polys) )
-       
-           
+    ##-------------------------------##
+    def export_sorted_centroids(self, name, folder):
+
+        features = []
+
+        #[[id, centroid, extents, len, points ]]
+        for i,s in enumerate(self.gr_sort):
+            features.append(Feature(geometry=Point((s[1][0],s[1][1])), properties={"id":i, "len" : len(s[4]) } ))
+
+        feature_collection = FeatureCollection(features)
+        with open('%s/%s_centroids.json'%(folder,name), 'w') as f:
+            dump(feature_collection, f)
+
+    ##-------------------------------##
+    def export_sorted_extents(self, name, folder):
+
+        features = []
+
+        #[[id, centroid, extents, len, points ]]
+        #for i,s in enumerate(self.gr_sort):
+        #    features.append(Feature(geometry=LineString(coordinates=self.extents_fr_bbox(s[2])), properties={"id":i, "len" : len(s[4]) } ))
+
+        coords = self.extents_fr_bbox([self.total_minx,self.total_miny,self.total_maxx,self.total_maxy], periodic=True)
+        #coords = self.extents_fr_bbox([(0,0),(1,1),(2,2)])
+
+        features.append(Feature(geometry=LineString(coordinates=coords), 
+                                properties={"id" : 0 
+                                           }
+                                ) 
+                        )
+                        
+
+        feature_collection = FeatureCollection(features)
+        with open('%s/%s_extents.json'%(folder,name), 'w') as f:
+            dump(feature_collection, f)
+
+    ##-------------------------------## 
+
+    ##-------------------------------##       
     def index_grsort(self):
+        """ assemble data into [[id, centroid, extents, len, points ]]
+
+            get total extents of all data while running  
+
+        """
+
+
+
         #print("indexing sort buffer ")
         self.gr_sort   = []
-        self.gr_sorted = [] 
+
         #print(" gr_polys buffer has %s polys in it "%len(self.gr_polys) )
         for ply in self.gr_polys:
-            self.gr_sort.append([ply[0][0], ply[0][1], ply] )
+            minx = 0
+            miny = 0         
+            maxx = 0
+            maxy = 0
 
+            #print('### len ', len(ply))
+            for i,pt in enumerate(ply):
+                if i == 0:
+                    minx=pt[0]
+                    maxx=pt[0]
+                    miny=pt[1]
+                    maxy=pt[1]
+
+                if pt[0]<minx:
+                    minx=pt[0]    
+                if pt[0]>maxx:
+                    maxx=pt[0]  
+                if pt[1]<miny:
+                    miny=pt[1]  
+                if pt[1]>maxy:
+                    maxy=pt[1] 
+            
+            if minx<self.total_minx:
+                self.total_minx=minx
+            if miny<self.total_miny:
+                self.total_miny=miny
+            if maxx>self.total_maxx:
+                self.total_maxx=maxx
+            if maxy>self.total_maxy:
+                self.total_maxy=maxy
+
+            self.gr_sort.append([i, self.centroid_pts(ply) ,[minx,maxx,miny,maxy], len(ply), ply])
+
+            #print("poly extents %s %s %s %s "%(minx, maxx, miny, maxy) )
+            
+        print("total extents %s %s %s %s "%(self.total_minx, self.total_maxx, self.total_miny, self.total_maxy) )
+
+  
+    ##-------------------------------##
     def sort_grpolys(self, axis):
-        # list of [x,y, (pts)] #firstpt_x firstpt_y (pts)
-      
-        from operator import itemgetter
-        
-        if axis =="x":
-            self.gr_sort = sorted(self.gr_sort,key=itemgetter(0))
-        
-        if axis =="y":        
-            self.gr_sort = sorted(self.gr_sort,key=itemgetter(1))
+        for gr in self.gr_polys:
+            print(gr)
+        #b-space 
+  
 
+ 
 
 
     ##-------------------------------##

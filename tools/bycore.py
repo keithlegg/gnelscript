@@ -10,13 +10,11 @@
 
 import sys
 
+TOOLSPATH = '/Users/klegg/serv/gnolmec'
 
-TOOLPATH = 'PUT_YOUR_FILES_HERE'
+sys.path.append(TOOLSPATH)
 
-
-sys.path.append(TOOLPATH)
-
-BYCORE_OBJ_OUT= '%s/3d_obj/BYCORE.obj'%TOOLPATH
+BYCORE_OBJ_OUT= '%s/3d_obj/BYCORE.obj'%TOOLSPATH
 
 
 from gnelscript.pygfx.math_ops import  *

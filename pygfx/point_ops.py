@@ -490,7 +490,7 @@ class point_operator(object):
 
     ##-------------------------------------------##
     def extents_fr_bbox(self, bbox, offset=None, periodic=False):
-        """ return pt geom from a bbox  
+        """ return 2d pts geom from a 2d bbox  
             
             args:
                bbox   - iterable of 4 numbers (PIL bbox [left, top, right, bottom]) 
