@@ -312,8 +312,7 @@ def geojson_to_ngc(folder, fnames, onefile=False):
                 kiparser.index_grsort()
                 kiparser.export_sorted_centroids(fspl[0], folder)
                 kiparser.export_sorted_extents(fspl[0], folder)
-                kiparser.show_buffers()
-
+                #kiparser.show_buffers()
                 kiparser.make_grid(fspl[0], folder, 5, 5)
 
             ##--

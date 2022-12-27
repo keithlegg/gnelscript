@@ -2,7 +2,7 @@ import geojson
 from geojson import Point, Feature, LineString, FeatureCollection, dump
 
 
-
+from gnelscript.pygfx.math_ops import  *
 from gnelscript.pygfx.grid_ops import  *
 from gnelscript.pygfx.obj3d import  *
 
@@ -23,6 +23,7 @@ class generic_ngc(object3d):
 
     def __init__(self):
         super().__init__()  
+        self.mu          = math_util()
         self.tesl        = teselator()
         self.pop2d       = point_operator_2d() 
 
@@ -101,11 +102,63 @@ class generic_ngc(object3d):
         ##---
         # add attrs to derived DAG graph nodes 
         for c in self.tesl.nodes:
-            c.addattr('centroid', (c.coord_x+(c.width/2), c.coord_y+(c.height/2)) )
-            c.addattr('width', c.width )
+            cen = (c.coord_x+(c.width/2), c.coord_y+(c.height/2))
+            c.addattr('centroid', cen )
+            c.addattr('width' , c.width )
             c.addattr('height', c.height )
 
+            if len(self.gr_sort):
+                for sort in self.gr_sort:
+                    # [[id, centroid, extents, len, points ]]
+                    dist = self.mu.calc_line_length(cen[0], cen[1], sort[1][0], sort[1][1])
+                    if dist < 2:
+                        print(c.name, sort[0], dist)
 
+
+
+    ##-------------------------------##
+    def mc_escher(self):
+        """ DAG + point generator = tesselator """
+        for cell in self.tesl.nodes:
+            cen = cell.getattrib('centroid')
+            #print('# ', cell.name,' ', cen )
+            
+            pts = self.pop2d.calc_circle_2d(cen[0],cen[1], .75, periodic=True, spokes=3)
+            cell.points.extend( pts )
+
+            pts2 = self.pop2d.batch_rotate_pts_2d( pts, cen, 180 )
+            cell.points.extend( pts2 )
+
+            pts3 = self.pop2d.calc_circle_2d(cen[0],cen[1], 1.5, periodic=True, spokes=12)
+            cell.points.extend( pts3 )
+
+    ##-------------------------------##
+    def sample_data(self):
+        """ DAG + point generator = tesselator """
+        for cell in self.tesl.nodes:
+            cen = cell.getattrib('centroid')
+            #print('# ', cell.name,' ', cen )
+            
+            pts = self.pop2d.calc_circle_2d(cen[0],cen[1], .75, periodic=True, spokes=6)
+            cell.points.extend( pts )
+
+            pts2 = self.pop2d.batch_rotate_pts_2d( pts, cen, 180 )
+            cell.points.extend( pts2 )
+
+
+
+
+    ##-------------------------------##
+    def show_buffers(self):
+
+        #[[id, centroid, extents, len, points ]
+        #for ply in self.gr_sort:
+        #    print("%s %s %s "%(ply[0], ply[1], len(ply[2]) )) 
+        print('#################')
+        print('size gr_polys %s'%len(self.gr_polys))
+        print('size gr_sort %s'%len(self.gr_sort))
+    
+    ##-------------------------------##
     def export_grid_gfx(self, name, folder ):
         #export cells as graphics  
 
@@ -131,24 +184,6 @@ class generic_ngc(object3d):
         feature_collection = FeatureCollection(features)
         with open('%s/%s_cells.json'%(folder, name), 'w') as f:
             dump(feature_collection, f)
-
-    ##-------------------------------##
-    def sample_data(self):
-        for cell in self.tesl.nodes:
-            cen = cell.getattrib('centroid')
-            #print('# ', cell.name,' ', cen )
-            cell.points.extend( self.pop2d.calc_circle_2d(cen[0],cen[1], .5, periodic=True, spokes=5))
-
-
-    ##-------------------------------##
-    def show_buffers(self):
-
-        #[[id, centroid, extents, len, points ]
-        #for ply in self.gr_sort:
-        #    print("%s %s %s "%(ply[0], ply[1], len(ply[2]) )) 
-        print('#################')
-        print('size gr_polys %s'%len(self.gr_polys))
-        print('size gr_sort %s'%len(self.gr_sort))
 
     ##-------------------------------##
     def export_sorted_centroids(self, name, folder):

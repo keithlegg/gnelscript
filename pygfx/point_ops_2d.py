@@ -10,6 +10,7 @@ from gnelscript.pygfx.math_ops import math_util as mu
 class point_operator_2d(object):
     def __init__(self):
         self.mu   = mu()
+        self.dtr = self.mu.dtr
 
     """
     def rotate_points_shifted(self, points, oldpivot, newpivot, angle, doOffset=False, doRound=False):

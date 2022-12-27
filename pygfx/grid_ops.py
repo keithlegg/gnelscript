@@ -44,13 +44,11 @@ class cell(node_base):
         self.points = [] 
         self.polys  = [] 
 
-    @property
-    def bbox(self):
-        pass 
+    # @property
+    # def bbox(self):
 
-    @property
-    def centroid(self):
-        pass
+    # @property
+    # def centroid(self):
 
     @property
     def boundary_pts(self):
@@ -180,9 +178,6 @@ class teselator(data_graph):
         pass 
 
 
-
-
-# def import WKT()
 
 
 #############################################################
