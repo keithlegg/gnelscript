@@ -7,11 +7,12 @@ general tools for grids, coordinates and a little GIS even
 import os, sys, math
 
 
+
 from gnelscript.pygfx.point_ops import *
 from gnelscript.pygfx.obj3d import *
 
 from gnelscript.pygfx.point_ops_2d import *
-
+from gnelscript.pygfx.dag_ops import *
 
 #not done 
 #from gnelscript.pygfx.obj2d import *
@@ -20,12 +21,13 @@ from gnelscript.pygfx.point_ops_2d import *
 
 
 #class teselator_cell(object2d):
-class cell(object):
+class cell(node_base):
     def __init__(self, name,
                        width, height, 
                        idx_x , idx_y , idx_z, 
                        coordx, coordy, coordz 
                 ):
+        super().__init__()     
         self.name = name
 
         self.width = width
@@ -39,7 +41,8 @@ class cell(object):
         self.cell_y = idx_y
         self.cell_z = idx_z
 
-        self.geom = [] 
+        self.points = [] 
+        self.polys  = [] 
 
     @property
     def bbox(self):
@@ -68,15 +71,13 @@ class cell(object):
         return shifted
 
 
-
-
 ##------------------------------##
 
 
-class teselator(object):
+class teselator(data_graph):
 
     def __init__(self):
-        self.cells = []
+        super().__init__()         
 
         #dimensions of 2d grid
         self.width  = 0
@@ -94,10 +95,10 @@ class teselator(object):
         self.maxy = 0
     
     def show(self):
-        for c in self.cells:
+        for c in self.nodes:
             print("# name %s %s %s "%(c.name, c.coord_x+(c.width/2), c.coord_y+(c.height/2) ) )
 
-    def set_extents(self, bbox):
+    def _set_extents(self, bbox):
         """ set global extents for generating data 
             based on PIL coordinate which is [left, top, right, bottom] 
             [minx, miny, maxx, maxy]  
@@ -128,7 +129,8 @@ class teselator(object):
                  width, height,
                  idx_x, idx_y, idx_z, 
                  coordx, coordy, 0)
-        self.cells.append(c)
+
+        self.add(c)
 
 
     def build_2d_cells(self, numx, numy, scale=1):

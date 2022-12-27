@@ -2,36 +2,83 @@ import codecs
 import os
 import re
 
-from gnelscript.pygfx.point_ops import *
+from pathlib import Path
+
+#from gnelscript.pygfx.point_ops import *
+
+
+""" 
+
+    THIS CODE IS IN NEED OF A REWRITE 
+
+    TODO:
+
+        make full on scene graph? 
+        
+        get rid of "obj" and "name" modes - just check input type 
+        pass walk callback 
+        cache data on nodes like:
+            depth 
+            ..?
+
+        WHY THE HELL DO WE HAVE "PARENT_BUFFER_SCAN" 
+
+        ADD ATTRS TO GRAPH ITSELF 
+
+        ENFORCE RECURSION ERRORS - IE - prnt('chet','jones').prnt('jones','chet')
+            -parent functon among others 
+
+        clone branch 
+
+        clone_branch as new tree
+
+        graft_tree as branch
+
+        delete branch  
+        
+        add_node_as_leaf 
+
+
+"""
 
   
 
 
-def new_stack (graphobj=None, loadfile=None): 
+def new_stack (graphobj=None): 
     """ return a recursively nestable graph interface 
         in oder to "prime the pump" and launch a dagop stack
         we need to have an a dagop object with a data_tree passed in
         This function exists to bootstrap that process  
     """
-   # print('%s, %s'%( graphobj,loadfile) )
-    if graphobj:
-        DG  = data_graph(graphobj)
-        return dagop(DG) 
-          
-    DG  = data_graph('dd')
-    if loadfile == None:
-        return dagop(DG)
-    if loadfile != None:
-        DG.load_graph_file(loadfile)
-        return dagop(DG)
+
+    if graphobj is None:
+        return dagop(data_graph('dd')) 
+
+    if type(graphobj)==data_graph:
+        return dagop(graphobj)
+
+    if type(graphobj)==str:
+        path = Path(graphobj)
+
+        if path.is_file():
+            DG = data_graph('dd')
+            DG.load_graph_file(graphobj)
+            return dagop(DG)
+        
+        else:
+            DG  = data_graph(graphobj)
+            return dagop(DG) 
+      
+
+
        
 
-######################################################################
+##-------------------------------------##
 class dagop(object):
     """ DAG operator- interface to the node and tree classes 
         self-referential, stackable and fun to play with 
 
-        Would be really bitch'n to --->  add a history component to this 
+        idea to explore ->  add a history component to this 
         so each graph returns a "stack" of operations that becomes 
         a modular instruction to reuse
     """
@@ -47,10 +94,7 @@ class dagop(object):
         for newnod in other.__getNodes():
             self.DG.add( newnod )
         return self.DG
-         
-    def __getNodes( self ):
-        return self.DG.getnodes()
-        
+    
     def __get( self, nod ):
         self.DG.get( nod )
         return self.DG
@@ -67,25 +111,27 @@ class dagop(object):
     def __parent( self, cnode, pnode ):
         self.DG.parent(cnode,pnode)
         return self.DG
-    
-    #i dont think we need this but a typo led me here, maybe a good idea
-    #def __parentNode( self, cnode, pnode ):
-    #    self.DG.parent(cnode,pnode)
-    #    return self.DG
-
 
     def __addattr( self, nodename, attrname, attrval ):
         #self.DG.parent_name(cnode,pnode)
         return self.DG
 
-    #attach other tress as a branch 
+    ##--------------------
+    # non recursive functions 
+
+    def __get_nodes( self ):
+        return self.DG.getnodes()
+
+    ##--------------------
+
+    #DEBUG - NOT DONE - attach other tress as a branch 
     def attach_branch( self, insert_point, BRANCH ):
         #for node in BRANCH.walk():
             #add node to this branch
         #parent root node to inser_point 
         return self.DG
 
-    #save a branch as a tree
+    #DEBUG - NOT DONE - save a branch as a tree
     def export_branch( self, insert_point, BRANCH ):
         #for node in BRANCH.walk():
             #add node to this branch with parenting, links, and attrs
@@ -98,8 +144,8 @@ class dagop(object):
         #parent root node to inser_point 
         return self.DG
 
-      ############################
-      #for debugging
+    ##--------------------
+    #for debugging
     def pause(self):
        print('debug pause')
        raw_input()
@@ -115,17 +161,20 @@ class dagop(object):
        self.DG.save_graph_file(graphfile)
        return dagop(self.DG)
       #######
+
+    #DEBUG - NOT DONE -  
     def rotate(self, node, rotation):
         print('rotating node %s')%node
         #self.__createNode(name,type)
         return dagop(self.DG)
 
+    #DEBUG - NOT DONE -
     def move(self, node, translation):
         print('moving node %s'%node)
         #self.__createNode(name,type)
         return dagop(self.DG)
      
-    def addn(self, name, type):
+    def adn(self, name, type):
         print('adding node %s type %s'%(name, type) )
         self.__create(name,type)
         return dagop(self.DG)
@@ -157,7 +206,8 @@ class dagop(object):
     
     def gtn(self, nod):
        return self.DG.getnodes( nod )
-######################################################################
+
+##-------------------------------------##
 class data_graph(object):
     def __init__( self, graphnamevar='dft_name' ):
         self.parse_object  = basic_parser() #to be continued (XML,etc) 
@@ -186,7 +236,13 @@ class data_graph(object):
     def setupwalk(self):
         self.walkbuffer    =[]   #for graph walking
         self.walkindent    =0    #for graph walking
-       
+
+    def getnodes(self):
+      return self.nodes
+
+    def setname(self, name):
+      self.name=str(name)
+
     # def unlink(self,node1,node2):
     # def link_name(self,node1,node2):   
     # def copy_node(self,nodetocopy,nameofnew):
@@ -233,10 +289,8 @@ class data_graph(object):
 
     def exists (self, nod):
         for node in self.nodes:
-
             if node is nod:
                 return True  
-
             if type(nod) is node_base:
                 if node.name==nod.name:
                     return True     
@@ -246,7 +300,6 @@ class data_graph(object):
             if type(nod) is str:#unicode:
                 if node.name==nod:
                     return True 
-                  
         return False
 
     def get (self, nod):
@@ -261,9 +314,6 @@ class data_graph(object):
                     if node.name==nod.name:
                         return node     
                 if type(nod) is str:
-                    if node.name==nod:
-                        return node 
-                if type(nod) is str: #unicode:
                     if node.name==nod:
                         return node 
         
@@ -291,10 +341,10 @@ class data_graph(object):
         if node !=None:
             return node.settype( ntype )
              
-    def getnumber( self ):
+    def getnumber(self):
         return len(self.nodes)
 
-    def getnodenames( self ):
+    def getnodenames(self):
         output =[]
         for node in self.nodes:
             output.append(node.name)
@@ -304,19 +354,12 @@ class data_graph(object):
     #PARENT (DIRECT OBJECT METHOD)
     def parent(self, node1, node2):
         node1 = self.get(node1)
-        node2 = self.get(node2)
+        node2 = self.get(node2)            
+
         if node1 == None or node2 ==None:
             print('##### parent: nodes not found')
             return None
-        # if not node1 == 0:
-        #     raise #'node '+ node1.name + ' DOES NOT EXIST'
-        # if self.exists(node2)==0:
-        #     raise #'node '+ node2.name + ' DOES NOT EXIST'
-        
-        #if (self.is_parent_of( node1, node2) ):
-        #     print 'can not parent a node to its own child ' 
-        #if (self.is_parent_of(node1,node2)==None):
-        
+    
         node1.hasparents = 1
         node1.parent.append('')
         node1.parent[0]= (node2.name)
@@ -406,12 +449,6 @@ class data_graph(object):
          if cnode:
            cnode.parent = ( [nodobj.name] )
 
-    def getnodes(self):
-      return self.nodes
-
-    def setname(self, name):
-      self.name=str(name)
-
     def set_attr(self, nodename, attr, value):
       node = self.get( nodename )
       if node ==None:
@@ -451,6 +488,9 @@ class data_graph(object):
           self.last_created = newnode
           
       return newnode
+
+    ################
+    ## COULD MERGE THESE 
 
     def createnode_parent(self, name, parentnode):
       """ create a node and parent it to an existing node """
@@ -492,7 +532,9 @@ class data_graph(object):
         self.last_created = newnode
       #return node so we can still work with it
       return newnode
-       
+
+    ################       
+
     def insert_node_parent(self, nodeobj, parname):
       PAR = self.get(parname)
       if PAR == None:
@@ -548,8 +590,7 @@ class data_graph(object):
          if item == parentnode:
             return True
       return False
-   
-   
+      
    
     def list_parents_name (self, nodename):
        NOBJ = self.get(nodename)
@@ -1062,7 +1103,8 @@ class data_graph(object):
            upstream  = inputnod
            return upstream.getdatafolder()
        return None #DEBUG
-######################################################################
+
+##-------------------------------------##
 class node_base(object): 
     #def delete an attribute from a node
    
@@ -1401,7 +1443,8 @@ class node_base(object):
        self.rotx = fbt[0]
        self.roty = fbt[1]
        self.rotz = fbt[2]
-######################################################################
+
+##-------------------------------------##
 class data_tree_file_io (object):
 
     def __init__(self):
@@ -1433,7 +1476,8 @@ class data_tree_file_io (object):
                     #lines = x.split(" ")
                     nonewline = x.split('\n')
                     self.filecontents_list.append(nonewline[0])
-######################################################################
+
+##-------------------------------------##
 class basic_parser( object ):
     
     def __init__(self):

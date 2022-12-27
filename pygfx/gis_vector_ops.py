@@ -23,7 +23,9 @@ class generic_ngc(object3d):
 
     def __init__(self):
         super().__init__()  
-        self.tesl          = teselator()
+        self.tesl        = teselator()
+        self.pop2d       = point_operator_2d() 
+
         self.loadbuffer    = []  #list of list of points 
         self.gr_polys      = []  #list of list of points 
 
@@ -54,8 +56,27 @@ class generic_ngc(object3d):
     #1 - DAG - b tree 
     #2 - parent geom to nodes - add matrix scenegraph  
     #3-  crazy f-ing animation potential - vector ala cyriak  
-    
-    def set_extents(self, bbox):
+
+    ##-------------------------------##
+    #TODO: 
+
+    ## def import_polys(self, pts):
+
+    ## def translate(self, pts):
+    ##     global/ indexer ?
+    ## def rotate(self, pts):
+    ##     global/ indexer ?
+    ## def scale(self, pts):
+    ##     global/ indexer ?
+
+    ## def remove_polys(self, pts):
+    ##     indexer 
+    ## def export_polys(self, pts):
+    ##     indexer  
+
+
+    ##-------------------------------##    
+    def _set_extents(self, bbox):
         """ set global extents for generating data 
             based on PIL coordinate which is [left, top, right, bottom] 
             [minx, miny, maxx, maxy]  
@@ -67,65 +88,56 @@ class generic_ngc(object3d):
         self.total_maxy = bbox[3]
 
     ##-------------------------------##
-    def make_grid(self, folder, xcuts, ycuts, bbox=None):
+    def make_grid(self, xcuts, ycuts, bbox=None):
         """ chop a square into smaller squares """
 
-
-
         if bbox:
-            self.tesl.set_extents(bbox) 
+            self.tesl._set_extents(bbox) 
         else:
-            self.tesl.set_extents([self.total_minx, self.total_miny, self.total_maxx, self.total_maxy]) 
+            self.tesl._set_extents([self.total_minx, self.total_miny, self.total_maxx, self.total_maxy]) 
 
         self.tesl.build_2d_cells(xcuts, ycuts)
 
-        export_gfx = True 
-        
         ##---
-        if export_gfx:
-            #export cells as graphics  
-            features = []
-            for c in self.tesl.cells:
-                #DEBUG - points are not transformed - they always start at 0,0  
-                features.append(Feature(geometry=Point((c.coord_x+(c.width/2), c.coord_y+(c.height/2))), 
-                                        properties={"id":c.name} 
-                                       )
-                            )
-
-                coords = c.boundary_pts
-                features.append(Feature(geometry=LineString(coordinates=coords), 
-                              properties={"id" : 0 
-                                         }
-                              ) 
-                      )
-
-            # # #total extents  
-            # coords = self.extents_fr_bbox([self.total_minx,self.total_miny,self.total_maxx,self.total_maxy], periodic=True)
-            # features.append(Feature(geometry=LineString(coordinates=coords), 
-            #                      properties={"id" : 0 
-            #                                 }
-            #                      ) 
-            #              )
+        # add attrs to derived DAG graph nodes 
+        for c in self.tesl.nodes:
+            c.addattr('centroid', (c.coord_x+(c.width/2), c.coord_y+(c.height/2)) )
+            c.addattr('width', c.width )
+            c.addattr('height', c.height )
 
 
-            feature_collection = FeatureCollection(features)
-            with open('%s/_cells.json'%(folder), 'w') as f:
-                dump(feature_collection, f)
+    def export_grid_gfx(self, name, folder ):
+        #export cells as graphics  
 
+        features = []
+        for c in self.tesl.nodes:
+            features.append(Feature(geometry=Point((c.coord_x+(c.width/2), c.coord_y+(c.height/2))), 
+                                    properties={"id":c.name} 
+                                   )
+                        )
+
+            features.append(Feature(geometry=LineString(coordinates=c.boundary_pts), 
+                          properties={"id" : 0 
+                                     }
+                          ) 
+                  )
+
+            features.append(Feature(geometry=LineString(coordinates=c.points), 
+                          properties={"id" : 0 
+                                     }
+                          ) 
+                  )
+
+        feature_collection = FeatureCollection(features)
+        with open('%s/%s_cells.json'%(folder, name), 'w') as f:
+            dump(feature_collection, f)
 
     ##-------------------------------##
     def sample_data(self):
-        # random = []
-        
-        # extents 
-        # self.total_minx 
-        # self.total_miny          
-        # self.total_maxx 
-        # self.total_maxy 
-
-        pass 
-
-
+        for cell in self.tesl.nodes:
+            cen = cell.getattrib('centroid')
+            #print('# ', cell.name,' ', cen )
+            cell.points.extend( self.pop2d.calc_circle_2d(cen[0],cen[1], .5, periodic=True, spokes=5))
 
 
     ##-------------------------------##
@@ -138,18 +150,9 @@ class generic_ngc(object3d):
         print('size gr_polys %s'%len(self.gr_polys))
         print('size gr_sort %s'%len(self.gr_sort))
 
-
-    ##-------------------------------##
-    # def load_sortbuffer(self):
-    #     #print("loading sort buffer ")
-    #     self.gr_polys = []
-    #     for ply in self.gr_sort:
-    #         self.gr_polys.append(ply[2])
-    #     #print(" gr_sort buffer has %s polys in it "%len(self.gr_sort) )
-    #     #print(" gr_polys buffer has %s polys in it "%len(self.gr_polys) )
-
     ##-------------------------------##
     def export_sorted_centroids(self, name, folder):
+        """ export a centroid for each polygon as a geojson file """
 
         features = []
 
@@ -158,11 +161,12 @@ class generic_ngc(object3d):
             features.append(Feature(geometry=Point((s[1][0],s[1][1])), properties={"id":i, "len" : len(s[4]) } ))
 
         feature_collection = FeatureCollection(features)
-        with open('%s/%s_centroids.json'%(folder,name), 'w') as f:
+        with open('%s/%s_ply_cntrs.json'%(folder,name), 'w') as f:
             dump(feature_collection, f)
 
     ##-------------------------------##
     def export_sorted_extents(self, name, folder):
+        """ export the data extents as a geojson polyline """
 
         features = []
 
@@ -187,20 +191,15 @@ class generic_ngc(object3d):
                         
 
         feature_collection = FeatureCollection(features)
-        with open('%s/%s_extents.json'%(folder,name), 'w') as f:
+        with open('%s/%s_ply_xtntx.json'%(folder,name), 'w') as f:
             dump(feature_collection, f)
-
-    ##-------------------------------## 
 
     ##-------------------------------##       
     def index_grsort(self):
-        """ assemble data into [[id, centroid, extents, len, points ]]
+        """ assemble data into [[id, centroid, extents, len, points ]] - put that in self.gr_sort   
 
-            get total extents of all data while running  
-
+            set total extents of all data while running  
         """
-
-
 
         #print("indexing sort buffer ")
         self.gr_sort   = []
@@ -244,15 +243,6 @@ class generic_ngc(object3d):
             
         print("total extents %s %s %s %s "%(self.total_minx, self.total_maxx, self.total_miny, self.total_maxy) )
 
-  
-    ##-------------------------------##
-    def sort_grpolys(self, axis):
-        for gr in self.gr_polys:
-            print(gr)
-        #b-space 
-  
-
-
     ##-------------------------------##
     def scrub(self, inp):
         """ clean up parsed characters from kicad file """
@@ -265,13 +255,6 @@ class generic_ngc(object3d):
         out = out.replace('\"','')
         out = out.replace('\'','')
         return out
-
-    ## def insert_pts(self, pts):
-    ##     """ insert points into gr_polys 
-    ##         fix rounding errors 
-    ##         fix anything else .... 
-    ##     """
-    ##     self.gr_polys.append(clean)
 
     ##-------------------------------##
     def save_line_obj(self, name):
@@ -328,7 +311,6 @@ class generic_ngc(object3d):
         #print(self.rotation)
         self.show() 
 
-
     ##-------------------------------##
     def grply_inspect(self, index=None):
         """
@@ -355,8 +337,6 @@ class generic_ngc(object3d):
 
         else:
             pass 
-
-
 
     ##-------------------------------##
     def load_geojson(self, inputfile, zaxis, getfids=None, getids=None):
@@ -499,7 +479,7 @@ class generic_ngc(object3d):
         ####################
         #not perfect - it will miss things that are longer than one line!
         
-        print('######## num geometry elements read ', len(geometry ) )
+        print('## ## num geometry elements read ', len(geometry ) )
         for p in geometry:
             tmp = []
             #print("### ", p )
@@ -512,29 +492,22 @@ class generic_ngc(object3d):
     ##-------------------------------##
     def calculate_paths(self, do_retracts=True):
         """ 
-            DEBUG - it seems that this just makes a single line with retract caclulated  
-            convert the raw points read from kicad into a usuable path(s) with retract 
+            this walks self.gr_poly and builds an OBJ and NGC file in self.outfile
+
 
             https://linuxcnc.org/docs/html/gcode/g-code.html
-
             Top 10 tasty GCODE commands:
-                
                 S - surface speed
                 G20 (Use inch)
                 G21 (Use mm)
                 G90 (Set Absolute Coordinates)
-
                 G0 -  Rapid Move
                 G1 -  Linear Move
-
                 M3, M4, M5  S ($)   Spindle Control
                 M6 - 
                 M9 - 
                 M3 - 
-
-
                 M2 - program end 
-
         """
 
         lastpt = (0,0,0)
@@ -560,9 +533,7 @@ class generic_ngc(object3d):
         self.outfile.append('  ')
         self.outfile.append('(exporting filled polygons )')
 
-        ##-----------------------------------------##
         # build the gcode up with simple linear movements 
-
         ###################################################
 
         #DEBUG - FILL_POLYS ARE A LAYOVER FROM KICAD STUFF - UNTESTED 
@@ -642,7 +613,6 @@ class generic_ngc(object3d):
         # rapid move at end 
         self.outfile.append('m2') #program end
 
-
     ##-------------------------------##
     def export_ngc(self, filename):
 
@@ -651,7 +621,6 @@ class generic_ngc(object3d):
         for line in self.outfile: 
             fobj.write(line+'\n')
         fobj.close()
-
 
     ##-------------------------------##
     def import_ngc(self, filename):
@@ -690,7 +659,7 @@ class generic_ngc(object3d):
         ####################
         #not perfect - it will miss things that are longer than one line!
         
-        print('######## num geometry elements read ', len(geometry ) )
+        print('## ## num geometry elements read ', len(geometry ) )
         for p in geometry:
             tmp = []
             #print("### ", p )
