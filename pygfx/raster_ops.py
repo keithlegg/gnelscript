@@ -107,10 +107,14 @@ class raster_op(object):
    
     def read_buffer(self, pilBuffer):
         #make sure you pass a PIL Image object 
-        self.fb = pilBuffer
-        self.res_x = pilBuffer.size[0]
-        self.res_y = pilBuffer.size[1] 
-        #print("debug raster op buffer read ", self.fb.show() )
+        if type(pilBuffer) == Image.Image:
+            self.fb = pilBuffer
+            self.res_x = pilBuffer.size[0]
+            self.res_y = pilBuffer.size[1] 
+            #print("debug raster op buffer read ", self.fb.show() )
+        else:
+            print(type(pilBuffer))
+            raise ValueError('object passed to read_buffer that was not a PIL Image') 
 
     def invert_bw(self):
         self.invert()
@@ -489,8 +493,6 @@ class pixel_op (raster_op):
         #    y = (self.center[1]+origin[1]) + (pt[1]*scale) * invert 
         #    
         #    transformed_pts.append( (x,y) ) 
-        
-        #print('### ', pts )
         self.connect_the_dots( transformed_pts, (230, 200, 0 ), 1 )
 
     ##---------------------------------------------## 
@@ -586,6 +588,8 @@ class pixel_op (raster_op):
             self.read_buffer(framebuffer)
         else:
             framebuffer= self.fb
+        
+
 
         dpix = framebuffer.load() 
         for x in range(self.res_x):

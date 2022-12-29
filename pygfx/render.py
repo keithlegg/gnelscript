@@ -32,7 +32,7 @@ class render3d(object):
         self.pg   = polygon_operator()      #use this for the matrix rotation and more
         self.m33  = matrix33()       
         self.m44  = matrix44()
-        self.fb   = pixel_op()   #framebuffer and raster freinds
+        self.pixop   = pixel_op()   #framebuffer and raster freinds
         
         self.rp   = []          # render path data  (lines)
         self.rpts = []          # render point data (points)
@@ -41,10 +41,10 @@ class render3d(object):
 
         if framebuffer==None:
             self.res = [resx, resy]
-            self.fb.create_buffer(resx, resy)
+            self.pixop.create_buffer(resx, resy)
         
         if framebuffer:
-            self.fb = framebuffer
+            self.pixop = framebuffer
             self.res = [framebuffer.res_x, framebuffer.res_y]
 
 
@@ -68,7 +68,7 @@ class render3d(object):
     ## ## ## ## ## 
     def save_image(self,filename='output.png', noalpha=True):
         self.post_process()
-        self.fb.save(filename, noalpha=noalpha)     
+        self.pixop.save(filename, noalpha=noalpha)     
         
 
 
@@ -188,11 +188,11 @@ class simple_render(object):
         
     """
 
-    def __init__(self, resx=800, resy=600, framebuffer=None):
+    def __init__(self, resx=800, resy=600, pixop=None):
         self.pg   = polygon_operator()      #use this for the matrix rotation and more
         self.m33  = matrix33()       
         self.m44  = matrix44()
-        self.fb   = pixel_op()   #framebuffer and raster freinds
+        self.pixop   = pixel_op()   #framebuffer and raster freinds
         
         self.rp   = []          # render path data  (lines)
         self.rpts = []          # render point data (points)
@@ -212,15 +212,14 @@ class simple_render(object):
         self.clip_x = [0,half_x]
         self.clip_y = [0,half_y]
 
-        if framebuffer==None:
+        if pixop==None:
             self.res = [resx, resy]
-            self.fb.create_buffer(resx, resy)
+            self.pixop.create_buffer(resx, resy)
         
-        if framebuffer:
-            self.fb = framebuffer
-            self.res = [framebuffer.res_x, framebuffer.res_y]
-
-
+        if pixop:
+            if type(pixop)==pixel_op:
+                self.pixop = pixop
+                self.res = [pixop.res_x, pixop.res_y]
 
         self.render_objects = []   # list of object3d's 
         self.lighting_vectors = [] # data about lighting - to visualize upstream from here
@@ -246,11 +245,11 @@ class simple_render(object):
     ## ## ## ## ## 
     def save_image(self,filename='output.png', noalpha=True):
         self.post_process()
-        self.fb.save(filename, noalpha=noalpha)     
+        self.pixop.save(filename, noalpha=noalpha)     
 
     def post_process(self):
         if self.SHOW_SCREEN_CLIP:
-            center = (int(self.fb.res_x/2), int(self.fb.res_y/2) )
+            center = (int(self.pixop.res_x/2), int(self.pixop.res_y/2) )
 
             cxmin = center[0]-self.clip_x[0] 
             cxmax = center[0]+self.clip_x[1] 
@@ -264,10 +263,10 @@ class simple_render(object):
             ## ]
 
 
-            self.fb.connect_the_dots( [(cxmin,cymin),(cxmax,cymax)] , (0,255,0), 2  )   
+            self.pixop.connect_the_dots( [(cxmin,cymin),(cxmax,cymax)] , (0,255,0), 2  )   
     
         #PIL USES TOP LEFT FOR (0,0) SO WE NEED TO FLIP TO CORRECT 
-        self.fb = self.fb.fb.transpose(Image.FLIP_LEFT_RIGHT) 
+        self.pixop.fb = self.pixop.fb.transpose(Image.FLIP_LEFT_RIGHT) 
 
 
     ## ## ## ## ##  
@@ -489,10 +488,13 @@ class simple_render(object):
         ###########################
         # optional framebuffer passed in so we can render on top of other images
         if framebuffer:
-            rndr_bfr = framebuffer
+            if type(framebuffer==pixel_op):
+                rndr_bfr = framebuffer
+            else:
+                raise ValueError("render_obj - wrong object type passed as framebuffer")    
         else:
             # default is to just make a new framebuffer from scratch
-            rndr_bfr = self.fb 
+            rndr_bfr = self.pixop 
             #rndr_bfr.create_buffer(res_x, res_y)#make a new image in memory
             #rndr_bfr.fill_color( (25,20,25) ) #make bg all dark 
 
@@ -529,13 +531,13 @@ class simple_render(object):
 
         #rebuild a new framebuffer with each "render pass" 
         #if you comment these 3 lines out, it renders over the old one each pass 
-        self.fb = pixel_op()
-        self.fb.create_buffer(self.res[0], self.res[1])#make a new image in memory
-        # self.fb.fill_color( (25,20,25) ) #make bg all dark
+        self.pixop = pixel_op()
+        self.pixop.create_buffer(self.res[0], self.res[1])#make a new image in memory
+        # self.pixop.fill_color( (25,20,25) ) #make bg all dark
 
         if self.render_objects:
             for obj in self.render_objects:
-                self.render_obj(color, rx, ry, rz, thick, scale, framebuffer=self.fb, object3d=obj) 
+                self.render_obj(color, rx, ry, rz, thick, scale, framebuffer=self.pixop, object3d=obj) 
 
     ## ## ## ## ## 
     def anim(self, objs, init_rots=(0,0,0), linethick=5, numframes=5, scale=150):
@@ -585,7 +587,7 @@ class simple_render(object):
         res_x = self.res[0];res_y = self.res[1]
        
         # default is to just make a new framebuffer from scratch
-        rndr_bfr = self.fb 
+        rndr_bfr = self.pixop 
         rndr_bfr.create_buffer(res_x, res_y)#make a new image in memory
         rndr_bfr.fill_color( (25,20,25) ) #make bg all dark 
 
@@ -732,8 +734,11 @@ class simple_render(object):
     def paint_line(self, points, color_fb, framebuffer=None, xoffset=0, yoffset=0, bright=1):
         """ paint a line of pixels from an image  """
 
-        dpix = framebuffer.fb.load() 
- 
+        if type(framebuffer)==pixel_op:
+            dpix = framebuffer.fb.load() 
+        else:
+            raise ValueError("paint_line wrong object passed as framebuffer ")
+
         p1 = list(points[0])    
         p2 = list(points[1])  
 
@@ -759,10 +764,6 @@ class simple_render(object):
                 pass
             pxct += 1 
 
-
-
-
-
     ## ## ## ## ##  
     def scanline(self, obj, scale=200, lightpos=(0,10,0) , texmap=None):
         """ 
@@ -772,9 +773,8 @@ class simple_render(object):
 
         polydata = self.sort_polys(obj) #pre-process polys before rendering 
 
+        output = self.pixop
 
-        output = self.fb 
-        
         output.fill_color((22,22,22))
 
         res_x = self.res[0]

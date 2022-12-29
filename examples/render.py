@@ -70,10 +70,10 @@ if NUMPY_IS_LOADED:
 #######################################################
 def vector_render(objfile):
     obj = object3d()
-    #obj.load(objfile)
+    
+    obj.load(objfile)
 
-    obj.prim_triangle( "z", (0,0,0), (0,0,0)  )
-
+    #obj.prim_triangle( "z", (0,0,0), (0,0,0)  )
 
     #PIL Images have origin in top left - so flip 
     #obj.rotate_pts( (0, 0, 180) )

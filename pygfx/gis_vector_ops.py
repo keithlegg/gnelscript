@@ -31,7 +31,7 @@ class generic_ngc(object3d):
         self.gr_polys      = []  #list of list of points 
 
         self.gr_sort       = []  #list of [(pt), (pts)]  
-        self.cut_grid     = []    
+        self.tmp_geom      = []    
 
         self.numexported = 0 
 
@@ -89,7 +89,7 @@ class generic_ngc(object3d):
         self.total_maxy = bbox[3]
 
     ##-------------------------------##
-    def make_grid(self, xcuts, ycuts, bbox=None):
+    def make_grid(self, folder, xcuts, ycuts, bbox=None):
         """ chop a square into smaller squares """
 
         if bbox:
@@ -98,6 +98,12 @@ class generic_ngc(object3d):
             self.tesl._set_extents([self.total_minx, self.total_miny, self.total_maxx, self.total_maxy]) 
 
         self.tesl.build_2d_cells(xcuts, ycuts)
+
+        
+        #temporary export of geom I HAVE TO SEE THIS BEFORE I GO TO BED!
+        features = []
+        
+        DIST_THRESH = 5.0 
 
         ##---
         # add attrs to derived DAG graph nodes 
@@ -111,10 +117,22 @@ class generic_ngc(object3d):
                 for sort in self.gr_sort:
                     # [[id, centroid, extents, len, points ]]
                     dist = self.mu.calc_line_length(cen[0], cen[1], sort[1][0], sort[1][1])
-                    if dist < 2:
-                        print(c.name, sort[0], dist)
+                    if dist < DIST_THRESH:
+                        # DEBUG CLEAN THIS UP 
+                        #print(c.name, sort[0], dist)
+                        #self.tmp_geom.append( [] )
+                        
+                        #DEBUG TODO - there is a problem of the same polygon getting added more than once 
+                        #make sure we dont export multiple times 
+                        # (check the number of points, then check thr actual points) 
 
+                        tmp_pts=[cen, sort[1]]
+                        features.append(Feature(geometry=LineString(coordinates=tmp_pts)) 
+                                       )
 
+        feature_collection = FeatureCollection(features)
+        with open('%s/_distances.json'%(folder), 'w') as f:
+            dump(feature_collection, f)
 
     ##-------------------------------##
     def mc_escher(self):
