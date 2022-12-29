@@ -4,10 +4,11 @@ from geojson import Point, Feature, LineString, FeatureCollection, dump
 
 from gnelscript.pygfx.math_ops import  *
 from gnelscript.pygfx.grid_ops import  *
-from gnelscript.pygfx.obj3d import  *
 
 from gnelscript.pygfx.raster_ops import  *
 
+from gnelscript.pygfx.obj3d import  *
+from gnelscript.pygfx.obj2d import  *
 
 
 
@@ -25,7 +26,7 @@ class generic_ngc(object3d):
         super().__init__()  
         self.mu          = math_util()
         self.tesl        = teselator()
-        self.pop2d       = point_operator_2d() 
+        self.pop2d       = object2d() 
 
         self.loadbuffer    = []  #list of list of points 
         self.gr_polys      = []  #list of list of points 
@@ -149,6 +150,21 @@ class generic_ngc(object3d):
 
             pts3 = self.pop2d.calc_circle_2d(cen[0],cen[1], 1.5, periodic=True, spokes=12)
             cell.points.extend( pts3 )
+
+    ##-------------------------------##
+    def tess_objclone(self, objfile):
+        """ DAG + point generator = tesselator """
+
+        self.pop2d.load(objfile)
+        self.pop2d.show()
+
+
+        for cell in self.tesl.nodes:
+            cen = cell.getattrib('centroid')
+            #print('# ', cell.name,' ', cen )
+            
+            pts = self.pop2d.calc_circle_2d(cen[0],cen[1], .75, periodic=True, spokes=3)
+            cell.points.extend( pts )
 
     ##-------------------------------##
     def sample_data(self):

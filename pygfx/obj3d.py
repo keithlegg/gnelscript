@@ -319,7 +319,7 @@ class object3d(polygon_operator):
 
         for v in vecs:
 
-            # somehow this gets recursive if None - exit just in case 
+            # DEBUG somehow this gets recursive if None - exit just in case 
             if v == None:
                 return None 
 

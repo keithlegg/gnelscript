@@ -703,13 +703,12 @@ class point_operator(object):
             pts_created.append( (npos[0], npos[1], npos[2]) )
         return pts_created
 
-
     ##-------------------------------------------##
     def trs_points(self, pts, translate=(0,0,0), rotate=(0,0,0), scale=(1,1,1) ):
         #UNTESTED 
 
-        #######################
-        #ROTATE FIRST 
+        ##--------------
+        #rotate
 
         rx=rotate[0]
         ry=rotate[1]
@@ -743,10 +742,10 @@ class point_operator(object):
         rot_matrix = self.m44.identity
         rot_matrix = x_matrix * tmp_matr   
  
-        rotated = self.apply_matrix_pts (pts, m44=rot_matrix) 
+        pts = self.apply_matrix_pts (pts, m44=rot_matrix) 
 
-        ###############################
-        #TRANSLATE SECOND 
+        ##--------------
+        #translate 
         tmp = []
         for pt in pts: 
             x = pt[0] + translate[0]
@@ -756,8 +755,8 @@ class point_operator(object):
 
         pts = tmp 
 
-        ###############################
-        #SCALE LAST 
+        ##--------------
+        #scale 
     
         # build a scale matrix 
         sc_m33 = self.m33.identity
@@ -927,6 +926,16 @@ class polygon_operator(point_operator):
 
         self.exprt_ply_idx   = 1 #obj is NOT zero indexed
         #self.exprt_pnt_idx   = 0 #pts ARE zero indexed (everything BUT .obj face idx's are)
+
+    ##-------------------------------------------##
+    def move(self, x,y,z ):
+        # ( pts, translate=(0,0,0), rotate=(0,0,0), scale=(1,1,1) ):
+        self.points = self.trs_points(self.points, (x,y,z) )
+
+    ##-------------------------------------------##
+    def rotate(self, x,y,z ):
+        # ( pts, translate=(0,0,0), rotate=(0,0,0), scale=(1,1,1) ):
+        self.points = self.trs_points(self.points,translate=(0,0,0), rotate=(x,y,z), scale=(1,1,1) )
 
     ##-------------------------------------------##  
     def z_sort(self, reverse=False):
@@ -1709,17 +1718,17 @@ class polygon_operator(point_operator):
 
         lastidx = len(self.points)
 
-        # make sure num points is divisable byt two, or ignore last one? 
-        
-        #print(pts)
+        # DEBUG make sure num points is divisible by two, or ignore last one? 
 
         #look at first point and assume all data is similar
+        #works with 2D data only 
         if len(pts[0])==2:
             #print("insert_line: data appears to be 2D")
             for i,pt in enumerate(pts):
-                if i>0:
-                    self.points.append( (pts[i][0], pts[i][1],0) )
+                self.points.append( (pts[i][0], pts[i][1], 0) )
+                if i%2==0:
                     self.polygons.append( [lastidx+1, lastidx+2] ) 
+
 
         if len(pts[0])==3:
             self.points.extend(pts)

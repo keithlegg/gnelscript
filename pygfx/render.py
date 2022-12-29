@@ -242,7 +242,7 @@ class simple_render(object):
         self.COLOR_MODE           = 'flat'    ####'flat', 'zdepth',  'normal' 
         ###############################################
 
-    ## ## ## ## ## 
+    ##--------------------------------## 
     def save_image(self,filename='output.png', noalpha=True):
         self.post_process()
         self.pixop.save(filename, noalpha=noalpha)     
@@ -269,7 +269,7 @@ class simple_render(object):
         self.pixop.fb = self.pixop.fb.transpose(Image.FLIP_LEFT_RIGHT) 
 
 
-    ## ## ## ## ##  
+    ##--------------------------------##  
     def project_points(self, object3d,  rx, ry, rz, scale, res_x=None, res_y=None):
         """
            project 3D point geometry into 2D
@@ -323,7 +323,7 @@ class simple_render(object):
 
         return points_projected
 
-    ## ## ## ## ##  
+    ##--------------------------------##   
     def project_polygons(self, object3d,  rx, ry, rz, scale, res_x=None, res_y=None):
         """
           rotate and project 3D line geometry into 2D.
@@ -471,7 +471,7 @@ class simple_render(object):
 
         return lines_to_draw
 
-    ## ## ## ## ## 
+    ##--------------------------------## 
     def render_obj (self, color, rx, ry, rz, thick, scale, framebuffer=None, object3d =None):
         """ 
             render a single object 
@@ -511,11 +511,9 @@ class simple_render(object):
                 
                 rndr_bfr.connect_the_dots( l, color, int(thick/2) )  #points, color, thickness
 
-                ## DEBUG FIGURE OUT HOW TO SAVE RENDER BUFFER AS 3D OBJECT    
-                ## self.vec_fr_buffer.insert_line(l)
-                ## if i==len(self.rp)-1:
-                ##     #self.vec_fr_buffer.insert_line(l)
-                ##     print(self.rp) 
+                ## DEBUG - save the renderpaths to a 3d Object     
+                self.vec_fr_buffer.insert_line(l)
+
 
         ###########################
         # render point geometry 
@@ -523,7 +521,7 @@ class simple_render(object):
             self.rpts = self.project_points(object3d, rx, ry, rz, scale, res_x, res_y)
             rndr_bfr.draw_points_batch( self.rpts ,  (255,255,0) , int(thick)        )  #points, color, thickness
    
-
+    ##--------------------------------## 
     def render_multiobj(self, color, rx, ry, rz, thick, scale):
         if not self.render_objects:
             print ('error no objects to render')
@@ -539,7 +537,7 @@ class simple_render(object):
             for obj in self.render_objects:
                 self.render_obj(color, rx, ry, rz, thick, scale, framebuffer=self.pixop, object3d=obj) 
 
-    ## ## ## ## ## 
+    ##--------------------------------## 
     def anim(self, objs, init_rots=(0,0,0), linethick=5, numframes=5, scale=150):
         """
             DEBUG - add interpolation for "keyframes"
@@ -579,7 +577,7 @@ class simple_render(object):
             self.render_multiobj((255,0,0), RX, RY+(f*step_degrees), RZ, linethick, scale ) 
             self.save_image( '%s/%s_%s.%s'%(outfolder,outfilename,f,output_type) )
 
-    ## ## ## ## ## 
+    ##--------------------------------## 
     def render_matrix_obj (self,  m33, m44, thick, scale, filename, object3d =None):
         """ high level wrapper to call render_custom_matrix """
 
@@ -606,7 +604,7 @@ class simple_render(object):
 
         rndr_bfr.save(filename) 
 
-    ## ## ## ## ##  
+    ##--------------------------------##   
     def render_custom_matrix(self, object3d, scale, m33=None, m44=None, res_x=None, res_y=None):
         """ 
             Utility for viewing matricies. Pass in a 3X3, 4X4, ( point_ops matrix or numpy ndarray )
@@ -687,7 +685,7 @@ class simple_render(object):
 
         return [points_to_draw,lines_to_draw] #points and lines at same time 
 
-
+    ##--------------------------------## 
     def sort_polys(self, obj):
         """ sorting logic is in the object3d class, 
             but this is where it gets called prior to rendering. 
@@ -730,7 +728,7 @@ class simple_render(object):
         return polydata
 
 
-
+    ##--------------------------------## 
     def paint_line(self, points, color_fb, framebuffer=None, xoffset=0, yoffset=0, bright=1):
         """ paint a line of pixels from an image  """
 
@@ -764,7 +762,7 @@ class simple_render(object):
                 pass
             pxct += 1 
 
-    ## ## ## ## ##  
+    ##--------------------------------## 
     def scanline(self, obj, scale=200, lightpos=(0,10,0) , texmap=None):
         """ 
             polydata = [ points[], polygons[], normals[] ]
@@ -932,8 +930,7 @@ class simple_render(object):
                             output.draw_fill_circle( k[0], k[1], 1, (0,0,255) )  
 
                     
-                    ###############################################
-
+                    ##--------------------------------## 
                     ## fill a polygon - test of texture mapping   
                     if self.SHOW_FACES:
                        
@@ -1007,9 +1004,8 @@ class simple_render(object):
                     output.connect_the_dots( l1, (0,255,0), 1) 
                     output.connect_the_dots( l2, (0,255,0), 1) 
                     output.connect_the_dots( l3, (0,255,0), 1)                 
-                
-        ## ## ## ## ##   
-        #output.save('scanlinez_.png') 
+        
+
 
 
 

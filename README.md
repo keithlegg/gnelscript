@@ -26,6 +26,9 @@ you chain them together.
        -  milling_ops      - process G-code files for CNC/CAM related stuff. Experimental. 
        -  kicad_ops        - parse the kicad pcb format for CNC/CAM related stuff. Experimental.
        -  gis_vector_ops   - GIS data import and export. Experimental.
+       -  grid_ops         - do things in a spatial grid like tesselations,etc - derived from dag_ops 
+
+
 
     Example files are split up by type:
        -  objects_3d          - examples of 3D rendering and 2D vector processing 
@@ -51,7 +54,7 @@ you chain them together.
 Raster tools structure:
 
     |-raster_op          - wrapper around PIL to work on whole images
-        |                  obj.fb = framebuffer = PIL Image.Image object that is being operated on 
+        |                   
         |
         |---pixel_op     - operations at pixel level - this is the .fb framebuffer used almost everywhere
 

@@ -70,9 +70,9 @@ if NUMPY_IS_LOADED:
 #######################################################
 def vector_render(objfile):
     obj = object3d()
-    
     obj.load(objfile)
-
+    obj.rotate(45,45,45)    
+    
     #obj.prim_triangle( "z", (0,0,0), (0,0,0)  )
 
     #PIL Images have origin in top left - so flip 
@@ -85,15 +85,10 @@ def vector_render(objfile):
     #GEOM types 
     #BBOX types 
     #PTGROUP types (zero index, option to shift)
-
     
     #XFROM_PTS IS BROKEN 
     #transform half of picture width (in pixels) to get to center
     #obj.xform_pts( (-200, -200, 0) )
-    
-    #TRS_POINTS SEEMS TO WORK 
-    #obj.trs_points( ply, translate=(0,0,0), rotate=(0,0,0), scale=(gs,gs,gs) ))
-    obj.points = obj.trs_points( obj.points, translate=(-3,-3,0) )
 
 
     #obj.triangulate() 
@@ -109,8 +104,8 @@ def vector_render(objfile):
     ## ropr.SHOW_EDGES         = False
     ## ropr.SHOW_FACE_CENTER   = False
     ## ropr.COLOR_MODE         = 'normal'
-    ropr.COLOR_MODE         = 'flat'
-    ropr.SHOW_EDGES         = True 
+    ropr.COLOR_MODE            = 'flat'
+    ropr.SHOW_EDGES            = True 
     ropr.SHOW_VTXS             = True 
     ropr.USE_PERSPECTIVE       = False
 
@@ -127,7 +122,9 @@ def vector_render(objfile):
     ropr.render_obj((100,0,255), 1, 1, 1, 1, render_scale, object3d=obj)
     ropr.save_image('simple_render_.png' )
 
-    ropr.vec_fr_buffer.show()
+    #ropr.vec_fr_buffer.show()
+
+    #coords are in pixels - rather huge for a model 
     ropr.vec_fr_buffer.scale_pts((.01,.01,.01))
     ropr.vec_fr_buffer.save("3d_obj/vec_buffer.obj")
     
@@ -311,18 +308,18 @@ def texmapping_test(objfile, texfile, pathout, fnum=1):
     # obj.rotate_pts( (180,0,0) )
 
     # load the texture to map to polygons 
-    img_op = pixel_op()   
+    pixop = pixel_op()   
     
     #img_op.load('tex.png') 
-    img_op.load(texfile) 
+    pixop.load(texfile) 
 
 
     #------------
     #you can do PIL operations on the images at anytime!
     """
     from PIL import ImageEnhance
-    enhancer = ImageEnhance.Brightness(img_op.fb)
-    img_op.fb = enhancer.enhance(3) #.show("Sharpness %f" % factor)
+    enhancer = ImageEnhance.Brightness(pixop.fb)
+    pixop.fb = enhancer.enhance(3) #.show("Sharpness %f" % factor)
     """
     #------------
 
@@ -345,7 +342,7 @@ def texmapping_test(objfile, texfile, pathout, fnum=1):
         persp_m44 = persp_m44.buildPerspProjMat( fnum*2,  1,     1,     10)
         obj.points = obj.apply_matrix_pts(obj.points, m44=persp_m44)
 
-    ropr.scanline(obj, render_scale, lightpos=lightpos, texmap=img_op ) 
+    ropr.scanline(obj, render_scale, lightpos=lightpos, texmap=pixop ) 
     ropr.save_image('%s/simple_render_%s.png'%(pathout,fnum))
 
 
