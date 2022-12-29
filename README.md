@@ -28,27 +28,36 @@ you chain them together.
        -  gis_vector_ops   - GIS data import and export. Experimental.
 
     Example files are split up by type:
-       -  examples            - examples of geometry processing
-       -  examples_2d         - examples of 2D rendering and 2D vector processing 
+       -  objects_3d          - examples of 3D rendering and 2D vector processing 
        -  examples_render     - examples of 3D rendering 
-       -  examples_selection  - examples of extracting portions of polygon geometry  
-       -  examples_vector     - examples of 3D vector processing
+       -  selection           - examples of extracting portions of polygon geometry  
+       -  vector              - examples of 3D vector processing
+    
 
 
     Stuff you can ignore for now :
-       -  examples_milling  - examples of G-code related tools. CNC and CAM in the future?
-       -  examples_wip      - work in progess examples 
-       -  unit_tests        - not done yet 
-       -  raytrace          - someones code I imported and am considering intergrating 
-       -  dag_ops           - directed acyclic graph, first stab at a scene graph (not working yet)
-       -  grid_ops          - nothing here yet, future home of mapping and grids 
-       -  examples_2d       - nothing here worth looking at  
-       -  render_2d         - nothing here yet, future home of 2D rendering 
+       -  examples.dag         - directed acyclic graph tools - pygfx.dag is 14 years old and needs cleanup 
+       -  examples.milling     - examples of G-code related tools. CNC and CAM in the future?
+       -  examples.wip         - work in progess examples 
+       -  examples.objects_2d  - nothing here worth looking at 
+       -  pygfx.objects_2d        - 2d is a work in progress - it will behave like all the 3D code but in 2D 
+       -  pygfx.unit_tests        - not done yet 
+       -  pygfx.raytrace          - someones code I imported and am considering intergrating 
+       -  pygfx.dag_ops           - directed acyclic graph, first stab at a scene graph (not working yet)
+       -  pygfx.render_2d         - nothing here yet, future home of 2D rendering 
 
 
 
+Raster tools structure:
 
-Overall structure:
+    |-raster_op          - wrapper around PIL to work on whole images
+        |                  obj.fb = framebuffer = PIL Image.Image object that is being operated on 
+        |
+        |---pixel_op     - operations at pixel level - this is the .fb framebuffer used almost everywhere
+
+
+
+3D objects structure:
 
     can be used along side numpy or standalone
     inside the __init__ file there is a global NUMPY_IS_LOADED to enable/disable the components that use numpy 

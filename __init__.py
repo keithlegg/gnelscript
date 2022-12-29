@@ -1,6 +1,6 @@
 
 
-GLOBAL_PROJ =''
+GLOBAL_PROJ ='/Users/klegg/serv/gnolmec'
 
 # kill switch for numpy integration 
 NUMPY_IS_LOADED = True 
