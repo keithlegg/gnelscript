@@ -137,15 +137,9 @@ class point_operator(object):
     ##-------------------------------------------## 
     def apply_matrix_pts(self, pts, m33=None, m44=None):
         """ 
-            DEBUG BAD INTERFACE! 
-             
             batch mutliply points by a matrix 
-            used for translate, rotate, and scaling. 
-            
-            Can be used for many other things as well.  
-
         """
-      
+  
         tmp_buffer = [] 
 
         # apply the transform here
@@ -477,7 +471,9 @@ class point_operator(object):
 
     ##-------------------------------------------##            
     def add_margin_bbox(self, bbox, size):
-        """ return center (x,y) from two diagonal coordinates 
+        """ BBOX is 2D [-x,-y, +x, +y ]
+
+            return center (x,y) from two diagonal coordinates 
             assuming a bbox is [left, top, right, bottom ] it "grows" the size of it 
         """
         
@@ -961,7 +957,7 @@ class polygon_operator(point_operator):
             
             
             mean = self.triangle_mean_z(tri)
-            #mean = self.centroid_pts(tri)[2]
+            #mean = self.centroid(tri)[2]
 
             if not isinstance(mean,float):
                 print('error in  z_sort - mean is NOT float ', mean )
@@ -1065,17 +1061,9 @@ class polygon_operator(point_operator):
     #def poly_seperate(self, obj):
     #    """ check for geometry that is not connected, if any found, break it off """
 
-    ##-------------------------------------------##     
-    def calc_bbox(self, ptgrp=None, facgrp=None ):
-        """ UNFINISHED  
-            get the boudning area of an object or face(s)
-        """
-        maxx = 0
-        maxy = 0
-        maxz = 0
-        
-        for p in self.points:
-            print(p)
+    ##-------------------------------------------##   
+    #def get_edge_centroid(self, f_id , e_id):
+    #    pass
 
     ##-------------------------------------------##  
     def _reindex_ply(self, f_idx, offset):
@@ -1090,28 +1078,95 @@ class polygon_operator(point_operator):
            out_face.append(i+offset)
         return tuple(out_face)
 
-    ##-------------------------------------------##   
-    #def get_edge_centroid(self, f_id , e_id):
-    #    pass
-    
-    ##-------------------------------------------##  
-    #def get_obj_centroid(self, prgrp=None, facgrp=None):
-    #    pass
-
 
     ##-------------------------------------------## 
     
     def triangle_mean_z(self, triangle):
         """ center of a triangle in 3d - used for render z sort 
-            replace with centroid_pts() ??  
+            replace with centroid() ??  
         """
         z1 = triangle[0][2]
         z2 = triangle[1][2]
         z3 = triangle[2][2]
         return (z1+z2+z3)/3
 
+    ##-------------------------------------------## 
+    def move_center(self):
+        """ 
+            pop3 = object3d()
+            pop3.load('foo.obj')
+            pop3.move_center()
+            pop3.save('bar.obj')
+        """                
+        c = self.centroid()
+        self.move(-c[0], -c[1], -c[2])
+
+    ##-------------------------------------------##  
+    @property
+    def dimensions(self, ptgrp=None):
+        """ X,Y,Z distance across object 
+
+            usage:
+
+                pop3 = object3d()
+                pop3.load('file,obj')
+                c = pop3.dimensions
+                print(c)
+
+        """
+
+        bb = self.calc_3d_bbox()
+        #[min_x, min_y, min_z, max_x, max_y, max_z ]
+        x = abs(bb[3]-bb[0])
+        y = abs(bb[4]-bb[2])
+        z = abs(bb[5]-bb[3])
+        
+        return[x,y,z]
+
+    ##-------------------------------------------## 
+    def calc_3d_bbox(self, pts=None, ptgrp=None, facgrp=None):
+        """ get 3D bounds of points (or 3d object) 
+
+            usage:
+
+                pop3 = object3d()
+                pop3.load('file,obj')
+                c = pop3.calc_3d_bbox()
+                print(c)
+
+        """
+
+        if pts is None and ptgrp is None and facgrp is None:
+            pts = self.points
+
+        #grab a point from data to initialize
+        min_x=pts[0][0]
+        min_y=pts[0][1]
+        min_z=pts[0][2]
+        max_x=pts[0][0]
+        max_y=pts[0][1]
+        max_z=pts[0][2]
+
+        for pt in pts:
+            if pt[0]<min_x:
+                min_x=pt[0]
+            if pt[0]>max_x:
+                max_x=pt[0]
+            
+            if pt[1]<min_y:
+                min_y=pt[1]
+            if pt[1]>max_y:
+                max_y=pt[1]
+
+            if pt[2]<min_z:
+                min_z=pt[2]
+            if pt[2]>max_z:
+                max_z=pt[2]
+
+        return [min_x, min_y, min_z, max_x, max_y, max_z ]
+
     ##-------------------------------------------##   
-    def centroid_pts(self, pts):
+    def centroid(self, pts=None):
         """ get 3D center of a list of points 
             (average of a list of XYZ points) 
 
@@ -1119,10 +1174,13 @@ class polygon_operator(point_operator):
 
                 pop3 = object3d()
                 pts = [(-1,0,0),(1,0,0)]
-                c = pop3.centroid_pts(pts)
+                c = pop3.centroid(pts)
                 print(c)
 
         """
+
+        if pts is None:
+            pts = self.points
 
         ptsx = []
         ptsy = []
@@ -1576,13 +1634,16 @@ class polygon_operator(point_operator):
             if the face is roundish, symetical, etc, it will work okay 
         """
         pts = self.get_face_pts(fid)
-        return self.centroid_pts(pts) 
+        return self.centroid(pts) 
 
     ##-------------------------------------------## 
     ##-------------------------------------------##  
     # operators that modify geometry data and/or build new geom 
 
-    
+
+    ##-------------------------------------------## 
+    #def auto_center():
+
     ##-------------------------------------------##  
     def apply_matrix_ptgrp(self, ptgrp, m33=None, m44=None):
         """ same as apply_matrix_pts() but for point groups 
@@ -2086,7 +2147,7 @@ class polygon_operator(point_operator):
 
         # calculate the center of each polygon
         # this will be added as a new point, center of radial mesh      
-        fac_ctr = self.centroid_pts(fac_pts)
+        fac_ctr = self.centroid(fac_pts)
         
         # offset is a spatial transform of the radial center point
         #DEBUG TODO - option to move along face normal!!  
@@ -2135,7 +2196,7 @@ class polygon_operator(point_operator):
 
             # calculate the center of each polygon
             # this will be added as a new point, center of radial mesh      
-            fac_ctr = self.centroid_pts(fac_pts)
+            fac_ctr = self.centroid(fac_pts)
             
             # offset is a spatial transform of the radial center point
             #DEBUG TODO - option to move along face normal!!  

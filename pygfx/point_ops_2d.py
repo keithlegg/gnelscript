@@ -5,12 +5,21 @@ import os
 from gnelscript import NUMPY_IS_LOADED
 
 from gnelscript.pygfx.math_ops import math_util as mu
+from gnelscript.pygfx.math_ops import NUMPY_IS_LOADED, matrix22, matrix33, vec2, vec3  
 
 
 class point_operator_2d(object):
     def __init__(self):
         self.mu   = mu()
-        self.dtr = self.mu.dtr
+        self.dtr  = self.mu.dtr
+        
+        self.m22  = matrix22()
+        self.m33  = matrix33()      
+        
+        self.vec2     = vec2()     
+        self.vec3     = vec3()  
+
+        #self.m44  = matrix44()   
 
     """
     def rotate_points_shifted(self, points, oldpivot, newpivot, angle, doOffset=False, doRound=False):
@@ -448,10 +457,113 @@ class polygon_operator_2d(point_operator_2d):
         self.pos          = [0,0]
         self.scale        = [1,1]
 
+    ##-------------------------------------------## 
+    def apply_matrix_pts(self, pts, m22=None, m33=None):
+        """ 
+            DEBUG BAD INTERFACE! 
+             
+            batch mutliply points by a matrix 
+            used for translate, rotate, and scaling. 
+            
+            Can be used for many other things as well.  
+
+        """
+      
+        tmp_buffer = [] 
+
+        # apply the transform here
+        for pt in pts: 
+
+            #print("###### PTS ", type(pt) , pt) 
+            #https://web.cse.ohio-state.edu/~shen.94/681/Site/Slides_files/transformation_review.pdf
+
+            if m33 is not None:
+                tmp_buffer.append( m33 * (pt[0], pt[1], 1) )
+            if m33 is not None:
+                tmp_buffer.append( m33 * (pt[0], pt[1], 1) )
+            #if m44 is not None:
+            #    tmp_buffer.append( m44 * pt )
+
+        return tmp_buffer
+
+    ##-------------------------------------------##
+    def trs_points(self, pts, translate=(0,0), rotate=(0,0), scale=(1,1) ):
+        """ 
+            DEBUG - NOT WORKING YET 
+
+            To combine rotation and translation in one operation one extra dimension is needed than the model requires. 
+            For planar things this is 3 components and for spatial things this is 4 components. 
+            The operators take 3 components and return 3 components requiring 3x3 matrices.
+
+
+            GO READ: 
+            https://web.cse.ohio-state.edu/~shen.94/681/Site/Slides_files/transformation_review.pdf
+
+        """
+
+        ##--------------
+        #rotate
+
+        rx=rotate[0]
+        ry=rotate[1]
+
+        # degree to radian function 
+        dtr = self.mu.dtr
+
+        # build rotationY (see diagram above) 
+        y_matrix =  self.m33.identity
+        #y_matrix[0]  =  math.cos(dtr( ry ))
+        #y_matrix[2]  = -math.sin(dtr( ry ))
+        #y_matrix[8]  =  math.sin(dtr( ry ))
+        #y_matrix[10] =  math.cos(dtr( ry ))
+              
+
+        # build rotationX (see diagram above) 
+        x_matrix =  self.m33.identity
+        # x_matrix[5]  =   math.cos(dtr( rx )) 
+        # x_matrix[6]  =   math.sin(dtr( rx )) 
+        # x_matrix[9]  =  -math.sin(dtr( rx ))
+        # x_matrix[10] =   math.cos(dtr( rx ))
+
+        rot_matrix = self.m33.identity
+        #rot_matrix = x_matrix * tmp_matr   
+ 
+        pts = self.apply_matrix_pts (pts, m33=rot_matrix) 
+
+        ##--------------
+        #translate 
+        tmp = []
+        for pt in pts: 
+            x = pt[0] + translate[0]
+            y = pt[1] + translate[1]
+            tmp.append( (x,y) )
+
+        pts = tmp 
+
+        ##--------------
+        #scale 
+    
+        # build a scale matrix 
+        sc_m33 = self.m33.identity
+        # sc_m33[0]  = scale[0]
+        # sc_m33[4]  = scale[1]
+        # sc_m33[8]  = scale[2]    
+         
+        ################################################
+        pts = self.apply_matrix_pts(pts, m33=sc_m33)  # m44=sc_m44 
+        
+        return pts 
+
+    ##-------------------------------------------##
+    def move(self, x,y ):
+        
+        # ( pts, translate=(0,0), rotate=(0,0), scale=(1,1) )
+
+        self.points = self.trs_points(self.points, (x,y) )
+
     ##-------------------------------------------##  
     def scribe(self, str):
         print(str)
-
 
     ##-------------------------------------------## 
     ##-------------------------------------------##  

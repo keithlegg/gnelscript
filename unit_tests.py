@@ -70,7 +70,7 @@ def calc_bbox(self, prgrp=None, facgrp=None ):
 
 def _reindex_ply(self, f_idx, offset):
 
-def centroid_pts(self, pts):
+def centroid(self, pts):
 
 def calc_tripoly_normal(self, three_pts, unitlen):
 

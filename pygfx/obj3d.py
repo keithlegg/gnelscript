@@ -102,12 +102,16 @@ class object3d(polygon_operator):
  
         tris = 0
         quads = 0
-        other = 0        
+        lines = 0
+        other = 0   
+
         for p in self.polygons:
             if len(p)==3:
                 tris+=1
             elif len(p)==4:
                 quads+=1  
+            elif len(p)==2:
+                lines+=1  
             else:
                 other+=1
 
@@ -126,6 +130,7 @@ class object3d(polygon_operator):
         data.append(' --------------------------- ' )         
         data.append('  num triangles      : %s' %  tris  )
         data.append('  num quads          : %s' %  quads )  
+        data.append('  num lines          : %s' %  lines ) 
         data.append('  num other          : %s' %  other ) 
         data.append('############################\n')
 

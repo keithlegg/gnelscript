@@ -182,9 +182,13 @@ class render3d(object):
 
 
 class simple_render(object):  
-    """ about as simple as a renderer can be 
-        
-        orthographic projection 
+    """         
+        orthographic projection of 3D data. 
+        Images can be rendered with PIL or dumped out as vectors. 
+
+        The vectors are 2D in 3d space by adding 0 as the Z axis. 
+        The "pixels" are coordinates so vector renders can be quite large.
+        They need to be scaled and centered around the zero axis. 
         
     """
 
@@ -199,7 +203,6 @@ class simple_render(object):
         
         #store render output to a vector framebuffer - a 2D "3D" object 
         self.vec_fr_buffer = object3d()
-        self.vec_fr_zaxis = 0.0
 
         self.uvx = 0 #pointer for UV map X axis  
         self.uvy = 0 #pointer for UV map X axis
@@ -234,9 +237,11 @@ class simple_render(object):
         self.SHOW_NORMALS         = True  
         self.SHOW_FACE_CENTER     = True
 
-        self.USE_PERSPECTIVE      = False         
+        self.USE_PERSPECTIVE      = False # experimental -         
         self.SHOW_SCREEN_CLIP     = False # broken 
         self.DO_SCREEN_CLIP       = False # broken 
+        
+        self.STORE_VECTOR_RENDER  = True   
 
 
         self.COLOR_MODE           = 'flat'    ####'flat', 'zdepth',  'normal' 
@@ -314,12 +319,7 @@ class simple_render(object):
                 sx = sx/sz 
                 sy = sy/sz
 
-
             points_projected.append( ((sx*scale)+center[0] , (sy*scale)+center[1] ) )
-            
-            #save into vector buffer 
-            #self.vec_fr_buffer.points.append( ((sx*scale)+center[0], (sy*scale)+center[1], self.vec_fr_zaxis)  )
-
 
         return points_projected
 
@@ -511,8 +511,8 @@ class simple_render(object):
                 
                 rndr_bfr.connect_the_dots( l, color, int(thick/2) )  #points, color, thickness
 
-                ## DEBUG - save the renderpaths to a 3d Object     
-                self.vec_fr_buffer.insert_line(l)
+                if self.STORE_VECTOR_RENDER_DATA:    
+                    self.vec_fr_buffer.insert_line(l)
 
 
         ###########################
@@ -885,7 +885,7 @@ class simple_render(object):
                         lightpos = vec3(lightpos[0],lightpos[1],lightpos[2])   
                     
                     # get the center of face to move light vector to 
-                    f_cntr = obj.centroid_pts(drwply)
+                    f_cntr = obj.centroid(drwply)
                     
                     # put face centroid point into a vec3 object 
                     fcntr = vec3(f_cntr[0],f_cntr[1],f_cntr[2])
@@ -995,7 +995,7 @@ class simple_render(object):
 
                 if self.SHOW_FACE_CENTER:
                     #draw face normal 
-                    cn =  obj.centroid_pts(drwply) 
+                    cn =  obj.centroid(drwply) 
                     cntr_pt = ( (cn[0]*scale)+center[0], (cn[1]*scale)+center[1] ) 
                     output.draw_fill_circle( cntr_pt[0], cntr_pt[1], 2, (255,255,20) )
 

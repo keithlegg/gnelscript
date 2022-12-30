@@ -43,6 +43,7 @@ class object2d(polygon_operator_2d):
     def show(self):
         data = []
  
+        lines = 0
         tris = 0
         quads = 0
         other = 0        
@@ -51,6 +52,8 @@ class object2d(polygon_operator_2d):
                 tris+=1
             elif len(p)==4:
                 quads+=1  
+            elif len(p)==2:
+                lines+=1
             else:
                 other+=1
 
@@ -65,6 +68,7 @@ class object2d(polygon_operator_2d):
         data.append(' --------------------------- ' )         
         data.append('  num triangles      : %s' %  tris  )
         data.append('  num quads          : %s' %  quads )  
+        data.append('  num lines          : %s' %  lines ) 
         data.append('  num other          : %s' %  other ) 
         data.append('############################\n')
 

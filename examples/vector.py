@@ -418,7 +418,7 @@ def model_geom_from_scratch_calc_normals():
 
     # ... or calculate them yourself.  
     normal   = obj.calc_tripoly_normal(pts[0:3], True)
-    centroid = obj.centroid_pts(pts[0:3]) 
+    centroid = obj.centroid(pts[0:3]) 
 
     # see what we have done, or not done 
     # obj.show() 

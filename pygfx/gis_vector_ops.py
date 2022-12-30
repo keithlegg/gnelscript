@@ -153,7 +153,10 @@ class generic_ngc(object3d):
 
     ##-------------------------------##
     def tess_objclone(self, objfile):
-        """ DAG + point generator = tesselator """
+        """ DAG + point generator = tesselator 
+            make sure to center the object for best results
+            use object3D.move_center()  
+        """
 
         self.pop2d.load(objfile)
         self.pop2d.show()
@@ -162,8 +165,15 @@ class generic_ngc(object3d):
         for cell in self.tesl.nodes:
             cen = cell.getattrib('centroid')
             #print('# ', cell.name,' ', cen )
-            
-            pts = self.pop2d.calc_circle_2d(cen[0],cen[1], .75, periodic=True, spokes=3)
+        
+            #DEBUG move goes into a broken loop if you try to use it - debug  
+            #self.pop2d.move( cen[0],cen[1] )
+
+            pts = []
+
+            for pt in self.pop2d.points:
+                pts.append( (pt[0]+cen[0], pt[1]+cen[1] ) )  
+
             cell.points.extend( pts )
 
     ##-------------------------------##
@@ -306,7 +316,7 @@ class generic_ngc(object3d):
             if maxy>self.total_maxy:
                 self.total_maxy=maxy
 
-            self.gr_sort.append([i, self.centroid_pts(ply) ,[minx,miny, maxx, maxy], len(ply), ply])
+            self.gr_sort.append([i, self.centroid(ply) ,[minx,miny, maxx, maxy], len(ply), ply])
 
             #print("poly extents %s %s %s %s "%(minx, maxx, miny, maxy) )
             
