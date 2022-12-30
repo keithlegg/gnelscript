@@ -7,6 +7,8 @@ from gnelscript.pygfx.grid_ops import  *
 
 from gnelscript.pygfx.raster_ops import  *
 
+from gnelscript.pygfx.render import simple_render
+
 from gnelscript.pygfx.obj3d import  *
 from gnelscript.pygfx.obj2d import  *
 
@@ -137,30 +139,92 @@ class generic_ngc(object3d):
 
     ##-------------------------------##
     def mc_escher(self):
-        """ DAG + point generator = tesselator """
+        """ DAG + point generator = tesselator 
+            make a grid and draw points at each location 
+        """
         for cell in self.tesl.nodes:
             cen = cell.getattrib('centroid')
             #print('# ', cell.name,' ', cen )
             
             pts = self.pop2d.calc_circle_2d(cen[0],cen[1], .75, periodic=True, spokes=3)
-            cell.points.extend( pts )
+            cell.points.append( pts )
 
             pts2 = self.pop2d.batch_rotate_pts_2d( pts, cen, 180 )
-            cell.points.extend( pts2 )
+            cell.points.append( pts2 )
 
             pts3 = self.pop2d.calc_circle_2d(cen[0],cen[1], 1.5, periodic=True, spokes=12)
-            cell.points.extend( pts3 )
+            cell.points.append( pts3 )
+
+    ##-------------------------------##
+    def tess_vec_render(self, renderscale, objfile):
+        """ make a grid and invoke render at each location 
+            
+            DEBUG - add mesh optimizer 
+                - eliminate lines that overlap 
+                - only render faces that face you (backface culling) 
+                - eliminate lines too small/big 
+
+
+        """
+
+        # render as one line (with no breaks)
+        single_line = False 
+        
+        ropr = simple_render() 
+        obj = object3d()
+        obj.load(objfile)
+
+        total = len(self.tesl.nodes)
+
+        for i,cell in enumerate(self.tesl.nodes):
+            cen = cell.getattrib('centroid')
+            print('#rendering  %s@%s %s of %s '%(cell.name, cen, i,total) )
+
+            #clear cache each time 
+            ropr.vec_fr_buffer.points = [] 
+
+            ## color, rx, ry, rz, thick, scale 
+            ropr.render_obj((100,0,255), i*20, i*20, i*20,  1, renderscale, object3d=obj)
+
+            #coords are in pixels - rather huge for a model 
+            #ropr.vec_fr_buffer.scale_pts((.01,.01,.01))
+
+            pts = []
+            
+            ropr.vec_fr_buffer.move_center()
+
+            #DEBUG - this is wrong - need to "lift the pen up"
+            #to do it right - iterate the polyon ids and draw a segment for each polygon
+            #this just draws it as a huge single blob  
+
+            if single_line:
+                for pt in ropr.vec_fr_buffer.points:
+                    pts.append( (pt[0]+cen[0], pt[1]+cen[1] ) )  
+            else:
+                for ply in ropr.vec_fr_buffer.polygons:
+                    #assume line geom 2 point polys 
+                    if len(ply)==2:
+                        pt1 = ropr.vec_fr_buffer.points[ply[0]-1] 
+                        pt2 = ropr.vec_fr_buffer.points[ply[1]-1] 
+                        pts.append( (pt1[0]+cen[0], pt1[1]+cen[1]) )
+                        pts.append( (pt2[0]+cen[0], pt2[1]+cen[1]) )
+
+                    #DEBUG - add 3 point (tris ) and 4 point (quads)
+
+            #debug - fixing cell geom export to include a new WKT segment for each nested block  
+            cell.points.append( pts )
+
+
 
     ##-------------------------------##
     def tess_objclone(self, objfile):
-        """ DAG + point generator = tesselator 
+        """ make a grid and insert points frm an object at each location 
             make sure to center the object for best results
             use object3D.move_center()  
         """
 
         self.pop2d.load(objfile)
         self.pop2d.show()
-
 
         for cell in self.tesl.nodes:
             cen = cell.getattrib('centroid')
@@ -206,6 +270,9 @@ class generic_ngc(object3d):
     def export_grid_gfx(self, name, folder ):
         #export cells as graphics  
 
+        if self.total_minx==0 and self.total_miny==0 and self.total_maxx==0 and self.total_maxy==0:
+            print("WARNING EXTENTS ARE ALL ZERO ")
+
         features = []
         for c in self.tesl.nodes:
             features.append(Feature(geometry=Point((c.coord_x+(c.width/2), c.coord_y+(c.height/2))), 
@@ -218,12 +285,13 @@ class generic_ngc(object3d):
                                      }
                           ) 
                   )
-
-            features.append(Feature(geometry=LineString(coordinates=c.points), 
-                          properties={"id" : 0 
-                                     }
-                          ) 
-                  )
+            
+            for ptgrp in c.points:
+                features.append(Feature(geometry=LineString(coordinates=ptgrp), 
+                              properties={"id" : 0 
+                                         }
+                              ) 
+                      )
 
         feature_collection = FeatureCollection(features)
         with open('%s/%s_cells.json'%(folder, name), 'w') as f:

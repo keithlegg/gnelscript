@@ -490,8 +490,6 @@ class simple_render(object):
         if framebuffer:
             if type(framebuffer==pixel_op):
                 rndr_bfr = framebuffer
-            else:
-                raise ValueError("render_obj - wrong object type passed as framebuffer")    
         else:
             # default is to just make a new framebuffer from scratch
             rndr_bfr = self.pixop 
@@ -511,7 +509,7 @@ class simple_render(object):
                 
                 rndr_bfr.connect_the_dots( l, color, int(thick/2) )  #points, color, thickness
 
-                if self.STORE_VECTOR_RENDER_DATA:    
+                if self.STORE_VECTOR_RENDER:    
                     self.vec_fr_buffer.insert_line(l)
 
 
