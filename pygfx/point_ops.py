@@ -2335,12 +2335,14 @@ class polygon_operator(point_operator):
             DEBUG - DOES NOT CLEAR BUFFERS FIRST!!
             so if you load two models, the points - polygons will be merged and have bad topology
 
-            load a wavefront OBJ file into model's point/poly memory 
-            you can save shape or cache data 
+            ALSO NEEDS TO DO A FILE CHECK FOR VALID DATA 
 
+            DOC: 
+                load a wavefront OBJ file into model's point/poly memory 
+                you can save shape or cache data 
 
-            doflush clears out all memory 
-            if you dont flush it will attempt to fuse existing geometry with loaded 
+                doflush clears out all memory 
+                if you dont flush it will attempt to fuse existing geometry with loaded 
         """
 
         #if doflush is True:
@@ -2458,6 +2460,8 @@ class polygon_operator(point_operator):
                         #if tok[0]=='vp':
                         #    print('Parameter space vertices found ', tok)
                                
+        # DEBUG put a file integrity check here 
+        # I had one with a bad point index 
 
     ##-------------------------------------------## 
 

@@ -368,6 +368,11 @@ class simple_render(object):
                     idx  = int(ply[pt])-1 #index start of line in 2d
                     idx2 = int(ply[pt+1])-1 #index end of line in 2d
                     
+                    if idx>len(pvtxs)-1:
+                        raise ValueError("\n\nbad index '%s'- check your data "%ply[pt])
+                    if idx2>len(pvtxs)-1:
+                        raise ValueError("\n\nbad index '%s' - check your data"%ply[pt+1]) 
+
                     # # #start of line
                     # x = pvtxs[idx][0] #first vtx - x component  
                     # y = pvtxs[idx][1] #first vtx - y component 
@@ -376,7 +381,6 @@ class simple_render(object):
                     # x2 = pvtxs[idx2][0] #second vtx - x component  
                     # y2 = pvtxs[idx2][1] #second vtx - y component 
                     # z2 = pvtxs[idx2][2]/10 #second vtx - z component 
-
 
                     # #start of line
                     x = pvtxs[idx][0] #first vtx - x component  

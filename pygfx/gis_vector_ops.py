@@ -156,7 +156,7 @@ class generic_ngc(object3d):
             cell.points.append( pts3 )
 
     ##-------------------------------##
-    def tess_vec_render(self, renderscale, objfile):
+    def tess_vec_render(self, renderscale, path, objfile):
         """ make a grid and invoke render at each location 
             
             DEBUG - add mesh optimizer 
@@ -172,7 +172,9 @@ class generic_ngc(object3d):
         
         ropr = simple_render() 
         obj = object3d()
-        obj.load(objfile)
+        obj.load('%s/%s'%(path,objfile))
+
+        #obj.show()
 
         total = len(self.tesl.nodes)
 
@@ -182,38 +184,39 @@ class generic_ngc(object3d):
 
             #clear cache each time 
             ropr.vec_fr_buffer.points = [] 
+            ropr.vec_fr_buffer.polygons = [] 
 
             ## color, rx, ry, rz, thick, scale 
             ropr.render_obj((100,0,255), i*20, i*20, i*20,  1, renderscale, object3d=obj)
 
             #coords are in pixels - rather huge for a model 
             #ropr.vec_fr_buffer.scale_pts((.01,.01,.01))
-
-            pts = []
-            
+        
             ropr.vec_fr_buffer.move_center()
+          
+            # used to test the vector render engine 
+            #ropr.vec_fr_buffer.save('%s/test_%s.obj'%(path,i) )
+    
 
-            #DEBUG - this is wrong - need to "lift the pen up"
-            #to do it right - iterate the polyon ids and draw a segment for each polygon
-            #this just draws it as a huge single blob  
-
+            # draw as a single line without breaks       
             if single_line:
+                pts = [] 
                 for pt in ropr.vec_fr_buffer.points:
                     pts.append( (pt[0]+cen[0], pt[1]+cen[1] ) )  
+                cell.points.append( pts )
+
+            # draw as proper line segments         
             else:
                 for ply in ropr.vec_fr_buffer.polygons:
-                    #assume line geom 2 point polys 
+                    pts = []
+                    #in this setup it will only be two point polys - vector render only does that                    
                     if len(ply)==2:
+                        # pts are zero indexed hence the -1
                         pt1 = ropr.vec_fr_buffer.points[ply[0]-1] 
                         pt2 = ropr.vec_fr_buffer.points[ply[1]-1] 
                         pts.append( (pt1[0]+cen[0], pt1[1]+cen[1]) )
                         pts.append( (pt2[0]+cen[0], pt2[1]+cen[1]) )
-
-                    #DEBUG - add 3 point (tris ) and 4 point (quads)
-
-            #debug - fixing cell geom export to include a new WKT segment for each nested block  
-            cell.points.append( pts )
-
+                    cell.points.append( pts )
 
 
     ##-------------------------------##
@@ -275,17 +278,18 @@ class generic_ngc(object3d):
 
         features = []
         for c in self.tesl.nodes:
+
             features.append(Feature(geometry=Point((c.coord_x+(c.width/2), c.coord_y+(c.height/2))), 
                                     properties={"id":c.name} 
                                    )
                         )
-
+            #draw a square around the boundary of object 
             features.append(Feature(geometry=LineString(coordinates=c.boundary_pts), 
                           properties={"id" : 0 
                                      }
                           ) 
                   )
-            
+            #render multilines in points (nested arrays - broken up lines)            
             for ptgrp in c.points:
                 features.append(Feature(geometry=LineString(coordinates=ptgrp), 
                               properties={"id" : 0 
