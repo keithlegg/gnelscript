@@ -4,25 +4,54 @@ from geojson import Point, Feature, LineString, FeatureCollection, dump
 
 from gnelscript.pygfx.math_ops import  *
 from gnelscript.pygfx.grid_ops import  *
-
 from gnelscript.pygfx.raster_ops import  *
-
-from gnelscript.pygfx.render import simple_render
+from gnelscript.pygfx.milling_ops import  *
 
 from gnelscript.pygfx.obj3d import  *
 from gnelscript.pygfx.obj2d import  *
 
 
+from gnelscript.pygfx.render import simple_render
 
 
 
-#########################################################################
-#########################################################################
 
 
 
-class generic_ngc(object3d):
-    """copy of kicad parser for experimenting  """
+class vectorflow(object3d):
+    """ copy of kicad parser for experimenting  
+        not really GIS related but it DOES export geoJSON 
+
+        It started out as s kicad ciles (graphic polygons and ???) to GCODE tool.
+        It turned into a tool turn geojson into GCODE  
+        then the dag_ops tesselator was added for GCODE optimization and I got derailed making MC escher style vector renders  
+
+
+        ##-------------------------------##
+        # IDEA 
+
+        #1 - DAG - b tree 
+        #2 - parent geom to nodes - add matrix scenegraph  
+        #3-  crazy f-ing animation potential - vector ala cyriak  
+
+        ##-------------------------------##
+        #TODO: 
+
+        ## def import_polys(self, pts):
+
+        ## def translate(self, pts):
+        ##     global/ indexer ?
+        ## def rotate(self, pts):
+        ##     global/ indexer ?
+        ## def scale(self, pts):
+        ##     global/ indexer ?
+
+        ## def remove_polys(self, pts):
+        ##     indexer 
+        ## def export_polys(self, pts):
+        ##     indexer  
+
+    """
 
     def __init__(self):
         super().__init__()  
@@ -30,54 +59,140 @@ class generic_ngc(object3d):
         self.tesl        = teselator()
         self.pop2d       = object2d() 
 
-        self.loadbuffer    = []  #list of list of points 
-        self.gr_polys      = []  #list of list of points 
-
-        self.gr_sort       = []  #list of [(pt), (pts)]  
-        self.tmp_geom      = []    
-
-        self.numexported = 0 
+        # geometry buffers for JSON, NGC,sorting, processing, etc 
+        self.gr_polys      = [] # list of list of points 
+        self.gr_sort       = [] # [[id, centroid, extents, len, points ]]  
+        self.ngc_buffer    = [] # list of list of points 
+        self.jsonbuffer    = [] # list of list of points 
 
         # GEOM ARRAYS for export   
         self.ngc_to_obj    = []
-        self.filled_polys  = []  #list of list of points 
-
+        self.filled_polys  = [] # list of list of points 
 
         self.global_scale =  0.0393701 #inch to mm 
 
-        self.rh = 1.5     # retract height 
-        self.ch = 1       # cut height 
-        self.hp = (0,0,0) # home position 
+        self.rh = 1.5                  # retract height 
+        self.ch = 1                    # cut height 
+        self.hp = (0,0,0)              # home position 
 
-        self.total_minx = 0
-        self.total_miny = 0         
-        self.total_maxx = 0
-        self.total_maxy = 0
+        self.orig_minx = 0
+        self.orig_miny = 0         
+        self.orig_maxx = 0
+        self.orig_maxy = 0
 
+        self.sort_minx = 0
+        self.sort_miny = 0         
+        self.sort_maxx = 0
+        self.sort_maxy = 0
+    
+    ##-------------------------------------------## 
+    def gl_extents(self):
+        """
+            global extents
+
+            we only work on gr_sort - gr_poly is a copy pf the orignial data
+
+            if you run sort() - it automatically sets extents while it is sorting  
+            if you want to re-run, use this 
+        """
+
+        # we only work on gr_sort - gr_poly is a copy pf the orignial data 
+        # [[id, centroid, extents, len, points ]]
+        for row in self.gr_sort:
+            ply = row[4] 
+
+            minx = 0
+            miny = 0         
+            maxx = 0
+            maxy = 0
+       
+            #print('### len ', len(ply))
+            for i,pt in enumerate(ply):
+                if i == 0:
+                    minx=pt[0]
+                    maxx=pt[0]
+                    miny=pt[1]
+                    maxy=pt[1]
+
+                if pt[0]<minx:
+                    minx=pt[0]    
+                if pt[0]>maxx:
+                    maxx=pt[0]  
+                if pt[1]<miny:
+                    miny=pt[1]  
+                if pt[1]>maxy:
+                    maxy=pt[1] 
+            
+            if minx<self.sort_minx:
+                self.sort_minx=minx
+            if miny<self.sort_miny:
+                self.sort_miny=miny
+            if maxx>self.sort_maxx:
+                self.sort_maxx=maxx
+            if maxy>self.sort_maxy:
+                self.sort_maxy=maxy
+    ##-------------------------------------------## 
+    def gl_centroid(self):
+        """
+           global centroid
+           we only work on gr_sort - gr_poly is a copy pf the orignial data
+ 
+        """
+
+        self.gl_extents()
+        
+        width  = abs(self.sort_maxx - self.sort_minx) 
+        height = abs(self.sort_maxy - self.sort_miny)         
+        
+        return ( self.sort_maxx-(width/2), self.sort_maxy-(height/2) )
+    ##-------------------------------------------## 
+    def gl_move(self, pos):
+        """
+            global move the entire dataset in 2d (ignore Z axis) 
+            this allows 3D moves but you probably want 2D - zero the Z axis for pos or just send it 2 coords
+        """
+
+        pop = polygon_operator()
+
+        for i,row in enumerate(self.gr_sort):
+            if len(pos)==2:
+                self.gr_sort[i][4] = pop.trs_points(self.gr_sort[i][4], (-pos[0], -pos[1]) )
+            if len(pos)==3:
+                self.gr_sort[i][4] = pop.trs_points(self.gr_sort[i][4], (-pos[0], -pos[1], -pos[0] ))
+
+        # dont forget to recalculate extents 
+        self.gl_extents()
+
+    def gl_rotate(self):
+        pass 
+
+    ##-------------------------------------------## 
+    def gl_move_center(self):
+        """
+            we only work on gr_sort - gr_poly is a copy pf the orignial data
+        """
+        cen = self.gl_centroid()
+
+        pop = polygon_operator()
+
+        for i,row in enumerate(self.gr_sort):
+            self.gr_sort[i][4] = pop.trs_points(self.gr_sort[i][4], (-cen[0], -cen[1], 0 ))
+
+        # dont forget to recalculate extents 
+        self.gl_extents()
+ 
     ##-------------------------------##
-    # IDEA 
+    def _scrub(self, inp):
+        """ clean up parsed characters from kicad file """
 
-    #1 - DAG - b tree 
-    #2 - parent geom to nodes - add matrix scenegraph  
-    #3-  crazy f-ing animation potential - vector ala cyriak  
-
-    ##-------------------------------##
-    #TODO: 
-
-    ## def import_polys(self, pts):
-
-    ## def translate(self, pts):
-    ##     global/ indexer ?
-    ## def rotate(self, pts):
-    ##     global/ indexer ?
-    ## def scale(self, pts):
-    ##     global/ indexer ?
-
-    ## def remove_polys(self, pts):
-    ##     indexer 
-    ## def export_polys(self, pts):
-    ##     indexer  
-
+        out = inp.lower()
+        out = out.strip()
+        out = out.replace('(','')
+        out = out.replace(')','')
+        out = out.replace(' ','')
+        out = out.replace('\"','')
+        out = out.replace('\'','')
+        return out
 
     ##-------------------------------##    
     def _set_extents(self, bbox):
@@ -86,27 +201,27 @@ class generic_ngc(object3d):
             [minx, miny, maxx, maxy]  
         """
         
-        self.total_minx = bbox[0]
-        self.total_miny = bbox[1]         
-        self.total_maxx = bbox[2]
-        self.total_maxy = bbox[3]
+        self.sort_minx = bbox[0]
+        self.sort_miny = bbox[1]         
+        self.sort_maxx = bbox[2]
+        self.sort_maxy = bbox[3]
 
     ##-------------------------------##
-    def make_grid(self, folder, xcuts, ycuts, bbox=None):
-        """ chop a square into smaller squares """
+    def make_grid(self, distance, folder, xcuts, ycuts, bbox=None):
+        """ chop a square into smaller squares 
+
+        """
 
         if bbox:
             self.tesl._set_extents(bbox) 
         else:
-            self.tesl._set_extents([self.total_minx, self.total_miny, self.total_maxx, self.total_maxy]) 
+            self.tesl._set_extents([self.sort_minx, self.sort_miny, self.sort_maxx, self.sort_maxy]) 
 
         self.tesl.build_2d_cells(xcuts, ycuts)
-
         
+
         #temporary export of geom I HAVE TO SEE THIS BEFORE I GO TO BED!
         features = []
-        
-        DIST_THRESH = 5.0 
 
         ##---
         # add attrs to derived DAG graph nodes 
@@ -120,10 +235,7 @@ class generic_ngc(object3d):
                 for sort in self.gr_sort:
                     # [[id, centroid, extents, len, points ]]
                     dist = self.mu.calc_line_length(cen[0], cen[1], sort[1][0], sort[1][1])
-                    if dist < DIST_THRESH:
-                        # DEBUG CLEAN THIS UP 
-                        #print(c.name, sort[0], dist)
-                        #self.tmp_geom.append( [] )
+                    if float(dist) < float(distance):
                         
                         #DEBUG TODO - there is a problem of the same polygon getting added more than once 
                         #make sure we dont export multiple times 
@@ -163,8 +275,6 @@ class generic_ngc(object3d):
                 - eliminate lines that overlap 
                 - only render faces that face you (backface culling) 
                 - eliminate lines too small/big 
-
-
         """
 
         # render as one line (with no breaks)
@@ -218,7 +328,6 @@ class generic_ngc(object3d):
                         pts.append( (pt2[0]+cen[0], pt2[1]+cen[1]) )
                     cell.points.append( pts )
 
-
     ##-------------------------------##
     def tess_objclone(self, objfile):
         """ make a grid and insert points frm an object at each location 
@@ -256,29 +365,45 @@ class generic_ngc(object3d):
             pts2 = self.pop2d.batch_rotate_pts_2d( pts, cen, 180 )
             cell.points.extend( pts2 )
 
-
-
-
     ##-------------------------------##
-    def show_buffers(self):
+    def show_buffers(self, sid=None):
+        """
+        
+            show evrything meaningful we can about our data 
+            id is optional 
+            - if passed use it to look up gr_poly and gr_sort, etc  
 
-        #[[id, centroid, extents, len, points ]
-        #for ply in self.gr_sort:
-        #    print("%s %s %s "%(ply[0], ply[1], len(ply[2]) )) 
+        """
+        
         print('#################')
-        print('size gr_polys %s'%len(self.gr_polys))
-        print('size gr_sort %s'%len(self.gr_sort))
-    
+        if sid is None:
+            #[[id, centroid, extents, len, points ]
+            #for ply in self.gr_sort:
+            #    print("%s %s %s "%(ply[0], ply[1], len(ply[2]) )) 
+
+            print('size gr_polys     %s'%len(self.gr_polys))
+            print('size gr_sort      %s'%len(self.gr_sort))
+
+        else:
+            grp = self.gr_polys[sid]
+            grs = self.gr_sort[sid]
+            print('gr_polys id %s size %s  '%( sid, len(grp) ) )
+            print('gr_sort  id %s json id:%s extents %s len %s size: %s '%( sid, grs[0], grs[1], grs[2], grs[3] ) )
+
+
+        print('original extents  %s %s %s %s '%(self.orig_minx, self.orig_miny, self.orig_maxx, self.orig_maxy))
+        print('sorted extents    %s %s %s %s '%(self.sort_minx, self.sort_miny, self.sort_maxx, self.sort_maxy)) 
+
     ##-------------------------------##
     def export_grid_gfx(self, name, folder ):
         #export cells as graphics  
 
-        if self.total_minx==0 and self.total_miny==0 and self.total_maxx==0 and self.total_maxy==0:
-            print("WARNING EXTENTS ARE ALL ZERO ")
+        if self.sort_minx==0 and self.sort_miny==0 and self.sort_maxx==0 and self.sort_maxy==0:
+            raise ValueError('export_grid_gfx - extents are not set') 
 
         features = []
         for c in self.tesl.nodes:
-
+            #cell centroids  
             features.append(Feature(geometry=Point((c.coord_x+(c.width/2), c.coord_y+(c.height/2))), 
                                     properties={"id":c.name} 
                                    )
@@ -332,8 +457,8 @@ class generic_ngc(object3d):
                                  ) 
                          )
 
-        #total extents  
-        coords = self.extents_fr_bbox([self.total_minx,self.total_miny,self.total_maxx,self.total_maxy], periodic=True)
+        #sort extents  
+        coords = self.extents_fr_bbox([self.sort_minx,self.sort_miny,self.sort_maxx,self.sort_maxy], periodic=True)
         features.append(Feature(geometry=LineString(coordinates=coords), 
                                 properties={"id" : 0 
                                            }
@@ -346,17 +471,17 @@ class generic_ngc(object3d):
             dump(feature_collection, f)
 
     ##-------------------------------##       
-    def index_grsort(self):
+    def _sort(self):
         """ assemble data into [[id, centroid, extents, len, points ]] - put that in self.gr_sort   
 
-            set total extents of all data while running  
+            set extents of original data while running   
         """
 
         #print("indexing sort buffer ")
         self.gr_sort   = []
 
         #print(" gr_polys buffer has %s polys in it "%len(self.gr_polys) )
-        for ply in self.gr_polys:
+        for x,ply in enumerate(self.gr_polys):
             minx = 0
             miny = 0         
             maxx = 0
@@ -379,33 +504,22 @@ class generic_ngc(object3d):
                 if pt[1]>maxy:
                     maxy=pt[1] 
             
-            if minx<self.total_minx:
-                self.total_minx=minx
-            if miny<self.total_miny:
-                self.total_miny=miny
-            if maxx>self.total_maxx:
-                self.total_maxx=maxx
-            if maxy>self.total_maxy:
-                self.total_maxy=maxy
+            if minx<self.orig_minx:
+                self.orig_minx=minx
+            if miny<self.orig_miny:
+                self.orig_miny=miny
+            if maxx>self.orig_maxx:
+                self.orig_maxx=maxx
+            if maxy>self.orig_maxy:
+                self.orig_maxy=maxy
 
-            self.gr_sort.append([i, self.centroid(ply) ,[minx,miny, maxx, maxy], len(ply), ply])
+            self.gr_sort.append([x, self.centroid(ply) ,[minx,miny, maxx, maxy], len(ply), ply])
+        
 
-            #print("poly extents %s %s %s %s "%(minx, maxx, miny, maxy) )
-            
-        print("total extents %s %s %s %s "%(self.total_minx, self.total_maxx, self.total_miny, self.total_maxy) )
+        # run initial extents calc on sorted polys         
+        self.gl_extents()
 
-    ##-------------------------------##
-    def scrub(self, inp):
-        """ clean up parsed characters from kicad file """
-
-        out = inp.lower()
-        out = out.strip()
-        out = out.replace('(','')
-        out = out.replace(')','')
-        out = out.replace(' ','')
-        out = out.replace('\"','')
-        out = out.replace('\'','')
-        return out
+        print("orig data extents %s %s %s %s "%(self.orig_minx, self.orig_maxx, self.orig_miny, self.orig_maxy) )
 
     ##-------------------------------##
     def save_line_obj(self, name):
@@ -449,15 +563,12 @@ class generic_ngc(object3d):
                 for ip, pt in enumerate(grpoly):
                     idx = ip+lidx
                     polygons.append( (idx, idx+1) ) #2 point polygon indeces
-
                 
                 self.polygons.append(polygons)
-                
                 self.points.extend(self.clean_points(grpoly))
                 lidx = len(grpoly)
 
                 #print(grpoly) 
-
 
         #print(self.rotation)
         self.show() 
@@ -536,7 +647,7 @@ class generic_ngc(object3d):
                             ptidx += 1  
                     #print("loaded %s points in polygon "%len(tmp_poly)) 
                     if tmp_poly:
-                        self.loadbuffer.append(tmp_poly) 
+                        self.jsonbuffer.append(tmp_poly) 
                 plyidx += 1 
 
         ##---------------        
@@ -554,7 +665,7 @@ class generic_ngc(object3d):
                                     ptidx += 1  
                             #print("loaded %s points in polygon "%len(tmp_poly)) 
                             if tmp_poly:
-                                self.loadbuffer.append(tmp_poly) 
+                                self.jsonbuffer.append(tmp_poly) 
                         plyidx += 1 
 
         ##---------------
@@ -562,14 +673,19 @@ class generic_ngc(object3d):
         
         # get all sub features
         if getids is None:
-            self.gr_polys = self.loadbuffer 
+            self.gr_polys = self.jsonbuffer 
         
         # pick out some sub features
         else:
             print("ids to load are is %s"%fixedids)
             for id in fixedids: 
-                self.gr_polys.append(self.loadbuffer[id]) 
+                self.gr_polys.append(self.jsonbuffer[id]) 
 
+        ##---------------
+
+        #make a copy of the data to work with - leaving the original in case we want to do something with it  
+        #self._sort()
+        
         print("loaded %s polygons from %s "%(plyidx,inputfile)) 
 
     ##-------------------------------##
@@ -606,24 +722,24 @@ class generic_ngc(object3d):
                 cleanspaces = []
                 for t in linetoked:
                     if t!='':
-                        cleanspaces.append( self.scrub(t) )
+                        cleanspaces.append( self._scrub(t) )
 
-                firstelem = self.scrub(cleanspaces[0]) 
+                firstelem = self._scrub(cleanspaces[0]) 
                 if firstelem!='':
                     newpoly.append(firstelem)
 
                 for i,tok in enumerate(cleanspaces):
                     if tok !='':
                         if tok == 'xy':   
-                            newpoly.append( (float(self.scrub(cleanspaces[i+1]))  , float(self.scrub(cleanspaces[i+2]) )) ) 
+                            newpoly.append( (float(self._scrub(cleanspaces[i+1]))  , float(self._scrub(cleanspaces[i+2]) )) ) 
 
                         if tok == 'start':   
-                            newpoly.append( (float(self.scrub(cleanspaces[i+1]))  , float(self.scrub(cleanspaces[i+2]) )) ) 
+                            newpoly.append( (float(self._scrub(cleanspaces[i+1]))  , float(self._scrub(cleanspaces[i+2]) )) ) 
                         if tok == 'end':   
-                            newpoly.append( (float(self.scrub(cleanspaces[i+1]))  , float(self.scrub(cleanspaces[i+2]) )) ) 
+                            newpoly.append( (float(self._scrub(cleanspaces[i+1]))  , float(self._scrub(cleanspaces[i+2]) )) ) 
 
                         if tok == 'center':   
-                            newpoly.append( (float(self.scrub(cleanspaces[i+1]))  , float(self.scrub(cleanspaces[i+2]) )) ) 
+                            newpoly.append( (float(self._scrub(cleanspaces[i+1]))  , float(self._scrub(cleanspaces[i+2]) )) ) 
 
                 if len(newpoly)>2:  
                     geometry.append(newpoly)
@@ -713,7 +829,11 @@ class generic_ngc(object3d):
         ####################################################
 
         # graphical polygons - build the gcode up with simple linear movements
-        for gr_poly in self.gr_polys:
+        for row in self.gr_sort:
+            
+            #modified to export sorted data - easy peasy  
+            gr_poly = row[4]
+
             self.outfile.append('(exporting new polygon )')
             if len(gr_poly):
             
@@ -767,56 +887,34 @@ class generic_ngc(object3d):
     ##-------------------------------##
     def export_ngc(self, filename):
 
-        print("gr poly buffer has %s polys in it. "%(len(self.gr_polys)))
+        print("gr poly buffer has %s polys in it. "%(len(self.gr_sort)))
         fobj = open( filename,"w") #encoding='utf-8'
         for line in self.outfile: 
             fobj.write(line+'\n')
         fobj.close()
 
-    ##-------------------------------##
-    def import_ngc(self, filename):
-        """ DEBUG - NOT WORKING OR TESTED """
-        f = open(filename, 'r')
-        geometry = []
-        for lc,line in enumerate(f):
-            if '(' in line or ')' in line:
-                newpoly =[]
-                linetoked = line.split(' ') 
-                cleanspaces = []
-                for t in linetoked:
-                    if t!='':
-                        cleanspaces.append( self.scrub(t) )
 
-                firstelem = self.scrub(cleanspaces[0]) 
-                if firstelem!='':
-                    newpoly.append(firstelem)
 
-                for i,tok in enumerate(cleanspaces):
-                    if tok !='':
-                        if tok == 'xy':   
-                            newpoly.append( (float(self.scrub(cleanspaces[i+1]))  , float(self.scrub(cleanspaces[i+2]) )) ) 
+##------------------------------##
 
-                        if tok == 'start':   
-                            newpoly.append( (float(self.scrub(cleanspaces[i+1]))  , float(self.scrub(cleanspaces[i+2]) )) ) 
-                        if tok == 'end':   
-                            newpoly.append( (float(self.scrub(cleanspaces[i+1]))  , float(self.scrub(cleanspaces[i+2]) )) ) 
+def arc_to_degree(NS, degrees, minutes, seconds, EW):
+    """ arc minutes to decimal degree ( example n50d0'02"e ) """
+    
+    outdegrees = 0.0
 
-                        if tok == 'center':   
-                            newpoly.append( (float(self.scrub(cleanspaces[i+1]))  , float(self.scrub(cleanspaces[i+2]) )) ) 
-
-                if len(newpoly)>2:  
-                    geometry.append(newpoly)
-
-        ####################
-        #not perfect - it will miss things that are longer than one line!
-        
-        print('## ## num geometry elements read ', len(geometry ) )
-        for p in geometry:
-            tmp = []
-            #print("### ", p )
-            if len(p):
-                if p[0] =='gr_poly':
-                    tmp.extend(p[1:])
-        
-            self.gr_polys.append(tmp)
+    if NS =='n':
+        outdegrees = degrees
+        outdegrees = outdegrees + (minutes*.0166667) #1/60
+        outdegrees = outdegrees + (seconds*.0166667*.0166667) #1/60
+    if NS =='s':
+        outdegrees = 180.0
+        outdegrees = outdegrees + degrees
+        outdegrees = outdegrees + (minutes*.0166667) #1/60
+        outdegrees = outdegrees + (seconds*.0166667*.0166667) #1/60
+    if EW =='w' and NS =='s':
+        outdegrees = outdegrees * -1
+    if EW =='e' and NS =='n':
+        outdegrees = outdegrees * -1
+  
+    return outdegrees
 

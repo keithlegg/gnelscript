@@ -37,7 +37,38 @@ from gnelscript.pygfx.math_ops import NUMPY_IS_LOADED, matrix33, matrix44, vec2,
         it is only points with a an ID for each point
         it is a way to work with partial objects and not loose the ID of each point 
 
-            
+ 
+    TODO:
+        upgrade to these to full objects instead of lists 
+        
+        class ptgrp(object):
+            def __init__(self):
+                ## store in zero index add function to get NON ZERO INDEXED
+                self.pts = [ ] #[idx, (pt), ..] 
+
+            def non_zero(self)
+                pass 
+            def centroid(self)
+                pass 
+            def bbox(self)
+                pass  
+
+
+        class rawgeom(object):
+            def __init__(self):
+                self.points = []   
+                self.polys = [] 
+
+            def non_zero(self)
+                pass 
+            def centroid(self)
+                pass 
+            def bbox(self)
+                pass  
+            def load(self)
+                pass 
+
+ 
 
 """
 
@@ -58,36 +89,8 @@ def printgeom(geom):
         print( " pt %s"%str(pt) )
 
 
-"""
-#upgrade to these objects instead of lists 
-class ptgrp(object):
-    def __init__(self):
-        ## store in zero index add function to get NON ZERO INDEXED
-        self.pts = [ ] #[idx, (pt), ..] 
-
-    def non_zero(self)
-        pass 
-    def centroid(self)
-        pass 
-    def bbox(self)
-        pass  
 
 
-class rawgeom(object):
-    def __init__(self):
-        self.points = []   
-        self.polys = [] 
-
-    def non_zero(self)
-        pass 
-    def centroid(self)
-        pass 
-    def bbox(self)
-        pass  
-    def load(self)
-        pass 
-
-"""
 
 
 class point_operator(object):
@@ -764,8 +767,6 @@ class point_operator(object):
         pts = self.apply_matrix_pts(pts, m33=sc_m33)  # m44=sc_m44 
         
         return pts 
-
- 
 
 ##-------------------------------------------##
 ##-------------------------------------------##    
@@ -2525,5 +2526,14 @@ class polygon_operator(point_operator):
         fobj = open( filename,"w") #encoding='utf-8'
         fobj.write(output)
         fobj.close()
+
+##-------------------------------------------## 
+##-------------------------------------------## 
+
+class pattern_generator(point_operator):
+
+    def __init__(self):
+        super().__init__()  
+
 
 

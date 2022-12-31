@@ -18,9 +18,6 @@ from gnelscript.pygfx.dag_ops import *
 #from gnelscript.pygfx.obj2d import *
 
 
-
-
-#class teselator_cell(object2d):
 class cell(node_base):
     def __init__(self, name,
                        width, height, 
@@ -68,9 +65,7 @@ class cell(node_base):
             shifted.append( (pt[0]+halfwidth, pt[1]+halfheight) ) 
         return shifted
 
-
 ##------------------------------##
-
 
 class teselator(data_graph):
 
@@ -156,7 +151,7 @@ class teselator(data_graph):
         spacing_y = res_y/numy
         
         print('#######################')
-        print( "resx %s resy %s spacex %s spacey %s "% (res_x, res_y, spacing_x, spacing_y ) )
+        print( "tesselation size: resx %s resy %s space x %s space y %s "% (res_x, res_y, spacing_x, spacing_y ) )
 
         for idx_x in range(self.x_squares):
             for idx_y in range(self.y_squares):
@@ -180,27 +175,6 @@ class teselator(data_graph):
 
 
 
-#############################################################
 
-def arc_to_degree(NS, degrees, minutes, seconds, EW):
-    """ arc minutes to decimal degree ( example n50d0'02"e ) """
-    
-    outdegrees = 0.0
-
-    if NS =='n':
-        outdegrees = degrees
-        outdegrees = outdegrees + (minutes*.0166667) #1/60
-        outdegrees = outdegrees + (seconds*.0166667*.0166667) #1/60
-    if NS =='s':
-        outdegrees = 180.0
-        outdegrees = outdegrees + degrees
-        outdegrees = outdegrees + (minutes*.0166667) #1/60
-        outdegrees = outdegrees + (seconds*.0166667*.0166667) #1/60
-    if EW =='w' and NS =='s':
-        outdegrees = outdegrees * -1
-    if EW =='e' and NS =='n':
-        outdegrees = outdegrees * -1
-  
-    return outdegrees
 
 

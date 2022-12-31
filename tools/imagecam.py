@@ -265,7 +265,7 @@ def thirdpass( inputfile, outputfolder, fileformat, bmpinvert=False, po_invert=F
 
 
 def geojson_to_ngc(folder, fnames, onefile=False):
-    kiparser = generic_ngc()
+    kiparser = vectorflow()
 
     ##-- 
 

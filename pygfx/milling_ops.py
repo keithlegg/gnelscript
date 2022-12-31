@@ -167,8 +167,6 @@ class generate_gcode(object):
         #program end 
         self.outfile.append('%')
         self.outfile.append('m2')
-        
-
 
 
 
@@ -394,6 +392,11 @@ class gcode(object3d):
                         ##             self.POSZ = float(output[i])
 
                         #self.segments.append( [n_idx, [self.POSX, self.POSY, self.POSZ], comm ] )
+
+
+
+
+
 
 
 
