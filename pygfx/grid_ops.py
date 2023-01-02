@@ -149,8 +149,7 @@ class teselator(data_graph):
 
         spacing_x = res_x/numx 
         spacing_y = res_y/numy
-        
-        print('#######################')
+
         print( "tesselation size: resx %s resy %s space x %s space y %s "% (res_x, res_y, spacing_x, spacing_y ) )
 
         for idx_x in range(self.x_squares):

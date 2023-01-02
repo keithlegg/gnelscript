@@ -115,22 +115,74 @@ PARAM   = '#<'   # parameter (variable) , followed with brackets
 
 ##------------------------------------------
 
+class cam_operator(point_operator):
+
+    def __init__(self):
+        super().__init__()  
+
+    #def dialate(self)
+    
+    #def erode(self)
+
+    def scanlines(self):
+        """ 
+        run a 3d scanline across a polygon 
+
+        return hits in the following order:
+
+
+           1_______2              1_______2
+          /        \             /        \   
+        3/__________\4         6/__________\3 
+         \           /          \           /     
+         5\_________/6          5\_________/4 
+
+
+        """
+
+        pass 
+
+
+    def face_sprial(self):
+       """ recursive erode->scanline -> repeat == spiral  
+
+       """
+       pass 
+
 
 
 ##------------------------------------------
 
-class generate_gcode(object):
+
+class gcode(object3d):
+    """ first stab of gcode translator - got put on hold 
+        kicad ops has the first working simple gcode exporter
+    """
+
     def __init__(self):
-        self.coords = []
-        self.outfile = []
+        super().__init__()  
 
-    def savengc(self, filename):
-        print(os.getcwd() )
+        self.DEBUG_MODE = True
+        # self.linear_units = 'in'
+        # self.z_axis  ?? 
 
-        fobj = open( filename,"w") #encoding='utf-8'
-        for line in self.outfile: 
-            fobj.write(line+'\n')
-        fobj.close()
+        #comments get dumped into this array (full or partial line)
+        self.commented = [] # [index, string] 
+        
+        self.param_names  = [] # [name, value ]
+        self.param_values = [] # [name, value ]
+
+        #swappable dialects of gcode commands 
+        self.dialect = parser_commands
+
+        self.coord_words = ['N','G', 'X','Y','Z','U','V','W','I','J','K','R','P','F'] # ,'A','B','C','D']
+        
+        # simulated position of the cutting head
+        self.POSX = 0
+        self.POSY = 0
+        self.POSZ = 0
+
+        self.segments  = [] # [index, command, xyz_pos] 
 
 
     def lineartest(self):
@@ -167,40 +219,6 @@ class generate_gcode(object):
         #program end 
         self.outfile.append('%')
         self.outfile.append('m2')
-
-
-
-##------------------------------------------
-
-
-class gcode(object3d):
-
-    def __init__(self):
-        super().__init__()  
-
-        self.DEBUG_MODE = True
-        # self.linear_units = 'in'
-        # self.z_axis  ?? 
-
-        #comments get dumped into this array (full or partial line)
-        self.commented = [] # [index, string] 
-        
-        self.param_names  = [] # [name, value ]
-        self.param_values = [] # [name, value ]
-
-        #swappable dialects of gcode commands 
-        self.dialect = parser_commands
-
-        self.coord_words = ['N','G', 'X','Y','Z','U','V','W','I','J','K','R','P','F'] # ,'A','B','C','D']
-        
-        # simulated position of the cutting head
-        self.POSX = 0
-        self.POSY = 0
-        self.POSZ = 0
-
-        self.segments  = [] # [index, command, xyz_pos] 
-
-
 
 
     def show_data(self):

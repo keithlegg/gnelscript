@@ -2527,13 +2527,10 @@ class polygon_operator(point_operator):
         fobj.write(output)
         fobj.close()
 
-##-------------------------------------------## 
-##-------------------------------------------## 
 
-class pattern_generator(point_operator):
 
-    def __init__(self):
-        super().__init__()  
+
+
 
 
 
