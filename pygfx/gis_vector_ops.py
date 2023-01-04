@@ -62,7 +62,7 @@ class vectorflow(object3d):
         self.outfile = []
 
         self.mu          = math_util()
-        self.tesl        = teselator()
+        self.tesl        = tessellator()
         self.pop2d       = object2d() 
         #self.kiparser    = pcbfile()
 

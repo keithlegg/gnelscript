@@ -109,6 +109,21 @@ class point_operator(object):
         self.vec2     = vec2()     
         self.vec3     = vec3()      
 
+    ##-------------------------------------------##
+    def mirror(self, origin, axis):
+        """ mirror a set of points """
+        
+        pass
+
+
+    # def array(self, origin, axis):
+    #     pass
+
+
+    # def clone(self, origin, axis):
+    #     pass
+
+
     ##-------------------------------------------## 
     def csp_str(self, pt):
         """ clean single point - tuple of 2 or 3 floats
@@ -679,18 +694,18 @@ class point_operator(object):
 
  
     ##-------------------------------------------##
-    def locate_pt_along3d(self, x1, y1, z1, x2, y2, z2, num):
+    #def locate_pt_along3d(self, x1, y1, z1, x2, y2, z2, num):
+    def locate_pt_along3d(self, fpos, spos, num):
         """
             given two 3D points, return a series of N number connecting points in 3D 
 
             usage:
 
-
         """
 
         pts_created = []
-        fpos=(x1, y1, z1)
-        spos=(x2, y2, z2)
+        #fpos=(x1, y1, z1)
+        #spos=(x2, y2, z2)
          
         for n in range(num):
             npos = [3]
@@ -1382,7 +1397,7 @@ class polygon_operator(point_operator):
         return out_poly 
 
     ##-------------------------------------------##   
-    def get_face_pts(self, fid):
+    def get_face_pts(self, fid, asvec3=False):
         """ lookup and return the point geometry of a face from a face ID
             for fancier features look at get_face_geom() 
             
@@ -1391,11 +1406,14 @@ class polygon_operator(point_operator):
         tmp = []
 
         if fid<0 or fid > len(self.polygons)-1:
-            print('# show_poly- bad face index : %s'%fid)
+            print('# get_face_pts- bad face index : %s'%fid)
             return None
 
         for v_id in self.polygons[fid]:
-            tmp.append(self.points[v_id-1])
+            if asvec3:
+                tmp.append(vec3(self.points[v_id-1]))
+            else:    
+                tmp.append(self.points[v_id-1])
 
         return tmp
 
@@ -1593,6 +1611,11 @@ class polygon_operator(point_operator):
     ##-------------------------------------------##   
     def get_face_normal(self, fid=None, unitlen=False ):
         """ lookup a face(s) and calculate a face normal(s) for it  
+            
+            fid IS NOT zero indexed ... we need to fix this inconsistency 
+            DEBUG i think the idea is that OBJ files are not ... all functions should do either
+
+
             only tested for 3 or 4 sided polygon 
             also returns the center position of a face
 
@@ -1853,16 +1876,20 @@ class polygon_operator(point_operator):
             if isinstance(points, tuple) or isinstance(points, list):
                 # do the insert operation
                 if geom is None:
+                    
+                    if type(points[0]) is vec3:
+                        for pv in points: 
+                            self.points.append(pv.aspt)
+                    else:    
+                        #look at first point and assume all data is similar
+                        #if it is 2d add a zero Z axis 
+                        if len(points[0])==2:
+                            #print("insert_polygons: data appears to be 2D")
+                            for i,pt in enumerate(points):
+                                self.points.append( (points[i][0], points[i][1],0) )
 
-                    #look at first point and assume all data is similar
-                    #if it is 2d add a zero Z axis 
-                    if len(points[0])==2:
-                        #print("insert_polygons: data appears to be 2D")
-                        for i,pt in enumerate(points):
-                            self.points.append( (points[i][0], points[i][1],0) )
-
-                    if len(points[0])==3:
-                        self.points.extend(points)
+                        if len(points[0])==3:
+                            self.points.extend(points)
 
                 else:
                     geom[1].extend(points)
@@ -2314,7 +2341,10 @@ class polygon_operator(point_operator):
             
             if pt is None:
                 self.scribe("pt idx %s is None"%i )
-            #iftype ==  <class 'tuple'>
+
+            elif type(pt)==vec3:
+                fix.append( (pt.x, pt.y, pt.z) )
+
             elif len(pt)==0:
                 self.scribe('found bad data - empty vertex')
              

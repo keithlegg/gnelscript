@@ -10,14 +10,24 @@ import re
 
 import os 
 
+from gnelscript import SHAPELY_IS_LOADED
+
+if SHAPELY_IS_LOADED:
+    from shapely import Point, LineString, Polygon
+
+
 from gnelscript.pygfx.obj3d import object3d
 
 from gnelscript.pygfx.point_ops import *
+from gnelscript.pygfx.math_ops import *
 
+from gnelscript.pygfx.grid_ops import tessellator
 
 
 #from pygfx.gcode.bridgeport import  parser_commands
 from gnelscript.pygfx.gcode.linuxcnc import  parser_commands
+
+
 
 
 
@@ -115,14 +125,163 @@ PARAM   = '#<'   # parameter (variable) , followed with brackets
 
 ##------------------------------------------
 
-class cam_operator(point_operator):
+
+
+#SHAPELY_IS_LOADED
+#https://shapely.readthedocs.io/en/stable/manual.html
+
+
+
+# Delaunay triangulation
+# line = LineString([(0, 0), (1, 1), (0, 2), (2, 2), (3, 1), (1, 0)])
+# dilated = line.buffer(0.5)
+# eroded = dilated.buffer(-0.3)
+
+##---------------------------##
+
+"""
+
+hmm - fake objects for shapely? good idea? 
+
+if not SHAPELY_IS_LOADED:
+
+    class Polygon(object):
+        pass 
+
+    class Point(object):
+        pass 
+
+    class LineString(object):
+        pass 
+"""
+
+##---------------------------##
+
+
+class cam_operator(object3d):
 
     def __init__(self):
         super().__init__()  
+        self.tesl = tessellator() 
 
-    #def dialate(self)
-    
-    #def erode(self)
+    def obj_to_wkt(self):
+        print(self.points)
+
+
+    if SHAPELY_IS_LOADED:
+        def test(self):
+            line = LineString([(2, 0), (2, 4), (3, 4)])
+            print(line)
+
+    def zigzag_on_quad(self, fid, num):
+        """ extract points on a 4 sided face """
+
+        out = [] 
+        tmp = self.get_face_geom(fid, reindex=True) #returns [fidx, pts] 
+
+        tmp2 = self.get_face_pts(fid)
+        
+        cuts = [] 
+
+        # walk the 4 edged as 2 point pairs - calc the in betweens 
+        for i,pt in enumerate(tmp2):
+            ep1 = tmp2[i]  
+            ep2 = tmp2[i-1]
+            cuts.append(self.locate_pt_along3d(ep1, ep2, num) )         
+
+        #self.tesl.from_square_outline(cuts)
+
+        # self.tesl.from_square_outline([
+        #                                ['a','b','c','d'], 
+        #                                ['e','f','g','h'], 
+        #                                ['i','j','k','l'], 
+        #                                ['m','n','o','p']
+        #                               ])         
+
+        # self.tesl.from_square_outline([
+        #                             ['a','b','c','d','e','f'], 
+        #                             ['g','h','i','j','k','l'], 
+        #                             ['m','n','o','p','q','r'], 
+        #                             ['s','t','u','v','w','x']
+        #                            ]) 
+ 
+        
+        o = object3d()
+        #o.insert(tmp) 
+        o.insert(self) 
+
+        grid = self.tesl.from_square_outline(cuts)
+        
+        #o.vectorlist_to_obj(grid) 
+        o.pts_to_linesegment(grid)
+
+        print(grid)
+
+        # width = len(cuts) 
+        # height = len(cuts[0])
+        # for x in range(width):
+        #     for y in range(height):
+        #         o.prim_locator(cuts[x][y], size=.1)
+
+        o.save('zigzag.obj')
+
+        return cuts
+ 
+
+    def poly_bisect(self):
+        """ 
+           if face is a quad you could get the two "vertical" egdes as vectors 
+
+        """
+
+        # project_pt
+        # locate_pt_along3d
+
+        vc1 = vec3(2 , -5, 0)
+        vc2 = vec3(0 ,  5, 0)
+        vc3 = vec3(-1, -5, 0)
+
+        triangle = (vc1, vc2, vc3)
+
+        ray = (vec3(.5,.5, 1), vec3(.1,.2,-1))
+
+        #triangle = [vec3(0,0,0), vec3(0,1.1,0),vec3(1.1,1.1,-1.03) ]
+        #ray =[vec3(.5,.5, 0),vec3(.5,.5,1)] 
+        
+
+ 
+        test = vec3() 
+        result = test.poly_intersect(ray, triangle)
+        o = object3d()
+        o.pts_to_linesegment(ray, periodic=False)
+        o.insert_polygons(plyids=[(1,2,3)], points=triangle)
+        
+        if result:
+            o.prim_locator(result[1])
+            o.pts_to_linesegment(result[2])
+
+        #o.save('intersect.obj')
+        
+        print(result)
+
+
+
+
+    def delaunay(self, object, height):
+        #if you could get outline at a Z value - (and spiral) - you have working cam 
+        pass 
+
+
+    ##--
+    def dialate(self):
+        pass 
+
+    ##-- 
+
+    def erode(self):
+        pass 
+
+    ##--    
 
     def scanlines(self):
         """ 
@@ -147,6 +306,7 @@ class cam_operator(point_operator):
        """ recursive erode->scanline -> repeat == spiral  
 
        """
+
        pass 
 
 

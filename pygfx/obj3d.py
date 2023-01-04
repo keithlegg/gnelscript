@@ -61,9 +61,12 @@ class object3d(polygon_operator):
                 self.insert_polygons(obj[0], obj[1])
 
     ############################################### 
-    def insert(self, obj, replace=False):
-        """ insert an objects geometry into this object 
+    def insert(self, obj, replace=False, asnew_shell=False):
+        """ insert an object's geometry into this object 
             
+            DEBUG - deafults to sharing the point indeces 
+            asnew_shell was added but seems to be broken 
+
         """
 
         # if tuple or list assume its [polyidx, points]
@@ -288,10 +291,12 @@ class object3d(polygon_operator):
     #def edgegeom_to_vectorlist(self, geom):
 
     ############################################### 
-    def pts_to_linesegment(self, pt_list):
+    def pts_to_linesegment(self, pt_list, periodic=False):
 
         for i,pt in enumerate(pt_list):
-            
+            if type(pt) is vec3:
+                pt = pt.aspt
+
             if pt == None:
                 return None
 
@@ -306,6 +311,11 @@ class object3d(polygon_operator):
                     self.points.append(p)
                 for vec in plyidx:    
                     self.polygons.append( vec )                          
+
+        if periodic:
+            n = self.numpts # add this number to the indices in case of existing geom 
+            self.polygons.append( (n, 1) )
+        
 
     ############################################### 
     def vectorlist_to_obj(self, vecs, pos=None):

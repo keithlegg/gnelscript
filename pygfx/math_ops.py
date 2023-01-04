@@ -531,6 +531,22 @@ class vec3(object):
         if key==2:
             self.z = item
 
+    @property
+    def aspt(self):
+        return (self.x, self.y, self.z)
+
+
+    #def is_parallel(self, vec):
+
+    def is_orthogonal(self, vec):
+        """UNTESTED
+        #https://www.learndatasci.com/glossary/orthogonal-and-orthonormal-vectors/
+        """
+
+        if self.dot(vec)==0:
+            return True 
+        else:
+            return False     
 
     def to_euler(self):
         """ 
@@ -821,6 +837,247 @@ class vec3(object):
 
 
         return None 
+    
+    ##------------------------------------- 
+
+    """
+    # https://stackoverflow.com/questions/312328/what-is-the-fastest-way-to-find-the-point-of-intersection-between-a-ray-and-a-po
+
+    struct point
+    {
+        float x
+        float y
+        float z
+    }
+
+    struct ray
+    {
+        point R1
+        point R2
+    }
+
+    struct polygon
+    {
+        point P[]
+        int count
+    }
+
+    float dotProduct(point A, point B)
+    {
+        return A.x*B.x + A.y*B.y + A.z*B.z
+    }
+
+    point crossProduct(point A, point B)
+    {
+        return point(A.y*B.z-A.z*B.y, A.z*B.x-A.x*B.z, A.x*B.y-A.y*B.x)
+    }
+
+    point vectorSub(point A, point B)
+    {
+        return point(A.x-B.x, A.y-B.y, A.z-B.z) 
+    }
+
+    point scalarMult(float a, Point B)
+    {
+        return point(a*B.x, a*B.y, a*B.z)
+    }
+
+    bool findIntersection(ray Ray, polygon Poly, point& Answer)
+    {
+        point plane_normal = crossProduct(vectorSub(Poly.P[1], Poly.P[0]), vectorSub(Poly.P[2], Poly.P[0]))
+
+        float denominator = dotProduct(vectorSub(Ray.R2, Poly.P[0]), plane_normal)
+
+        if (denominator == 0) { return FALSE } // ray is parallel to the polygon
+
+        float ray_scalar = dotProduct(vectorSub(Poly.P[0], Ray.R1), plane_normal)
+
+        Answer = vectorAdd(Ray.R1, scalarMult(ray_scalar, Ray.R2))
+
+        // verify that the point falls inside the polygon
+
+        point test_line = vectorSub(Answer, Poly.P[0])
+        point test_axis = crossProduct(plane_normal, test_line)
+
+        bool point_is_inside = FALSE
+
+        point test_point = vectorSub(Poly.P[1], Answer)
+        bool prev_point_ahead = (dotProduct(test_line, test_point) > 0)
+        bool prev_point_above = (dotProduct(test_axis, test_point) > 0)
+
+        bool this_point_ahead
+        bool this_point_above
+
+        int index = 2;
+        while (index < Poly.count)
+        {
+            test_point = vectorSub(Poly.P[index], Answer)
+            this_point_ahead = (dotProduct(test_line, test_point) > 0)
+
+            if (prev_point_ahead OR this_point_ahead)
+            {
+                this_point_above = (dotProduct(test_axis, test_point) > 0)
+
+                if (prev_point_above XOR this_point_above)
+                {
+                    point_is_inside = !point_is_inside
+                }
+            }
+
+            prev_point_ahead = this_point_ahead
+            prev_point_above = this_point_above
+            index++
+        }
+
+        return point_is_inside
+    }
+    """
+    
+    ##------------------------------------- 
+
+    def poly_intersect(self, ray, poly):
+        """ DEBUG UNTESTED - 
+            works with planar polygons only 
+        """
+
+        point_is_inside = False
+        
+        e0=poly[0]
+        e1=poly[1]
+        e2=poly[2]
+
+        r1 = ray[0]
+        r2 = ray[1]
+
+        #point plane_normal = crossProduct(vectorSub(Poly.P[1], Poly.P[0]), vectorSub(Poly.P[2], Poly.P[0]))
+        tmp = e1-e0
+        plane_normal = tmp.cross(e2-e0)
+        
+        #keith is experimenting here - try normalizing?
+        plane_normal = plane_normal.normal
+
+
+        #float denominator = dotProduct(vectorSub(Ray.R2, Poly.P[0]), plane_normal)
+        tmp = r2-e0
+        denominator = tmp.dot(plane_normal)
+
+        ## ray is parallel to the polygon
+        if denominator == 0:
+            print("ray is parallel to the polygon")
+            return False 
+
+        #float ray_scalar = dotProduct(vectorSub(Poly.P[0], Ray.R1), plane_normal)
+        tmp = e0-r1
+        ray_scalar = tmp.dot(plane_normal)
+
+        #Answer = vectorAdd(Ray.R1, scalarMult(ray_scalar, Ray.R2))
+        answer = r1 + (r2*ray_scalar)
+  
+        ##---- 
+
+        # verify that the point falls inside the polygon
+        #point test_line = vectorSub(Answer, Poly.P[0])
+        test_line = answer-e0
+
+        #point test_axis = crossProduct(plane_normal, test_line)
+        test_axis = plane_normal.cross(test_line)
+
+        #point test_point = vectorSub(Poly.P[1], Answer)
+        test_point = e1-answer
+
+        #bool prev_point_ahead = (dotProduct(test_line, test_point) > 0)
+        prev_point_ahead = test_line.dot(test_point)
+
+        #bool prev_point_above = (dotProduct(test_axis, test_point) > 0)
+        prev_point_above = test_axis.dot(test_point)
+
+        this_point_ahead = False
+        this_point_above = False
+        
+
+        index = 2
+        while index < len(poly):
+            test_point = poly[index]-answer
+            this_point_ahead = test_line.dot(test_point)>0
+            if prev_point_ahead or this_point_ahead:
+                this_point_above = test_axis.dot(test_point)>0
+                if prev_point_above != this_point_above:
+                    point_is_inside = not point_is_inside
+
+            prev_point_ahead = this_point_ahead
+            prev_point_above = this_point_above
+            index+=1
+ 
+ 
+
+        return [point_is_inside, answer, plane_normal ]
+
+    """
+    # https://stackoverflow.com/questions/2549708/intersections-of-3d-polygons-in-python
+
+    if NUMPY_IS_LOADED:
+        def np_intersection(self, ray):
+
+           def cmp_floats(a,b, atol=1e-12):
+               return abs(a-b) < atol
+
+           # Returns a intersection point with a ray and the polygon. 
+
+           n = self.normal()
+
+           #Ray is parallel to the polygon
+           if cmp_floats( np.dot( np.array(ray.direction), n ), 0. ):
+               return None
+
+           t = 1/(np.dot(np.array(ray.direction),n)) * ( np.dot(n,np.array(self.pts[0])) - np.dot(n,np.array(ray.position)) )
+           
+           #Intersection point is behind the ray
+           if t < 0.0:
+               return None
+
+           #Calculate intersection point
+           point = np.array(ray.position) + t*np.array(ray.direction)
+           
+           #Check if intersection point is really in the polygon or only on the (infinite) plane
+           if self.on_surface(point):
+               return [list(point)]
+
+           return None
+
+    def is_planar(self):
+        #the determinant of the vectors (volume) must always be 0
+        x_i = np.array(self.pts[i])
+        x_i1 = np.array(self.pts[i+1])
+        x_i2 = np.array(self.pts[i+2])
+        det = np.linalg.det([x_0-x_i, x_0-x_i1, x_0-x_i2])
+        assert cmp_floats( det, 0.0 ), "Points must be in a plane to create a Polygon"
+
+
+    def on_surface(self, point):
+        # Returns True if the point is on the polygon's surface and false otherwise. 
+        n = len(self.pts)
+        anglesum = 0
+        p = np.array(point)
+
+        for i in range(n):
+            v1 = np.array(self.pts[i]) - p
+            v2 = np.array(self.pts[(i+1)%n]) - p
+
+            m1 = magnitude(v1)
+            m2 = magnitude(v2)
+
+            if cmp_floats( m1*m2 , 0. ):
+                return True #point is one of the nodes
+            else:
+                # angle(normal, vector)
+                costheta = np.dot(v1,v2)/(m1*m2)
+            anglesum = anglesum + np.arccos(costheta)
+        return cmp_floats( anglesum , 2*np.pi )
+
+    """
+            
+
+
 
 
 ##-------------------------------------------##
@@ -1991,6 +2248,7 @@ class quaternion(object):
             self.set_identity()
 
     def dot_product(self, q): 
+        #DEBUG - HOW IS THIS RIGHT? 
         return a.x * b.x + a.y * b.y + a.z * b.z + a.z * a.z;   
 
     def conjugate(self, q):

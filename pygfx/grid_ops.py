@@ -67,7 +67,7 @@ class cell(node_base):
 
 ##------------------------------##
 
-class teselator(data_graph):
+class tessellator(data_graph):
 
     def __init__(self):
         super().__init__()         
@@ -91,6 +91,7 @@ class teselator(data_graph):
         for c in self.nodes:
             print("# name %s %s %s "%(c.name, c.coord_x+(c.width/2), c.coord_y+(c.height/2) ) )
 
+    ##----------- 
     def _set_extents(self, bbox):
         """ set global extents for generating data 
             based on PIL coordinate which is [left, top, right, bottom] 
@@ -102,16 +103,7 @@ class teselator(data_graph):
         self.maxx = bbox[2]
         self.maxy = bbox[3]
 
-    def build_3d_cells(self):
-        """   
-        DEBUG - NOT DONE 
-        """
-
-        for x in range(self.x_squares):
-            for y in range(self.y_squares):
-                for z in range(self.z_squares):
-                    print("%s %s %s"%(x,y,z))
-
+    ##----------- 
 
     def new_cell_2d(self, name, 
                           width, height,
@@ -125,7 +117,7 @@ class teselator(data_graph):
 
         self.add(c)
 
-
+    ##----------- 
     def build_2d_cells(self, numx, numy, scale=1):
         """   
         top edge verts match bottom edge
@@ -165,12 +157,72 @@ class teselator(data_graph):
                                 )
 
 
+    ##----------- 
+    def build_3d_cells(self):
+        """   
+            DEBUG - NOT DONE 
+        """
+        for x in range(self.x_squares):
+            for y in range(self.y_squares):
+                for z in range(self.z_squares):
+                    print("%s %s %s"%(x,y,z))
 
+    ##----------- 
+    def from_square_outline(self, array=None):
+        """   
+            DEBUG - NOT DONE  - builds a grid from X,Y outline 
 
+            input  - [a,b,c,d], [e,f,g,h], [i,j,k,l], [m,n,o,p] 
+            
+            output -  a b c d
+                    p . . . . e
+                    o . . . . f
+                    n . . . . g
+                    m . . . . h
+                      l k j i 
+
+            started out as a simple cube generator 
+            I got tyhe idea to build a grid based on square nested arrays from another function 
+
+            ARGS - 
+                array (must be square) grid of 3d points  
+
+        """
+        output = [] 
+
+        # DEBUG - add a check here 
+        is_square=True 
+
+        ##tested with a 2D grid of 3D points (a polygon face) 
+        #if is_square:
+        #    for x in array:
+        #        for y in x_cells:
+        #            print(xy_cells) 
+
+        width = len(array) 
+        height = len(array[0]) 
+
+        # matrix transpose 
+        tmp  = array[0] 
+        tmp2 = array[1] 
+        array[0] = tmp2
+        array[1] = tmp
+        array[0].reverse()
+        array[1].reverse()
+
+        #only works with 4 sided  (N per side)
+        for y in range(height):
+            for x in range(width):
+                output.append( array[x][y] ) 
+
+        return output 
+        
+    ##----------- 
     def arrange_cell(self):
         """ """
         pass 
 
+    ##----------- 
 
 
 
