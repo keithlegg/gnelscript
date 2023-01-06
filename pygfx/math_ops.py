@@ -402,6 +402,36 @@ class vec2(object):
         ptY = B.y + (calcY * offset)
         return type(self)(ptX, ptY)
 
+    def rayintersectseg(p, edge):
+        ''' UNTESTED 
+            FROM https://rosettacode.org/wiki/Ray-casting_algorithm#Python
+             takes a point p=Pt() and an edge of two endpoints a,b=Pt() of a line segment returns boolean
+        '''
+        a,b = edge
+        if a.y > b.y:
+            a,b = b,a
+        if p.y == a.y or p.y == b.y:
+            p = Pt(p.x, p.y + _eps)
+
+        intersect = False
+
+        if (p.y > b.y or p.y < a.y) or (
+            p.x > max(a.x, b.x)):
+            return False
+
+        if p.x < min(a.x, b.x):
+            intersect = True
+        else:
+            if abs(a.x - b.x) > _tiny:
+                m_red = (b.y - a.y) / float(b.x - a.x)
+            else:
+                m_red = _huge
+            if abs(a.x - p.x) > _tiny:
+                m_blue = (p.y - a.y) / float(p.x - a.x)
+            else:
+                m_blue = _huge
+            intersect = m_blue >= m_red
+        return intersect
 
     def intersect(self, v1s, v1e, v2s, v2e ):
         """ intersect 2 lines in 2D 
@@ -838,106 +868,166 @@ class vec3(object):
 
         return None 
     
-    ##------------------------------------- 
-
-    """
-    # https://stackoverflow.com/questions/312328/what-is-the-fastest-way-to-find-the-point-of-intersection-between-a-ray-and-a-po
-
-    struct point
-    {
-        float x
-        float y
-        float z
-    }
-
-    struct ray
-    {
-        point R1
-        point R2
-    }
-
-    struct polygon
-    {
-        point P[]
-        int count
-    }
-
-    float dotProduct(point A, point B)
-    {
-        return A.x*B.x + A.y*B.y + A.z*B.z
-    }
-
-    point crossProduct(point A, point B)
-    {
-        return point(A.y*B.z-A.z*B.y, A.z*B.x-A.x*B.z, A.x*B.y-A.y*B.x)
-    }
-
-    point vectorSub(point A, point B)
-    {
-        return point(A.x-B.x, A.y-B.y, A.z-B.z) 
-    }
-
-    point scalarMult(float a, Point B)
-    {
-        return point(a*B.x, a*B.y, a*B.z)
-    }
-
-    bool findIntersection(ray Ray, polygon Poly, point& Answer)
-    {
-        point plane_normal = crossProduct(vectorSub(Poly.P[1], Poly.P[0]), vectorSub(Poly.P[2], Poly.P[0]))
-
-        float denominator = dotProduct(vectorSub(Ray.R2, Poly.P[0]), plane_normal)
-
-        if (denominator == 0) { return FALSE } // ray is parallel to the polygon
-
-        float ray_scalar = dotProduct(vectorSub(Poly.P[0], Ray.R1), plane_normal)
-
-        Answer = vectorAdd(Ray.R1, scalarMult(ray_scalar, Ray.R2))
-
-        // verify that the point falls inside the polygon
-
-        point test_line = vectorSub(Answer, Poly.P[0])
-        point test_axis = crossProduct(plane_normal, test_line)
-
-        bool point_is_inside = FALSE
-
-        point test_point = vectorSub(Poly.P[1], Answer)
-        bool prev_point_ahead = (dotProduct(test_line, test_point) > 0)
-        bool prev_point_above = (dotProduct(test_axis, test_point) > 0)
-
-        bool this_point_ahead
-        bool this_point_above
-
-        int index = 2;
-        while (index < Poly.count)
-        {
-            test_point = vectorSub(Poly.P[index], Answer)
-            this_point_ahead = (dotProduct(test_line, test_point) > 0)
-
-            if (prev_point_ahead OR this_point_ahead)
+        ##------------------------------------- 
+        """
+            bool rayTriangleIntersect(
+            const Vec3f &orig, const Vec3f &dir,
+            const Vec3f &v0, const Vec3f &v1, const Vec3f &v2,
+            float &t)
             {
-                this_point_above = (dotProduct(test_axis, test_point) > 0)
+            // compute the plane's normal
+            Vec3f v0v1 = v1 - v0;
+            Vec3f v0v2 = v2 - v0;
+            // no need to normalize
+            Vec3f N = v0v1.crossProduct(v0v2); // N
+            float area2 = N.length();
+         
+            // Step 1: finding P
+            
+            // check if the ray and plane are parallel.
+            float NdotRayDirection = N.dotProduct(dir);
+            if (fabs(NdotRayDirection) < kEpsilon) // almost 0
+                return false; // they are parallel, so they don't intersect! 
 
-                if (prev_point_above XOR this_point_above)
-                {
-                    point_is_inside = !point_is_inside
-                }
-            }
+            // compute d parameter using equation 2
+            float d = -N.dotProduct(v0);
+            
+            // compute t (equation 3)
+            t = -(N.dotProduct(orig) + d) / NdotRayDirection;
+            
+            // check if the triangle is behind the ray
+            if (t < 0) return false; // the triangle is behind
+         
+            // compute the intersection point using equation 1
+            Vec3f P = orig + t * dir;
+         
+            // Step 2: inside-outside test
+            Vec3f C; // vector perpendicular to triangle's plane
+         
+            // edge 0
+            Vec3f edge0 = v1 - v0; 
+            Vec3f vp0 = P - v0;
+            C = edge0.crossProduct(vp0);
+            if (N.dotProduct(C) < 0) return false; // P is on the right side
+         
+            // edge 1
+            Vec3f edge1 = v2 - v1; 
+            Vec3f vp1 = P - v1;
+            C = edge1.crossProduct(vp1);
+            if (N.dotProduct(C) < 0)  return false; // P is on the right side
+         
+            // edge 2
+            Vec3f edge2 = v0 - v2; 
+            Vec3f vp2 = P - v2;
+            C = edge2.crossProduct(vp2);
+            if (N.dotProduct(C) < 0) return false; // P is on the right side;
 
-            prev_point_ahead = this_point_ahead
-            prev_point_above = this_point_above
-            index++
+            return true; // this ray hits the triangle
         }
+        """
 
-        return point_is_inside
-    }
-    """
+    def ray_tri_intersect(self, orig, dir, v0, v1, v2):
+        #const Vec3f &orig, const Vec3f &dir,
+        #const Vec3f &v0, const Vec3f &v1, const Vec3f &v2,
+        #float &t)
+        
+        t = 0 
+
+        #// compute the plane's normal
+        v0v1 = vec3()
+        v0v2 = vec3()
+        
+        v0v1 = v1-v0
+        v0v2 = v2-v0
+        
+        #// no need to normalize
+        N =vec3() 
+        N = v0v1.cross(v0v2) 
+        
+        area2 = N.length
+        
+        print('### normal ',N, 'length ', area2)
+
+     
+        #// Step 1: finding P
+        #// check if the ray and plane are parallel.
+        n_dot_ray_dir = N.dot(dir)
+
+        #// check almost 0
+        #if abs(n_dot_ray_dir) < kEpsilon: 
+        if n_dot_ray_dir <.001:
+            print('### %s almost zero '%n_dot_ray_dir)
+            #// they are parallel, so they don't intersect! 
+            return False 
+
+        #// compute d parameter using equation 2
+        d = -N.dot(v0)
     
+        #// compute t (equation 3)
+        t = -(N.dot(orig) + d) / n_dot_ray_dir
+        
+        #// check if the triangle is behind the ray
+        if t < 0:
+            # the triangle is behind
+            return False 
+     
+        #// compute the intersection point using equation 1
+        P = vec3() 
+        #P = orig + t * dir
+        P = (orig+ t)  * dir
+
+        #// Step 2: inside-outside test
+        #// vector perpendicular to triangle's plane
+        C = vec3() 
+     
+        #// edge 0
+        edge0 = vec3()
+        edge0 = v1 - v0 
+        
+        vp0 =vec3()
+        vp0 = P - v0
+        
+        C = edge0.cross(vp0)
+        if N.dot(C) < 0:
+            #// P is on the right side
+            return False; 
+     
+        #// edge 1
+        edge1 = vec3()
+        edge1 = v2 - v1 
+       
+        vp1 = vec3() 
+        vp1 = P - v1
+        C = edge1.cross(vp1)
+        if N.dot(C) < 0:  
+            #// P is on the right side
+            return False; 
+     
+        #// edge 2
+        edge2 = vec3()
+        edge2 = v0 - v2 
+        
+        vp2 = vec3()        
+        vp2 = P - v2
+        
+        C = edge2.cross(vp2)
+        if N.dot(C) < 0:
+            #// P is on the right side;
+            return False; 
+        
+        #// this ray hits the triangle
+        return [True, P]
+
+    
+
     ##------------------------------------- 
 
     def poly_intersect(self, ray, poly):
         """ DEBUG UNTESTED - 
-            works with planar polygons only 
+
+            FROM :  https://stackoverflow.com/questions/312328/what-is-the-fastest-way-to-find-the-point-of-intersection-between-a-ray-and-a-po
+            SEE ALSO: https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution.html
+
         """
 
         point_is_inside = False
@@ -946,22 +1036,30 @@ class vec3(object):
         e1=poly[1]
         e2=poly[2]
 
+        #e0=e0.normal
+        #e1=e1.normal
+        #e2=e2.normal
+
         r1 = ray[0]
         r2 = ray[1]
+        
+        #r1=r1.normal
+        #r2=r2.normal
 
         #point plane_normal = crossProduct(vectorSub(Poly.P[1], Poly.P[0]), vectorSub(Poly.P[2], Poly.P[0]))
         tmp = e1-e0
         plane_normal = tmp.cross(e2-e0)
         
+        #print("# normal ", plane_normal , ' length ', plane_normal.length )
         #keith is experimenting here - try normalizing?
-        plane_normal = plane_normal.normal
+        #plane_normal = plane_normal.normal
 
 
         #float denominator = dotProduct(vectorSub(Ray.R2, Poly.P[0]), plane_normal)
         tmp = r2-e0
         denominator = tmp.dot(plane_normal)
 
-        ## ray is parallel to the polygon
+        ## ray is parallel to the polygon (compare to face normal to get this)
         if denominator == 0:
             print("ray is parallel to the polygon")
             return False 
@@ -1011,6 +1109,14 @@ class vec3(object):
  
 
         return [point_is_inside, answer, plane_normal ]
+
+
+
+    ##------------------------
+
+
+    ##------------------------
+
 
     """
     # https://stackoverflow.com/questions/2549708/intersections-of-3d-polygons-in-python
@@ -1076,6 +1182,7 @@ class vec3(object):
 
     """
             
+    ##----------------------
 
 
 

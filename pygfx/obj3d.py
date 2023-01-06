@@ -293,6 +293,8 @@ class object3d(polygon_operator):
     ############################################### 
     def pts_to_linesegment(self, pt_list, periodic=False):
 
+        print(pt_list)
+        
         for i,pt in enumerate(pt_list):
             if type(pt) is vec3:
                 pt = pt.aspt

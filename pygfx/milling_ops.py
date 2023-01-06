@@ -237,13 +237,17 @@ class cam_operator(object3d):
         # project_pt
         # locate_pt_along3d
 
-        vc1 = vec3(2 , -5, 0)
-        vc2 = vec3(0 ,  5, 0)
-        vc3 = vec3(-1, -5, 0)
+        #vc1 = vec3(2 , -5, 0)
+        #vc2 = vec3(0 ,  5, 0)
+        #vc3 = vec3(-1, -5, 0)
 
+        vc1 = vec3(2 , 0, 3)
+        vc2 = vec3(0 ,  2, 1)
+        vc3 = vec3(-1, -7, 5)
+        
         triangle = (vc1, vc2, vc3)
 
-        ray = (vec3(.5,.5, 1), vec3(.1,.2,-1))
+        ray = (vec3(0,0,-1), vec3(0,.3, 1))
 
         #triangle = [vec3(0,0,0), vec3(0,1.1,0),vec3(1.1,1.1,-1.03) ]
         #ray =[vec3(.5,.5, 0),vec3(.5,.5,1)] 
@@ -251,16 +255,21 @@ class cam_operator(object3d):
 
  
         test = vec3() 
-        result = test.poly_intersect(ray, triangle)
+        #result = test.poly_intersect(ray, triangle)
+
+        result = test.ray_tri_intersect(ray[0], ray[1], vc1, vc2, vc3)
+
+        
         o = object3d()
+        
         o.pts_to_linesegment(ray, periodic=False)
         o.insert_polygons(plyids=[(1,2,3)], points=triangle)
         
         if result:
             o.prim_locator(result[1])
-            o.pts_to_linesegment(result[2])
+            #o.pts_to_linesegment(result[2])
 
-        #o.save('intersect.obj')
+        o.save('intersect.obj')
         
         print(result)
 
