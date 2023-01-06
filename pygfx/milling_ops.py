@@ -228,6 +228,7 @@ class cam_operator(object3d):
         return cuts
  
 
+
     def poly_bisect(self):
         """ 
            if face is a quad you could get the two "vertical" egdes as vectors 
@@ -236,38 +237,56 @@ class cam_operator(object3d):
 
         # project_pt
         # locate_pt_along3d
+        pop = object3d()
 
-        #vc1 = vec3(2 , -5, 0)
-        #vc2 = vec3(0 ,  5, 0)
-        #vc3 = vec3(-1, -5, 0)
+        flip = False 
+        flipray = False 
 
-        vc1 = vec3(2 , 0, 3)
-        vc2 = vec3(0 ,  2, 1)
-        vc3 = vec3(-1, -7, 5)
-        
+
+        pop.prim_triangle('z',(0,0,-2),(45,45,45))
+
+        pts = pop.points
+        if flip:
+            vc1 = vec3(pts[2])
+            vc2 = vec3(pts[1])
+            vc3 = vec3(pts[0])
+        else:
+            vc1 = vec3(pts[0])
+            vc2 = vec3(pts[1])
+            vc3 = vec3(pts[2])
+
         triangle = (vc1, vc2, vc3)
 
-        ray = (vec3(0,0,-1), vec3(0,.3, 1))
+        cen = vec3() 
+        cen.insert( pop.centroid(triangle))
 
-        #triangle = [vec3(0,0,0), vec3(0,1.1,0),vec3(1.1,1.1,-1.03) ]
-        #ray =[vec3(.5,.5, 0),vec3(.5,.5,1)] 
-        
 
- 
+        if flipray:
+            ray = (vec3(0,0,1), vec3(0, 0, -1))
+        else: 
+            ray = (vec3(0,.5,0), vec3(.2, -.2, -1))
+
         test = vec3() 
+        
         #result = test.poly_intersect(ray, triangle)
 
         result = test.ray_tri_intersect(ray[0], ray[1], vc1, vc2, vc3)
-
         
         o = object3d()
-        
-        o.pts_to_linesegment(ray, periodic=False)
+
+        #ray origin
+        o.prim_locator(ray[0], size=.1)
+        #ray vector 
+        o.one_vec_to_obj(ray[1], ray[0], arrowhead=True)
+
+        #polygon geom 
         o.insert_polygons(plyids=[(1,2,3)], points=triangle)
-        
+
         if result:
-            o.prim_locator(result[1])
-            #o.pts_to_linesegment(result[2])
+            #hit location
+            o.prim_locator((result[1]), size=.1)
+            #polygon normal 
+            #o.pts_to_linesegment([cen, cen+(result[2])] )
 
         o.save('intersect.obj')
         

@@ -372,12 +372,12 @@ class object3d(polygon_operator):
 
         poly = [(1,2)]
        
+        pts = self.rotate_pts( rot, pts )
+        pts = self.xform_pts( pos, pts )
         self.insert_polygons(poly, pts)
-        #self.rotate_pts( rot )
-        #self.xform_pts( pos )
 
     ###############################################  
-    def prim_triangle(self, axis, pos, rot, size=1):
+    def prim_triangle(self, axis, pos, rot, size=1, flip=False):
         """ single polygon operations (that can be stacked together ?) """
 
         if axis=='x':
@@ -387,12 +387,16 @@ class object3d(polygon_operator):
         if axis=='z':
             pts =  [(-size,0,0), (0,size,0), (size,0,0) ]
 
-        poly = [(1,2,3)]
+        if flip:
+            poly = [(3,2,1)]        
+        else:
+            poly = [(1,2,3)]
        
-        self.insert_polygons(poly, pts)
-        #self.rotate_pts( rot )
-        #self.xform_pts( pos )
-        
+
+        pts = self.rotate_pts( rot, pts )
+        pts = self.xform_pts( pos, pts )
+        self.insert_polygons( poly, pts)
+
     ###############################################  
     def prim_quad(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
         """ single polygon operations (that can be stacked together ?) """
@@ -408,9 +412,9 @@ class object3d(polygon_operator):
 
         poly    = [(1,2,3,4)]
        
+        pts = self.rotate_pts( rot, pts )
+        pts = self.xform_pts( pos, pts )
         self.insert_polygons(poly, pts)
-        #self.rotate_pts( rot )
-        #self.xform_pts( pos )
 
     ###############################################  
     def prim_circle(self, axis, pos=(0,0,0), rot=(0,0,0), dia=1, spokes=9):
@@ -456,9 +460,6 @@ class object3d(polygon_operator):
             oset = (0,0,tiplen) 
 
         self.radial_triangulate_face(0, offset=oset )
-
-        #pts = self.xform_pts(  pos, pts)
-        #pts = self.rotate_pts( rot, pts)
 
     ############################################### 
     #def prim_sphere2(self, pos=(0,0,0), rot=(0,0,0), size=1 ):

@@ -492,7 +492,11 @@ class vec2(object):
 class vec3(object):    
 
     def __init__(self,x=0,y=0,z=0):
-        self.x=x;self.y=y;self.z=z  
+        #this is sloppy - check the first item and assume we are initializing with a tuple xyz 
+        if type(x) is tuple:
+            self.x=x[0];self.y=x[1];self.z=x[2]         
+        else:    
+            self.x=x;self.y=y;self.z=z  
         self.mu = math_util() 
 
     def __repr__(self):
@@ -755,6 +759,7 @@ class vec3(object):
            print('normal vec3: divide by zero error.') 
            return [0,0,1]
 
+    ##------------------------------------- 
     @property
     def np_normal(self):
         """ unit vector of the vector using numpy """
@@ -763,6 +768,7 @@ class vec3(object):
         else:
             pass 
 
+    ##------------------------------------- 
     def look_at(self):
         """
         https://stackoverflow.com/questions/1251828/calculate-rotations-to-look-at-a-3d-point
@@ -788,6 +794,7 @@ class vec3(object):
         """
         pass
 
+    ##------------------------------------- 
     def np_angle_between(self, v1, v2):
         """ 
            UNTESTED 
@@ -814,7 +821,7 @@ class vec3(object):
 
             return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
-
+    ##------------------------------------- 
     def angle_between(self, other):
         """ 
             result is in radians
@@ -829,6 +836,7 @@ class vec3(object):
         except:
             return 0
 
+    ##------------------------------------- 
     def vector_mean(self, p_vecs, mode='vec3'):
         """ 
             UNTESTED 
@@ -837,7 +845,6 @@ class vec3(object):
 
         """
         
-
         tmp_x = 0;tmp_y = 0;tmp_z = 0;
 
         count = 0
@@ -865,158 +872,89 @@ class vec3(object):
         if mode=='vec3':
             return type(self)(tmp_x/count, tmp_y/count, tmp_z/count)
 
-
         return None 
     
-        ##------------------------------------- 
-        """
-            bool rayTriangleIntersect(
-            const Vec3f &orig, const Vec3f &dir,
-            const Vec3f &v0, const Vec3f &v1, const Vec3f &v2,
-            float &t)
-            {
-            // compute the plane's normal
-            Vec3f v0v1 = v1 - v0;
-            Vec3f v0v2 = v2 - v0;
-            // no need to normalize
-            Vec3f N = v0v1.crossProduct(v0v2); // N
-            float area2 = N.length();
-         
-            // Step 1: finding P
-            
-            // check if the ray and plane are parallel.
-            float NdotRayDirection = N.dotProduct(dir);
-            if (fabs(NdotRayDirection) < kEpsilon) // almost 0
-                return false; // they are parallel, so they don't intersect! 
-
-            // compute d parameter using equation 2
-            float d = -N.dotProduct(v0);
-            
-            // compute t (equation 3)
-            t = -(N.dotProduct(orig) + d) / NdotRayDirection;
-            
-            // check if the triangle is behind the ray
-            if (t < 0) return false; // the triangle is behind
-         
-            // compute the intersection point using equation 1
-            Vec3f P = orig + t * dir;
-         
-            // Step 2: inside-outside test
-            Vec3f C; // vector perpendicular to triangle's plane
-         
-            // edge 0
-            Vec3f edge0 = v1 - v0; 
-            Vec3f vp0 = P - v0;
-            C = edge0.crossProduct(vp0);
-            if (N.dotProduct(C) < 0) return false; // P is on the right side
-         
-            // edge 1
-            Vec3f edge1 = v2 - v1; 
-            Vec3f vp1 = P - v1;
-            C = edge1.crossProduct(vp1);
-            if (N.dotProduct(C) < 0)  return false; // P is on the right side
-         
-            // edge 2
-            Vec3f edge2 = v0 - v2; 
-            Vec3f vp2 = P - v2;
-            C = edge2.crossProduct(vp2);
-            if (N.dotProduct(C) < 0) return false; // P is on the right side;
-
-            return true; // this ray hits the triangle
-        }
-        """
-
+    ##------------------------------------- 
     def ray_tri_intersect(self, orig, dir, v0, v1, v2):
-        #const Vec3f &orig, const Vec3f &dir,
-        #const Vec3f &v0, const Vec3f &v1, const Vec3f &v2,
-        #float &t)
-        
+        """ taken from C code at 
+            https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution.html 
+        """
+
         t = 0 
 
-        #// compute the plane's normal
+        # compute the plane's normal
         v0v1 = vec3()
         v0v2 = vec3()
         
         v0v1 = v1-v0
         v0v2 = v2-v0
         
-        #// no need to normalize
+        # no need to normalize
         N =vec3() 
         N = v0v1.cross(v0v2) 
-        
-        area2 = N.length
-        
-        print('### normal ',N, 'length ', area2)
 
-     
-        #// Step 1: finding P
-        #// check if the ray and plane are parallel.
+        #// Step 1: check if the ray and plane are parallel.
         n_dot_ray_dir = N.dot(dir)
 
-        #// check almost 0
+        # check almost 0
         #if abs(n_dot_ray_dir) < kEpsilon: 
         if n_dot_ray_dir <.001:
-            print('### %s almost zero '%n_dot_ray_dir)
-            #// they are parallel, so they don't intersect! 
+            # they are parallel, so they don't intersect! 
             return False 
 
-        #// compute d parameter using equation 2
+        # compute (d) parameter using equation 2
         d = -N.dot(v0)
     
-        #// compute t (equation 3)
+        # compute (t) - distance from the ray origin to the intersection point
         t = -(N.dot(orig) + d) / n_dot_ray_dir
         
-        #// check if the triangle is behind the ray
+        # check if the triangle is behind the ray
+        # If is greater than 0, the triangle is "visible" to that ray
         if t < 0:
-            # the triangle is behind
             return False 
      
-        #// compute the intersection point using equation 1
+        # compute the intersection point  
         P = vec3() 
-        #P = orig + t * dir
-        P = (orig+ t)  * dir
+        P = orig+(dir*t)
+        
+        #print("## distance %s point "%t, P)
+        ##-----
 
-        #// Step 2: inside-outside test
-        #// vector perpendicular to triangle's plane
+        # inside-outside test - vector perpendicular to triangle's plane
         C = vec3() 
      
-        #// edge 0
+        # edge 0
         edge0 = vec3()
         edge0 = v1 - v0 
-        
         vp0 =vec3()
         vp0 = P - v0
-        
         C = edge0.cross(vp0)
         if N.dot(C) < 0:
-            #// P is on the right side
+            # P is on the right side
             return False; 
      
-        #// edge 1
+        # edge 1
         edge1 = vec3()
         edge1 = v2 - v1 
-       
         vp1 = vec3() 
         vp1 = P - v1
         C = edge1.cross(vp1)
         if N.dot(C) < 0:  
-            #// P is on the right side
+            # P is on the right side
             return False; 
      
-        #// edge 2
+        # edge 2
         edge2 = vec3()
         edge2 = v0 - v2 
-        
         vp2 = vec3()        
         vp2 = P - v2
-        
         C = edge2.cross(vp2)
         if N.dot(C) < 0:
-            #// P is on the right side;
+            # P is on the right side;
             return False; 
         
-        #// this ray hits the triangle
-        return [True, P]
+        # this ray hits the triangle
+        return [True, P, N]
 
     
 
@@ -1050,7 +988,7 @@ class vec3(object):
         tmp = e1-e0
         plane_normal = tmp.cross(e2-e0)
         
-        #print("# normal ", plane_normal , ' length ', plane_normal.length )
+        print("# poly_intersect normal ", plane_normal , ' length ', plane_normal.length )
         #keith is experimenting here - try normalizing?
         #plane_normal = plane_normal.normal
 
@@ -1112,10 +1050,10 @@ class vec3(object):
 
 
 
-    ##------------------------
+    ##------------------------------------- 
 
 
-    ##------------------------
+    ##------------------------------------- 
 
 
     """
