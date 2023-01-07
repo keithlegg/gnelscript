@@ -649,6 +649,8 @@ class vec3(object):
         """
 
         pass
+    
+    ##----------------------------------------
 
     def between(self, pt2):
         """ given 2 points in 3D, create a 3D vector 
@@ -672,17 +674,21 @@ class vec3(object):
 
         return pt2 - self
 
- 
+    ##----------------------------------------
     def orthogonal_vec_from_pt(self, vecpt, unitvec, pt ):
         if NUMPY_IS_LOADED:        
             return (vecpt-pt) - ( np.dot((vecpt-pt), unitvec) ) * unitvec
         return None 
+    
+    ##----------------------------------------
 
     if NUMPY_IS_LOADED:
         @property
         def as_np(self):
             """  get this vec3 as an np.array """ 
             return self.copy(vtype='numpy')
+
+    ##----------------------------------------
 
     def insert(self, iterable):
         """ convert an np.array, tuple or list  to vec3  
@@ -702,7 +708,7 @@ class vec3(object):
 
         return self 
 
- 
+     ##----------------------------------------
     def copy(self, vtype=None):
         if vtype == None:
             return type(self)(self.x,self.y,self.z)
@@ -954,7 +960,7 @@ class vec3(object):
             return False; 
         
         # this ray hits the triangle
-        return [True, P, N]
+        return P
 
     
 

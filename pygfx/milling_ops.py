@@ -167,11 +167,49 @@ class cam_operator(object3d):
     def obj_to_wkt(self):
         print(self.points)
 
-
     if SHAPELY_IS_LOADED:
         def test(self):
             line = LineString([(2, 0), (2, 4), (3, 4)])
             print(line)
+
+    def radial_intersect(self, stacks, spokes):
+        """ 
+           shoot a bunch of rays down from above in a circle to get the contours of an object
+        """
+        n = object3d()
+
+        extents = self.calc_3d_bbox()
+        cen = self.centroid() 
+       
+        stack_pts = [] 
+        
+        step = .1 
+
+        for s in range(1,stacks):
+            stack_pts.append( self.calc_circle(pos=(0,0,0), rot=(0,0,0), dia=step*s, axis='y', periodic=True, spokes=spokes) )
+
+        yval = 5 
+
+        for ring in stack_pts:
+            for pt in ring:
+                #n.prim_locator(pos=pt, size=.1)
+                ray = (vec3(pt[0], yval, pt[2]), vec3(0, -1, 0))
+                
+                hits = self.ray_hit( ray[0], ray[1])
+                print(hits)
+
+                n.one_vec_to_obj(ray[1], ray[0])
+                for h in hits:
+                    n.prim_locator(h[1], size=.1)
+                    g = self.get_face_geom(h[0], reindex=True, geom=None)
+                    self.exprt_ply_idx = 1
+                    n.insert(g)
+                
+
+
+        n.save("lotsa_locators.obj")
+         
+
 
     def zigzag_on_quad(self, fid, num):
         """ extract points on a 4 sided face """
@@ -182,6 +220,8 @@ class cam_operator(object3d):
         tmp2 = self.get_face_pts(fid)
         
         cuts = [] 
+
+        print(tmp2)
 
         # walk the 4 edged as 2 point pairs - calc the in betweens 
         for i,pt in enumerate(tmp2):
@@ -228,6 +268,25 @@ class cam_operator(object3d):
         return cuts
  
 
+    def edge_extract(self,filename, vector):
+        """
+           UNFINISHED  
+
+           find edged based on angle  
+
+        """
+
+        obj = object3d()
+        obj.load(filename)
+        
+        #obj.extrude_face(0,2)
+        #obj.triangulate()
+
+        obj.show()
+        obj.save('extruded.obj')
+
+
+
 
     def poly_bisect(self):
         """ 
@@ -243,7 +302,7 @@ class cam_operator(object3d):
         flipray = False 
 
 
-        pop.prim_triangle('z',(0,0,-2),(45,45,45))
+        pop.prim_triangle('z',(0,0,-2),(0,70,0))
 
         pts = pop.points
         if flip:
@@ -264,7 +323,7 @@ class cam_operator(object3d):
         if flipray:
             ray = (vec3(0,0,1), vec3(0, 0, -1))
         else: 
-            ray = (vec3(0,.5,0), vec3(.2, -.2, -1))
+            ray = (vec3(0,.5,0), vec3(-.2, 0, -3))
 
         test = vec3() 
         

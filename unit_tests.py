@@ -36,8 +36,6 @@ def calc_bbox_pt(self, size, origin=None ):
 
 def calc_circle(self, pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
 
-def sort_3_distances(self, mode, coords):
-
 def triangle_mean_z(self, triangle):
 
 def cvt_2d_to_3d(self, points):

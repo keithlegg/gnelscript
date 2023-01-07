@@ -29,7 +29,7 @@ from gnelscript.pygfx.math_ops import NUMPY_IS_LOADED, matrix33, matrix44, vec2,
     POINT GROUPS -  [ [ID, (X,Y,Z)], ... ] 
         
         POINT GROUPS SHOULD BE ZERO INDEXED!
-        I think the choice was mad eto NOT zero index to make it simpler to insert them to others 
+        I think the choice was made NOT to zero index because OBJ is not zero indexec 
         give this a big think 
 
         add check in all feunctions to ensure this - fix all fucntions!
@@ -367,7 +367,6 @@ class point_operator(object):
         out = []
         for u,column in enumerate(grid_array):
             for v,row in enumerate(column):
-                #print("number of rows " , len(column) )
                 if v == colidx:
                     out.append(row)  
 
@@ -425,8 +424,19 @@ class point_operator(object):
     
     ##-------------------------------------------##
     def cubic_bezier(self, draw_steps, start, ctrl1, ctrl2, end):
-        """  2D spline 
-            pretty much what it says it does 
+        """  3D spline 
+
+            usage:
+                obj = object3d()
+                num = 23
+                start = (1 ,  0, 0)
+                ctrl1 = (.5,  0, 0)
+                ctrl2 = ( 0, .5, 0)
+                end   = (0 ,  1, 0)
+                curve = obj.cubic_bezier(num, start, ctrl1, ctrl2, end)
+                obj.lathe(curve, num)
+                obj.save('rotateowl.obj')  
+
         """
         
         out = []
@@ -466,24 +476,39 @@ class point_operator(object):
             ARGS:
                 curves - array of [start, ctrl1 , ctrl2, end ]
 
-        """
+            usage:
 
-        
+                obj = object3d()
+
+                start = (1 ,  0, 0)
+                ctrl1 = (.5,  0, 0)
+                ctrl2 = ( 0, .5, 0)
+                end   = (0 ,  1, 0)
+                kurve = [start, ctrl1, ctrl2, end]
+
+                start  = (0   ,  1   , 0)
+                ctrl1  = (1.5 ,  1.0   , 0)
+                ctrl2  = (1   ,  1.5 , 0)
+                end    = (2   ,  2   , 0)
+                kurve2 =[start, ctrl1, ctrl2, end]
+                
+                curves = [kurve, kurve2] 
+                
+                obj.draw_splines( 10, curves, drawctrls=True, drawhulls=True)
+
+                obj.save('splines.obj')                
+
+        """
         size = .1
 
         for c in curves:    
-            
-            print("### KURBE ", c )
-
             if drawctrls:
                 self.prim_locator_color(pos=c[0] , rot=(0,0,0), size=size) # start 
                 self.prim_locator_color(pos=c[1] , rot=(0,0,0), size=size) # ctrl1
                 self.prim_locator_color(pos=c[2] , rot=(0,0,0), size=size) # ctrl2
                 self.prim_locator_color(pos=c[3] , rot=(0,0,0), size=size) # end
-
             if drawhulls:
                 self.linegeom_fr_points( [c[0], c[1], c[2], c[3]], color=(0,255,0) ) 
-
             curvepts = self.cubic_bezier(num, c[0], c[1], c[2], c[3])
             self.linegeom_fr_points( curvepts ) 
 
@@ -636,46 +661,6 @@ class point_operator(object):
             out.append( out[0] )
 
         return out
- 
-    ##-------------------------------------------##
-    def sort_3_distances(self, mode, coords):
-        """ take 3 XY points (triangle) and get the distances between all 3 
-            return the sorted distances represented as two coordinate pairs
-        """
-        out = []
-        tmp = []
-
-        tmp.append((self.calc_line_length(coords[0][0], coords[0][1], coords[1][0], coords[1][1]), coords[0], coords[1]))
-        tmp.append((self.calc_line_length(coords[1][0], coords[1][1], coords[2][0], coords[2][1]), coords[2], coords[1]))
-        tmp.append((self.calc_line_length(coords[2][0], coords[2][1], coords[0][0], coords[0][1]), coords[2], coords[0]))
-
-        tmp.sort()
-
-        if mode=='shortest':
-            out.append(tmp[0][1]);out.append(tmp[0][2])
-
-        if mode=='middle':
-            out.append(tmp[1][1]);out.append(tmp[1][2])
-
-        if mode=='longest':
-            out.append(tmp[2][1]);out.append( tmp[2][2])
-
-        #we have the data but we need to keep the order intact 
-        newout = [0,0,0]#create a work buffer with 3 elements
-        
-        for x in out:
-            count = 0
-            for f in coords:
-                if x == f:
-                    newout[count]=x
-                count += 1
-        
-        #remove empty elements
-        tmp = []
-        for y in newout:
-            if y:
-                tmp.append(y)
-        return tmp
 
     ##-------------------------------------------##  
     def cvt_2d_to_3d(self, points):
@@ -694,7 +679,6 @@ class point_operator(object):
 
  
     ##-------------------------------------------##
-    #def locate_pt_along3d(self, x1, y1, z1, x2, y2, z2, num):
     def locate_pt_along3d(self, fpos, spos, num):
         """
             given two 3D points, return a series of N number connecting points in 3D 
@@ -865,14 +849,12 @@ class polygon_operator(point_operator):
         #self.point_colors   = []
         #self.line_colors    = []
 
-        self.vec_buffer      = []  # vector work buffer - scratch area to store vectors for operations 
-
         # render properties embedded in geometry 
         self.linecolors = None       # iterable of colors for lines 
         self.linecolor  = (0,240,00)
         self.vtxcolor   = (0,240,00)
 
-        # "unavoidable side effect" variables 
+        # "unavoidable side effect" variables - when reindexing between ops - we need to keep this
         self.exprt_ply_idx   = 1     # obj is NOT zero indexed
         #self.exprt_pnt_idx   = 0    # pts ARE zero indexed (everything BUT .obj face idx's are)
 
@@ -936,8 +918,6 @@ class polygon_operator(point_operator):
         self.normals         = []
         self.face_uvs        = []
 
-        self.exprt_ply_idx   = 1 #obj is NOT zero indexed
-        #self.exprt_pnt_idx   = 0 #pts ARE zero indexed (everything BUT .obj face idx's are)
 
     ##-------------------------------------------##
     def move(self, x,y,z ):
@@ -1108,18 +1088,21 @@ class polygon_operator(point_operator):
 
     ##-------------------------------------------## 
     def move_center(self):
-        """ 
-            pop3 = object3d()
-            pop3.load('foo.obj')
-            pop3.move_center()
-            pop3.save('bar.obj')
+        """
+           relocate an object so its centroid is at world origin 
+
+            usage:
+                pop3 = object3d()
+                pop3.load('foo.obj')
+                pop3.move_center()
+                pop3.save('bar.obj')
         """                
         c = self.centroid()
         self.move(-c[0], -c[1], -c[2])
 
     ##-------------------------------------------##  
     @property
-    def dimensions(self, ptgrp=None):
+    def dimensions(self):
         """ X,Y,Z distance across object 
 
             usage:
@@ -1227,6 +1210,7 @@ class polygon_operator(point_operator):
                 n = pop3.three_vec3_to_normal(v1, v2, v3)
 
         """
+        # make sure type(v1,v2,v3) is vec3! 
 
         # calculate the face normal  
         a = v1 - v2
@@ -1270,18 +1254,29 @@ class polygon_operator(point_operator):
     def pt_is_near(self, pt1, pt2, dist ):
         """ compare two 3D points and return True if they are within 
             the specified distance to each other 
+
+            pt1 = (0,0,0)
+            pt2 = (2,2,2)
+            o = object3d()
+            out = o.pt_is_near(pt1,pt2,5)
+            print(out)
+
         """
-        
-        # convert them to vec3 objects for the built in tools  
-        pt1vec  = vec3( pt1[0], pt1[1], pt1[2])
-        pt2vec  = vec3( pt2[0], pt2[1], pt2[2])        
-        
+        # convert them to vec3 objects for the built in tools 
+        if type(pt1)is tuple or type(pt1) is list:
+            pt1vec  = vec3( pt1[0], pt1[1], pt1[2])
+        else:
+            pt1vec = pt1 
+
+        if type(pt1)is tuple or type(pt1) is list:
+             pt2vec  = vec3( pt2[0], pt2[1], pt2[2])        
+        else: 
+             pt2vec = pt2
+
         # get the vector between two points              
         b = pt1vec.between(pt2vec)
-        
+
         if b.length <= dist:
-            # experiment to cache vector data and use it later 
-            self.vec_buffer.append( (b, pt1vec) ) #+pt1vec
             return True   
         return False
 
@@ -1319,7 +1314,68 @@ class polygon_operator(point_operator):
             return near_fids
 
         return None
+    ##-------------------------------------------##
+    def ray_hit(self, ray_orgin, ray_vector):
+        """ ONLY WORKS FOR TRIANGLES  
+         
+            iterate all polygons (tris) return [[fid, hitlocation]]
 
+            return a polygon id for a ray intersect 
+
+         
+            usage:
+                pop = object3d()
+                pop.load('3d_obj/cube.obj')
+                pop.triangulate()
+                ray = (vec3(0,0,-1), vec3(0, 0, 1))
+                hits = pop.ray_hit( ray[0],  ray[1])
+                print(hits)  
+            
+                ##----------
+
+                pop = object3d()
+                pop.load('3d_obj/cube.obj')
+                pop.triangulate()
+                pop.rotate(45,45,45)
+                ray = (vec3(0,0,-3), vec3(0, .1, 1))
+                hits = pop.ray_hit( ray[0],  ray[1])
+                x = object3d()
+                x.one_vec_to_obj(ray[1], ray[0])
+                for h in hits:
+                    x.prim_locator(h[1], size=.1)
+                    g = pop.get_face_geom(h[0], reindex=True, geom=None)
+                    pop.exprt_ply_idx = 1
+                    x.insert(g)
+                x.save('ray_hits.obj')
+                pop.save('ray_obj.obj')
+
+        """
+
+        hits = []
+        
+        test = vec3()
+
+        for x in range(self.numfids):
+            geom = self.get_face_geom(x)
+
+            #vc1=vec3(geom[1][0]) 
+            #vc2=vec3(geom[1][1]) 
+            #vc3=vec3(geom[1][2])
+
+            vc1=vec3(geom[1][2]) 
+            vc2=vec3(geom[1][1]) 
+            vc3=vec3(geom[1][0])
+
+            result = test.ray_tri_intersect(ray_orgin, ray_vector, vc1, vc2, vc3)
+            if result:
+                hits.append([x,result])
+
+        # annoying - we must reset this so other get_face_geom will work 
+        self.exprt_ply_idx = 1
+
+        return hits
+
+                 
     ##-------------------------------------------## 
     def geom_to_ptgrp(self, geom):
         """ convert one weird data type into another 
@@ -1359,7 +1415,6 @@ class polygon_operator(point_operator):
         # this allows multiple polygons to be exported with an incrementing "relative" index  
         # relative, to each sub select 
         # other function can auto increment, thus allowing polygons reordering in chunks 
-        self.exprt_ply_idx = 1
         
         if span:
             if span[1]=='n' or span[1]=='N' or span[1]>self.numfids:
@@ -1384,6 +1439,8 @@ class polygon_operator(point_operator):
     ##-------------------------------------------##  
     def get_pt_ids(self, fids=None):
         """ lookup point indices (poly) from a list of face IDs 
+
+
         """
         out_poly = [] 
         for i in fids:
@@ -1473,6 +1530,9 @@ class polygon_operator(point_operator):
 
             if nothing is specified, get all the points from self
 
+            usage:
+
+
         """
 
         out = []
@@ -1490,24 +1550,20 @@ class polygon_operator(point_operator):
             return out      
 
     ##-------------------------------------------##  
-    def get_face_group(self, span=None, ids=None):
-        """ UNFINISHED 
-            get a face group, a list of faces and IDS so 
-            we can process them and put them back 
-
-            data format [ [ID, face] ]
-
-        """
-        fids = self.indexer( span=span, ids=ids)
-
-
-        pass
+    # def get_face_group(self, span=None, ids=None):
+    #     """ UNFINISHED 
+    #         get a face group, a list of faces and IDS so 
+    #         we can process them and put them back 
+    #         data format [ [ID, face] ]
+    #     """
+    #     fids = self.indexer( span=span, ids=ids)
+    #     pass
 
     ##-------------------------------------------##  
     def get_geom_edges(self, geom ):
         """ 
             takes a geom object and returns another geom of the edges 
-            it does this by iterating polhy indices in groups of 2 
+            it does this by iterating poly indices in groups of 2 
         """
 
         out_edge_ids = []
@@ -1528,25 +1584,38 @@ class polygon_operator(point_operator):
     def get_face_edges(self, fid, reindex=False, geom=None):
         """ UNTESTED 
             return [[VTX_IDS], [VTX_PTS]]
+
         """
         if geom is None:
-            self.exprt_ply_idx = 1
             geom = self.get_face_geom(fid, reindex=True)  # [[poly idx], [pt data]] 
         return self.get_geom_edges(geom)
 
     ##-------------------------------------------##  
-    def get_face_geom(self, fid,  reindex=False, geom=None):
+    def get_face_geom(self, fids,  reindex=False, geom=None):
         """ lookup and return the polygon indices and points for a single polygon 
 
             reindex - if True  - renumber the new polygon indices startring at 1, 
-                      if False - retain the oringial numbering 
+                      if False - retain the original numbering 
 
             geom - act on a geom obj passed in, or on self
+
+            usage: 
+
+            o = object3d()
+            o.load('3d_obj/cube.obj')
+            g = o.get_face_geom(3, reindex=True, geom=None)
+
+            x = object3d()
+            x.insert(g)
+            x.save('newobj.obj')
+
+
+
         """
 
         # validate inputs 
-        #if fid<1 or fid > self.numply:
-        #    print('# get_face_geom- bad face index : %s'%fid)
+        #if fids<1 or fids > self.numply:
+        #    print('# get_face_geom- bad face index : %s'%fids)
         #    return None
 
         # decide what the input is, fallback on self.poly/self.points  
@@ -1561,14 +1630,15 @@ class polygon_operator(point_operator):
         if self.verify_geom( [polygr, pointgr] ) is False:
             return None 
         
-        #if type(fid) is list:
-        if type(fid) is int:
-            fid = [fid]
+        #if type(fids) is list:
+        if type(fids) is int:
+            fids = [fids]
 
         tmp_pts = []
         out_geom = [[],[]]
 
-        for f_id in fid: 
+    
+        for f_id in fids: 
             reindex_id = []             
             if f_id<len(polygr):  
                 for v_id in polygr[f_id]:
@@ -1577,36 +1647,16 @@ class polygon_operator(point_operator):
                     # store points that are indexed in geom 
                     tmp_pts.append(pointgr[v_id-1]) #data is NOT zero index but all else IS 
                     self.exprt_ply_idx +=1
-                
+
                 # geom is always [ [(poly),..], [(point),(point),...]  ]
                 if reindex is False:
-                    ##return [[polygr[f_id]]     , tmp_pts]
                     out_geom[0].append(polygr[f_id])
                 if reindex is True:
-                    ##return [[tuple(reindex_id)] , tmp_pts]
                     out_geom[0].append(tuple(reindex_id))
             
             out_geom[1] = tmp_pts
-
-
         return out_geom
- 
 
-
-  
-        ## for v_id in polygr[fid]:
-        ##     # keep a count of points stored to use as new index
-        ##     reindex_id.append(int(self.exprt_ply_idx ))
-        ##     # store points that are indexed in geom 
-        ##     tmp_pts.append(pointgr[v_id-1]) #data is NOT zero index but all else IS 
-        ##     self.exprt_ply_idx +=1
-        ## # geom is always [ [(poly),..], [(point),(point),...]  ]
-        ## if reindex is False:
-        ##     return [[polygr[fid]]     , tmp_pts]
-        ## if reindex is True:
-        ##     return [[tuple(reindex_id)] , tmp_pts]
-        
-        return None 
 
     ##-------------------------------------------##   
     def get_face_normal(self, fid=None, unitlen=False ):

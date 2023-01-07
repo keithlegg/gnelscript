@@ -36,7 +36,7 @@ mu = math_util()
 ##-------------------------------------------------
 def do_intersection(self):
     """ 
-        setup to test vector to triangle intersection 
+        test intersection of a single vector with a triangle  
     """
 
     # project_pt
@@ -87,7 +87,7 @@ def do_intersection(self):
 
     if result:
         #hit location
-        o.prim_locator((result[1]), size=.1)
+        o.prim_locator((result), size=.1)
         #polygon normal 
         #o.pts_to_linesegment([cen, cen+(result[2])] )
 
@@ -159,6 +159,7 @@ def render_m33_as_vec3s(m33, outfile, transpose=False, vlist=None):
     obj.save(outfile)       
 
 
+##------------------------------------------------
 
 def numpy_m33_fromvec(outfile):
     my_m33 = matrix33()
@@ -168,7 +169,9 @@ def numpy_m33_fromvec(outfile):
     render_m33_as_vec3s(m, outfile, transpose=False, vlist=[axis])
 
 
-#####################################################
+
+##------------------------------------------------
+
 
 def make_right_triangle(outfile, theta):
     """ UNTESTED 
