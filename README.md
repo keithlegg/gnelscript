@@ -1,7 +1,11 @@
 ![alt text](https://github.com/keithlegg/gnelscript/blob/master/images/example/monkey_tex.png) 
-![alt text](https://github.com/keithlegg/gnelscript/blob/master/images/example/teapots.png) 
+
+![alt text](https://github.com/keithlegg/gnelscript/blob/master/images/example/teapots.png)
+
 ![alt text](https://github.com/keithlegg/gnelscript/blob/master/images/example/ngc.png) 
+
 ![alt text](https://github.com/keithlegg/gnelscript/blob/master/images/example/cam.png) 
+
 
 # gnelscript
 
