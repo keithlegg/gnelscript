@@ -775,30 +775,38 @@ class vec3(object):
             pass 
 
     ##------------------------------------- 
-    def look_at(self):
+    def lookat(self, pt):
         """
+        UNFINISHED/NOT WORKING 
+
         https://stackoverflow.com/questions/1251828/calculate-rotations-to-look-at-a-3d-point
         
-        ###################################
+        https://math.stackexchange.com/questions/3139155/finding-a-vector-that-points-towards-a-coordinate
+
+        ##--- 
 
         rotx = Math.atan2( y, z )
         roty = Math.atan2( x * Math.cos(rotx), z )
         rotz = Math.atan2( Math.cos(rotx), Math.sin(rotx) * Math.sin(roty) )
-        ###################################
-         rotx = Math.atan2( y, z );
-         if (z >= 0) {
-            roty = -Math.atan2( x * Math.cos(rotx), z );
-         }else{
-            roty = Math.atan2( x * Math.cos(rotx), -z );
-         }        
-        ###################################
 
         About X: -atan2(y, z)
         About Y: atan2(x, sqrt(y*y + z*z))
         About Z: 0 
 
         """
-        pass
+
+        x = pt[0]
+        y = pt[1]
+        z = pt[2]
+
+        rotx = math.atan2( y, z )
+        if z >= 0:
+            roty = -math.atan2( x * math.cos(rotx), z );
+        else:
+            roty = math.atan2( x * math.cos(rotx), -z );
+        
+        return [rotx,roty]
+
 
     ##------------------------------------- 
     def np_angle_between(self, v1, v2):

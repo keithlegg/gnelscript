@@ -172,47 +172,134 @@ class cam_operator(object3d):
             line = LineString([(2, 0), (2, 4), (3, 4)])
             print(line)
 
-    def radial_intersect(self, stacks, spokes):
+    ##-----------------------------------
+    def waterline(self, size_x, size_y, heights=None):
+        """
+           UNFINISHED 
+           shoot a bunch of rays down from above in a square to get the contours of an object
+        """
+
+        extents = self.calc_3d_bbox()
+        cen = self.centroid()   #pt = xzy
+        dim = self.dimensions   # xyz - 3 floats 
+
+        #if heights == None:
+        #    heights =  
+        
+        #for s in range(1,stacks):
+        #    stack_pts.append( self.calc_circle(pos=(0,0,0), rot=(0,0,0), dia=step*s, axis='y', periodic=True, spokes=spokes) )
+
+
+        pass 
+
+    ##-----------------------------------
+    def project_image(self, img_curves):
+        pass 
+
+    ##-----------------------------------
+    def zigzag_intersect(self, size_x, size_y, rows, cols, overstep=0):
+        """
+           UNFINISHED 
+           shoot a bunch of rays down from above in a square to get the contours of an object
+        """
+        
+        # height to "shoot" from 
+        yval = 5 
+
+        n = object3d()
+
+        extents = self.calc_3d_bbox()
+        cen = self.centroid()   #pt = xzy
+        dim = self.dimensions   # xyz - 3 floats 
+
+        stack_pts = [] 
+
+        for s in range(1,stacks):
+            stack_pts.append( self.calc_circle(pos=(0,0,0), rot=(0,0,0), dia=step*s, axis='y', periodic=True, spokes=spokes) )
+
+        
+        curve_geom = [] 
+        
+        """
+        for ring in stack_pts:
+            newcurve = [] 
+            for pt in ring:
+                ray = (vec3(pt[0], yval, pt[2]), vec3(0, -1, 0))
+                hits = self.ray_hit( ray[0], ray[1])
+                print(hits)
+                #n.prim_locator(pos=pt, size=.1)
+                #n.one_vec_to_obj(ray[1], ray[0])
+                for h in hits:
+                    newcurve.append(h[1])
+                    #n.prim_locator(h[1], size=.1)
+                    # g = self.get_face_geom(h[0], reindex=True, geom=None)
+                    # self.exprt_ply_idx = 1
+                    # n.insert(g)
+                curve_geom.append(newcurve)
+        """ 
+
+        for curve in curve_geom:
+            if len(curve):
+                n.linegeom_fr_points(curve, periodic=True )
+
+        n.save("lotsa_locators.obj")
+
+    ##-----------------------------------
+    def radial_intersect(self, step, stacks, spokes):
         """ 
            shoot a bunch of rays down from above in a circle to get the contours of an object
         """
+        
+        # height to "shoot" from 
+        yval = 5 
+
         n = object3d()
 
         extents = self.calc_3d_bbox()
         cen = self.centroid() 
        
         stack_pts = [] 
-        
-        step = .1 
 
         for s in range(1,stacks):
-            stack_pts.append( self.calc_circle(pos=(0,0,0), rot=(0,0,0), dia=step*s, axis='y', periodic=True, spokes=spokes) )
+            stack_pts.append( self.calc_circle(pos=(cen[0],0,cen[2]), rot=(0,0,0), dia=step*s, axis='y', periodic=True, spokes=spokes) )
 
-        yval = 5 
+        curve_geom = [] 
 
         for ring in stack_pts:
+            
+            newcurve = [] 
+
             for pt in ring:
-                #n.prim_locator(pos=pt, size=.1)
                 ray = (vec3(pt[0], yval, pt[2]), vec3(0, -1, 0))
                 
                 hits = self.ray_hit( ray[0], ray[1])
                 print(hits)
 
-                n.one_vec_to_obj(ray[1], ray[0])
-                for h in hits:
-                    n.prim_locator(h[1], size=.1)
-                    g = self.get_face_geom(h[0], reindex=True, geom=None)
-                    self.exprt_ply_idx = 1
-                    n.insert(g)
+                #n.prim_locator(pos=pt, size=.1)
+                #n.one_vec_to_obj(ray[1], ray[0])
                 
+                for h in hits:
+                    newcurve.append(h[1])
+                    #n.prim_locator(h[1], size=.1)
+                    
+                    # g = self.get_face_geom(h[0], reindex=True, geom=None)
+                    # self.exprt_ply_idx = 1
+                    # n.insert(g)
+                curve_geom.append(newcurve)
 
+        for curve in curve_geom:
+            if len(curve):
+                n.linegeom_fr_points(curve, periodic=True )
 
         n.save("lotsa_locators.obj")
          
 
+    ##-----------------------------------
 
     def zigzag_on_quad(self, fid, num):
-        """ extract points on a 4 sided face """
+        """ extract points on a 4 sided face 
+            does not use raycasting - gets the edges of a face and sets points along those
+        """
 
         out = [] 
         tmp = self.get_face_geom(fid, reindex=True) #returns [fidx, pts] 
@@ -266,30 +353,12 @@ class cam_operator(object3d):
         o.save('zigzag.obj')
 
         return cuts
- 
 
-    def edge_extract(self,filename, vector):
-        """
-           UNFINISHED  
-
-           find edged based on angle  
-
-        """
-
-        obj = object3d()
-        obj.load(filename)
-        
-        #obj.extrude_face(0,2)
-        #obj.triangulate()
-
-        obj.show()
-        obj.save('extruded.obj')
-
-
-
+    ##-----------------------------------
 
     def poly_bisect(self):
-        """ 
+        """
+           test of polygon raycast code  
            if face is a quad you could get the two "vertical" egdes as vectors 
 
         """
@@ -351,7 +420,7 @@ class cam_operator(object3d):
         
         print(result)
 
-
+    ##-----------------------------------
 
 
     def delaunay(self, object, height):
@@ -359,7 +428,7 @@ class cam_operator(object3d):
         pass 
 
 
-    ##--
+    ##-----------------------------------    
     def dialate(self):
         pass 
 
@@ -388,7 +457,7 @@ class cam_operator(object3d):
 
         pass 
 
-
+    ##-----------------------------------
     def face_sprial(self):
        """ recursive erode->scanline -> repeat == spiral  
 

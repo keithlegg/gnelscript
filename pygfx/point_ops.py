@@ -110,22 +110,39 @@ class point_operator(object):
         self.vec3     = vec3()      
 
     ##-------------------------------------------##
-    def mirror(self, origin, axis):
+    #def mirror(self, origin, axis):
         """ mirror a set of points """
-        
-        pass
-
+     
+    ##-------------------------------------------##   
 
     # def array(self, origin, axis):
     #     pass
 
+    ##-------------------------------------------##   
 
     # def clone(self, origin, axis):
     #     pass
 
+    ##-------------------------------------------## 
+    #def grow_selection(self, ptgrp, facgrp, u_num, v_num):
 
     ##-------------------------------------------## 
-    def csp_str(self, pt):
+    #def weld_edges(self, obj):
+
+    ##-------------------------------------------##  
+    #def scan_shells(self, obj):
+    #    """ look for all the chunks of geometry that are not connected """
+
+    ##-------------------------------------------##   
+    #def poly_seperate(self, obj):
+    #    """ check for geometry that is not connected, if any found, break it off """
+
+    ##-------------------------------------------##   
+    #def get_edge_centroid(self, f_id , e_id):
+    #    pass
+
+    ##-------------------------------------------## 
+    def _csp_str(self, pt):
         """ clean single point - tuple of 2 or 3 floats
             destructive command - cleans floats for export but will loose precision 
             only run when object is exported 
@@ -897,20 +914,20 @@ class polygon_operator(point_operator):
         if pts==None:
             #print(self.points)
             for pt in self.points:
-                cleaned.append( self.csp_str(pt) )
+                cleaned.append( self._csp_str(pt) )
             self.points = cleaned
         else:
             #print(pts)
             for pt in pts:
-                cleaned.append( self.csp_str(pt) )            
+                cleaned.append( self._csp_str(pt) )            
             return cleaned
 
     ##-------------------------------------------##  
-    def scribe(self, str):
+    def _scribe(self, str):
         print(str)
 
     ##-------------------------------------------##           
-    def flush(self):
+    def _flush(self):
         """ set all geometry to a clean state """
 
         self.points          = [] 
@@ -1042,24 +1059,6 @@ class polygon_operator(point_operator):
                         print('## debug verify geom contains invalid index ')    
                     return False       
         return True 
-
-    ##-------------------------------------------## 
-    #def grow_selection(self, ptgrp, facgrp, u_num, v_num):
-
-    ##-------------------------------------------## 
-    #def weld_edges(self, obj):
-
-    ##-------------------------------------------##  
-    #def scan_shells(self, obj):
-    #    """ look for all the chunks of geometry that are not connected """
-
-    ##-------------------------------------------##   
-    #def poly_seperate(self, obj):
-    #    """ check for geometry that is not connected, if any found, break it off """
-
-    ##-------------------------------------------##   
-    #def get_edge_centroid(self, f_id , e_id):
-    #    pass
 
     ##-------------------------------------------##  
     def _reindex_ply(self, f_idx, offset):
@@ -1550,16 +1549,6 @@ class polygon_operator(point_operator):
             return out      
 
     ##-------------------------------------------##  
-    # def get_face_group(self, span=None, ids=None):
-    #     """ UNFINISHED 
-    #         get a face group, a list of faces and IDS so 
-    #         we can process them and put them back 
-    #         data format [ [ID, face] ]
-    #     """
-    #     fids = self.indexer( span=span, ids=ids)
-    #     pass
-
-    ##-------------------------------------------##  
     def get_geom_edges(self, geom ):
         """ 
             takes a geom object and returns another geom of the edges 
@@ -1713,10 +1702,6 @@ class polygon_operator(point_operator):
     ##-------------------------------------------## 
     ##-------------------------------------------##  
     # operators that modify geometry data and/or build new geom 
-
-
-    ##-------------------------------------------## 
-    #def auto_center():
 
     ##-------------------------------------------##  
     def apply_matrix_ptgrp(self, ptgrp, m33=None, m44=None):
@@ -1961,25 +1946,6 @@ class polygon_operator(point_operator):
         self.points.extend(pts)
         self.polygons.append( [npts+1,npts+2,npts+3, npts+4])
 
-
-    ##-------------------------------------------##  
-    def revolve_points(self, numdivs, axis, pts):
-        """ simple lathe function 
-
-        """
-
-        
-        step = int(360/numdivs)
- 
-        out = []
-        if axis == 'y':
-            for r in range(1, 360, step):
-                #self.rotate_pts( (0,r,0), ptgrp=self.pts_to_ptgrp(pts) )
-                out.append(self.rotate_pts( (0,r,0), pts=pts) )
-
-        return out
-        #return  self.modulo(numdivs, self.points) 
-
     ##-------------------------------------------##  
     def linegeom_fr_points(self, pts, color=(100,0,100), periodic=False ):
         """ create renderable lines from array of 3D pts 
@@ -2001,9 +1967,51 @@ class polygon_operator(point_operator):
                 self.points.append( (pt2[0], pt2[1], pt2[2], color[0], color[1], color[2]) ); lptidx+=1 
                 self.polygons.append([lptidx-1, lptidx])
 
+    ##-------------------------------------------##  
+    def revolve_points(self, numdivs, axis, pts):
+        """ simple lathe function 
+
+        """
+
+        
+        step = int(360/numdivs)
+ 
+        out = []
+        if axis == 'y':
+            for r in range(1, 360, step):
+                #self.rotate_pts( (0,r,0), ptgrp=self.pts_to_ptgrp(pts) )
+                out.append(self.rotate_pts( (0,r,0), pts=pts) )
+
+        return out
+        #return  self.modulo(numdivs, self.points) 
+
     ##-------------------------------------------## 
-    def lathe(self, pts, num):
-        """ spin a set of 3d points 360 degrees and make a renderable surface """
+    def lathe(self, pts, num, axis='y'):
+        """ spin a set of 3d points 360 degrees and make a renderable surface 
+            needs to have the same num U and V to work
+
+            usage: 
+            
+            # simple example 
+            
+                obj = object3d()
+                pts = [(.1,.1,0),(1,1,0),(2,2,0),(3,3,0)]
+                obj.lathe(pts, 4)
+
+
+            # using bezier curve function 
+
+                obj = object3d()
+                num = 23
+                start = (1 ,  0, 0)
+                ctrl1 = (.5,  0, 0)
+                ctrl2 = ( 0, .5, 0)
+                end   = (0 ,  1, 0)
+                curve = obj.cubic_bezier(num, start, ctrl1, ctrl2, end)
+                obj.lathe(curve, num)
+                obj.save('lathe.obj')
+
+        """
 
         # use readable indices for testing iterator
         # pt_grid = [ ['a','b','c','d'],
@@ -2013,16 +2021,18 @@ class polygon_operator(point_operator):
         #  print('##################\n\n')
         # self.print_grid(pt_grid)
 
-        pt_grid = self.revolve_points( num, 'y', pts )
+        pt_grid = self.revolve_points( num, axis, pts )
 
         #print( pt_grid )
+        viewhulls = False 
 
         #view hulls for debugging
-        #for n in range(num):
-        #    rows = self.get_grid_column( pt_grid , n)
-        #    cols = self.get_grid_row( pt_grid    , n)
-        #    self.linegeom_fr_points( rows )
-        #    self.linegeom_fr_points( cols )                
+        if viewhulls:
+            for n in range(num):
+                rows = self.get_grid_column( pt_grid , n)
+                cols = self.get_grid_row( pt_grid    , n)
+                self.linegeom_fr_points( rows )
+                self.linegeom_fr_points( cols )                
        
         for u in range(num):
             for v in range(num):
@@ -2079,7 +2089,11 @@ class polygon_operator(point_operator):
 
     ##-------------------------------------------##  
     def extrude_face(self, f_id, distance):
- 
+        """ 
+           proof of concept - but it makes bad topology - the edges are not connected 
+
+        """
+
         geom  = self.sub_select_geom(ids=[f_id] , reindex=True)
         nrml = self.get_face_normal(fid=f_id, unitlen=True) 
 
@@ -2307,8 +2321,6 @@ class polygon_operator(point_operator):
         """
         out_polys = []
 
-        #print("### DEBUG TRIANGULATE CALLED ", len(self.polygons) )
-
         if force is True:
             self.radial_triangulate_obj(offset=offset)
 
@@ -2380,7 +2392,7 @@ class polygon_operator(point_operator):
     ##-------------------------------------------## 
     #file IO / mesh analysis, etc 
 
-    def repair(self):
+    def _repair(self):
         """ UNFINISHED 
             walk internal data and fix any bad data found  (empty point tuples, etc) 
         """
@@ -2390,17 +2402,17 @@ class polygon_operator(point_operator):
         for i,pt in enumerate(self.points):
             
             if pt is None:
-                self.scribe("pt idx %s is None"%i )
+                self._scribe("pt idx %s is None"%i )
 
             elif type(pt)==vec3:
                 fix.append( (pt.x, pt.y, pt.z) )
 
             elif len(pt)==0:
-                self.scribe('found bad data - empty vertex')
+                self._scribe('found bad data - empty vertex')
              
             #CASE     
             #elif len(pt)==0:
-            #    self.scribe('found bad data ')
+            #    self._scribe('found bad data ')
             
             #CASE
             #
@@ -2427,10 +2439,10 @@ class polygon_operator(point_operator):
         """
 
         #if doflush is True:
-        #    self.flush() 
+        #    self._flush() 
 
         if os.path.lexists(filename) == 0:
-            self.scribe("%s DOES NOT EXIST !! "%filename )
+            self._scribe("%s DOES NOT EXIST !! "%filename )
             #raise
             
         if os.path.lexists(filename):
@@ -2553,7 +2565,7 @@ class polygon_operator(point_operator):
         """    
         
         ##################
-        self.repair()#optional but this will help find/fix problems later
+        self._repair()#optional but this will help find/fix problems later
 
 
         buf = [] #array of strings to be written out as the OBJ file
@@ -2600,7 +2612,7 @@ class polygon_operator(point_operator):
         for s in buf:
             output=output+s+'\n'
 
-        self.scribe('### file "%s" saved' % filename)
+        self._scribe('### file "%s" saved' % filename)
 
         #save it to disk now
         fobj = open( filename,"w") #encoding='utf-8'

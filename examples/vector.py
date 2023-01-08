@@ -126,10 +126,7 @@ def rotate_around_vec(outfile):
     obj.one_vec_to_obj( (2,0,0) )     
     obj.save(outfile)
 
-# rotate_around_vec()
-
-
-#####################################################
+##------------------------------------------------
 
 def render_m33_as_vec3s(m33, outfile, transpose=False, vlist=None):
     """ create renderable line geom to visualize a matrix 
@@ -158,7 +155,6 @@ def render_m33_as_vec3s(m33, outfile, transpose=False, vlist=None):
     obj.vectorlist_to_obj( rendervecs )
     obj.save(outfile)       
 
-
 ##------------------------------------------------
 
 def numpy_m33_fromvec(outfile):
@@ -168,10 +164,7 @@ def numpy_m33_fromvec(outfile):
 
     render_m33_as_vec3s(m, outfile, transpose=False, vlist=[axis])
 
-
-
 ##------------------------------------------------
-
 
 def make_right_triangle(outfile, theta):
     """ UNTESTED 
@@ -229,7 +222,7 @@ def make_right_triangle(outfile, theta):
 
     obj.save(outfile)
 
-#####################################################
+##------------------------------------------------
 def homogeneous_test():
     camera = vec3( 0,0,-5 )
  
@@ -276,7 +269,7 @@ def homogeneous_test():
     obj.save('frustrum.obj')
 """
 
-#####################################################
+##------------------------------------------------
 """
 def homogeneous_test_2d():
     camera = vec3(0,0,-5)
@@ -290,7 +283,7 @@ def homogeneous_test_2d():
     #vf_bl = vec4() 
 """
 
-#####################################################
+##------------------------------------------------
 
 def angle_between_vectors():
     """ print the angle between two vectors """
@@ -302,9 +295,7 @@ def angle_between_vectors():
     print( mu.rtd(v2.angle_between(v1))        ) 
     print( mu.rtd(v3.np_angle_between(v1, v2)) )
 
-
-
-#####################################################
+##------------------------------------------------
 
 def unit_circle_viewer( outfile ):
     """ UNFINSIHED 
@@ -332,8 +323,7 @@ def unit_circle_viewer( outfile ):
 
 # unit_circle_viewer()
 
-#####################################################
-
+##------------------------------------------------
 
 def right_triangle_viewer( xcrd, ycrd, outfile):
     """ UNFINSIHED 
@@ -359,8 +349,7 @@ def right_triangle_viewer( xcrd, ycrd, outfile):
 
 #right_triangle_viewer(2,2)
 
-
-#####################################################
+##------------------------------------------------
     
 def visualize_cross_product( outfile ):
     obj = object3d()
@@ -378,7 +367,7 @@ def visualize_cross_product( outfile ):
 
 #visualize_cross_product()
 
-#####################################################
+##------------------------------------------------
 
 def offset_between_2vecs( outfile):
     """ create a vector representing offset between two points """
@@ -405,9 +394,7 @@ def offset_between_2vecs( outfile):
 
 #offset_between_2vecs() 
 
-
-
-#####################################################
+##------------------------------------------------
 
 def make_normal_all_faces( infile, outfile ):
     """ the zero indexing is a big problem  
@@ -432,7 +419,7 @@ def make_normal_all_faces( infile, outfile ):
 
 # make_normal_all_faces() 
 
-#####################################################
+##------------------------------------------------
 def load_build_another_from_normals(infile, outfile):
     """ load an object, 
         turn its normals into another line object, 
@@ -462,47 +449,8 @@ def load_build_another_from_normals(infile, outfile):
     ropr.render_obj((100,0,255), 0, 0, 0, 1, 150, object3d=obj2)
     ropr.save_image('pretty_render.png')
 
-#####################################################
 
-def model_geom_from_scratch_calc_normals(): 
-
-    obj   = object3d() # container for 3D object 
-    geom  = [[],[]]    # container for some random geometry (optional)
-
-    # add new geom  
-    polys = [(1,2,3,4) ]  #if you reverse the indexing, the normal inverts   
-    pts   = [ (1,1,0), (1,-1,0), (-1,-1,0), (-1,1,0) ]
-
-    # if you pass a geom container it will populate it 
-    # instead of putting the geometry into the object  
-    geom = obj.insert_polygons(polys, pts, geom=geom) 
-    # use insert to add geom to object 
-    obj.insert(geom) 
-
-    # get the data from face ID with helper functions 
-    # normal    = obj.get_face_normal(0)
-    # centroid  = obj.get_face_centroid(0) 
-
-    # ... or calculate them yourself.  
-    normal   = obj.calc_tripoly_normal(pts[0:3], True)
-    centroid = obj.centroid(pts[0:3]) 
-
-    # see what we have done, or not done 
-    # obj.show() 
-    obj.save(PYCORE_OBJ_OUT)
-
-    #######################
-    obj2 = object3d()
-    obj2.vectorlist_to_obj([normal.normal]) #, pos=centroid)
-    obj2.save("new_normal.obj")
-
-#model_geom_from_scratch_calc_normals() 
-
-
-
-
-
-#####################################################
+##------------------------------------------------
 
 def build_orthogonal_vector(outfile):
     """ treats the "line" as an infinite vector 
