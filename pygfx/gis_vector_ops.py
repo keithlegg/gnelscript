@@ -79,12 +79,12 @@ class vectorflow(object3d):
 
         self.omit_ids      = [] #list of feature ids to NOT export (but leave in)
 
-        self.rh = 2            # retract height 
-        self.ch = .5           # cut height (top, start of cut)
+        self.rh = 1            # retract height 
+        self.ch = .1           # cut height (top, start of cut)
         self.cdpi = .01        # cut depth per iteration on Z axis
         self.cmax = 1          # maximum cut depth on Z axis 
 
-        self.hp = (0,0,0)              # home position 
+        self.hp = (0,0,self.rh) # home position 
 
         self.orig_minx = 0
         self.orig_miny = 0         
@@ -968,10 +968,14 @@ class vectorflow(object3d):
 
     ##-------------------------------##
     def export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False):
-        print("# exporting NGC file ", filename)
 
+        if ch==None:
+            print("# exporting NGC file - cut height disabled (3d) ", filename)
+        else:
+            print("# exporting NGC file ", filename)
+            self.ch = ch          # cut height (top, start of cut)
+        
         self.rh = rh          # retract height 
-        self.ch = ch          # cut height (top, start of cut)
         self.cdpi = cdpi      # cut depth per iteration on Z axis
         self.cmax = cmax      # maximum cut depth on Z axis 
 

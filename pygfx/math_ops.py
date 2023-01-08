@@ -896,6 +896,12 @@ class vec3(object):
 
         t = 0 
 
+        #DEBUG  a but hacky 
+        if type(dir) is not vec3:
+            dir = vec3(dir)
+        if type(orig) is not vec3:
+            orig = vec3(orig)
+
         # compute the plane's normal
         v0v1 = vec3()
         v0v2 = vec3()

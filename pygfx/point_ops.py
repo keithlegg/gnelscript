@@ -1345,13 +1345,14 @@ class polygon_operator(point_operator):
 
         return None
     ##-------------------------------------------##
-    def ray_hit(self, ray_orgin, ray_vector):
+    def ray_hit(self, ray_orgin, ray_vector, fastmode=False):
         """ ONLY WORKS FOR TRIANGLES  
          
-            iterate all polygons (tris) return [[fid, hitlocation]]
+            Iterates all polygons (tris) return [[fid, hitlocation]]
+
+            fastmode will stop after it finds a single hit. If off it will find all hits. 
 
             return a polygon id for a ray intersect 
-
          
             usage:
                 pop = object3d()
@@ -1388,19 +1389,24 @@ class polygon_operator(point_operator):
         for x in range(self.numfids):
             geom = self.get_face_geom(x)
 
-            print(geom) 
-            #vc1=vec3(geom[1][0]) 
-            #vc2=vec3(geom[1][1]) 
-            #vc3=vec3(geom[1][2])
-
             if len(geom[1])>2:
+                
+                # right or left handed coords - IDK 
+                #vc1=vec3(geom[1][0]) 
+                #vc2=vec3(geom[1][1]) 
+                #vc3=vec3(geom[1][2])
+                
+                # right or left handed coords - IDK 
                 vc1=vec3(geom[1][2]) 
                 vc2=vec3(geom[1][1]) 
                 vc3=vec3(geom[1][0])
 
                 result = test.ray_tri_intersect(ray_orgin, ray_vector, vc1, vc2, vc3)
                 if result:
-                    hits.append([x,result])
+                    if fastmode:
+                        return [[x,result]]
+                    else:    
+                        hits.append([x,result])
 
         # annoying - we must reset this so other get_face_geom will work 
         self.exprt_ply_idx = 1

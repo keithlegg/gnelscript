@@ -173,10 +173,62 @@ class cam_operator(object3d):
             print(line)
 
     ##-----------------------------------
-    def waterline(self, size_x, size_y, heights=None):
+    def radial_intersect(self, step, stacks, spokes):
+        """ 
+           shoot a bunch of rays down from above in a circle to get the contours of an object
+        """
+        
+        # height to "shoot" from 
+        yval = 5 
+
+        n = object3d()
+
+        extents = self.calc_3d_bbox()
+        cen = self.centroid() 
+       
+        stack_pts = [] 
+
+        for s in range(1,stacks):
+            #stack_pts.append( self.calc_circle(pos=(cen[0],cen[1],cen[2]), rot=(0,0,0), dia=step*s, axis='y', periodic=True, spokes=spokes) )
+            stack_pts.append( self.calc_circle(pos=(0,0,0), rot=(0,0,0), dia=step*s, axis='y', periodic=True, spokes=spokes) )
+
+        curve_geom = [] 
+
+        for ring in stack_pts:
+            
+            newcurve = [] 
+
+            for pt in ring:
+                ray = (vec3(pt[0], yval, pt[2]), vec3(0, -1, 0))
+                
+                hits = self.ray_hit( ray[0], ray[1])
+                print(hits)
+
+                #n.prim_locator(pos=pt, size=.1)
+                #n.one_vec_to_obj(ray[1], ray[0])
+                
+                for h in hits:
+                    newcurve.append(h[1])
+                    #n.prim_locator(h[1], size=.1)
+                    
+                    # g = self.get_face_geom(h[0], reindex=True, geom=None)
+                    # self.exprt_ply_idx = 1
+                    # n.insert(g)
+                curve_geom.append(newcurve)
+
+        for curve in curve_geom:
+            if len(curve):
+                #n.linegeom_fr_points(curve, periodic=True )
+                n.linegeom_fr_points(curve, periodic=False )
+
+        n.save("lotsa_locators.obj")
+
+    ##-----------------------------------
+    def waterline(self, radius, spokes, heights=None):
         """
            UNFINISHED 
-           shoot a bunch of rays down from above in a square to get the contours of an object
+           shoot rays at center target from a circle around it 
+
         """
 
         extents = self.calc_3d_bbox()
@@ -186,11 +238,47 @@ class cam_operator(object3d):
         #if heights == None:
         #    heights =  
         
-        #for s in range(1,stacks):
-        #    stack_pts.append( self.calc_circle(pos=(0,0,0), rot=(0,0,0), dia=step*s, axis='y', periodic=True, spokes=spokes) )
+        ray_positions = [] 
 
+        curve_geom =[]
 
-        pass 
+        n = object3d()
+
+        numheights = len(heights)
+
+        for i,h in enumerate(heights):
+            print("calculating ring %s of %s"%(i,numheights))
+            for s in range(0,1):
+                ray_positions = self.calc_circle(pos=(0,h,0), rot=(0,0,0), dia=radius*2, axis='y', periodic=True, spokes=spokes) 
+                #calc vector to 0 point 
+                
+                newcurve =[]          
+                for ray in ray_positions:
+                    aim = vec3()
+                    aim =  vec3(0,0,0) - vec3(ray) 
+
+                    hits = self.ray_hit( ray, aim, fastmode=True)
+                    if hits:
+                        newcurve.append(hits[0][1])
+
+                    #for h in hits:
+                    #    n.prim_locator(h[1], size=.1)
+                    #    g = self.get_face_geom(h[0], reindex=True, geom=None)
+                    #    self.exprt_ply_idx = 1
+                    #    n.insert(g)
+
+                    curve_geom.append(newcurve)
+
+        #print(curve_geom)
+
+        #print(ray_positions)
+        for curve in curve_geom:
+            if len(curve):
+                #n.linegeom_fr_points(curve, periodic=True )
+                n.linegeom_fr_points(curve, periodic=False )
+
+    
+        n.save("waterline.obj")  
 
     ##-----------------------------------
     def project_image(self, img_curves):
@@ -244,56 +332,7 @@ class cam_operator(object3d):
 
         n.save("lotsa_locators.obj")
 
-    ##-----------------------------------
-    def radial_intersect(self, step, stacks, spokes):
-        """ 
-           shoot a bunch of rays down from above in a circle to get the contours of an object
-        """
-        
-        # height to "shoot" from 
-        yval = 5 
 
-        n = object3d()
-
-        extents = self.calc_3d_bbox()
-        cen = self.centroid() 
-       
-        stack_pts = [] 
-
-        for s in range(1,stacks):
-            #stack_pts.append( self.calc_circle(pos=(cen[0],cen[1],cen[2]), rot=(0,0,0), dia=step*s, axis='y', periodic=True, spokes=spokes) )
-            stack_pts.append( self.calc_circle(pos=(0,0,0), rot=(0,0,0), dia=step*s, axis='y', periodic=True, spokes=spokes) )
-
-        curve_geom = [] 
-
-        for ring in stack_pts:
-            
-            newcurve = [] 
-
-            for pt in ring:
-                ray = (vec3(pt[0], yval, pt[2]), vec3(0, -1, 0))
-                
-                hits = self.ray_hit( ray[0], ray[1])
-                print(hits)
-
-                #n.prim_locator(pos=pt, size=.1)
-                #n.one_vec_to_obj(ray[1], ray[0])
-                
-                for h in hits:
-                    newcurve.append(h[1])
-                    #n.prim_locator(h[1], size=.1)
-                    
-                    # g = self.get_face_geom(h[0], reindex=True, geom=None)
-                    # self.exprt_ply_idx = 1
-                    # n.insert(g)
-                curve_geom.append(newcurve)
-
-        for curve in curve_geom:
-            if len(curve):
-                #n.linegeom_fr_points(curve, periodic=True )
-                n.linegeom_fr_points(curve, periodic=False )
-
-        n.save("lotsa_locators.obj")
          
 
     ##-----------------------------------
