@@ -1810,7 +1810,7 @@ class matrix44(object):
                 self.m[8] -n[8] , self.m[9]-n[9]  , self.m[10]-n[10], self.m[11]-n[11],
                 self.m[12]-n[12], self.m[13]-n[13], self.m[14]-n[14], self.m[15]-n[15]
                )
-   
+
     def __mul__(self, n):
         """multiply this 4X4 by another 4X4 matrix or a vector3, vector4 """
 

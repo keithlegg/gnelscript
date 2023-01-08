@@ -170,6 +170,32 @@ class point_operator(object):
         return outputs
 
     ##-------------------------------------------## 
+    def apply_matrix_pts_round(self, pl, pts, m33=None, m44=None):
+        """ UNTESTED 
+            DO ROUNDING AND batch mutliply points by a matrix 
+        """
+        tmp_buffer = [] 
+
+        # apply the transform here
+        for pt in pts:  
+            if m33 is not None:
+                tmp = m44*pt                
+                rpt = (round(tmp[0],pl),
+                       round(tmp[1],pl),
+                       round(tmp[2],pl)
+                       )  
+                tmp_buffer.append( rpt )
+
+            if m44 is not None:
+                tmp = m44*pt
+                rpt = (round(tmp[0],pl),
+                       round(tmp[1],pl),
+                       round(tmp[2],pl)
+                       )  
+                tmp_buffer.append( rpt )
+        return tmp_buffer
+
+    ##-------------------------------------------## 
     def apply_matrix_pts(self, pts, m33=None, m44=None):
         """ 
             batch mutliply points by a matrix 
@@ -576,14 +602,19 @@ class point_operator(object):
 
 
     ##-------------------------------------------## 
-    def calc_square_diag(self, tl, br):
+    def calc_square_diag(self, tl, br, add_zaxis=False):
         """ creates 4 coordinates representing an extent box from a diagonal coordinate pair """ 
         out =[]  
-        out.append( (tl[0], tl[1])  ) #tl
-        out.append( (br[0], tl[1])  ) #tr
-        out.append( (br[0], br[1])  ) #br
-        out.append( (tl[0], br[1])  ) #bl
-
+        if add_zaxis:
+            out.append( (tl[0], tl[1], 0)  ) #tl
+            out.append( (br[0], tl[1], 0)  ) #tr
+            out.append( (br[0], br[1], 0)  ) #br
+            out.append( (tl[0], br[1], 0)  ) #bl
+        else:
+            out.append( (tl[0], tl[1])  ) #tl
+            out.append( (br[0], tl[1])  ) #tr
+            out.append( (br[0], br[1])  ) #br
+            out.append( (tl[0], br[1])  ) #bl            
         return out
 
     ##-------------------------------------------##
@@ -1357,17 +1388,19 @@ class polygon_operator(point_operator):
         for x in range(self.numfids):
             geom = self.get_face_geom(x)
 
+            print(geom) 
             #vc1=vec3(geom[1][0]) 
             #vc2=vec3(geom[1][1]) 
             #vc3=vec3(geom[1][2])
 
-            vc1=vec3(geom[1][2]) 
-            vc2=vec3(geom[1][1]) 
-            vc3=vec3(geom[1][0])
+            if len(geom[1])>2:
+                vc1=vec3(geom[1][2]) 
+                vc2=vec3(geom[1][1]) 
+                vc3=vec3(geom[1][0])
 
-            result = test.ray_tri_intersect(ray_orgin, ray_vector, vc1, vc2, vc3)
-            if result:
-                hits.append([x,result])
+                result = test.ray_tri_intersect(ray_orgin, ray_vector, vc1, vc2, vc3)
+                if result:
+                    hits.append([x,result])
 
         # annoying - we must reset this so other get_face_geom will work 
         self.exprt_ply_idx = 1
@@ -1773,7 +1806,7 @@ class polygon_operator(point_operator):
         self.insert_pt_grp(scaled)
 
     ##-------------------------------------------##   
-    def rotate_pts(self, rot, pts=None, ptgrp=None):
+    def rotate_pts(self, rot, pts=None, ptgrp=None, doround=False):
         """  
             rotate some points with a matrix
             works on a pointgroup, or a list of points 
@@ -1818,7 +1851,11 @@ class polygon_operator(point_operator):
         ################################################
         # if points passed in but no point group operate on pts
         if pts is not None and ptgrp is None: 
-            return self.apply_matrix_pts(pts,  m44=rot_matrix)  
+            if doround:
+                return self.apply_matrix_pts_round(4, pts,  m44=rot_matrix)  
+            else:
+                return self.apply_matrix_pts(pts,  m44=rot_matrix) 
+            
 
         # if neither is specified, apply to whole object 
         if pts is None and ptgrp is None:
@@ -2528,8 +2565,12 @@ class polygon_operator(point_operator):
 
                         # UV's
                         if tok[0]=='vt':
-                            # print('texture UV found ', tok)
-                            self.uv_points.append( (float(tok[1]), float(tok[2]), float(tok[3]) ) ) 
+                            #print('texture UV found ', tok)
+                            
+                            #print(tok)
+
+                            if len(tok)==3: 
+                                self.uv_points.append( (float(tok[1]), float(tok[2])) )  
 
                             """
                             v  0.000000 2.000000 0.000000

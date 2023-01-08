@@ -165,10 +165,6 @@ class vectorflow(object3d):
             #spirals.append(newply)
             self.gr_sort[idx][4] = newply  
 
-
-
-
-
     ##-------------------------------##       
     def _sort(self):
         """ assemble data into [[id, centroid, extents, len, points ]] - put that in self.gr_sort   
@@ -220,6 +216,74 @@ class vectorflow(object3d):
 
         print("orig data extents %s %s %s %s "%(self.orig_minx, self.orig_maxx, self.orig_miny, self.orig_maxy) )
 
+    ##-------------------------------------------## 
+    ##-------------------------------------------## 
+    def show_setup(self):
+        print("retract height %s"%self.rh)
+        print("cut height     %s"%self.ch)
+        print("cut max        %s"%self.cmax)
+        print("cut cdpi       %s"%self.cdpi)
+
+        print('original extents  %s %s %s %s '%(self.orig_minx, self.orig_miny, self.orig_maxx, self.orig_maxy))
+        print('sorted extents    %s %s %s %s '%(self.sort_minx, self.sort_miny, self.sort_maxx, self.sort_maxy)) 
+
+
+
+    ##-------------------------------##
+
+    def show_buffers(self, sid=None):
+        """
+        
+            show evrything meaningful we can about our data 
+            id is optional 
+            - if passed use it to look up gr_poly and gr_sort, etc  
+
+        """
+        
+        print('#################')
+        if sid is None:
+            #[[id, centroid, extents, len, points ]
+            #for ply in self.gr_sort:
+            #    print("%s %s %s "%(ply[0], ply[1], len(ply[2]) )) 
+
+            print('size gr_polys     %s'%len(self.gr_polys))
+            print('size gr_sort      %s'%len(self.gr_sort))
+
+        else:
+            grp = self.gr_polys[sid]
+            grs = self.gr_sort[sid]
+            print('gr_polys id %s size %s  '%( sid, len(grp) ) )
+            print('gr_sort  id %s json id:%s extents %s len %s size: %s '%( sid, grs[0], grs[1], grs[2], grs[3] ) )
+
+
+    ##---------------------- 
+    def grply_inspect(self, index=None):
+        """
+            #return info about how many features, sub features, etc are in a file 
+            
+            args:
+                index is positive int or iterable 
+
+            todo:
+                slice , index 
+                get extents 
+                get centroid 
+                get as vectors 
+
+        """
+    
+        print("##------------##")
+
+        if index == None:
+            print("gr_poly buffer has %s polygons "%len(self.gr_polys) )
+            for i,p in enumerate(self.gr_polys):
+                print("    feature %s has %s points"%(i, len(p)))
+                print(p)
+
+        else:
+            pass 
+
+    ##-------------------------------------------## 
     ##-------------------------------------------## 
     def gl_extents(self):
         """ global extents DEBUG - NOT TESTED
@@ -287,6 +351,7 @@ class vectorflow(object3d):
             global move the entire dataset in 2d (ignore Z axis) 
             this allows 3D moves but you probably want 2D - zero the Z axis for pos or just send it 2 coords
         """
+        print("global move ", pos) 
 
         pop = polygon_operator()
 
@@ -306,14 +371,16 @@ class vectorflow(object3d):
             global rotate the entire dataset in 2d  
             this allows 3D moves but you probably want 2D - zero the Z axis for pos or just send it 2 coords
         """
+        print("global rotate ", rot) 
 
         pop = polygon_operator()
 
         for i,row in enumerate(self.gr_sort):
-            if len(rot)==2:
-                self.gr_sort[i][4] = pop.trs_points(self.gr_sort[i][4], rotate=(-rot[0], -rot[1]) )
-            if len(rot)==3:
-                self.gr_sort[i][4] = pop.trs_points(self.gr_sort[i][4], rotate=(-rot[0], -rot[1], -rot[0] ))
+                # TRS all in one 
+                #self.gr_sort[i][4] = pop.trs_points(self.gr_sort[i][4], rotate=(-rot[0], -rot[1], -rot[2] ))
+
+                # ROUNDING WAS CAUSING GLITCHES IN THE NCVIEWER APP - MAY OR MAY NOT BE AN ISSUE 
+                self.gr_sort[i][4] = pop.rotate_pts(rot=(-rot[0], -rot[1], -rot[2] ), pts=self.gr_sort[i][4], doround=True)
 
         # dont forget to recalculate extents 
         self.gl_extents()
@@ -325,6 +392,7 @@ class vectorflow(object3d):
             global rotate the entire dataset in 2d  
             this allows 3D moves but you probably want 2D - zero the Z axis for pos or just send it 2 coords
         """
+        print("global scale ", scale) 
 
         pop = polygon_operator()
 
@@ -366,13 +434,13 @@ class vectorflow(object3d):
         return out
     
     ##-------------------------------##
-    def _calculate_paths3d(self, do_retracts=True):
+    def _calculate_paths3d(self, do_retracts=True, doround=True):
         """ 
              DEBUGGY 
         """
-
+        pl = 6 #numeric rounding places 
         lastpt = (0,0,0)
-        
+
         self.outfile.append('(exported with _calculate_paths3d() )')
         self.outfile.append('(linear scale set to %s of internal coordinates)'%self.global_scale )
         self.outfile.append('  ')
@@ -435,20 +503,18 @@ class vectorflow(object3d):
 
             if len(gr_poly) and export_ply:
                 self.outfile.append('(exporting new polygon )')
-
                 
                 ##-- 
                 #DEBUG - need to sort out clean points - want to run as close to final export 
                 #it looses precision 
 
                 # no formatting (full precision)
-                pt1 = gr_poly[0]
-                # do round to get rid of bad string formatting ( exponent in floats) 
-                #pt1 = self.clean_pts_str(gr_poly[0])
+                if doround:                
+                    pt1=(round(gr_poly[0][0],pl) ,round(gr_poly[0][1],pl)) 
+                else:
+                    pt1 = gr_poly[0]
 
-                ##-- 
-
-                #### first point at retract height 
+                ## first point at retract height 
                 if do_retracts:
                     #move to first point RH 
                     self.outfile.append('x%s y%s z%s'% (  pt1[0] , pt1[1], self.rh ) )               
@@ -457,19 +523,23 @@ class vectorflow(object3d):
                 ## iterate points in polygon 
                 self.outfile.append( 'G1' )
                 for i,pt in enumerate(gr_poly):
+                    if doround:
+                        tmp = ( round(pt[0],pl), round(pt[1],pl), round(pt[2],pl) ) 
+                        pt = tmp  
+
                     self.outfile.append( 'x%s y%s z%s'%( pt[0], pt[1],  pt[2] ) )
                     self.ngc_to_obj.append( (pt[0], pt[1],  pt[2]) )                   
-                    #lastpt = ( round(pt1[0]*self.global_scale,6) , round(pt1[1]*self.global_scale,6), self.ch )
                 
                 self.outfile.append( 'G0' )
 
-                # move to last point at CH  
-                #self.ngc_to_obj.append( (gr_poly[0][0], gr_poly[0][1], self.ch))   
-                #self.outfile.append( 'x%s y%s z%s'%( (gr_poly[0][0], gr_poly[0][1], self.ch) ) )
-
                 if do_retracts:
-                    self.ngc_to_obj.append( (gr_poly[0][0], gr_poly[0][1], self.rh)  )
-                    self.outfile.append( 'x%s y%s z%s'%( gr_poly[0][0], gr_poly[0][1], self.rh) )
+                    if doround:
+                        gpt=(round(gr_poly[0][0],pl) ,round(gr_poly[0][1],pl)) 
+                    else:
+                        gpt=gr_poly[0]
+
+                    self.ngc_to_obj.append( (gpt[0], gpt[1], self.rh)  )
+                    self.outfile.append( 'x%s y%s z%s'%( gpt[0], gpt[1], self.rh) )
 
                     #### retract in between cuts
                     self.outfile.append('g0z%s'% ( self.rh ) )  
@@ -539,7 +609,7 @@ class vectorflow(object3d):
             for i,pt in enumerate(fill_poly):
                 self.outfile.append( 'G1 x%s y%s z%s'%( pt[0], pt[1], self.ch ) )
                 self.ngc_to_obj.append( ( pt[0], pt[1], self.ch ) )             
-                lastpt =( round(pt[0]*self.global_scale,pl) , pt[1], self.ch )
+                lastpt =( pt[0], pt[1], self.ch )
 
             self.outfile.append( 'G0 x%s y%s z%s'%(lastpt[0], lastpt[1], self.ch) )
             self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.ch)   ) 
@@ -595,7 +665,6 @@ class vectorflow(object3d):
                 for i,pt in enumerate(gr_poly):
                     self.outfile.append( 'x%s y%s z%s'%( pt[0], pt[1], self.ch ) )
                     self.ngc_to_obj.append( (pt[0], pt[1], self.ch) )                   
-                    #lastpt = ( round(pt1[0]*self.global_scale,6) , round(pt1[1]*self.global_scale,6), self.ch )
                 
                 self.outfile.append( 'G0' )
 
@@ -619,63 +688,7 @@ class vectorflow(object3d):
         # rapid move at end 
         self.outfile.append('m2') #program end
 
-    ##-------------------------------##
-    ##-------------------------------##
 
-    def show_buffers(self, sid=None):
-        """
-        
-            show evrything meaningful we can about our data 
-            id is optional 
-            - if passed use it to look up gr_poly and gr_sort, etc  
-
-        """
-        
-        print('#################')
-        if sid is None:
-            #[[id, centroid, extents, len, points ]
-            #for ply in self.gr_sort:
-            #    print("%s %s %s "%(ply[0], ply[1], len(ply[2]) )) 
-
-            print('size gr_polys     %s'%len(self.gr_polys))
-            print('size gr_sort      %s'%len(self.gr_sort))
-
-        else:
-            grp = self.gr_polys[sid]
-            grs = self.gr_sort[sid]
-            print('gr_polys id %s size %s  '%( sid, len(grp) ) )
-            print('gr_sort  id %s json id:%s extents %s len %s size: %s '%( sid, grs[0], grs[1], grs[2], grs[3] ) )
-
-
-        print('original extents  %s %s %s %s '%(self.orig_minx, self.orig_miny, self.orig_maxx, self.orig_maxy))
-        print('sorted extents    %s %s %s %s '%(self.sort_minx, self.sort_miny, self.sort_maxx, self.sort_maxy)) 
-
-    ##---------------------- 
-    def grply_inspect(self, index=None):
-        """
-            #return info about how many features, sub features, etc are in a file 
-            
-            args:
-                index is positive int or iterable 
-
-            todo:
-                slice , index 
-                get extents 
-                get centroid 
-                get as vectors 
-
-        """
-    
-        print("##------------##")
-
-        if index == None:
-            print("gr_poly buffer has %s polygons "%len(self.gr_polys) )
-            for i,p in enumerate(self.gr_polys):
-                print("    feature %s has %s points"%(i, len(p)))
-                print(p)
-
-        else:
-            pass 
 
     ##-------------------------------##     
     ##-------------------------------##
@@ -924,7 +937,44 @@ class vectorflow(object3d):
         print("loaded %s polygons from %s "%(plyidx,inputfile)) 
 
     ##-------------------------------##
-    def export_ngc(self, filename, do3d=False):
+    def export_extents_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False):
+        
+        #self.gl_extents()
+
+        tempbuffer = self.gr_sort
+        self.gr_sort = []
+
+        #self.prim_triangle('z', (0,0,0), (0,0,0) )
+        # [[id, centroid, extents, len, points ]] 
+        #self.gr_sort.append([0,0,0,0,self.points]) 
+        
+        pts = self.calc_square_diag((self.sort_minx,self.sort_miny ),
+                                   (self.sort_maxx,self.sort_maxy), add_zaxis=True ) 
+        pts.append( (self.sort_minx, self.sort_miny, 0) )
+        self.gr_sort.append([0,0,0,0,pts])
+
+        if do3d==True:
+            self._calculate_paths3d()
+        else:
+            self._calculate_paths2d()
+        
+        print("gr_sort buffer has %s polys in it. "%(len(self.gr_sort)))
+        fobj = open( filename,"w") #encoding='utf-8'
+        for line in self.outfile: 
+            fobj.write(line+'\n')
+        fobj.close()
+
+        self.gr_sort = tempbuffer
+
+    ##-------------------------------##
+    def export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False):
+        print("# exporting NGC file ", filename)
+
+        self.rh = rh          # retract height 
+        self.ch = ch          # cut height (top, start of cut)
+        self.cdpi = cdpi      # cut depth per iteration on Z axis
+        self.cmax = cmax      # maximum cut depth on Z axis 
+
         if do3d==True:
             self._calculate_paths3d()
         else:
@@ -1162,7 +1212,8 @@ class vectorflow(object3d):
                                     xcoord = float( self._scrub(cleanspaces[i+1]) )
                                     ycoord = float( self._scrub(cleanspaces[i+2]) )
 
-                                    coord.append( (xcoord*self.global_scale, ycoord*self.global_scale, self.ch ) )
+                                    coord.append( (xcoord, ycoord, self.ch ) )
+
                                 # if tok == 'start':   
                                 #     coord.append( (float(self._scrub(cleanspaces[i+1]))  , float(self._scrub(cleanspaces[i+2]) )) ) 
                                 # if tok == 'end':   

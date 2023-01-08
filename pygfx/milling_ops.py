@@ -261,7 +261,8 @@ class cam_operator(object3d):
         stack_pts = [] 
 
         for s in range(1,stacks):
-            stack_pts.append( self.calc_circle(pos=(cen[0],0,cen[2]), rot=(0,0,0), dia=step*s, axis='y', periodic=True, spokes=spokes) )
+            #stack_pts.append( self.calc_circle(pos=(cen[0],cen[1],cen[2]), rot=(0,0,0), dia=step*s, axis='y', periodic=True, spokes=spokes) )
+            stack_pts.append( self.calc_circle(pos=(0,0,0), rot=(0,0,0), dia=step*s, axis='y', periodic=True, spokes=spokes) )
 
         curve_geom = [] 
 
@@ -289,7 +290,8 @@ class cam_operator(object3d):
 
         for curve in curve_geom:
             if len(curve):
-                n.linegeom_fr_points(curve, periodic=True )
+                #n.linegeom_fr_points(curve, periodic=True )
+                n.linegeom_fr_points(curve, periodic=False )
 
         n.save("lotsa_locators.obj")
          

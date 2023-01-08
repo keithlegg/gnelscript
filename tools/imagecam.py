@@ -354,26 +354,7 @@ def geojson_to_ngc(folder, fnames, onefile=False):
     # TODO ADD A SPATIAL POLYGON SORT TO REDUCE SPINDLE TRAVEL ON RETRACTS 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+##------------------------------------------------------------
 
 
 
@@ -382,63 +363,9 @@ def geojson_to_ngc(folder, fnames, onefile=False):
 
 
 ##----------------------------------------------------
-
-
-
-# Text for the file header, the parameter is the name of the module, ex "LOGO".
-header = """(module %(name)s
-  (layer F.Cu)
-  (at 0 0)
-  (fp_text reference "VAL***" (at 0 10) (layer F.SilkS) hide
-    (effects (font (thickness 0.3)))
-  )
-  (fp_text reference "%(name)s" (at 0 5) (layer F.SilkS) hide
-    (effects (font (thickness 0.3)))
-  )
 """
-
-
-# Text for the file footer, the only parameter is the name of the module
-footer = """)
-"""
-
-
-# Places a pixel with (x, y) at the upper-left corner
-# Size is in units of mm
-def make_pixel(x, y, px_size):
-    return """  (fp_poly
-    (pts
-      (xy %(0)s %(1)s)
-      (xy %(2)s %(1)s)
-      (xy %(2)s %(3)s)
-      (xy %(0)s %(3)s)
-      (xy %(0)s %(1)s)
-    )
-    (layer F.SilkS)
-    (width 0.01)
-  )
-""" % {"0": x, "1": y, "2": x + px_size, "3": y + px_size}
-
-
-def conv_image_to_module(image, module_name, scale_factor):
-
-    """ Returns the text for the module, and the size: (x, y) in mm. """
-    w, h = image.size
-    #print "Original image dimensions: {0} x {1}".format(w, h)
-    #print "Writing module file to \"{0}\"".format(output_filename)
-    module = header % {"name": module_name}
-    for y in range(h):
-        for x in range(w):
-            #print image.getpixel((x,y))
-            if image.getpixel((x, y)) == 0:
-                module += make_pixel(scale_factor * x, scale_factor * y, scale_factor)
-    module += footer % {"name": module_name}
-    return module, (scale_factor * w, scale_factor * h)
-
-##----------------------------------------------------
-
 def vectorizer(inputfile, outputfile=None):
-    """ example of PIL edge detect """
+    # example of PIL edge detect 
     output = "poster"
 
     # Opening the image (R prefixed to string
@@ -458,7 +385,7 @@ def vectorizer(inputfile, outputfile=None):
 ##----------------------------------------------------
 
 def vectorizer2(inputfile, outputfile=None):
-    """ based on kicad img convert """
+    # based on kicad img convert 
     output = "poster"
 
     input_image = "images/dot.png"                              #sys.argv[1]
@@ -488,6 +415,7 @@ def vectorizer2(inputfile, outputfile=None):
     fid = open(outputfile, "w")
     fid.write(module)
     fid.close()
+"""
 
 
 
