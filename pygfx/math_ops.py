@@ -792,7 +792,13 @@ class vec3(object):
             pass 
 
     ##------------------------------------- 
-    def lookat(self, pt):
+    def lookat(self, target):
+        #if you want to point one vector at another all you need to do is subtract! 
+        aim = vec3()
+        return vec3(target) - self 
+        
+
+    def lookat2(self, pt):
         """
         UNFINISHED/NOT WORKING 
 

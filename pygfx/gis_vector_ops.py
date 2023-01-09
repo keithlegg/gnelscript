@@ -44,7 +44,7 @@ class vectorflow(object3d):
     """ copy of kicad parser for experimenting  
         not really GIS related but it DOES export geoJSON 
 
-        It started out as s kicad ciles (graphic polygons and ???) to GCODE tool.
+        It started out as an importer for kicad files (graphic polygons and ???) to GCODE tool.
         It turned into a tool turn geojson into GCODE  
         then the dag_ops tesselator was added for GCODE optimization and I got derailed making MC escher style vector renders  
 
@@ -61,15 +61,9 @@ class vectorflow(object3d):
 
         ## def import_polys(self, pts):
 
-        ## def translate(self, pts):
-        ##     global/ indexer ?
-        ## def rotate(self, pts):
-        ##     global/ indexer ?
-        ## def scale(self, pts):
-        ##     global/ indexer ?
-
         ## def remove_polys(self, pts):
         ##     indexer 
+
         ## def export_polys(self, pts):
         ##     indexer  
 
@@ -429,6 +423,8 @@ class vectorflow(object3d):
         """
             we only work on gr_sort - gr_poly is a copy pf the orignial data
         """
+        print("global tansform to center ") 
+
         cen = self.gl_centroid()
 
         pop = polygon_operator()
@@ -460,7 +456,7 @@ class vectorflow(object3d):
         pl = 6 #numeric rounding places 
         lastpt = (0,0,0)
 
-        self.outfile.append('(exported with _calculate_paths3d() )')
+        self.outfile.append('( exported with _calculate_paths3d )')
         self.outfile.append('(linear scale set to %s of internal coordinates)'%self.global_scale )
         self.outfile.append('  ')
 
@@ -596,7 +592,7 @@ class vectorflow(object3d):
 
         lastpt = (0,0,0)
         
-        self.outfile.append('(exported with _calculate_paths2d() )')
+        self.outfile.append('(exported with _calculate_paths2d )')
         self.outfile.append('(linear scale set to %s of internal coordinates)'%self.global_scale )
         self.outfile.append('  ')
 
@@ -732,13 +728,17 @@ class vectorflow(object3d):
                                      }
                           ) 
                   )
-            #render multilines in points (nested arrays - broken up lines)            
+
+            ################
+            # render multilines in points (nested arrays - broken up lines)            
             for ptgrp in c.points:
                 features.append(Feature(geometry=LineString(coordinates=ptgrp), 
-                              properties={"id" : 0 
-                                         }
-                              ) 
-                      )
+                                  properties={"id" : 0 
+                                             }
+                                  ) 
+                          )
+
+            #################
 
         feature_collection = FeatureCollection(features)
         with open('%s/%s_cells.json'%(folder, name), 'w') as f:
@@ -1087,7 +1087,12 @@ class vectorflow(object3d):
         
         ropr = simple_render() 
         obj = object3d()
-        obj.load('%s/%s'%(path,objfile))
+
+        if type(objfile)==str:
+            obj.load('%s/%s'%(path,objfile))
+        if type(objfile==object3d):
+            obj.polygons=objfile.polygons
+            obj.points=objfile.points    
 
         #obj.show()
 
@@ -1102,7 +1107,10 @@ class vectorflow(object3d):
             ropr.vec_fr_buffer.polygons = [] 
 
             ## color, rx, ry, rz, thick, scale 
-            ropr.render_obj((100,0,255), i*20, i*20, i*20,  1, renderscale, object3d=obj)
+            #ropr.render_obj((100,0,255), i*20, i*20, i*20,  1, renderscale, object3d=obj)
+            
+            #no rotation 
+            ropr.render_obj((100,0,255), 0, 0, 0, 1, renderscale, object3d=obj)
 
             #coords are in pixels - rather huge for a model 
             #ropr.vec_fr_buffer.scale_pts((.01,.01,.01))
@@ -1134,14 +1142,26 @@ class vectorflow(object3d):
                     cell.points.append( pts )
 
     ##-------------------------------##
-    def tess_objclone(self, objfile):
-        """ make a grid and insert points frm an object at each location 
+    def tess_objclone(self, pts=None, objfile=None):
+        """ make a grid and insert points from an object into each tesselation cell  
             make sure to center the object for best results
-            use object3D.move_center()  
-        """
+            ( use object3D.move_center()  )
 
-        self.pop2d.load(objfile)
-        self.pop2d.show()
+        """
+        if objfile:
+            if type(objfile)==str:
+                self.pop2d.load(objfile)
+            if type(objfile)==object3d: 
+                self.pop2d.points = objfile.points        
+                self.pop2d.polygons = objfile.polygons
+        if pts:
+            self.pop2d.points = pts 
+            
+        if not pts and not objfile:
+            print("tess_objclone - no object or point data to work with ")
+            return None 
+
+        #self.pop2d.show()
 
         for cell in self.tesl.nodes:
             cen = cell.getattrib('centroid')
@@ -1151,7 +1171,8 @@ class vectorflow(object3d):
             #self.pop2d.move( cen[0],cen[1] )
 
             pts = []
-
+            
+            #append X Y coords to each cell (ignore Z)
             for pt in self.pop2d.points:
                 pts.append( (pt[0]+cen[0], pt[1]+cen[1] ) )  
 

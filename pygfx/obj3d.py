@@ -158,7 +158,7 @@ class object3d(polygon_operator):
         for d in data:
             print(d)
 
-    ############################################### 
+    ##-------------------------------------------
     @property
     def numply(self):
         return len(self.polygons)
@@ -171,28 +171,30 @@ class object3d(polygon_operator):
     def numfacnrml(self):
         return len(self.normals)  
 
-    ############################################### 
-    def convert_pts_vec3(self):
+    ##-------------------------------------------
+    def cvt_pts_2d(self, axis='xy'):
+        pts2d = [] 
+        for pt in self.points: 
+            if axis=='xy':
+                pts2d.append((pt[0],pt[1]))
+            if axis=='yz':
+                pts2d.append((pt[1],pt[2]))
+            if axis=='xz':
+                pts2d.append((pt[0],pt[2]))
+        return pts2d
+            
+
+    ##-------------------------------------------
+    def cvt_pts_vec3(self):
         """ return a list of pygfx vec3 objects for each vertex """
 
         vectrx = []
-        #load each point into a pygfx.vec3 object 
         for pt in self.points:
             v = vec3().insert(pt)
-            ##
-            # tests of vec3 stuff 
-            # v = v*1.1 
-            #v = v.normal 
-
-            ##
             vectrx.append(v.copy(vtype='tuple'))
-        
-        #tmp = object3d()
-        #tmp.vectorlist_to_obj(vectrx)
-        #tmp.save('vtx_vectrz.obj')
         return vectrx
 
-    ############################################### 
+    ##-------------------------------------------
     def calc_face_normals(self):
         """ calculate the normals for each face of object
             only tested for 3 and 4 sided polygons   
