@@ -2,15 +2,20 @@
 # gnelscript
 
 
-Procedural 3D Model, Render, and basic image composite in pure python. 
+Python gaphics power tools. Procedural 2D/3D Modeling. 
+Connected to other formats (obj, kicad, geojson, ngc/gcode).
 
-I am writing this to learn 3D math. It is for fun and to be used
-as a platform to teach 3D math and graphics. 
+Flexible enough to build your own text based geometry formats and parsers. 
 
-Inspired by years of working with Maya 3D and Houdini. 
-I love the "ops" idea from houdini, everything is an operator and
-you chain them together.
+Basic 3D Renderer and raster utils with Python PIL.
+(basic) gcode generator for milling with Linux CNC.    
+lots of random goodies:
+    raycasting, 2D vector render, tesselator, directed acylic graph. 
 
+
+I am writing this to learn 3D math. 
+
+It is for fun and to be used as a platform to teach 3D math and graphics. 
 
 
     Organized by the following modules:
@@ -18,7 +23,6 @@ you chain them together.
        -  point_ops        - points, polygons, and objects, the "brains" of geometry processing
        -  point_ops_2d     - 2d points, polygons
        -  obj2d            - data structure for 2D models.   Inherits all the other stuff  
-       -  obj25d           - data structure for 2.5D models. Inherits all the other stuff  
        -  obj3d            - data structure for 3D models.   Inherits all the other stuff     
        -  raster_ops       - image manipulation with PIL, framebuffer  
        -  render           - brain dead simple 3D rendering, examples of using pygfx modules to build a 3D render  

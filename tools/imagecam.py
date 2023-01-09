@@ -38,7 +38,7 @@ from gnelscript.pygfx.point_ops_2d import *
 from gnelscript.pygfx.point_ops import *
 
 from gnelscript.pygfx.obj3d import  *
-from gnelscript.pygfx.obj25d import  *
+from gnelscript.pygfx.obj2d import  *
 
 
 from gnelscript.pygfx.kicad_ops import *
