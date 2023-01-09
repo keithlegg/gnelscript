@@ -2,8 +2,8 @@
 # gnelscript
 
 
-Python gaphics power tools. Procedural 2D/3D Modeling. 
-Connected to other formats (obj, kicad, geojson, ngc/gcode).
+Python graphics power tools. Procedural 2D/3D Modeling. 
+Connects to several oddball formats (obj, kicad, geojson, ngc/gcode).
 
 Flexible enough to build your own text based geometry formats and parsers. 
 
