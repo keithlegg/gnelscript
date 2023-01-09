@@ -707,7 +707,7 @@ class vectorflow(object3d):
 
     ##-------------------------------##     
     ##-------------------------------##
-    def export_grid_gfx(self, name, folder ):
+    def export_grid_gfx(self, name, folder , borders=True, centroids=True):
         #export cells as graphics  
         
         self.gl_extents()
@@ -717,17 +717,20 @@ class vectorflow(object3d):
 
         features = []
         for c in self.tesl.nodes:
-            #cell centroids  
-            features.append(Feature(geometry=Point((c.coord_x+(c.width/2), c.coord_y+(c.height/2))), 
-                                    properties={"id":c.name} 
-                                   )
-                        )
-            #draw a square around the boundary of object 
-            features.append(Feature(geometry=LineString(coordinates=c.boundary_pts), 
-                          properties={"id" : 0 
-                                     }
-                          ) 
-                  )
+            if centroids:
+                #cell centroids  
+                features.append(Feature(geometry=Point((c.coord_x+(c.width/2), c.coord_y+(c.height/2))), 
+                                        properties={"id":c.name} 
+                                       )
+                            )
+
+            if borders:
+                #draw a square around the boundary of object 
+                features.append(Feature(geometry=LineString(coordinates=c.boundary_pts), 
+                              properties={"id" : 0 
+                                         }
+                              ) 
+                      )
 
             ################
             # render multilines in points (nested arrays - broken up lines)            

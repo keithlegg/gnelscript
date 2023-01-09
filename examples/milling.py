@@ -33,32 +33,49 @@ from gnelscript.pygfx.milling_ops import *
 #gc_poly.save_3d_object('gcode_3d.obj')
 
 
-class gear_generator(object3d):
-    def __init__(self):
-        super().__init__()         
-        #self.contact_angle
-        self.tooth_spacing = 20 
-        self.num_teeth = 5
-        self.shaft_hole_dia = 4
+
+def dagoptimize(filename):
+    kip = vectorflow()
+    
+    #DEBUG - EXPONENT COORDS ARE GETTING THROUGH AND MESSING UP THINGS 
+
+    #pop = point_operator()
+    #ids = pop.indexer(ids, span, unique, nth)
+    #kip.load_geojson('%s/images/out/%s'%(GLOBAL_PROJ,'%s.json'%filename), 0, getfids=[0], getids=[2])
+    
+    kip.load_geojson('%s/images/out/%s'%(GLOBAL_PROJ,'%s.json'%filename), 0, getfids=None, getids=None)
+
+    kip._omit_ids(ids=[32])
+
+    kip.gl_move_center()    
+    kip.gl_scale( (.3,.3,.3) )
+    
+    #kip.gl_move( (1,0,0) )
+    kip.gl_rotate( (0,0,90) )
+
+    #kip.make_grid(2, '%s/images/out'%(GLOBAL_PROJ),6, 4)
+    #kip.export_grid_gfx('gridgfx', '%s/images/out'%(GLOBAL_PROJ) )
+
+    ##kip.tesl.save_graph_file('%s/test.klsys'%GLOBAL_PROJ)
+
+    #kip.save_line_obj('3d_obj/foo.obj')
+
+    #kip.show_buffers()    
+    kip.show_setup()    
+
+    # export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False):
+    #kip.export_extents_ngc(.1, None, .1, 2, '%s/images/out/%s.ngc'%(GLOBAL_PROJ, 'extents'), do3d=True )
+    kip.export_ngc(.2, None, .1, 2, '%s/images/out/%s.ngc'%(GLOBAL_PROJ, filename), do3d=True )
 
 
-    def build(self, shaftdia, dia, teeth_height, numteeth ):
-        outer = self.calc_circle(pos=(0,0,0), rot=(0,0,0), dia=(dia+teeth_height), axis='z', periodic=True, spokes=36)
-        inner = self.calc_circle(pos=(0,0,0), rot=(0,0,0), dia=dia               , axis='z', periodic=True, spokes=36)
-        shaft = self.calc_circle(pos=(0,0,0), rot=(0,0,0), dia=shaftdia          , axis='z', periodic=True, spokes=36)
-
-        outer.extend(inner)
-        outer.extend(shaft)
-        
-        return outer 
 
 
-#-------------------------------
 
-class gear_mesh_generator(object3d):
-    def __init__(self):
-        self.gear1 = gear_generator()
-        self.gear2 = gear_generator()
+
+
+    
+
+
 
 
 

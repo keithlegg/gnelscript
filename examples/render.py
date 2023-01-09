@@ -20,6 +20,49 @@ if NUMPY_IS_LOADED:
 
 
 
+##-----------------------------------------
+
+def tesselator():
+    kip = vectorflow()
+    kip._set_extents( (-10, -10, 10, 10) )
+    kip.make_grid(1, GLOBAL_PROJ, 9, 9)
+    o = object3d()
+
+    divs = 6
+    degs = 360/divs 
+    for x in range(divs):
+        o.prim_triangle('z',(0,0,0),(0,0,x*degs))
+    o.scale_pts((1.5,1.5,1.5))
+
+    #kip.tess_vec_render(1, '%s/3d_obj/'%GLOBAL_PROJ, 'monkey.obj')
+    kip.tess_vec_render(1, '', o)
+    ##--
+    #kip.tess_objclone(objfile='%s/3d_obj/centered.obj'%GLOBAL_PROJ )
+    #kip.tess_objclone(objfile=o )
+    #kip.tess_objclone( pts=o.cvt_pts_2d() )
+    ##-- 
+    kip.export_grid_gfx('gridgfx', GLOBAL_PROJ, borders=False, centroids=False)
+    #kip.export_grid_gfx('gridgfx', GLOBAL_PROJ, borders=True, centroids=True)
+
+
+def sq_tesselator(size, grdivs, rotdivs, scpts):
+    kip = vectorflow()
+    kip._set_extents( (-size, -size, size, size) )
+    kip.make_grid(1, GLOBAL_PROJ, grdivs, grdivs)
+    o = object3d()
+    divs = rotdivs
+    degs = 360/divs 
+    for x in range(divs):
+        o.prim_triangle('z',(0,0,0),(0,0,x*degs))
+    o.scale_pts((scpts,scpts,scpts))
+    kip.tess_vec_render(1, '', o)
+    kip.export_grid_gfx('gridgfx', GLOBAL_PROJ, borders=False, centroids=False)
+    #kip.export_grid_gfx('gridgfx', GLOBAL_PROJ, borders=True, centroids=True)
+
+
+#sq_tesselator(10,9,6,1.5)
+#sq_tesselator(15, 10, 5, 4.5)
+
 
 #######################################################
 

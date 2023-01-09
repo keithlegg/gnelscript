@@ -19,45 +19,20 @@
 
 import re 
 
-
 #from pygfx.obj3d import object3d
 from gnelscript.pygfx.milling_ops import gcode
 
 
-## class kicad_line(object):
-##     """container for a kicad pad"""    
-##     def __init__(self):
-##         self.width    = 0
-##         self.start_xy = []
-##         self.end_xy   = []
-## 
-## class kicad_pad(object):
-##     """container for a kicad pad"""    
-##     def __init__(self):
-##         self.name   = ''
-##         self.size   = 0
-##         self.xcoord = 0
-##         self.ycoord = 0
-## 
-## class kicad_module(object):
-##     """container for a kicad module"""
-##     def __init__(self):
-##         self.name  = ''
-##         self.lines = []
-##         self.pads  = []
-
-
-
-"""
-    <- point_operator (contains math_util)
-      <- polygon_operator 
-        <- object3d 
-          <- gcode (linuxcnc)
-            <- pcbfile  (kicad)
-"""
-
-
 class pcbfile(gcode):
+    """ 
+       A bit of history:
+           the first tool i built 
+           started with gcode export and kicad import 
+           made this to load kicad and export gcode 
+           clond and renamed vectorflow() 
+           cloned vectorflow into milling_op() 
+
+    """
 
     def __init__(self):
         super().__init__()  
