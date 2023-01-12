@@ -79,7 +79,7 @@ class object3d(polygon_operator):
                 self.insert_polygons(obj[0], obj[1])
 
     ############################################### 
-    def insert(self, obj, replace=False, asnew_shell=False):
+    def insert(self, obj, replace=False, asnew_shell=False, pos=None):
         """ insert an object's geometry into this object 
             
             DEBUG - deafults to sharing the point indeces 
@@ -90,17 +90,32 @@ class object3d(polygon_operator):
         # if tuple or list assume its [polyidx, points]
         if isinstance(obj, tuple) or isinstance(obj, list):
             if replace is True:
-                self.points=obj[0]
+                if pos:
+                    tmp=[]
+                    for pt in obj[0]:
+                        tmp.append((pt[0]+pos[0], pt[1]+pos[1], pt[2]+pos[2])) 
+                    self.points=tmp
+                else:
+                    self.points=obj[0]                    
                 self.polygons=obj[1]                 
             else:
                 self.insert_polygons(obj[0], obj[1])
 
         if isinstance(obj, object3d):
             if replace is True:
-                self.points=obj.points
+                if pos:
+                    tmp=[]
+                    for pt in obj[0]:
+                        tmp.append((pt[0]+pos[0], pt[1]+pos[1], pt[2]+pos[2])) 
+                    self.points=tmp
+                else:
+                    self.points=obj[0]  
                 self.polygons=obj.polygons                 
             else:
-                self.insert_polygons(obj.polygons, obj.points)
+                if pos:
+                    self.insert_polygons(obj.polygons, obj.points, pos=pos)
+                else:    
+                    self.insert_polygons(obj.polygons, obj.points)
 
     ############################################### 
     def append(self, otherobj):
@@ -110,12 +125,12 @@ class object3d(polygon_operator):
 
             polys have to be re-indexed to match the higher index values
         """
+        if type(otherobj)==self:
+            for pt in otherobj.points:
+                self.points.append(pt)
 
-        for pt in otherobj.points:
-            self.points.append(pt)
-
-        for ply in otherobj.polygons:
-            self.polygons.append(self._reindex_ply(ply, self.numpts))  
+            for ply in otherobj.polygons:
+                self.polygons.append(self._reindex_ply(ply, self.numpts))  
 
     ###############################################  
     def show(self):
@@ -485,7 +500,7 @@ class object3d(polygon_operator):
     #def prim_sphere2(self, pos=(0,0,0), rot=(0,0,0), size=1 ):
 
     ############################################### 
-    def prim_sphere(self, pos, rot, size=1 ):
+    def prim_sphere(self, pos=(0,0,0), rot=(0,0,0), size=1 ):
         
         #UNFINISHED 
 

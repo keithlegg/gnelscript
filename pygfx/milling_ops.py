@@ -1404,7 +1404,67 @@ class cam_op(gcode_op):
         n.save("lotsa_locators.obj")
 
     ##-----------------------------------
-    def waterline(self, radius, spokes, heights=None):
+    def waterline(self, spokes, heights):
+        """
+            do a radial raycast to get poly FIDs in a ring 
+            get the horizonal edges from those
+            intersect a plane on the edges at a specific height 
+
+        """
+        radius = 10 
+
+        extents = self.calc_3d_bbox()
+        cen = self.centroid()   #pt = xzy
+        dim = self.dimensions   # xyz - 3 floats 
+
+        #if heights == None:
+        #    heights =  
+        
+        ray_positions = [] 
+
+        curve_geom =[]
+
+        n = object3d()
+
+        numheights = len(heights)
+
+        for i,h in enumerate(heights):
+            print("calculating ring %s of %s"%(i,numheights))
+            for s in range(0,1):
+                ray_positions = self.calc_circle(pos=(0,h,0), rot=(0,0,0), dia=radius*2, axis='y', periodic=True, spokes=spokes) 
+
+                
+                newcurve =[]          
+                for ray in ray_positions:
+                    aim = vec3()
+                    aim =  vec3(0,0,0) - vec3(ray) 
+
+                    hits = self.ray_hit( ray, aim, fastmode=True)
+                    if hits:
+                        newcurve.append(hits[0][1])
+
+                    for h in hits:
+                        n.prim_locator(h[1], size=.1)
+                        self.exprt_ply_idx = 1
+                        g = self.get_face_geom(h[0], reindex=True, geom=None)
+
+                        print(g)
+
+                        n.insert(g)
+
+                    #curve_geom.append(newcurve)
+
+        #print(curve_geom)
+
+        #print(ray_positions)
+        for curve in curve_geom:
+            if len(curve):
+                #n.linegeom_fr_points(curve, periodic=True )
+                n.linegeom_fr_points(curve, periodic=False )
+
+        n.save("waterline.obj")  
+        
+    def rc_waterline(self, radius, spokes, heights=None):
         """
            UNFINISHED 
            shoot rays at center target from a circle around it 

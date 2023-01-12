@@ -15,8 +15,52 @@ if NUMPY_IS_LOADED:
     from gnelscript.tools.raytrace import  *
 
 
+##-----------------------------------------
 
 
+def make_gif_from_frames():
+    # ref - https://engineering.giphy.com/how-to-make-gifs-with-ffmpeg/
+
+    ##convert frames to video 
+    ## ffmpeg -r 30 -i my3d_%d.png -s hd480 -vcodec libx264 output.mp4
+
+    ##convert frames to video preserve aspect ratio 
+    ## ffmpeg -r 30 -i unit_circle_%d.png -vf scale=w=640:h=480:force_original_aspect_ratio=decrease  -vcodec libx264 output.mp4
+
+
+    ## convert video to GIF 
+    # ffmpeg -i output.mp4 -f gif output.gif
+
+    ## convert video to GIF with speed change
+    # ffmpeg -i output.mp4 -f gif -filter:v "setpts=3*PTS" output.gif
+
+    pass
+
+
+##-----------------------------------------
+
+
+def basic_animation():
+    obj = object3d() 
+    obj.prim_cube() 
+
+    #obj.load('objects')
+
+    ropr = simple_render()
+    ropr.anim(objs=[obj], init_rots=(0,0,0), linethick=5, numframes=5, scale=150 )
+#    anim(self, objs, init_rots=(0,0,0), linethick=5, numframes=5, scale=150):
+
+
+##-----------------------------------------
+
+if NUMPY_IS_LOADED:
+    # run the raytracer 
+    def raytrace():
+        rt = raytracer()
+        rt.w=500
+        rt.h=500
+        img = rt.raytracemain()
+        rt.save_image(img)
 
 
 
@@ -63,51 +107,6 @@ def sq_tesselator(size, grdivs, rotdivs, scpts):
 #sq_tesselator(10,9,6,1.5)
 #sq_tesselator(15, 10, 5, 4.5)
 
-
-#######################################################
-
-
-def make_gif_from_frames():
-    # ref - https://engineering.giphy.com/how-to-make-gifs-with-ffmpeg/
-
-    ##convert frames to video 
-    ## ffmpeg -r 30 -i my3d_%d.png -s hd480 -vcodec libx264 output.mp4
-
-    ##convert frames to video preserve aspect ratio 
-    ## ffmpeg -r 30 -i unit_circle_%d.png -vf scale=w=640:h=480:force_original_aspect_ratio=decrease  -vcodec libx264 output.mp4
-
-
-    ## convert video to GIF 
-    # ffmpeg -i output.mp4 -f gif output.gif
-
-    ## convert video to GIF with speed change
-    # ffmpeg -i output.mp4 -f gif -filter:v "setpts=3*PTS" output.gif
-
-    pass
-
-
-
-
-
-def basic_animation():
-    obj = object3d() 
-    obj.prim_cube() 
-
-    #obj.load('objects')
-
-    ropr = simple_render()
-    ropr.anim(objs=[obj], init_rots=(0,0,0), linethick=5, numframes=5, scale=150 )
-#    anim(self, objs, init_rots=(0,0,0), linethick=5, numframes=5, scale=150):
-
-
-#######################################################
-
-if NUMPY_IS_LOADED:
-    # run the raytracer 
-    def raytrace():
-        
-        rtrace = raytracer() 
-        rtrace.save_image( rtrace.main() )
 
 
 #######################################################

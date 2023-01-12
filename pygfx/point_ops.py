@@ -620,7 +620,15 @@ class point_operator(object):
 
     ##-------------------------------------------## 
     def calc_square_diag(self, tl, br, add_zaxis=False):
-        """ creates 4 coordinates representing an extent box from a diagonal coordinate pair """ 
+        """ creates 4 coordinates representing a 2D extent box from a diagonal coordinate pair 
+            
+            usage:
+
+            bbox = self.calc_3d_bbox()
+            pts = self.calc_square_diag((bbox[0],bbox[1]),(bbox[3],bbox[4]), add_zaxis=True)
+         
+        """
+
         out =[]  
         if add_zaxis:
             out.append( (tl[0], tl[1], 0)  ) #tl
@@ -969,6 +977,37 @@ class polygon_operator(point_operator):
             for pt in pts:
                 cleaned.append( self._csp_str(pt) )            
             return cleaned
+    ##-------------------------------------------## 
+    def slice_axis(self, low, high, axis='y'):
+        sliced=[]
+        exists = []
+
+    
+        def add_once(data):
+            if data[0] not in exists:
+                sliced.append(data)                
+                exists.append(data[0])
+
+        for fid,ply in enumerate(self.polygons):
+            tmply=[]
+            for pid in ply:
+                pt = self.points[pid-1]
+                tmply.append(pt)
+
+            for a in tmply:
+                if axis=='x':
+                    if a[0]>low and a[0]< high: 
+                        add_once([fid, [ply ,tmply]])
+ 
+                if axis=='y':
+                    if a[1]>low and a[1]< high:  
+                        add_once([fid, [ply ,tmply]])
+                          
+                if axis=='z':
+                    if a[2]>low and a[2]< high:  
+                        add_once([fid,[ply ,tmply]])
+       
+        return sliced
 
     ##-------------------------------------------##  
     def _scribe(self, str):
@@ -1916,7 +1955,7 @@ class polygon_operator(point_operator):
 
 
     ##-------------------------------------------##          
-    def insert_polygons(self, plyids, points, asnew_shell=True, geom=None, incrone=False):
+    def insert_polygons(self, plyids, points, asnew_shell=True, geom=None, incrone=False, pos=None):
         """  
              Insert NEW geometry into this object
              
@@ -1928,8 +1967,13 @@ class polygon_operator(point_operator):
              geom            - geom to insert into, instead of object.polygons, object.points
                                if true, will return the geom object when done 
 
+             pos             - transform points to a position 
+
              if points are 2D - automatically insert in 3D on the 0 Z axis
         """
+
+        if plyids and points:
+            raise ValueError("ONLY USE POINT OR POLYS - NOT BOTH ")
 
         #if isinstance(points, vec3):
         #    self.points.extend(points)
@@ -1969,6 +2013,12 @@ class polygon_operator(point_operator):
         # add new geom using python extend 
         if asnew_shell is True:
             if isinstance(points, tuple) or isinstance(points, list):
+                if pos:
+                    tmp=[]
+                    for pt in points:
+                        tmp.append((pt[0]+pos[0], pt[1]+pos[1], pt[2]+pos[2])) 
+                    points=tmp
+
                 # do the insert operation
                 if geom is None:
                     

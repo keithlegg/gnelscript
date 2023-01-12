@@ -28,6 +28,9 @@ export = object3d()
 class raytracer(object):
 
     def __init__(self):
+        
+        #self.sc = object3d()
+
         # Default light and material parameters.
         self.ambient     = .1 #.05
         self.diffuse_c   = 1.
@@ -105,6 +108,10 @@ class raytracer(object):
         transparency = obj['transparency']
         return transparency
 
+
+    def colapse(self):
+        print("BOOM")
+
     def trace_ray(self, scene, rayO, rayD, L, O):
         # Find first point of intersection with the scene.
         t = np.inf
@@ -125,6 +132,8 @@ class raytracer(object):
         #export.one_vec_to_obj( r3, pos=None, arrowhead=False):        
         #export.one_vec_to_obj( M )
         ##########################
+
+
 
 
         # Find properties of the object.
@@ -160,9 +169,15 @@ class raytracer(object):
         # Blinn-Phong shading (specular).
         col_ray += obj.get('specular_c', self.specular_c) * max(np.dot(N, self.normalize(toL + toO)), 0) ** self.specular_k * self.color_light
         
+
+        if transparency:
+            col_ray=np.array([1,0,0])
+
         return obj, M, N, col_ray
 
     def add_sphere(self, position, radius, color):
+        export.prim_sphere( pos=position, rot=(0,0,0), size=radius)
+
         return dict(type='sphere', position=np.array(position), 
             radius=np.array(radius), color=np.array(color), reflection=0, transparency=.2)
         
@@ -174,7 +189,7 @@ class raytracer(object):
             diffuse_c=.75, specular_c=.5, reflection=1, transparency=None)
     
     
-    def main(self):
+    def raytracemain(self):
         # List of objects.
         color_plane0 = 1. * np.ones(3)
         color_plane1 = 0. * np.ones(3)
@@ -232,8 +247,6 @@ class raytracer(object):
                     reflection *= obj.get('reflection', 1.)
                 img[self.h - j - 1, i, :] = np.clip(col, 0, 1)
 
-
-        export.save("dump_geom_raytrace.obj") 
         return img 
 
     def save_image(self, pixdata):
@@ -243,6 +256,9 @@ class raytracer(object):
 
         fb.insert_numpy( pixdata )
         fb.save('raytraced.png')
+        
+        export.save("dump_geom_raytrace.obj") 
+        #self.sc.save("ray_scene.obj")
 
 
 
