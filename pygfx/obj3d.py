@@ -21,7 +21,7 @@ import math
 
 
 from gnelscript.pygfx.point_ops import polygon_operator
-from gnelscript.pygfx.math_ops import vec3 
+from gnelscript.pygfx.math_ops import vec3, matrix33, matrix44  
 
 
 ###############################################
@@ -40,6 +40,18 @@ class object3d(polygon_operator):
         #self.uv_points       = []
         #self.uv_polys        = []
         #self.normals         = []
+
+   
+    def __mul__(self, matrix):
+        """ you can multiply an object by a matrix - cool huh? """
+
+        if type(matrix)is matrix33:
+            self.points = self.apply_matrix_pts(pts=self.points, m33=matrix) 
+        if type(matrix)is matrix44:
+            self.points = self.apply_matrix_pts(pts=self.points, m44=matrix) 
+
+
+     
 
     def reset(self):
         self.rot          = [0,0,0]
@@ -395,7 +407,7 @@ class object3d(polygon_operator):
     #    pass  
     
     ############################################### 
-    def prim_line(self, axis, pos, rot, size=1):
+    def prim_line(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
         """ 3d lines, 2 point polygons """
 
         if axis=='x':
@@ -528,7 +540,7 @@ class object3d(polygon_operator):
         faces = [] 
 
         # compute 10 vertices at 1st and 2nd rows
-        for i in range(1,8):
+        for i in range(1,4):
             n = self.numpts # add to this index each time
 
             z  = radius * math.sin(V_ANGLE)  # elevaton
@@ -545,6 +557,9 @@ class object3d(polygon_operator):
             vtmp1.append(  z                      )# z
             vtmp2.append( -z                      )
 
+            self.prim_locator(pos=vtmp1,size=.1)
+            self.prim_locator(pos=vtmp2,size=.1)
+
             #// next horizontal angles
             hAngle1 += H_ANGLE
             hAngle2 += H_ANGLE
@@ -552,11 +567,10 @@ class object3d(polygon_operator):
             self.points.append(tuple(vtmp1))
             self.points.append(tuple(vtmp2))
 
-
-            if i>1:
-                self.polygons.append( (n, n+1, n+2) )
-            if i<7:
-                self.polygons.append( (n+1, n+2, n+3) )
+            # if i>1:
+            #     self.polygons.append( (n, n+1, n+2) )
+            # if i<7:
+            #     self.polygons.append( (n+1, n+2, n+3) )
         
         # the last bottom vertex at (0, 0, -r)
         self.points.append( (0,0,-radius) )
@@ -569,7 +583,76 @@ class object3d(polygon_operator):
         #pts = self.rotate_pts( rot, pts)
 
 
+        ######################################################
 
+        """
+        std::vector<float> tmpVertices;
+        std::vector<float> tmpIndices;
+        const float *v1, *v2, *v3;          // ptr to original vertices of a triangle
+        float newV1[3], newV2[3], newV3[3]; // new vertex positions
+        unsigned int index;
+
+        // iterate all subdivision levels
+        for(int i = 1; i <= subdivision; ++i)
+        {
+            // copy prev vertex/index arrays and clear
+            tmpVertices = vertices;
+            tmpIndices = indices;
+            vertices.clear();
+            indices.clear();
+            index = 0;
+
+            // perform subdivision for each triangle
+            for(int j = 0; j < tmpIndices.size(); j += 3)
+            {
+                // get 3 vertices of a triangle
+                v1 = &tmpVertices[tmpIndices[j] * 3];
+                v2 = &tmpVertices[tmpIndices[j + 1] * 3];
+                v3 = &tmpVertices[tmpIndices[j + 2] * 3];
+
+                // compute 3 new vertices by spliting half on each edge
+                //         v1       
+                //        / \       
+                // newV1 *---* newV3
+                //      / \ / \     
+                //    v2---*---v3   
+                //       newV2      
+                computeHalfVertex(v1, v2, newV1);
+                computeHalfVertex(v2, v3, newV2);
+                computeHalfVertex(v1, v3, newV3);
+
+                // add 4 new triangles to vertex array
+                addVertices(v1,    newV1, newV3);
+                addVertices(newV1, v2,    newV2);
+                addVertices(newV1, newV2, newV3);
+                addVertices(newV3, newV2, v3);
+
+                // add indices of 4 new triangles
+                addIndices(index,   index+1, index+2);
+                addIndices(index+3, index+4, index+5);
+                addIndices(index+6, index+7, index+8);
+                addIndices(index+9, index+10,index+11);
+                index += 12;    // next index
+            }
+        }
+
+
+        ///////////////////////////////////////////////////////////////////////////////
+        // find middle point of 2 vertices
+        // NOTE: new vertex must be resized, so the length is equal to the radius
+        ///////////////////////////////////////////////////////////////////////////////
+        void computeHalfVertex(const float v1[3], const float v2[3], float newV[3])
+        {
+            newV[0] = v1[0] + v2[0];    // x
+            newV[1] = v1[1] + v2[1];    // y
+            newV[2] = v1[2] + v2[2];    // z
+            float scale = radius / sqrtf(newV[0]*newV[0] + newV[1]*newV[1] + newV[2]*newV[2]);
+            newV[0] *= scale;
+            newV[1] *= scale;
+            newV[2] *= scale;
+        }
+
+        """
     ###############################################  
     def prim_locator(self, pos=(0,0,0), rot=(0,0,0), size=1):
    
@@ -687,6 +770,32 @@ class object3d(polygon_operator):
         self.insert_polygons(polys, pts) 
         #self.rotate_pts( rot )
         #self.xform_pts( pos )
+
+    ###############################################  
+    def prim_ray(self, pos=(0,0,0), vec3=(0,1,0) ): 
+        """ derived from prim_arrow (unfinished)
+            fully 3D model of an arrow on a vector 
+             
+        """
+
+        spokes  = 4  # num turns around axis 
+
+        length  = 1
+
+        dia      = .1        # extrude length is double this, or .2 
+        shaftlen = length-.2 # cone is .2, that plus this = 1 
+        
+        tmpobj1 = object3d()
+        tmpobj1.prim_cone( axis='y', pos=(0,shaftlen,0), dia=dia, spokes=spokes )        
+        
+        tmpobj = object3d()
+        tmpobj.prim_circle( axis='y', pos=(0,0,0), spokes=spokes , dia=dia/5)
+        tmpobj.extrude_face(0, distance=shaftlen)
+
+        tmpobj1.insert(tmpobj)
+
+
+        self.insert(tmpobj1) 
 
     ###############################################  
     def prim_arrow(self, axis='y', pos=(0,0,0), rot=(0,0,0), vec3=None, size=1, pivot='obj'): 

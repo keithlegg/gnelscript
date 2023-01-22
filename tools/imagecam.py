@@ -1,6 +1,10 @@
 #from __future__ import print_function
 """ 
 
+
+extract data from images and turn it into vectors.
+
+
 requires 
    Python:
        scipy 
@@ -118,9 +122,10 @@ def firstpass_bw( iters, blur, contrast, bright, chops, inputfile, outputfolder,
         cont_en = ImageEnhance.Contrast(simg)
         simg = cont_en.enhance(contrast)
         
-        ### bright pass  
-        bright_en = ImageEnhance.Brightness(simg)
-        simg = bright_en.enhance(bright)
+        if bright:
+            ### bright pass  
+            bright_en = ImageEnhance.Brightness(simg)
+            simg = bright_en.enhance(bright)
 
         copy = simg.convert("RGBA")        
         copy.save( "%s/%s_%d.%s"%(outputfolder, outputfile,i,"bmp") )
@@ -146,10 +151,11 @@ def firstpass( iters, blur, contrast, bright, chops, inputfile, outputfolder, ou
         ### contrast pass 
         cont_en = ImageEnhance.Contrast(simg)
         simg = cont_en.enhance(contrast)
-        
-        ### bright pass  
-        bright_en = ImageEnhance.Brightness(simg)
-        simg = bright_en.enhance(bright)
+
+        if bright:        
+            ### bright pass  
+            bright_en = ImageEnhance.Brightness(simg)
+            simg = bright_en.enhance(bright)
         
         simg.save( "%s/%s_%d.%s"%(outputfolder, outputfile,i,"bmp") )
 
@@ -167,7 +173,7 @@ def secondpass(inputimage, outputpath, numbands, fast=False):
     #from stack overflow  - get most common colors in an image 
     
     """
-
+    print("calculating %s common colors. may take some time, especially on large images"%numbands)
 
     im = Image.open(inputimage )
 
@@ -177,6 +183,9 @@ def secondpass(inputimage, outputpath, numbands, fast=False):
     ar = np.asarray(im)
     shape = ar.shape
     ar = ar.reshape(scipy.product(shape[:2]), shape[2]).astype(float)
+
+    #sort colors  WRONG 
+    #np.sort(ar)
 
     codes, dist = scipy.cluster.vq.kmeans(ar, numbands)
 
@@ -253,16 +262,185 @@ def thirdpass( inputfile, outputfolder, fileformat, bmpinvert=False, po_invert=F
         #extract_by_color( path, name, color, slowmode, exactcolor, invert, framebuffer)
         simg.extract_by_color( outputfolder, c[0], c[1], False, False, bmpinvert, False )
 
-        if po_invert:
-            command = [potrace_command, "%s/%s.bmp"%(outputfolder, c[0] ), "-i", "-b", fileformat, "-W", str(vwidth), "-H", str(vheight), "-t", str(tsize)]        
-        else:    
-            command = [potrace_command, "%s/%s.bmp"%(outputfolder, c[0] ), "-b", fileformat, "-W", str(vwidth), "-H", str(vheight), "-t", str(tsize)]
-        #print(command)
-        subprocess.run(command)
+        #if no format - dont run potrace - comic mode only uses BMP files 
+        if fileformat:
+            if po_invert:
+                command = [potrace_command, "%s/%s.bmp"%(outputfolder, c[0] ), "-i", "-b", fileformat, "-W", str(vwidth), "-H", str(vheight), "-t", str(tsize)]        
+            else:    
+                command = [potrace_command, "%s/%s.bmp"%(outputfolder, c[0] ), "-b", fileformat, "-W", str(vwidth), "-H", str(vheight), "-t", str(tsize)]
+            #print(command)
+            subprocess.run(command)
+        else:
+            print('POTRACE DISABLED')
 
 
 ##----------------------------------------------------
 
+
+def comic_pass( infolder, names, outfolder, colorbg_file, lineweight, bluramt, brightamt, blacklines=True ):
+    """ trace edges """
+
+    edge_cases = [] 
+
+    # get size we are working with - assume they are all same size 
+    infile = '%s/%s.bmp'%(infolder,names[0])
+    image = Image.open(infile)    
+    res_x = image.size[0]
+    res_y = image.size[1] 
+
+    ##-- 
+
+    ## iterate list of BW files to edge detect and composite back onto color image 
+    for fname in names:
+        infile = '%s/%s.bmp'%(infolder,fname)
+
+        image = Image.open(infile)
+     
+        # Converting the image to grayscale, as edge detection
+        # requires input image to be of mode = Grayscale (L)
+        image = image.convert("L")
+     
+        # Detecting Edges on the Image using the argument ImageFilter.FIND_EDGES
+        image = image.filter(ImageFilter.FIND_EDGES)
+      
+        #invert to make black edges 
+        inverted_image = ImageOps.invert(image)
+
+        #image.save('%s/%s.bmp'%(outfolder,fname))
+        edgefile='%s/%s_edge.bmp'%(outfolder,fname)
+        edge_cases.append(edgefile)
+        image.save(edgefile)        
+        #invedgefile='%s/%s_inv_edge.bmp'%(outfolder,fname)
+        #inverted_image.save(invedgefile)
+
+
+    ##----
+    # merge all the edge files into one
+    # THIS IS NOT RIGHT , BUT IT IS INTERESTNG - IT ACCUMULATES LINE WEIGHT 
+
+    if blacklines:
+        alledges = Image.new('RGBA', [res_x,res_y], (255,)*4)
+    else:
+        alledges = Image.new('RGBA', [res_x,res_y], (0,)*4)
+
+    allwhite = Image.new('RGBA', [res_x,res_y], (255,)*4) # white mask to composite
+    allblack = Image.new('RGBA', [res_x,res_y], (0,)*4)   # black mask to color lines where mask shows through 
+
+    for i,e in enumerate(edge_cases):
+        print(e)
+        tmp = Image.open(e)         
+        tmp = tmp.convert("RGBA")
+        alledges =  Image.blend(tmp, alledges, .5) 
+
+    ########### 
+    ## process lines   
+    
+    if lineweight:
+        ## blur lines pass
+        alledges = alledges.filter( ImageFilter.GaussianBlur(radius=bluramt) )
+        ## contrast lines 
+        cont_en = ImageEnhance.Contrast(alledges)
+        alledges = cont_en.enhance(lineweight)
+
+    ## bright pass  
+    #bright_en = ImageEnhance.Brightness(simg)
+    #simg = bright_en.enhance(bright)
+
+    #cheapo dilation
+    #alledges = alledges.filter(ImageFilter.MaxFilter(3))
+
+    #cheapo erode
+    #alledges = alledges.filter(ImageFilter.MinFilter(1))
+
+    ## end process lines
+    ########### 
+
+    if blacklines:
+        alledges = alledges.convert("L")
+        alledges = ImageOps.invert(alledges)
+    alledges.save("%s/alledges.bmp"%(outfolder))  
+
+    ##----
+    # now composite them onto the color background 
+    background = '%s/%s'%(infolder,colorbg_file)
+    colorbg = Image.open(background) 
+
+    if brightamt:
+        ## bright pass color background  
+        bright_en = ImageEnhance.Brightness(colorbg)
+        colorbg = bright_en.enhance(brightamt)
+
+    final = Image.new('RGBA', [res_x,res_y]) 
+    final = Image.composite(colorbg, allblack, alledges) 
+    final.save("%s/cartoon.bmp"%(outfolder))
+
+    ## FIRST STAB - composite using white edges - black BG - it works, but only for each layer at a time ##
+    # background = '%s/%s'%(infolder,colorbg_file)
+    # colorbg = Image.open(background) 
+    # final = Image.new('RGBA', colorbg.size) 
+    # for i,e in enumerate(edge_cases):
+    #     edge_mask = Image.open(e) 
+    #     final =  Image.composite(allblack, colorbg, edge_mask) 
+    #     final.save("%s/foofu_%s.bmp"%(outfolder,i))
+
+
+
+##----------------------------------------------------
+
+def redraw(  infolder, colorbg_file, lineweight, bluramt, brightamt, blacklines=True ):
+    """ trace edges """
+
+    edge_cases = [] 
+
+    # get size we are working with - assume they are all same size 
+    aefile = '%s/alledges.bmp'%(infolder)
+    alledges = Image.open(aefile)    
+    res_x = alledges.size[0]
+    res_y = alledges.size[1] 
+
+    ########### 
+    ## process lines   
+    
+    if lineweight:
+        ## blur lines pass
+        alledges = alledges.filter( ImageFilter.GaussianBlur(radius=bluramt) )
+        ## contrast lines 
+        cont_en = ImageEnhance.Contrast(alledges)
+        alledges = cont_en.enhance(lineweight)
+
+    #allwhite = Image.new('RGBA', [res_x,res_y], (255,)*4) # white mask to composite
+    allblack = Image.new('RGBA', [res_x,res_y], (0,)*4)   # black mask to color lines where mask shows through 
+
+    ## bright pass  
+    #bright_en = ImageEnhance.Brightness(simg)
+    #simg = bright_en.enhance(bright)
+
+    #cheapo dilation
+    #alledges = alledges.filter(ImageFilter.MaxFilter(3))
+
+    #cheapo erode
+    #alledges = alledges.filter(ImageFilter.MinFilter(1))
+
+    ## end process lines
+    ########### 
+
+    ##----
+    # now composite them onto the color background 
+    background = '%s/%s'%(infolder,colorbg_file)
+    colorbg = Image.open(background) 
+
+    if brightamt:
+        ## bright pass color background  
+        bright_en = ImageEnhance.Brightness(colorbg)
+        colorbg = bright_en.enhance(brightamt)
+
+    final = Image.new('RGBA', [res_x,res_y]) 
+    final = Image.composite(colorbg, allblack, alledges) 
+    final.save("%s/cartoon.bmp"%(infolder))
+
+
+
+##----------------------------------------------------
 
 def geojson_to_ngc(folder, fnames, onefile=False):
     kiparser = vectorflow()

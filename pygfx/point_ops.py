@@ -57,7 +57,9 @@ from gnelscript.pygfx.math_ops import NUMPY_IS_LOADED, matrix33, matrix44, vec2,
  
     TODO:
         upgrade to these to full objects instead of lists 
-        
+        make operators work universally on GEOM, OBJECT, PTGRPS, ETC 
+        SOLVE THE STUPID ZERO INDEX ISSUE 
+
         class ptgrp(object):
             def __init__(self):
                 ## store in zero index add function to get NON ZERO INDEXED
@@ -222,7 +224,6 @@ class point_operator(object):
 
         # apply the transform here
         for pt in pts:  
-
             if m33 is not None:
                 tmp_buffer.append( m33 * pt )
             if m44 is not None:
@@ -979,6 +980,10 @@ class polygon_operator(point_operator):
             return cleaned
     ##-------------------------------------------## 
     def slice_axis(self, low, high, axis='y'):
+        """ extract a section of polygons from a model based on position in space 
+            it should catch any polygon with a point within the range... I think 
+        """
+
         sliced=[]
         exists = []
 
@@ -1955,7 +1960,13 @@ class polygon_operator(point_operator):
 
 
     ##-------------------------------------------##          
-    def insert_polygons(self, plyids, points, asnew_shell=True, geom=None, incrone=False, pos=None):
+    def insert_polygons(self, plyids=None, 
+                              points=None, 
+                              asnew_shell=True, 
+                              geom=None, 
+                              incrone=False, 
+                              pos=None):
+
         """  
              Insert NEW geometry into this object
              
@@ -1966,18 +1977,25 @@ class polygon_operator(point_operator):
              asnew_shell     - reindex the points and append, else keep the same indices
              geom            - geom to insert into, instead of object.polygons, object.points
                                if true, will return the geom object when done 
-
+             incrone         - 
              pos             - transform points to a position 
 
              if points are 2D - automatically insert in 3D on the 0 Z axis
         """
-
-        if plyids and points:
-            raise ValueError("ONLY USE POINT OR POLYS - NOT BOTH ")
-
+        
         #if isinstance(points, vec3):
         #    self.points.extend(points)
 
+        ##-- DEBUG experiment - just append points as new if no indexes specified
+        if points and not plyids:
+            tmp=[]
+            numpts = len(self.points)
+            for i,p in enumerate(points):
+                tmp.append((i+numpts)-1)
+            plyids=[tmp]    
+            
+     
+        ##-- option to increment polyids by one automatically  
         newplyids = []
         if incrone:
             for pid in plyids:
@@ -1988,7 +2006,7 @@ class polygon_operator(point_operator):
 
             plyids = newplyids
 
-        ######### 
+        ##--
         # append polygons (using existing point buffer)
         for poly in plyids:
             plytmp = []      

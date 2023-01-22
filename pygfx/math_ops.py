@@ -692,20 +692,6 @@ class vec3(object):
         return pt2 - self
 
     ##----------------------------------------
-    def orthogonal_vec_from_pt(self, vecpt, unitvec, pt ):
-        if NUMPY_IS_LOADED:        
-            return (vecpt-pt) - ( np.dot((vecpt-pt), unitvec) ) * unitvec
-        return None 
-    
-    ##----------------------------------------
-
-    if NUMPY_IS_LOADED:
-        @property
-        def as_np(self):
-            """  get this vec3 as an np.array """ 
-            return self.copy(vtype='numpy')
-
-    ##----------------------------------------
 
     def insert(self, iterable):
         """ convert an np.array, tuple or list  to vec3  
@@ -829,34 +815,7 @@ class vec3(object):
             roty = math.atan2( x * math.cos(rotx), -z );
         
         return [rotx,roty]
-
-
-    ##------------------------------------- 
-    def np_angle_between(self, v1, v2):
-        """ 
-           UNTESTED 
-
-           Returns the angle in radians between vectors 'v1' and 'v2'::
-
-                >>> angle_between((1, 0, 0), (0, 1, 0))
-                1.5707963267948966
-                >>> angle_between((1, 0, 0), (1, 0, 0))
-                0.0
-                >>> angle_between((1, 0, 0), (-1, 0, 0))
-                3.141592653589793
-        """
-
-        if NUMPY_IS_LOADED:        
-            if isinstance(v1, tuple):
-                v1 = self.insert(v1)  #wrong?
-            if isinstance(v2, tuple):
-                v2 = self.insert(v2)  #wrong?
-
-            v1_u = v1.np_normal;v2_u = v2.np_normal
-
-            #print('### ', v1_u , v2_u )
-
-            return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+ 
 
     ##------------------------------------- 
     def angle_between(self, other):
@@ -999,11 +958,46 @@ class vec3(object):
         # this ray hits the triangle
         return P
 
-    ##------------------------------------- 
+    ################################################
+    ## NUMPY FUNCTIONS 
+
+    if NUMPY_IS_LOADED:
+        @property
+        def as_np(self):
+            """  get this vec3 as an np.array """ 
+            return self.copy(vtype='numpy')
+
+        ##----------------------------------------
+        def orthogonal_vec_from_pt(self, vecpt, unitvec, pt ):
+            return (vecpt-pt) - ( np.dot((vecpt-pt), unitvec) ) * unitvec
+
+        def np_angle_between(self, v1, v2):
+            """ 
+               UNTESTED 
+
+               Returns the angle in radians between vectors 'v1' and 'v2'::
+
+                    >>> angle_between((1, 0, 0), (0, 1, 0))
+                    1.5707963267948966
+                    >>> angle_between((1, 0, 0), (1, 0, 0))
+                    0.0
+                    >>> angle_between((1, 0, 0), (-1, 0, 0))
+                    3.141592653589793
+            """
+       
+            if isinstance(v1, tuple):
+                v1 = self.insert(v1)  #wrong?
+            if isinstance(v2, tuple):
+                v2 = self.insert(v2)  #wrong?
+
+            v1_u = v1.np_normal;v2_u = v2.np_normal
+
+            #print('### ', v1_u , v2_u )
+
+            return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
 
     ##------------------------------------- 
-
 
     """
     # https://stackoverflow.com/questions/2549708/intersections-of-3d-polygons-in-python
@@ -1522,53 +1516,6 @@ class matrix33(object):
             tmp_buffer.append( self * pvec )
         return tmp_buffer
 
-    def from_vec3(self, vec3, angle):
-        """ UNTESTED build a 3X3 matrix that will rotate around a vector 
-  
-            vec3 = the vector for an axis of rotation
-            angle - angle in degrees to rotate 
-
-        """
-        
-        theta = self.mu.dtr(angle)
-        #axis = vec3.normal
-        axis = vec3.as_np
-        #tmpm33 = self.identity
-
-        if NUMPY_IS_LOADED and SCIPY_IS_LOADED:
-            tmpm33 = expm(np.cross(np.eye(3), axis / np.linalg.norm(axis) * theta)) 
-            return self.from_np(tmpm33)
-        else:
-            return None 
-
-
-    def align_two_vec3(self, a, b):
-        """  UNFINISHED !! 
-
-             https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
-       
-              ⎛cosθ −sinθ  0 ⎞
-          G = ⎜sinθ  cosθ  0 ⎟ 
-              ⎝0      0    1 ⎠
-
-                --------------------------------------------------------------
-               Given our unit vectors, we note that cosθ=A⋅B, and sinθ=||A×B||
-      
-              ⎛ A.B    -||A×B||    0 ⎞
-          G = ⎜||A×B||   A.B       0 ⎟ 
-              ⎝0          0        1 ⎠
-
-
-        """
-        theta = self.mu.dtr(angle)
-        #axis = vec3.normal
-        axis = vec3.as_np
-        #tmpm33 = self.identity
-        
-        tmpm33 = expm(np.cross(np.eye(3), axis / np.linalg.norm(axis) * theta)) 
-
-        return self.from_np(tmpm33)
-
     def from_euler(self, xrot, yrot, zrot):
         """
             derived from the rotate_pts_3d function 
@@ -1658,6 +1605,153 @@ class matrix33(object):
         ############ 
         return rotation_33.batch_mult_pts(points)
 
+
+
+    ##############################################
+    # NUMPY FUNCTIONS
+
+    if NUMPY_IS_LOADED:
+        def np_rotate(self, axis, angle_rad=None, angle_deg=None):
+            """ 
+                UNTESTED - USES NUMPY 
+      
+                build a 3X3 matrix that will rotate around a vector 
+                axis = vec3 - vector for an axis of rotation
+                
+                angle_rad - angle in radians to rotate 
+                angle_deg - angle in degrees to rotate 
+
+            """
+            
+            if angle_rad==None and angle_deg==None:
+                print('from_vec3: no angle specified')
+                return None 
+            if angle_rad  and angle_deg :
+                print('from_vec3: angle must be rad or deg but not both')
+                return None 
+
+            if angle_rad:
+                if type(angle_rad) is vec3:
+                    theta = angle_rad.as_np
+                if type(angle_rad) is tuple:
+                    theta = vec3(angle_rad).as_np
+            if angle_deg:
+                if type(angle_deg) is tuple:
+                    theta = vec3(self.mu.dtr(angle_deg[0]),
+                                 self.mu.dtr(angle_deg[1]),
+                                 self.mu.dtr(angle_deg[2])).as_np
+
+            axis = axis.as_np
+
+            if NUMPY_IS_LOADED and SCIPY_IS_LOADED:
+                tmpm33 = expm(np.cross(np.eye(3), axis / np.linalg.norm(axis) * theta )) 
+                return self.from_np(tmpm33)
+            else:
+                return None 
+
+        ##------------------------------------
+        def np_is_rot_matrix(self, R) :
+            # https://learnopencv.com/rotation-matrix-to-euler-angles/
+            Rt = np.transpose(R)
+            shouldBeIdentity = np.dot(Rt, R)
+            I = np.identity(3, dtype = R.dtype)
+            n = np.linalg.norm(I - shouldBeIdentity)
+            return n < 1e-6
+
+        ##------------------------------------         
+        def np_rot_matrix_to_euler(self, R) :
+            # https://learnopencv.com/rotation-matrix-to-euler-angles/
+            # Calculates rotation matrix to euler angles
+            # The result is the same as MATLAB except the order
+            # of the euler angles ( x and z are swapped ).
+
+            assert(self.isRotationMatrix(R))
+         
+            sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
+         
+            singular = sy < 1e-6
+         
+            if  not singular :
+                x = math.atan2(R[2,1] , R[2,2])
+                y = math.atan2(-R[2,0], sy)
+                z = math.atan2(R[1,0], R[0,0])
+            else :
+                x = math.atan2(-R[1,2], R[1,1])
+                y = math.atan2(-R[2,0], sy)
+                z = 0
+         
+            return np.array([x, y, z])
+        
+        ##------------------------------------
+        def np_euler_to_rot_matrix(self, theta) :
+            # https://learnopencv.com/rotation-matrix-to-euler-angles/
+            R_x = np.array([[1,         0,                  0                   ],
+                            [0,         math.cos(theta[0]), -math.sin(theta[0]) ],
+                            [0,         math.sin(theta[0]), math.cos(theta[0])  ]
+                            ])
+         
+            R_y = np.array([[math.cos(theta[1]),    0,      math.sin(theta[1])  ],
+                            [0,                     1,      0                   ],
+                            [-math.sin(theta[1]),   0,      math.cos(theta[1])  ]
+                            ])
+         
+            R_z = np.array([[math.cos(theta[2]),    -math.sin(theta[2]),    0],
+                            [math.sin(theta[2]),    math.cos(theta[2]),     0],
+                            [0,                     0,                      1]
+                            ])
+         
+            R = np.dot(R_z, np.dot( R_y, R_x ))
+            return R
+
+        ##------------------------------------
+        def np_euler_rotation_matrix(self, theta):
+            # Rotate m_vec (x, y, z) around the x(roll), y(pitch), and z(yaw) axes.
+            # same as np_euler_to_rot_matrix() 
+
+            roll = theta[0]
+            pitch = theta[1]
+            yaw = theta[2]
+
+            if roll == 0.0 and pitch == 0.0 and yaw == 0.0:
+                return np.eye(3)
+
+            P = pitch
+            Y = yaw
+            R = roll
+            rot = np.array([[ np.cos(P)*np.cos(Y), -np.cos(R)*np.sin(Y)+np.sin(R)*np.sin(P)*np.cos(Y),  np.sin(R)*np.sin(Y)+np.cos(R)*np.sin(P)*np.cos(Y)],
+                            [ np.cos(P)*np.sin(Y),  np.cos(R)*np.cos(Y)+np.sin(R)*np.sin(P)*np.sin(Y), -np.sin(R)*np.cos(Y)+np.cos(R)*np.sin(P)*np.sin(Y)],
+                            [-np.sin(P),            np.sin(R)*np.cos(P),                                np.cos(R)*np.cos(P)]]);
+
+            return rot
+   
+        ##------------------------------------
+
+        def align_two_vec3(self, a, b):
+            """  UNFINISHED !! 
+
+                 https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
+           
+                  ⎛cosθ −sinθ  0 ⎞
+              G = ⎜sinθ  cosθ  0 ⎟ 
+                  ⎝0      0    1 ⎠
+
+                    --------------------------------------------------------------
+                   Given our unit vectors, we note that cosθ=A⋅B, and sinθ=||A×B||
+          
+                  ⎛ A.B    -||A×B||    0 ⎞
+              G = ⎜||A×B||   A.B       0 ⎟ 
+                  ⎝0          0        1 ⎠
+
+
+            """
+            theta = self.mu.dtr(angle)
+            #axis = vec3.normal
+            axis = vec3.as_np
+            #tmpm33 = self.identity
+            
+            tmpm33 = expm(np.cross(np.eye(3), axis / np.linalg.norm(axis) * theta)) 
+
+            return self.from_np(tmpm33)
 
 ##-------------------------------------------##
 ##-------------------------------------------##
