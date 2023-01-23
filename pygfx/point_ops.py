@@ -978,42 +978,6 @@ class polygon_operator(point_operator):
             for pt in pts:
                 cleaned.append( self._csp_str(pt) )            
             return cleaned
-    ##-------------------------------------------## 
-    def slice_axis(self, low, high, axis='y'):
-        """ extract a section of polygons from a model based on position in space 
-            it should catch any polygon with a point within the range... I think 
-        """
-
-        sliced=[]
-        exists = []
-
-    
-        def add_once(data):
-            if data[0] not in exists:
-                sliced.append(data)                
-                exists.append(data[0])
-
-        for fid,ply in enumerate(self.polygons):
-            tmply=[]
-            for pid in ply:
-                pt = self.points[pid-1]
-                tmply.append(pt)
-
-            for a in tmply:
-                if axis=='x':
-                    if a[0]>low and a[0]< high: 
-                        add_once([fid, [ply ,tmply]])
- 
-                if axis=='y':
-                    if a[1]>low and a[1]< high:  
-                        add_once([fid, [ply ,tmply]])
-                          
-                if axis=='z':
-                    if a[2]>low and a[2]< high:  
-                        add_once([fid,[ply ,tmply]])
-       
-        return sliced
-
     ##-------------------------------------------##  
     def _scribe(self, str):
         print(str)
@@ -1683,6 +1647,11 @@ class polygon_operator(point_operator):
     def get_face_geom(self, fids,  reindex=False, geom=None):
         """ lookup and return the polygon indices and points for a single polygon 
 
+            
+            ANNOYING - YOU MUST RESET THIS GLOBAL BEFORE USING 
+            self.exprt_ply_idx
+
+
             reindex - if True  - renumber the new polygon indices startring at 1, 
                       if False - retain the original numbering 
 
@@ -1690,13 +1659,13 @@ class polygon_operator(point_operator):
 
             usage: 
 
-            o = object3d()
-            o.load('3d_obj/cube.obj')
-            g = o.get_face_geom(3, reindex=True, geom=None)
+                o = object3d()
+                o.load('3d_obj/cube.obj')
+                g = o.get_face_geom(3, reindex=True, geom=None)
 
-            x = object3d()
-            x.insert(g)
-            x.save('newobj.obj')
+                x = object3d()
+                x.insert(g)
+                x.save('newobj.obj')
 
 
 
@@ -1745,7 +1714,6 @@ class polygon_operator(point_operator):
             
             out_geom[1] = tmp_pts
         return out_geom
-
 
     ##-------------------------------------------##   
     def get_face_normal(self, fid=None, unitlen=False ):
@@ -1934,6 +1902,49 @@ class polygon_operator(point_operator):
         self.insert_pt_grp(rotated)
         #self.append_pt_grp(rotated)
 
+    ##-------------------------------------------## 
+    def xform_pts(self, pos, pts=None, ptgrp=None):
+        """ 
+            BROKEN - FIX 
+            shift points without using a matrix 
+            if no points are specified - apply to whole object 
+        """
+        
+        ################################################
+        if pts is not None and ptgrp is None: 
+            out = []
+            for pt in pts:
+                x = pt[0] + pos[0]
+                y = pt[1] + pos[1]
+                z = pt[2] + pos[2]
+                out.append( (x,y,z) )
+            return out     
+
+
+        if pts is None and ptgrp is None: 
+            # no args gets all the points of this object 
+            ptgrp = self.get_pt_grp()    
+
+        if ptgrp:
+            pt_ids  = []
+            pt_data = []
+            tmp_buffer = [] 
+
+            for ptg in ptgrp:
+                pt_ids.append(  ptg[0] )
+                pt_data.append( ptg[1] )
+            
+            for i,pt in enumerate(pt_data):  
+                x = pt[0] + pos[0]
+                y = pt[1] + pos[1]
+                z = pt[2] + pos[2]
+                tmp_buffer.append( [i+1,(x,y,z)] )
+
+            print(tmp_buffer)    
+            self.insert_pt_grp(tmp_buffer)
+
+        return None 
+
     ##-------------------------------------------##          
     def insert_line(self, pts):
         """ insert tuple into THIS object as a 3d line 
@@ -1957,9 +1968,30 @@ class polygon_operator(point_operator):
         if len(pts[0])==3:
             self.points.extend(pts)
 
+    ##-------------------------------------------##  
+    def linegeom_fr_points(self, pts, color=(100,0,100), periodic=False ):
+        """ create renderable lines from array of 3D pts 
+        """
+        lptidx = self.numpts
+        for i in range(len(pts)):
+            if i>0:
+                pt1 = pts[i-1]
+                pt2 = pts[i]
+               
+                self.points.append( (pt1[0], pt1[1], pt1[2], color[0], color[1], color[2]) ); lptidx+=1
+                self.points.append( (pt2[0], pt2[1], pt2[2], color[0], color[1], color[2]) ); lptidx+=1 
+                self.polygons.append([lptidx-1, lptidx])
+            
+        if periodic:
+                pt1 = pts[0]
+                pt2 = pts[len(pts)-1]            
+                self.points.append( (pt1[0], pt1[1], pt1[2], color[0], color[1], color[2]) ); lptidx+=1
+                self.points.append( (pt2[0], pt2[1], pt2[2], color[0], color[1], color[2]) ); lptidx+=1 
+                self.polygons.append([lptidx-1, lptidx])
 
-
-    ##-------------------------------------------##          
+    ##-------------------------------------------## 
+    ##-------------------------------------------## 
+     
     def insert_polygons(self, plyids=None, 
                               points=None, 
                               asnew_shell=True, 
@@ -2012,7 +2044,7 @@ class polygon_operator(point_operator):
             plytmp = []      
             for idx in poly:
                 if not isinstance(idx, int):
-                    print('## insert_polygons, bad data for index ')
+                    print('## insert_polygons, bad data for index: ', idx)
                     return None 
 
                 if asnew_shell is True:
@@ -2074,26 +2106,9 @@ class polygon_operator(point_operator):
         self.points.extend(pts)
         self.polygons.append( [npts+1,npts+2,npts+3, npts+4])
 
-    ##-------------------------------------------##  
-    def linegeom_fr_points(self, pts, color=(100,0,100), periodic=False ):
-        """ create renderable lines from array of 3D pts 
-        """
-        lptidx = self.numpts
-        for i in range(len(pts)):
-            if i>0:
-                pt1 = pts[i-1]
-                pt2 = pts[i]
-               
-                self.points.append( (pt1[0], pt1[1], pt1[2], color[0], color[1], color[2]) ); lptidx+=1
-                self.points.append( (pt2[0], pt2[1], pt2[2], color[0], color[1], color[2]) ); lptidx+=1 
-                self.polygons.append([lptidx-1, lptidx])
-            
-        if periodic:
-                pt1 = pts[0]
-                pt2 = pts[len(pts)-1]            
-                self.points.append( (pt1[0], pt1[1], pt1[2], color[0], color[1], color[2]) ); lptidx+=1
-                self.points.append( (pt2[0], pt2[1], pt2[2], color[0], color[1], color[2]) ); lptidx+=1 
-                self.polygons.append([lptidx-1, lptidx])
+    ##-------------------------------------------##   
+    ##-------------------------------------------## 
+    # MODELING TOOLS 
 
     ##-------------------------------------------##  
     def revolve_points(self, numdivs, axis, pts):
@@ -2296,48 +2311,6 @@ class polygon_operator(point_operator):
                 # DEBUG - this seems not right, grinds to a halt on 20+ polygons
                 self.insert_polygons(geom[0], newpts  ) 
 
-    ##-------------------------------------------## 
-    def xform_pts(self, pos, pts=None, ptgrp=None):
-        """ 
-            BROKEN - FIX 
-            shift points without using a matrix 
-            if no points are specified - apply to whole object 
-        """
-        
-        ################################################
-        if pts is not None and ptgrp is None: 
-            out = []
-            for pt in pts:
-                x = pt[0] + pos[0]
-                y = pt[1] + pos[1]
-                z = pt[2] + pos[2]
-                out.append( (x,y,z) )
-            return out     
-
-
-        if pts is None and ptgrp is None: 
-            # no args gets all the points of this object 
-            ptgrp = self.get_pt_grp()    
-
-        if ptgrp:
-            pt_ids  = []
-            pt_data = []
-            tmp_buffer = [] 
-
-            for ptg in ptgrp:
-                pt_ids.append(  ptg[0] )
-                pt_data.append( ptg[1] )
-            
-            for i,pt in enumerate(pt_data):  
-                x = pt[0] + pos[0]
-                y = pt[1] + pos[1]
-                z = pt[2] + pos[2]
-                tmp_buffer.append( [i+1,(x,y,z)] )
-
-            print(tmp_buffer)    
-            self.insert_pt_grp(tmp_buffer)
-
-        return None 
     ##-------------------------------------------##  
     def radial_triangulate_face(self, fid, offset=None, as_new_obj=False ):
         """ put a vertex at the center of polygon 
@@ -2515,6 +2488,42 @@ class polygon_operator(point_operator):
             self.polygons = new_plys
         else:    
             self.insert_polygons(new_plys, new_pts)
+
+    ##-------------------------------------------## 
+    def slice_axis(self, low, high, axis='y'):
+        """ extract a section of polygons from a model based on position in space 
+            it should catch any polygon with a point within the range... I think 
+        """
+
+        sliced=[]
+        exists = []
+
+    
+        def add_once(data):
+            if data[0] not in exists:
+                sliced.append(data)                
+                exists.append(data[0])
+
+        for fid,ply in enumerate(self.polygons):
+            tmply=[]
+            for pid in ply:
+                pt = self.points[pid-1]
+                tmply.append(pt)
+
+            for a in tmply:
+                if axis=='x':
+                    if a[0]>low and a[0]< high: 
+                        add_once([fid, [ply ,tmply]])
+ 
+                if axis=='y':
+                    if a[1]>low and a[1]< high:  
+                        add_once([fid, [ply ,tmply]])
+                          
+                if axis=='z':
+                    if a[2]>low and a[2]< high:  
+                        add_once([fid,[ply ,tmply]])
+       
+        return sliced
 
     ##-------------------------------------------##   
     ##-------------------------------------------## 

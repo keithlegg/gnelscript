@@ -17,7 +17,15 @@
 #
 # ***** END GPL LICENCE BLOCK *****
 
+
+from gnelscript import NUMPY_IS_LOADED
+
+if NUMPY_IS_LOADED:
+    import numpy as np             
+    #from numpy.linalg import inv
+
 import math 
+
 
 
 from gnelscript.pygfx.point_ops import polygon_operator
@@ -43,12 +51,25 @@ class object3d(polygon_operator):
 
    
     def __mul__(self, matrix):
-        """ you can multiply an object by a matrix - cool huh? """
+        """ you can multiply an object by a matrix (or vector?) to transform- cool huh? """
 
+        #if type(matrix)is vec3:
+        #    self.points = self.apply_matrix_pts(pts=self.points, m33=matrix) 
+
+        print(type(matrix)) 
+        
         if type(matrix)is matrix33:
             self.points = self.apply_matrix_pts(pts=self.points, m33=matrix) 
         if type(matrix)is matrix44:
             self.points = self.apply_matrix_pts(pts=self.points, m44=matrix) 
+        if NUMPY_IS_LOADED:
+            if type(matrix)==np.ndarray:
+                if matrix.size==9:
+                    m33=matrix33()
+                    self.points = self.apply_matrix_pts(pts=self.points, m33=m33.from_np(matrix)) 
+                if matrix.size==16:
+                    m444=matrix44()
+                    self.points = self.apply_matrix_pts(pts=self.points, m44=m44.from_np(matrix)) 
 
 
      
@@ -99,7 +120,18 @@ class object3d(polygon_operator):
 
         """
 
-        # if tuple or list assume its [polyidx, points]
+
+        # VEC3 TYPE - UNTESTED
+        if isinstance(obj, vec3):
+            if pos:            
+                self.one_vec_to_obj(obj, pos=pos, arrowhead=False)
+                #self.insert_line(obj)
+                #self.linegeom_fr_points( [(0,0,0), tuple(obj.aspt)] )
+                pass 
+            else:            
+                self.one_vec_to_obj(obj)
+
+        # GEOMTYPE tuple or list assume its [polyidx, points]
         if isinstance(obj, tuple) or isinstance(obj, list):
             if replace is True:
                 if pos:
@@ -128,6 +160,9 @@ class object3d(polygon_operator):
                     self.insert_polygons(obj.polygons, obj.points, pos=pos)
                 else:    
                     self.insert_polygons(obj.polygons, obj.points)
+
+
+
 
     ############################################### 
     def append(self, otherobj):
@@ -253,20 +288,13 @@ class object3d(polygon_operator):
         """
         
         # get the mag of the vector 
-
         # build the geom for the model 
-
         # create a matrix from the vec??
-
         # multiply the obj by the matrix?
-
-
         pts = [
                (0    , 0    , 0    ),
                (r3[0], r3[1], r3[2]), 
               ]
-
-
         ############                              
         n = self.numpts # add this number to the indices in case of existing geom 
         plyidx = [(n+1,n+2)]
@@ -287,7 +315,6 @@ class object3d(polygon_operator):
         #if isinstance(r3,vec4):
         #    r3 = [r3[0]
         
-
         if pos is not None:
             pts = [
                    (pos[0]       , pos[1]      , pos[2]       ),
@@ -489,9 +516,7 @@ class object3d(polygon_operator):
         """ first prim tool to use other tools and prims 
             made so we can make an arrow prim 
         """
-
         # print("## debug pos cone ", pos )
-
  
         self.prim_circle(axis=axis, pos=pos, dia=dia, spokes=spokes)
         
@@ -510,24 +535,70 @@ class object3d(polygon_operator):
 
     ############################################### 
     #def prim_sphere2(self, pos=(0,0,0), rot=(0,0,0), size=1 ):
+    """
+    http://www.songho.ca/opengl/gl_sphere.html
 
+    // clear memory of prev arrays
+    std::vector<float>().swap(vertices);
+    std::vector<float>().swap(normals);
+    std::vector<float>().swap(texCoords);
+
+    float x, y, z, xy;                              // vertex position
+    float nx, ny, nz, lengthInv = 1.0f / radius;    // vertex normal
+    float s, t;                                     // vertex texCoord
+
+    float sectorStep = 2 * PI / sectorCount;
+    float stackStep = PI / stackCount;
+    float sectorAngle, stackAngle;
+
+    for(int i = 0; i <= stackCount; ++i)
+    {
+        stackAngle = PI / 2 - i * stackStep;        // starting from pi/2 to -pi/2
+        xy = radius * cosf(stackAngle);             // r * cos(u)
+        z = radius * sinf(stackAngle);              // r * sin(u)
+
+        // add (sectorCount+1) vertices per stack
+        // the first and last vertices have same position and normal, but different tex coords
+        for(int j = 0; j <= sectorCount; ++j)
+        {
+            sectorAngle = j * sectorStep;           // starting from 0 to 2pi
+
+            // vertex position (x, y, z)
+            x = xy * cosf(sectorAngle);             // r * cos(u) * cos(v)
+            y = xy * sinf(sectorAngle);             // r * cos(u) * sin(v)
+            vertices.push_back(x);
+            vertices.push_back(y);
+            vertices.push_back(z);
+
+            // normalized vertex normal (nx, ny, nz)
+            nx = x * lengthInv;
+            ny = y * lengthInv;
+            nz = z * lengthInv;
+            normals.push_back(nx);
+            normals.push_back(ny);
+            normals.push_back(nz);
+
+            // vertex tex coord (s, t) range between [0, 1]
+            s = (float)j / sectorCount;
+            t = (float)i / stackCount;
+            texCoords.push_back(s);
+            texCoords.push_back(t);
+        }
+    }
+    """
     ############################################### 
-    def prim_sphere(self, pos=(0,0,0), rot=(0,0,0), size=1 ):
+    def _icosahedron(self, radius):
+        """ builds the points but not polygons for an icosahedron
+            there are some experimental geom functions here  
+        """
+        build_wire = False 
+        build_geom = True 
         
-        #UNFINISHED 
-
-        #radius is called size for uniformity in ARGS 
-        radius = size
-
-        #icosahedron  - from http://www.songho.ca/opengl/gl_sphere.html 
-
         #// constants
         PI = 3.1415926;
         H_ANGLE = PI/ 180*72;       # 72 degree = 360 / 5
         V_ANGLE = math.atan(1.0/2); # elevation = 26.565 degree
 
-        i1 = 0
-        i2 = 0                            # indices
         z  = 0
         xy = 0                            # coords
         hAngle1 = -PI / 2 - H_ANGLE / 2   # start from -126 deg at 1st row
@@ -538,54 +609,79 @@ class object3d(polygon_operator):
         fid = self.numpts-1
 
         faces = [] 
+        front_loop=[]
+        back_loop=[]
+        last_pt = None 
 
         # compute 10 vertices at 1st and 2nd rows
-        for i in range(1,4):
+        for i in range(1,7):
             n = self.numpts # add to this index each time
 
             z  = radius * math.sin(V_ANGLE)  # elevaton
             xy = radius * math.cos(V_ANGLE)  # length on XY plane
-
             vtmp1 = [];vtmp2 = []
-
             vtmp1.append( xy * math.cos(hAngle1)  )# x
             vtmp2.append( xy * math.cos(hAngle2)  )
-
             vtmp1.append( xy * math.sin(hAngle1)  )# y
             vtmp2.append( xy * math.sin(hAngle2)  )
-
             vtmp1.append(  z                      )# z
             vtmp2.append( -z                      )
-
-            self.prim_locator(pos=vtmp1,size=.1)
-            self.prim_locator(pos=vtmp2,size=.1)
-
             #// next horizontal angles
             hAngle1 += H_ANGLE
             hAngle2 += H_ANGLE
             
             self.points.append(tuple(vtmp1))
             self.points.append(tuple(vtmp2))
+            
+            if n>1:
+                if (n%2)-1==0:
+                    front_loop.append(n)
+                    back_loop.append(n-1)
 
-            # if i>1:
-            #     self.polygons.append( (n, n+1, n+2) )
-            # if i<7:
-            #     self.polygons.append( (n+1, n+2, n+3) )
+            if build_wire:
+                self.prim_locator(pos=vtmp1,size=.1)
+                self.prim_locator(pos=vtmp2,size=.1)
+                self.insert(vec3(vtmp2)-vec3(vtmp1), pos=vtmp1)  
+
+            if build_geom:
+                if i>1:
+                    self.polygons.append( (n, n+1, n+2) )
+                if i<6:
+                    self.polygons.append( (n+1, n+2, n+3) )
         
         # the last bottom vertex at (0, 0, -r)
         self.points.append( (0,0,-radius) )
+        last_pt = self.numpts 
+ 
+        ## build the front endcaps
+        for i,idx in enumerate(front_loop):
+            #cool star pattern  
+            #self.polygons.append( (idx, last_pt, front_loop[i-2]) )            
+            self.polygons.append( (idx, last_pt, front_loop[i-1]) )    
 
-               
-        #end caps
-        #self.points.append( (fid,fid+1,fid+2) )
-        
-        #pts = self.xform_pts(  pos, pts)
-        #pts = self.rotate_pts( rot, pts)
+        ## build the back endcaps
+        for i,idx in enumerate(back_loop):
+            self.polygons.append( (idx, 1, back_loop[i-1]) )  
+
+
+
+    def prim_sphere(self, pos=(0,0,0), rot=(0,0,0), size=1 ):
+        """
+            build a icosahedron : UNFINISHED - need to add smoothing/triangulate
+            from http://www.songho.ca/opengl/gl_sphere.html 
+        """
+        self._icosahedron(radius=size)
 
 
         ######################################################
 
         """
+        http://www.songho.ca/opengl/gl_sphere.html
+
+        The subdivision algorithm is splitting the 3 edge lines of each triangle in half, 
+        then extruding the new middle point outward, 
+        so its length (the distance from the center) is the same as sphere's radius. 
+
         std::vector<float> tmpVertices;
         std::vector<float> tmpIndices;
         const float *v1, *v2, *v3;          // ptr to original vertices of a triangle

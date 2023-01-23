@@ -26,15 +26,13 @@ from gnelscript import NUMPY_IS_LOADED, SCIPY_IS_LOADED
 
 
 if NUMPY_IS_LOADED:
-    # print(' ## debug - loading numpy module. ')
-    import numpy as np             #for testing - remove later 
+    import numpy as np             
     from numpy.linalg import inv
+else:
+    print(' ## debug - numpy module disabled. ')
 
 if SCIPY_IS_LOADED:    
     from scipy.linalg import expm
-
-else:
-    print(' ## debug - numpy module disabled. ')
 
 
 
@@ -91,12 +89,57 @@ class math_util(object):
 
     ##-------------------------------------------##
     def dtr (self, deg ):
-       return deg * DEG_TO_RAD
+
+        #print('##################')
+        #print(deg, type(deg) )
+
+        if type(deg)==int: 
+            return float(deg) * DEG_TO_RAD
+
+        if type(deg)==float: 
+            return deg * DEG_TO_RAD
+       
+        if type(deg)==tuple:
+            out = []
+            for e in deg: 
+                out.append(e * DEG_TO_RAD)
+            return out 
+
+        if NUMPY_IS_LOADED:
+            if type(deg)==np.float64:
+                return float(deg) * DEG_TO_RAD
+
+            #if type(deg)==np.ndarray:
+            #    out = []
+            #    for e in deg: 
+            #        out.append(e * DEG_TO_RAD)
+            #    return out 
+
+        raise ValueError('dtr: unknown type ')
 
     ##-------------------------------------------##
     def rtd (self, rad ):
-       return rad * RAD_TO_DEG
-    
+        if type(rad)==int: 
+            return float(rad) * RAD_TO_DEG
+
+        if type(rad)==float:         
+            return rad * RAD_TO_DEG
+
+        if type(rad)==tuple:
+            out = []
+            for e in rad: 
+                out.append(e * RAD_TO_DEG)
+            return out 
+
+        if NUMPY_IS_LOADED:
+            if type(rad)==np.float64:
+                return float(rad) * RAD_TO_DEG
+
+            if type(rad)==np.ndarray:            
+                pass 
+
+        raise ValueError('rtd: unknown type ')
+
     ##-------------------------------------------##
     def dtr_vec3(self, invec):
         return ( self.dtr( invec[0] ),
@@ -510,8 +553,8 @@ class vec3(object):
 
     def __init__(self,x=0,y=0,z=0):
         #this is sloppy - check the first item and assume we are initializing with a tuple xyz 
-        if type(x) is tuple:
-            self.x=x[0];self.y=x[1];self.z=x[2]         
+        if type(x) is list or type(x) is tuple:
+            self.x=x[0];self.y=x[1];self.z=x[2]  
         else:    
             self.x=x;self.y=y;self.z=z  
         self.mu = math_util() 
@@ -629,9 +672,11 @@ class vec3(object):
         pass  
 
 
-
+    ##----------------------------------------
     def project_pt(self, offset):
-        """ project a point along a vector """
+        """ UNTESTED? 
+            project a point along a vector 
+        """
         
         # nX = B.x - A.x
         # nY = B.y - A.y
@@ -654,23 +699,27 @@ class vec3(object):
         ptY = self.y + (normal.y * offset)
         ptZ = self.z + (normal.z * offset)
         return type(self)(ptX, ptY, ptZ)
-
-    def project_vec3(self):
-        """  UNFINISHED  
-
-            from David Gould's book
-            Complete Maya Programing II 
-            page 32 
-        
-
-        """
-
-        pass
     
     ##----------------------------------------
 
+
+    # def project_vec3(self):
+    #     """  UNFINISHED  
+    #         from David Gould's book
+    #         Complete Maya Programing II 
+    #         page 32 
+    #     """
+    #     pass
+    
+    ##----------------------------------------
+
+    def lookat(self, target):
+        #if you want to point one vector at another all you need to do is subtract! 
+        aim = vec3()
+        return vec3(target) - self 
+
     def between(self, pt2):
-        """ given 2 points in 3D, create a 3D vector 
+        """ given 2 points in 3D, create a 3D vector (lookat) 
             representing the offset between them 
 
             doesnt get much easier than this, just subtract 
@@ -690,6 +739,57 @@ class vec3(object):
             pt2 = vec3( pt2[0], pt2[1], pt2[2])
 
         return pt2 - self
+
+    ##------------------------------------- 
+    def angle_between(self, other):
+        """ 
+            result is in radians
+            derived from law of cosines 
+            range from 0 (colinear) to PI radians (180 deg)  
+
+            FAILS WHEN 0 or 180 ?
+        """
+        if type(other) is tuple:
+            other=vec3(other)
+
+        try:
+            o = math.acos( self.dot(other) / (self.length*other.length) ) 
+            return o 
+        except:
+            return None
+        
+    ##------------------------------------- 
+    def lookat2(self, pt):
+        """
+        UNFINISHED/NOT WORKING 
+
+        https://stackoverflow.com/questions/1251828/calculate-rotations-to-look-at-a-3d-point
+        
+        https://math.stackexchange.com/questions/3139155/finding-a-vector-that-points-towards-a-coordinate
+
+        ##--- 
+
+        rotx = Math.atan2( y, z )
+        roty = Math.atan2( x * Math.cos(rotx), z )
+        rotz = Math.atan2( Math.cos(rotx), Math.sin(rotx) * Math.sin(roty) )
+
+        About X: -atan2(y, z)
+        About Y: atan2(x, sqrt(y*y + z*z))
+        About Z: 0 
+
+        """
+
+        x = pt[0]
+        y = pt[1]
+        z = pt[2]
+
+        rotx = math.atan2( y, z )
+        if z >= 0:
+            roty = -math.atan2( x * math.cos(rotx), z );
+        else:
+            roty = math.atan2( x * math.cos(rotx), -z );
+        
+        return [rotx,roty]
 
     ##----------------------------------------
 
@@ -776,61 +876,6 @@ class vec3(object):
             return self.as_np / np.linalg.norm(self.as_np)
         else:
             pass 
-
-    ##------------------------------------- 
-    def lookat(self, target):
-        #if you want to point one vector at another all you need to do is subtract! 
-        aim = vec3()
-        return vec3(target) - self 
-        
-
-    def lookat2(self, pt):
-        """
-        UNFINISHED/NOT WORKING 
-
-        https://stackoverflow.com/questions/1251828/calculate-rotations-to-look-at-a-3d-point
-        
-        https://math.stackexchange.com/questions/3139155/finding-a-vector-that-points-towards-a-coordinate
-
-        ##--- 
-
-        rotx = Math.atan2( y, z )
-        roty = Math.atan2( x * Math.cos(rotx), z )
-        rotz = Math.atan2( Math.cos(rotx), Math.sin(rotx) * Math.sin(roty) )
-
-        About X: -atan2(y, z)
-        About Y: atan2(x, sqrt(y*y + z*z))
-        About Z: 0 
-
-        """
-
-        x = pt[0]
-        y = pt[1]
-        z = pt[2]
-
-        rotx = math.atan2( y, z )
-        if z >= 0:
-            roty = -math.atan2( x * math.cos(rotx), z );
-        else:
-            roty = math.atan2( x * math.cos(rotx), -z );
-        
-        return [rotx,roty]
- 
-
-    ##------------------------------------- 
-    def angle_between(self, other):
-        """ 
-            result is in radians
-            derived from law of cosines 
-            range from 0 (colinear) to PI radians (180 deg)  
-
-            FAILS WHEN 0 or 180 ?
-        """
-        try:
-            o = math.acos( self.dot(other) / (self.length*other.length) ) 
-            return o 
-        except:
-            return 0
 
     ##------------------------------------- 
     def vector_mean(self, p_vecs, mode='vec3'):
@@ -968,7 +1013,7 @@ class vec3(object):
             return self.copy(vtype='numpy')
 
         ##----------------------------------------
-        def orthogonal_vec_from_pt(self, vecpt, unitvec, pt ):
+        def orthogonal_fr_pt(self, vecpt, unitvec, pt ):
             return (vecpt-pt) - ( np.dot((vecpt-pt), unitvec) ) * unitvec
 
         def np_angle_between(self, v1, v2):
@@ -1065,9 +1110,6 @@ class vec3(object):
             
     ##----------------------
 
-
-
-
 ##-------------------------------------------##
 ##-------------------------------------------##
 
@@ -1077,6 +1119,7 @@ class vec4(object):
     """
 
     def __init__(self,x=0,y=0,z=0,w=1):
+        self.mu = math_util()         
         self.x=x
         self.y=y
         self.z=z
@@ -1162,10 +1205,6 @@ class vec4(object):
         self.z = vec3.z
         self.w = 1  
 
-#[xyzw]∗⎡⎣⎢⎢⎢m00m10m20m30m01m11m21m31m02m12m22m32m03m13m23m33⎤⎦⎥⎥⎥
-#x′=x∗m00+y∗m10+z∗m20+w∗m30y′=x∗m01+y∗m11+z∗m21+w∗m31z′=x∗m02+y∗m12+z∗m22+w∗m32w′=x∗m03+y∗m13+z∗m23+w∗m33
-
-
 ##-------------------------------------------##
 ##-------------------------------------------##
 
@@ -1173,8 +1212,9 @@ class matrix22(object):
     """ 2D matrix experiment """
 
     def __init__(self, a=1, b=0, c=0, d=1):
-        self.m = [a,b,c,d]
         self.mu = math_util()
+        self.m = [a,b,c,d]
+
     
     def __getitem__(self, index):
         return self.m[index]
@@ -1192,7 +1232,8 @@ class matrix22(object):
     @property
     def transpose(self):
         """
-        UNTESTED 
+        UNTESTED m22 transpose 
+
         # standard indicies  |  #transposed indicies
         1  2                 |   1 3 
         3  4                 |   2 4 
@@ -1368,6 +1409,26 @@ class matrix33(object):
         )
 
 
+    if NUMPY_IS_LOADED:
+        def as_np(self):
+            """ UNTESTED 
+                get this m33 as a numpy array 3X3 
+            """
+
+            return np.array(
+              [[self.m[0], self.m[3], self.m[6]],
+               [self.m[1], self.m[4], self.m[7]],
+               [self.m[2], self.m[5], self.m[8]]]
+            )
+
+            """
+            return np.array(
+                [[self.m[0], self.m[1], self.m[2]],
+                 [self.m[3], self.m[4], self.m[5]],
+                 [self.m[6], self.m[7], self.m[8]]]
+            )
+            """
+
     def insert(self, iterable):
         """ load the first 9 things we find into this matrix 
             accepts numpy.ndarray, list, and tuple 
@@ -1410,6 +1471,8 @@ class matrix33(object):
     @property
     def transpose(self):
         """
+        m33 transpose
+
         # standard indicies  |  #transposed indicies
         1  2  3              |   1 4 7
         4  5  6              |   2 5 8
@@ -1605,7 +1668,48 @@ class matrix33(object):
         ############ 
         return rotation_33.batch_mult_pts(points)
 
+    ##############################################
 
+    """
+    
+    https://stackoverflow.com/questions/21622956/how-to-convert-direction-vector-to-euler-angles
+
+    #include <math.h> 
+    #include <float.h> 
+
+    #define PI 3.141592653589793 
+    /**
+     * @param X1x
+     * @param X1y
+     * @param X1z X1 vector coordinates
+     * @param Y1x
+     * @param Y1y
+     * @param Y1z Y1 vector coordinates
+     * @param Z1x
+     * @param Z1y
+     * @param Z1z Z1 vector coordinates
+     * @param pre precession rotation
+     * @param nut nutation rotation
+     * @param rot intrinsic rotation
+     */
+    void lcs2Euler(
+            double X1x, double X1y, double X1z,
+            double Y1x, double Y1y, double Y1z,
+            double Z1x, double Z1y, double Z1z,
+            double *pre, double *nut, double *rot) {
+        double Z1xy = sqrt(Z1x * Z1x + Z1y * Z1y);
+        if (Z1xy > DBL_EPSILON) {
+            *pre = atan2(Y1x * Z1y - Y1y*Z1x, X1x * Z1y - X1y * Z1x);
+            *nut = atan2(Z1xy, Z1z);
+            *rot = -atan2(-Z1x, Z1y);
+        }
+        else {
+            *pre = 0.;
+            *nut = (Z1z > 0.) ? 0. : PI;
+            *rot = -atan2(X1y, X1x);
+        }
+    }
+    """
 
     ##############################################
     # NUMPY FUNCTIONS
@@ -1622,7 +1726,8 @@ class matrix33(object):
                 angle_deg - angle in degrees to rotate 
 
             """
-            
+            #print(type(angle_deg))
+
             if angle_rad==None and angle_deg==None:
                 print('from_vec3: no angle specified')
                 return None 
@@ -1634,15 +1739,22 @@ class matrix33(object):
                 if type(angle_rad) is vec3:
                     theta = angle_rad.as_np
                 if type(angle_rad) is tuple:
-                    theta = vec3(angle_rad).as_np
+                    tmp = self.mu.rtd(angle_rad)
+                    theta=vec3(tmp[0],tmp[1],tmp[2]).as_np                    
             if angle_deg:
                 if type(angle_deg) is tuple:
-                    theta = vec3(self.mu.dtr(angle_deg[0]),
-                                 self.mu.dtr(angle_deg[1]),
-                                 self.mu.dtr(angle_deg[2])).as_np
+                    tmp = self.mu.dtr(angle_deg)
+                    theta=vec3(tmp[0],tmp[1],tmp[2]).as_np
+                if type(angle_deg) is vec3:
+                    theta = angle_deg.as_np
 
-            axis = axis.as_np
+            if type(axis) is vec3:
+                axis = axis.as_np
+            if type(axis) is tuple:
+                axis = np.array([axis[0],axis[1],axis[2]])    
 
+            ##-- 
+            # all the crap above just for conversions 
             if NUMPY_IS_LOADED and SCIPY_IS_LOADED:
                 tmpm33 = expm(np.cross(np.eye(3), axis / np.linalg.norm(axis) * theta )) 
                 return self.from_np(tmpm33)
@@ -1650,8 +1762,17 @@ class matrix33(object):
                 return None 
 
         ##------------------------------------
-        def np_is_rot_matrix(self, R) :
-            # https://learnopencv.com/rotation-matrix-to-euler-angles/
+        #def np_is_rot_matrix(self) :
+        #    # UNTESTED
+        #    # https://learnopencv.com/rotation-matrix-to-euler-angles/
+        #    R = self.as_np() 
+        #    Rt = np.transpose(R)
+        #    shouldBeIdentity = np.dot(Rt, R)
+        #    I = np.identity(3, dtype = R.dtype)
+        #    n = np.linalg.norm(I - shouldBeIdentity)
+        #    return n < 1e-6
+
+        def isRotationMatrix(self, R) :
             Rt = np.transpose(R)
             shouldBeIdentity = np.dot(Rt, R)
             I = np.identity(3, dtype = R.dtype)
@@ -1659,32 +1780,53 @@ class matrix33(object):
             return n < 1e-6
 
         ##------------------------------------         
-        def np_rot_matrix_to_euler(self, R) :
-            # https://learnopencv.com/rotation-matrix-to-euler-angles/
-            # Calculates rotation matrix to euler angles
-            # The result is the same as MATLAB except the order
-            # of the euler angles ( x and z are swapped ).
+        #def np_to_euler(self) :
+        #    # UNTESTED            
+        #    # https://learnopencv.com/rotation-matrix-to-euler-angles/
+        #    # Calculates rotation matrix to euler angles
+        #    # The result is the same as MATLAB except the order
+        #    # of the euler angles ( x and z are swapped ).
+        #    assert(self.np_is_rot_matrix(R))
+        #    sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
+        #    singular = sy < 1e-6
+        #    if  not singular :
+        #        x = math.atan2(R[2,1] , R[2,2])
+        #        y = math.atan2(-R[2,0], sy)
+        #        z = math.atan2(R[1,0], R[0,0])
+        #    else :
+        #        x = math.atan2(-R[1,2], R[1,1])
+        #        y = math.atan2(-R[2,0], sy)
+        #        z = 0
+        #    return np.array([x, y, z])
 
-            assert(self.isRotationMatrix(R))
-         
+        def rotationMatrixToEulerAngles(self, R) :
+            #assert(self.isRotationMatrix(R))
+            
             sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
-         
             singular = sy < 1e-6
-         
             if  not singular :
-                x = math.atan2(R[2,1] , R[2,2])
+                x = math.atan2( R[2,1], R[2,2])
                 y = math.atan2(-R[2,0], sy)
-                z = math.atan2(R[1,0], R[0,0])
+                z = math.atan2( R[1,0], R[0,0])
             else :
                 x = math.atan2(-R[1,2], R[1,1])
                 y = math.atan2(-R[2,0], sy)
                 z = 0
-         
-            return np.array([x, y, z])
-        
+            return np.array([x, y, z])        
         ##------------------------------------
-        def np_euler_to_rot_matrix(self, theta) :
-            # https://learnopencv.com/rotation-matrix-to-euler-angles/
+        def np_from_euler(self, theta) :
+            """
+                INPUT IS RADIANS!!            
+
+                Usage:
+                    m33=matrix33()
+                    npm33 = m33.np_from_euler( m33.mu.dtr((0,180,0)) )
+                    o = object3d()
+                    o.one_vec_to_arrow( vec3(0,0,1) )
+                    o*npm33
+                    o.save('rotated.obj')
+            """
+
             R_x = np.array([[1,         0,                  0                   ],
                             [0,         math.cos(theta[0]), -math.sin(theta[0]) ],
                             [0,         math.sin(theta[0]), math.cos(theta[0])  ]
@@ -1705,6 +1847,9 @@ class matrix33(object):
 
         ##------------------------------------
         def np_euler_rotation_matrix(self, theta):
+            # same as self.np_from_euler() ac_nuke! 
+            # just leaving here for testing 
+
             # Rotate m_vec (x, y, z) around the x(roll), y(pitch), and z(yaw) axes.
             # same as np_euler_to_rot_matrix() 
 
@@ -1992,6 +2137,8 @@ class matrix44(object):
 
     @property
     def transpose(self):
+        """ m44 transpose """
+
         return type(self)(
             self.m[0], self.m[4], self.m[8] , self.m[12],
             self.m[1], self.m[5], self.m[9] , self.m[13],
@@ -2533,7 +2680,6 @@ class quaternion(object):
         result.w = k0 * q0.w + k1 * q1w;
         
         return result
-
 
 ##-------------------------------------------##
 ##-------------------------------------------##

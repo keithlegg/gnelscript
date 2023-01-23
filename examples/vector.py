@@ -478,7 +478,7 @@ def build_orthogonal_vector(outfile):
     display_unitvec = display_unitvec * -1
     obj.one_vec_to_obj( display_unitvec , pos=pt2) 
 
-    d = com.orthogonal_vec_from_pt(pt2, unitvec, pt1)
+    d = com.orthogonal_fr_pt(pt2, unitvec, pt1)
 
     #obj.one_vec_to_obj( d*-1 )   
     obj.one_vec_to_obj( d , pt1 )   
