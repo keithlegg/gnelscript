@@ -32,6 +32,15 @@ mu = math_util()
 #     print( PYCORE_BMP_OUT )
                 
 
+def cvt_obj_to_vec3():
+    o = object3d()
+    x = object3d()
+    x.load('3d_obj/sphere.obj')
+    vex = x.cvt_vec3(x.points)
+    for v in vex: 
+        o.one_vec_to_obj(v)
+    o.save('ball_vex.obj')
+
 
 ##-------------------------------------------------
 def do_intersection(self):
@@ -166,7 +175,7 @@ def numpy_m33_fromvec(outfile):
 
 ##------------------------------------------------
 
-def make_right_triangle(outfile, theta):
+def make_right_triangle(outfile, theta, axis='y', obj=None):
     """ UNTESTED 
         calculate three 3D vectors to form a right triangle based on a theta angle 
         
@@ -175,12 +184,8 @@ def make_right_triangle(outfile, theta):
             insert a 3D cube at the point the triangle meets the unit circle 
 
     """
-    obj = object3d()
-
     x = math.cos(mu.dtr( theta) )    
     y = math.sin(mu.dtr( theta) ) 
-
-    axis = 'y'
 
     if axis == 'x':
         hypot  = vec3(x,y,0)
@@ -213,14 +218,14 @@ def make_right_triangle(outfile, theta):
     #print('## angle between  o h   %s'%oppos.angle_between(hypot) )
     
     if obj is None:
-        return [oppos, adaj, hypot]
+        #return [oppos, adaj, hypot]
+        obj = object3d()
 
     if obj is not None:
         obj.one_vec_to_obj(hypot)
         obj.one_vec_to_obj(adaj)
         obj.one_vec_to_obj(oppos, adaj)
-
-    obj.save(outfile)
+        obj.save(outfile)
 
 ##------------------------------------------------
 def homogeneous_test():
@@ -364,6 +369,28 @@ def visualize_cross_product( outfile ):
 
     obj.save( outfile )
 
+
+def visualize_cross_product2( outfile ):
+    obj = object3d()
+
+    t = object3d()
+    t.prim_triangle()
+    
+    t.rotate_pts((45,45,45))
+    
+    vex = t.cvt_vec3(t.points)
+    
+    #for v in vex: 
+    #    obj.one_vec_to_obj(v)
+
+    obj.one_vec_to_obj(vex[1]-vex[0],t.points[0])
+    obj.one_vec_to_obj(vex[2]-vex[1],t.points[1])
+    
+    #obj.insert(t)
+
+    obj.one_vec_to_obj( vex[0].cross(vex[1]).normal * .5 )
+
+    obj.save( outfile )
 
 #visualize_cross_product()
 

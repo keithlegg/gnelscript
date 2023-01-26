@@ -737,21 +737,45 @@ class point_operator(object):
         return out
 
     ##-------------------------------------------##  
-    def cvt_2d_to_3d(self, points):
+    def cvt_2d_to_3d(self, points, asvec3=False):
         """ convert a single (tuple) or multiple (list) 2d points 
             into 3d by adding an empty z axis 
+            
+            this assumes tuple is a single point 
+
         """
 
         if type(points) is tuple:
-            return (pt[0], pt[1], 0) 
+            if asvec3:
+                return (pt[0], pt[1], 0) 
+            else:
+                return vec3(pt[0], pt[1], 0)                             
         else:
             newpts = []
             for pt in points:
-                newpts.append( (pt[0], pt[1], 0)   )
+                if asvec3:
+                    newpts.append( vec3(pt[0], pt[1], 0)   )                
+                else:
+                    newpts.append( (pt[0], pt[1], 0)   )
+            return newpts
+        return None
+ 
+     ##-------------------------------------------##  
+    def cvt_vec3(self, points):
+        """ convert a single (tuple) or multiple (list) into vec3 objects
+            this assumes tuple is a single point 
+
+        """
+
+        if type(points) is tuple:
+            return vec3(pt[0], pt[1], pt[2])                             
+        else:
+            newpts = []
+            for pt in points:
+                newpts.append( vec3(pt[0], pt[1], pt[2])   )                
             return newpts
         return None
 
- 
     ##-------------------------------------------##
     def locate_pt_along3d(self, fpos, spos, num):
         """
@@ -1909,8 +1933,7 @@ class polygon_operator(point_operator):
             shift points without using a matrix 
             if no points are specified - apply to whole object 
         """
-        
-        ################################################
+
         if pts is not None and ptgrp is None: 
             out = []
             for pt in pts:
@@ -1940,7 +1963,7 @@ class polygon_operator(point_operator):
                 z = pt[2] + pos[2]
                 tmp_buffer.append( [i+1,(x,y,z)] )
 
-            print(tmp_buffer)    
+            #print(tmp_buffer)    
             self.insert_pt_grp(tmp_buffer)
 
         return None 
@@ -2018,16 +2041,18 @@ class polygon_operator(point_operator):
         #if isinstance(points, vec3):
         #    self.points.extend(points)
 
+ 
         ##-- DEBUG experiment - just append points as new if no indexes specified
-        if points and not plyids:
-            tmp=[]
-            numpts = len(self.points)
-            for i,p in enumerate(points):
-                tmp.append((i+numpts)-1)
-            plyids=[tmp]    
-            
+        if len(points)<=4:
+            if points and not plyids:
+                tmp=[]
+                numpts = len(self.points)
+                for i,p in enumerate(points):
+                    tmp.append((i+numpts)-1)
+                plyids=[tmp]    
+    
      
-        ##-- option to increment polyids by one automatically  
+        ##-- option to increment polyids by one automatically to solve zero index problem 
         newplyids = []
         if incrone:
             for pid in plyids:
@@ -2038,8 +2063,8 @@ class polygon_operator(point_operator):
 
             plyids = newplyids
 
-        ##--
-        # append polygons (using existing point buffer)
+
+        ##-- append polygons (using existing point buffer)
         for poly in plyids:
             plytmp = []      
             for idx in poly:
@@ -2058,8 +2083,8 @@ class polygon_operator(point_operator):
             else:
                 geom[0].append( tuple(plytmp) )
 
-        #########        
-        # append points,  only if new geom - 
+
+        ##-- append points,  only if new geom - 
         # add new geom using python extend 
         if asnew_shell is True:
             if isinstance(points, tuple) or isinstance(points, list):

@@ -71,14 +71,10 @@ class object3d(polygon_operator):
                     m444=matrix44()
                     self.points = self.apply_matrix_pts(pts=self.points, m44=m44.from_np(matrix)) 
 
-
-     
-
     def reset(self):
         self.rot          = [0,0,0]
         self.pos          = [0,0,0]
         self.scale        = [1,1,1]
-
 
     @property
     def rotation(self):
@@ -88,14 +84,14 @@ class object3d(polygon_operator):
     def position(self):
         return self.pos
 
-    ############################################### 
+    ##------------------------------------------------##
     def copy(self):
         new = type(self)()
         new.points   = self.points
         new.polygons = self.polygons  
         return new
 
-    ############################################### 
+    ##------------------------------------------------##
     def insert_2pp(self, obj):
         """ insert tuple as two point polygon (line) 
             
@@ -111,7 +107,7 @@ class object3d(polygon_operator):
             else:
                 self.insert_polygons(obj[0], obj[1])
 
-    ############################################### 
+    ##------------------------------------------------##
     def insert(self, obj, replace=False, asnew_shell=False, pos=None):
         """ insert an object's geometry into this object 
             
@@ -119,7 +115,7 @@ class object3d(polygon_operator):
             asnew_shell was added but seems to be broken 
 
         """
-
+        #DEBUG - check for data in object first 
 
         # VEC3 TYPE - UNTESTED
         if isinstance(obj, vec3):
@@ -145,6 +141,7 @@ class object3d(polygon_operator):
             else:
                 self.insert_polygons(obj[0], obj[1])
 
+        # object3d type  
         if isinstance(obj, object3d):
             if replace is True:
                 if pos:
@@ -154,17 +151,16 @@ class object3d(polygon_operator):
                     self.points=tmp
                 else:
                     self.points=obj[0]  
-                self.polygons=obj.polygons                 
+            
+                if len(obj.polygons):
+                    self.polygons=obj.polygons                 
             else:
                 if pos:
                     self.insert_polygons(obj.polygons, obj.points, pos=pos)
-                else:    
+                else:   
                     self.insert_polygons(obj.polygons, obj.points)
 
-
-
-
-    ############################################### 
+    ##------------------------------------------------##
     def append(self, otherobj):
         """ add another object to this one 
             points can be added, paying attention to the index 
@@ -179,7 +175,7 @@ class object3d(polygon_operator):
             for ply in otherobj.polygons:
                 self.polygons.append(self._reindex_ply(ply, self.numpts))  
 
-    ###############################################  
+    ##------------------------------------------------## 
     def show(self):
         data = []
  
@@ -279,7 +275,7 @@ class object3d(polygon_operator):
 
         return cache_face_normals
 
-    ############################################### 
+    ##------------------------------------------------##
     def one_vec_to_arrow(self, r3, pos=None):
         """ single vector into a renderable 3D line 
             
@@ -304,7 +300,7 @@ class object3d(polygon_operator):
         for vec in plyidx:    
             self.polygons.append( vec )  
 
-    ############################################### 
+    ##------------------------------------------------##
     def one_vec_to_obj(self, r3, pos=None, arrowhead=False):
         """ single vector into a renderable 3D line 
             
@@ -312,8 +308,12 @@ class object3d(polygon_operator):
 
         """
 
-        #if isinstance(r3,vec4):
-        #    r3 = [r3[0]
+        if type(r3)is tuple or type(r3)is list:
+            r3 = vec3(r3)
+
+        #calc_circle(self, pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=4):
+        #circle = self.calc_circle(periodic=True, spokes=4) 
+        #print(circle)   
         
         if pos is not None:
             pts = [
@@ -325,24 +325,30 @@ class object3d(polygon_operator):
             if arrowhead is False:
                 pts = [
                        (0    , 0    , 0    ),
-                       (r3[0], r3[1], r3[2]), 
+                       (r3[0], r3[1], r3[2]) 
                       ]
             if arrowhead is True:
                 pts = [
                        (0    , 0    , 0    ),
-                       (r3[0], r3[1], r3[2]), 
+                       (r3[0], r3[1], r3[2])
+
                       ]
 
         ############                              
         n = self.numpts # add this number to the indices in case of existing geom 
-        plyidx = [(n+1,n+2)]
+        
+        if arrowhead is False:
+            plyidx = [(n+1,n+2)]
+        if arrowhead:
+            plyidx = [(n+1,n+2)] 
+
         #append points to internal 
         for p in pts:
             self.points.append(p)
         for vec in plyidx:    
             self.polygons.append( vec )  
 
-    ############################################### 
+    ##------------------------------------------------##
     """
     def vector_between_two_obj(self, r3_1, r3_2):
         # a vector between two other vectors 
@@ -360,11 +366,11 @@ class object3d(polygon_operator):
         for vec in plyidx:    
             self.polygons.append( vec )  
     """
-    ############################################### 
+    ##------------------------------------------------##
 
     #def edgegeom_to_vectorlist(self, geom):
 
-    ############################################### 
+    ##------------------------------------------------##
     def pts_to_linesegment(self, pt_list, periodic=False):
 
         print(pt_list)
@@ -393,7 +399,7 @@ class object3d(polygon_operator):
             self.polygons.append( (n, 1) )
         
 
-    ############################################### 
+    ##------------------------------------------------##
     def vectorlist_to_obj(self, vecs, pos=None):
         """ take a list of vectors and convert it to renderable geometry 
         
@@ -424,16 +430,16 @@ class object3d(polygon_operator):
                     self.one_vec_to_obj(v[0], v[1])                 
                
 
-    ###############################################  
-    ###############################################  
+    ##------------------------------------------------## 
+    ##------------------------------------------------## 
     #        BUILT IN PRIMITIVE OBJECTS
-    ###############################################  
-    ###############################################  
+    ##------------------------------------------------## 
+    ##------------------------------------------------## 
  
     #def prim_cylinder(self, axis='z', pos=(0,0,0), rot=(0,0,0), dia=1, spokes = 9):
     #    pass  
     
-    ############################################### 
+    ##------------------------------------------------##
     def prim_line(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
         """ 3d lines, 2 point polygons """
 
@@ -450,8 +456,8 @@ class object3d(polygon_operator):
         pts = self.xform_pts( pos, pts )
         self.insert_polygons(poly, pts)
 
-    ###############################################  
-    def prim_triangle(self, axis, pos, rot, size=1, flip=False):
+    ##------------------------------------------------## 
+    def prim_triangle(self, axis='z', pos=(0,0,0), rot=(0,0,0), size=1, flip=False):
         """ single polygon operations (that can be stacked together ?) """
 
         if axis=='x':
@@ -471,7 +477,7 @@ class object3d(polygon_operator):
         pts = self.xform_pts( pos, pts )
         self.insert_polygons( poly, pts)
 
-    ###############################################  
+    ##------------------------------------------------##  
     def prim_quad(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1):
         """ single polygon operations (that can be stacked together ?) """
         
@@ -490,7 +496,7 @@ class object3d(polygon_operator):
         pts = self.xform_pts( pos, pts )
         self.insert_polygons(poly, pts)
 
-    ###############################################  
+    ##------------------------------------------------##  
     def prim_circle(self, axis, pos=(0,0,0), rot=(0,0,0), dia=1, spokes=9):
         """ UNFINSIHED single polygon operations  """    
 
@@ -511,7 +517,7 @@ class object3d(polygon_operator):
 
         self.insert_polygons([tuple(poly)], pts)
 
-    ###############################################
+    ##------------------------------------------------## 
     def prim_cone(self, axis, pos=(0,0,0), rot=(0,0,0), dia=1, spokes=8):
         """ first prim tool to use other tools and prims 
             made so we can make an arrow prim 
@@ -533,7 +539,7 @@ class object3d(polygon_operator):
 
         self.radial_triangulate_face(0, offset=oset )
 
-    ############################################### 
+    ##------------------------------------------------## 
     #def prim_sphere2(self, pos=(0,0,0), rot=(0,0,0), size=1 ):
     """
     http://www.songho.ca/opengl/gl_sphere.html
@@ -586,14 +592,15 @@ class object3d(polygon_operator):
         }
     }
     """
-    ############################################### 
-    def _icosahedron(self, radius):
+    
+    ##------------------------------------------------## 
+    def _icosahedron(self, pos, radius, build_wire=False, build_geom=False):
         """ builds the points but not polygons for an icosahedron
             there are some experimental geom functions here  
         """
-        build_wire = False 
-        build_geom = True 
-        
+    
+        tmp = object3d()
+
         #// constants
         PI = 3.1415926;
         H_ANGLE = PI/ 180*72;       # 72 degree = 360 / 5
@@ -605,8 +612,8 @@ class object3d(polygon_operator):
         hAngle2 = -PI / 2                 # start from -90 deg at 2nd row
 
         # the first top vertex at (0, 0, r)
-        self.points.append( (0,0,radius) )
-        fid = self.numpts-1
+        tmp.points.append( (0,0,radius) )
+        fid = tmp.numpts-1
 
         faces = [] 
         front_loop=[]
@@ -615,7 +622,7 @@ class object3d(polygon_operator):
 
         # compute 10 vertices at 1st and 2nd rows
         for i in range(1,7):
-            n = self.numpts # add to this index each time
+            n = tmp.numpts # add to this index each time
 
             z  = radius * math.sin(V_ANGLE)  # elevaton
             xy = radius * math.cos(V_ANGLE)  # length on XY plane
@@ -630,8 +637,8 @@ class object3d(polygon_operator):
             hAngle1 += H_ANGLE
             hAngle2 += H_ANGLE
             
-            self.points.append(tuple(vtmp1))
-            self.points.append(tuple(vtmp2))
+            tmp.points.append(tuple(vtmp1))
+            tmp.points.append(tuple(vtmp2))
             
             if n>1:
                 if (n%2)-1==0:
@@ -639,116 +646,158 @@ class object3d(polygon_operator):
                     back_loop.append(n-1)
 
             if build_wire:
-                self.prim_locator(pos=vtmp1,size=.1)
-                self.prim_locator(pos=vtmp2,size=.1)
-                self.insert(vec3(vtmp2)-vec3(vtmp1), pos=vtmp1)  
+                tmp.prim_locator(pos=vtmp1,size=.1)
+                tmp.prim_locator(pos=vtmp2,size=.1)
+                tmp.insert(vec3(vtmp2)-vec3(vtmp1), pos=vtmp1)  
 
             if build_geom:
                 if i>1:
-                    self.polygons.append( (n, n+1, n+2) )
+                    tmp.polygons.append( (n, n+1, n+2) )
                 if i<6:
-                    self.polygons.append( (n+1, n+2, n+3) )
+                    tmp.polygons.append( (n+1, n+2, n+3) )
         
         # the last bottom vertex at (0, 0, -r)
-        self.points.append( (0,0,-radius) )
-        last_pt = self.numpts 
+        tmp.points.append( (0,0,-radius) )
+        last_pt = tmp.numpts 
  
-        ## build the front endcaps
-        for i,idx in enumerate(front_loop):
-            #cool star pattern  
-            #self.polygons.append( (idx, last_pt, front_loop[i-2]) )            
-            self.polygons.append( (idx, last_pt, front_loop[i-1]) )    
+        if build_geom:
+            ## build the front endcaps
+            for i,idx in enumerate(front_loop):
+                #cool star pattern  
+                #self.polygons.append( (idx, last_pt, front_loop[i-2]) )            
+                tmp.polygons.append( (idx, last_pt, front_loop[i-1]) )    
+            ## build the back endcaps
+            for i,idx in enumerate(back_loop):
+                tmp.polygons.append( (idx, 1, back_loop[i-1]) )  
 
-        ## build the back endcaps
-        for i,idx in enumerate(back_loop):
-            self.polygons.append( (idx, 1, back_loop[i-1]) )  
+        tmp.points = tmp.xform_pts(pos=pos, pts=tmp.points)
 
+        return tmp
 
+    ##------------------------------------------------## 
+    def _subdiv(self, size):
+        """
+            find middle point of 2 vertices
+            NOTE: new vertex must be resized, so the length is equal to the radius
+            from http://www.songho.ca/opengl/gl_sphere.html 
+        """
+
+        def computeHalfVertex( radius, v1, v2):
+            newV = []
+            
+            print("####### computeHalfVertex ", v1 , v2 )
+
+            newV.append(v1[0] + v2[0])    #x
+            newV.append(v1[1] + v2[1])    #y
+            newV.append(v1[2] + v2[2])    #z
+            scale = radius / math.sqrt(newV[0]*newV[0] + newV[1]*newV[1] + newV[2]*newV[2]);
+            newV[0] *= scale
+            newV[1] *= scale
+            newV[2] *= scale
+            
+            print("####### computeHalfVertex ", newV)
+
+            return newV
+
+        # The subdivision algorithm is splitting the 3 edge lines of each triangle in half, 
+        # then extruding the new middle point outward, 
+        # so its length (the distance from the center) is the same as sphere's radius. 
+        
+        subdivision = 1
+
+        tmpVertices = []
+        tmpIndices = []
+
+        v1 = .0
+        v2 = .0
+        v3 = .0
+ 
+        # new vertex positions
+        newV1 = vec3()
+        newV2 = vec3()
+        newV3 = vec3() 
+
+        index = 0
+
+        # iterate all subdivision levels
+        for i in range(subdivision):
+            # copy prev vertex/index arrays and clear
+            tmpVertices = self.points
+            tmpIndices = self.polygons
+
+            self.points = []
+            self.polygons = []
+            
+            index = 0;
+
+            # perform subdivision for each triangle
+            for j in range(0, len(tmpIndices), 3):
+
+                ##--------------------------------##
+                ## DEBUG
+
+                # get 3 vertices of a triangle
+                #v1 = tmpVertices[tmpIndices[j] * 3]
+                #v2 = tmpVertices[tmpIndices[j + 1] * 3]
+                #v3 = tmpVertices[tmpIndices[j + 2] * 3]
+
+                v1 = tmpVertices[ tmpIndices[j][0] ]
+                v2 = tmpVertices[ tmpIndices[j+1][1] ]
+                v3 = tmpVertices[ tmpIndices[j+2][2] ]
+
+                print('###############', j)
+                print(v1)
+                print(v2)
+                print(v3)
+                
+                ## DEBUG
+                ##--------------------------------##
+
+                # compute 3 new vertices by spliting half on each edge
+                #         v1       
+                #        / \       
+                # newV1 *---* newV3
+                #      / \ / \     
+                #    v2---*---v3   
+                #       newV2      
+
+                #newV1 = computeHalfVertex(size, v1, v2)
+                #newV2 = computeHalfVertex(size, v2, v3)
+                #newV3 = computeHalfVertex(size, v1, v3)
+
+                # add 4 new triangles to vertex array
+                self.points.append((v1,    newV1, newV3) )
+                self.points.append((newV1, v2,    newV2) )
+                self.points.append((newV1, newV2, newV3) )
+                self.points.append((newV3, newV2, v3)    )
+
+                # add indices of 4 new triangles
+                self.polygons.append((index,   index+1, index+2) )
+                self.polygons.append((index+3, index+4, index+5) )
+                self.polygons.append((index+6, index+7, index+8) )
+                self.polygons.append((index+9, index+10,index+11))
+                index = index + 12  # next index
+            
+                self.points = tmpVertices
+                self.polygons = tmpIndices
+
+    ##------------------------------------------------## 
 
     def prim_sphere(self, pos=(0,0,0), rot=(0,0,0), size=1 ):
         """
             build a icosahedron : UNFINISHED - need to add smoothing/triangulate
             from http://www.songho.ca/opengl/gl_sphere.html 
         """
-        self._icosahedron(radius=size)
+        obj = self._icosahedron(pos=pos, radius=size, build_geom=True)
+        
+        #DEBUG NOT WORKING YET # 
+        #obj._subdiv(size)
+        
+        self.insert(obj)
 
 
-        ######################################################
 
-        """
-        http://www.songho.ca/opengl/gl_sphere.html
-
-        The subdivision algorithm is splitting the 3 edge lines of each triangle in half, 
-        then extruding the new middle point outward, 
-        so its length (the distance from the center) is the same as sphere's radius. 
-
-        std::vector<float> tmpVertices;
-        std::vector<float> tmpIndices;
-        const float *v1, *v2, *v3;          // ptr to original vertices of a triangle
-        float newV1[3], newV2[3], newV3[3]; // new vertex positions
-        unsigned int index;
-
-        // iterate all subdivision levels
-        for(int i = 1; i <= subdivision; ++i)
-        {
-            // copy prev vertex/index arrays and clear
-            tmpVertices = vertices;
-            tmpIndices = indices;
-            vertices.clear();
-            indices.clear();
-            index = 0;
-
-            // perform subdivision for each triangle
-            for(int j = 0; j < tmpIndices.size(); j += 3)
-            {
-                // get 3 vertices of a triangle
-                v1 = &tmpVertices[tmpIndices[j] * 3];
-                v2 = &tmpVertices[tmpIndices[j + 1] * 3];
-                v3 = &tmpVertices[tmpIndices[j + 2] * 3];
-
-                // compute 3 new vertices by spliting half on each edge
-                //         v1       
-                //        / \       
-                // newV1 *---* newV3
-                //      / \ / \     
-                //    v2---*---v3   
-                //       newV2      
-                computeHalfVertex(v1, v2, newV1);
-                computeHalfVertex(v2, v3, newV2);
-                computeHalfVertex(v1, v3, newV3);
-
-                // add 4 new triangles to vertex array
-                addVertices(v1,    newV1, newV3);
-                addVertices(newV1, v2,    newV2);
-                addVertices(newV1, newV2, newV3);
-                addVertices(newV3, newV2, v3);
-
-                // add indices of 4 new triangles
-                addIndices(index,   index+1, index+2);
-                addIndices(index+3, index+4, index+5);
-                addIndices(index+6, index+7, index+8);
-                addIndices(index+9, index+10,index+11);
-                index += 12;    // next index
-            }
-        }
-
-
-        ///////////////////////////////////////////////////////////////////////////////
-        // find middle point of 2 vertices
-        // NOTE: new vertex must be resized, so the length is equal to the radius
-        ///////////////////////////////////////////////////////////////////////////////
-        void computeHalfVertex(const float v1[3], const float v2[3], float newV[3])
-        {
-            newV[0] = v1[0] + v2[0];    // x
-            newV[1] = v1[1] + v2[1];    // y
-            newV[2] = v1[2] + v2[2];    // z
-            float scale = radius / sqrtf(newV[0]*newV[0] + newV[1]*newV[1] + newV[2]*newV[2]);
-            newV[0] *= scale;
-            newV[1] *= scale;
-            newV[2] *= scale;
-        }
-
-        """
+     
     ###############################################  
     def prim_locator(self, pos=(0,0,0), rot=(0,0,0), size=1):
    

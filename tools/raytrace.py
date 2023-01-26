@@ -119,36 +119,38 @@ class raytracer(object):
             t_obj = self.intersect(rayO, rayD, obj)
             if t_obj < t:
                 t, obj_idx = t_obj, i
+
         # Return None if the ray does not intersect any object.
         if t == np.inf:
             return
+
         # Find the object.
         obj = scene[obj_idx]
+        
         # Find the point of intersection on the object.
         M = rayO + rayD * t
         
         ##########################
         #keith is having fun here - beware  
-        #export.one_vec_to_obj( r3, pos=None, arrowhead=False):        
+        #if M exists here we hit something 
         #export.one_vec_to_obj( M )
         ##########################
-
-
 
 
         # Find properties of the object.
         N = self.get_normal(obj, M)
 
         color = self.get_color(obj, M)
-        
+
         ###########
         # keith attempting to add transparency  
         transparency = self.get_transparency(obj, M)
-        if transparency:
-            #    print(obj['type'] , 'has transparency ', transparency)
-            export.one_vec_to_obj( M )
-            if N.any():
-                export.one_vec_to_obj( (N[0],N[1],N[2]), M )
+        #if transparency:
+        #    #    print(obj['type'] , 'has transparency ', transparency)
+        #    export.one_vec_to_obj( M )
+        #    #save the normal at intersevtion point 
+        #    if N.any():
+        #        export.one_vec_to_obj( (N[0],N[1],N[2]), M )
         ###########
 
         toL = self.normalize(L - M)
@@ -169,9 +171,8 @@ class raytracer(object):
         # Blinn-Phong shading (specular).
         col_ray += obj.get('specular_c', self.specular_c) * max(np.dot(N, self.normalize(toL + toO)), 0) ** self.specular_k * self.color_light
         
-
-        if transparency:
-            col_ray=np.array([1,0,0])
+        #if transparency:
+        #    col_ray=np.array([1,0,0])
 
         return obj, M, N, col_ray
 
@@ -182,11 +183,14 @@ class raytracer(object):
             radius=np.array(radius), color=np.array(color), reflection=0, transparency=.2)
         
     def add_plane(self, position, normal, cp1, cp2):
+        #cant rotate to normal easily 
+        export.prim_quad( pos=position, rot=(0,0,0), size=100)
+
         return dict(type='plane', position=np.array(position), 
             normal=np.array(normal),
             color=lambda M: (cp1 
                 if (int(M[0] * 2) % 2) == (int(M[2] * 2) % 2) else cp2),
-            diffuse_c=.75, specular_c=.5, reflection=1, transparency=None)
+            diffuse_c=.75, specular_c=.5, reflection=1, transparency=.8)
     
     
     def raytracemain(self):
@@ -194,16 +198,19 @@ class raytracer(object):
         color_plane0 = 1. * np.ones(3)
         color_plane1 = 0. * np.ones(3)
 
-        ## scene = [self.add_sphere([.75, .1, 1.], .6, [0., 0., 1.]),
-        ##          self.add_sphere([-.75, .1, 2.25], .6, [.5, .223, .5]),
-        ##          self.add_sphere([-2.75, .1, 3.5], .6, [1., .572, .184]),
-        ##          self.add_plane([0., -.5, 0.], [0., 1., 0.], color_plane0, color_plane1),
-        ##     ]
+        # scene = [self.add_sphere([.75, .1, 1.], .6, [0., 0., 1.]),
+        #          self.add_sphere([-.75, .1, 2.25], .6, [.5, .223, .5]),
+        #          self.add_sphere([-2.75, .1, 3.5], .6, [1., .572, .184]),
+        #          self.add_plane([0., -.5, 0.], [0., 1., 0.], color_plane0, color_plane1),
+        #     ]
 
+        # scene = [ self.add_sphere( [ 0  ,  3, 3  ] , 1, [1. , .572 , .184] ),
+        #           self.add_sphere( [ -4 ,  3, 10 ] , 1, [1. , .572 , .184] ),
+        #           self.add_plane(  [ 0. , -5, 0. ] ,    [0., 1., 0.]        , color_plane0, color_plane1),
+        #     ]
 
-        scene = [ self.add_sphere([ 0 , 3 , 3 ], 1 , [1. , .572 , .184] ),
-                  self.add_sphere([ -4 , 3 , 10 ], 1, [1. , .572 , .184] ),
-                  self.add_plane( [0., -5, 0.], [0., 1., 0.], color_plane0, color_plane1),
+        scene = [ self.add_sphere( [ 0  ,  3, 3  ] , 1, [1. , .572 , .184] ),
+                  self.add_sphere( [ -4 ,  3, 10 ] , 1, [1. , .572 , .184] )
             ]
 
         # Light position and color.
@@ -255,7 +262,7 @@ class raytracer(object):
         fb.create_buffer(self.w, self.h)
 
         fb.insert_numpy( pixdata )
-        fb.save('raytraced.png')
+        #fb.save('raytraced.png')
         
         export.save("dump_geom_raytrace.obj") 
         #self.sc.save("ray_scene.obj")

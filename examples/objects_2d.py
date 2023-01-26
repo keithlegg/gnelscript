@@ -6,6 +6,9 @@ from gnelscript.pygfx.point_ops_2d import *
 from gnelscript.pygfx.obj3d import  *
 
 
+from gnelscript.examples.render import bloody_simple_2drender
+
+
 mu = math_util() 
 
 
@@ -420,13 +423,13 @@ def test_2d_intersect():
     s1 = vec2( 5, 5)
     e1 = vec2(-5,-5)
 
-    s2 = vec2( 6, 3)
-    e2 = vec2(-3,-3)
+    s2 = vec2( 2, 3)
+    e2 = vec2( 2,-3)
       
     #debug - make auto convert from vec2 so we dont have to re enter these 
     #lines = [ ( s1,e1 ), (s2,e2 ) ] 
 
-    lines = [ ( ( 5,5),(-5,-5) ),  (( 6, 3),(-3,-3)  ) ] 
+    lines = [ ( s1,e1 ),  (s2,e2  ) ] 
     bloody_simple_2drender('XXX', lines=lines, pfb=fb)
     
     pt = com.intersect(s1,e1,s2,e2)
@@ -437,71 +440,12 @@ def test_2d_intersect():
     print( 'vectors intersect at point ', pt )
 
 
-#test_2d_intersect() 
+
 
 
 ##-------------------------------------------##
 
-def bloody_simple_2drender( imagename, pts=None, vecs=None, lines=None, obj=None, gridsize=50, pfb=None, gratic=True):
-    """ draw some points and lines on a grid 
 
-        ARGS:
-
-            pts      - list of points to render 
-            vecs     - list of vectors to render 
-            lines    - list of lines to render 
-            obj      - list of 3D obect models to render
-            gridsize - parameter to set a grid units to pixels ratio
-            pfb      - passed frame buffer - work on framebuffer passed in 
-                       as opposed to a single new framebuffer 
-                       this allows layering of multiple renders 
-
-        TO RUN:
-
-            pts = [(1,1),(2,2),(3,3)]
-            lines = [ [ (1,1), (1,2), (2,1)], [ (6,1), (1,6), (5,-1)] ]
-            bloody_simple_2drender('2d_render.png', pts=pts, vecs=pts, lines=lines )
-
-    """
-
-    if pfb is None:
-        fb = pixel_op()   
-        fb.create_buffer(800, 800)
-        if gratic is True:
-            fb.graticule(gridsize)
-        if gratic is False:
-            fb.fill_color((0,0,0) )
-
-    else:
-        fb = pfb 
-
-    #pt_size = 3
-    pointcolor = ()
-    linecolot = () 
-
-    if obj is not None:
-        for o in obj:
-            # look! I wrote a renderer in 5 lines!! 
-            for ply in o.polygons:
-                poly = []
-                for fid in ply:
-                    poly.append( o.points[fid-1] )
-                fb.render_line_2d( poly,  scale=gridsize)   
-
-    if lines is not None:
-        for line in lines:        
-            fb.render_line_2d( line,  scale=gridsize)
-
-    if vecs is not None:
-        for v in vecs:
-            fb.render_vector_2d(   v,  scale=gridsize)
-
-    if pts is not None:
-        for p in pts:
-            fb.render_point_2d( p , scale=gridsize ) #dotsize=10
-
-    if pfb is None:
-        fb.save(imagename)
 
 
 

@@ -15,6 +15,76 @@ if NUMPY_IS_LOADED:
     from gnelscript.tools.raytrace import  *
 
 
+
+
+def bloody_simple_2drender( imagename, pts=None, 
+                                       vecs=None, 
+                                       lines=None, 
+                                       obj=None, 
+                                       gridsize=50, 
+                                       pfb=None, 
+                                       gratic=True):
+
+    """ draw some points and lines on a grid 
+
+        ARGS:
+
+            pts      - list of points to render 
+            vecs     - list of vectors to render 
+            lines    - list of lines to render 
+            obj      - list of 3D obect models to render
+            gridsize - parameter to set a grid units to pixels ratio
+            pfb      - passed frame buffer - work on framebuffer passed in 
+                       as opposed to a single new framebuffer 
+                       this allows layering of multiple renders 
+
+        TO RUN:
+
+            pts = [(1,1),(2,2),(3,3)]
+            lines = [ [ (1,1), (1,2), (2,1)], [ (6,1), (1,6), (5,-1)] ]
+            bloody_simple_2drender('2d_render.png', pts=pts, vecs=pts, lines=lines )
+
+    """
+
+    if pfb is None:
+        fb = pixel_op()   
+        fb.create_buffer(800, 800)
+        if gratic is True:
+            fb.graticule(gridsize)
+        if gratic is False:
+            fb.fill_color((0,0,0) )
+
+    else:
+        fb = pfb 
+
+    #pt_size = 3
+    pointcolor = ()
+    linecolot = () 
+
+    if obj is not None:
+        for o in obj:
+            # look! I wrote a renderer in 5 lines!! 
+            for ply in o.polygons:
+                poly = []
+                for fid in ply:
+                    poly.append( o.points[fid-1] )
+                fb.render_line_2d( poly,  invert_y=True, scale=gridsize)   
+
+    if lines is not None:
+        for line in lines:        
+            fb.render_line_2d( line,  invert_y=True, scale=gridsize)
+
+    if vecs is not None:
+        for v in vecs:
+            fb.render_vector_2d(   v,  invert_y=True, scale=gridsize)
+
+    if pts is not None:
+        for p in pts:
+            fb.render_point_2d( p , invert_y=True, scale=gridsize ) #dotsize=10
+
+    if pfb is None:
+        fb.save(imagename)
+
 ##-----------------------------------------
 
 
