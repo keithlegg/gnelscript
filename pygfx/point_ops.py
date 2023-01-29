@@ -2066,6 +2066,21 @@ class polygon_operator(point_operator):
     ##-------------------------------------------## 
     ##-------------------------------------------## 
 
+    def push_plys(self, ids):
+        # push a stack of ids by reindexing
+        n = self.numpts 
+        out = []
+
+        for p in ids:
+            t = []
+            for idx in p:
+                t.append(idx+n)
+            out.append(t)
+        return out     
+
+    #def push_pts(self, ids):
+
+
     def insert_polygons(self, plyids=None, 
                               points=None, 
                               geom_obj=None, 
@@ -2073,8 +2088,7 @@ class polygon_operator(point_operator):
                               pos=None,
                               ans=True ):
 
-        print("$$$$$ points %s polyids %s "%(len(points), len(plyids)))   
-        
+    
         #     Insert new geometry into an object
         #         you can pass a geom object to insert into 
         #         if you dont specify it goes into self 
@@ -2097,6 +2111,9 @@ class polygon_operator(point_operator):
         # as new shell True will reindex new polygons 
         # any points automatically are treated as new shell 
         # as new shell False is only for adding polygons to existing geom 
+        
+        if points is None:
+            points=[]
 
         if not plyids and not geom_obj:
             raise ValueError("insert_polygons: no new polygons to insert")    
@@ -2110,17 +2127,7 @@ class polygon_operator(point_operator):
         #    raise ValueError("insert_polygons: use geom obj or polyids but not both at same time") 
         
 
-        def push(ids):
-            # push a stack of ids by reindexing
-            n = self.numpts 
-            out = []
-
-            for p in ids:
-                t = []
-                for idx in p:
-                    t.append(idx+n)
-                out.append(t)
-            return out                  
+             
                       
         #############################              
         #debug checks for data -  make sure it is good first 
@@ -2201,7 +2208,7 @@ class polygon_operator(point_operator):
         if ans:
             if geom_obj is None: 
                 tmp_pts.extend(points)
-                tmp_plys.extend(push(plyids))
+                tmp_plys.extend(self.push_plys(plyids))
             else:
                 geom_obj[0].extend(plyids)  
                 geom_obj[1].extend(points)    

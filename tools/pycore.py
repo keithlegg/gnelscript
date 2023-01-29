@@ -315,49 +315,49 @@ def primitive(primtype):
     # obj.prim_line( axis=axis, pos=position, rot=rotation, size=size)
     # obj.save(PYCORE_OBJ_OUT)
     # if do_flush:
-    #     obj.flush()
+    #     obj._flush()
 
     if primtype == 'triangle':
         obj.prim_triangle( axis=axis, pos=position, rot=rotation, size=size)
         obj.save(PYCORE_OBJ_OUT)
         if do_flush:
-            obj.flush()
+            obj._flush()
 
     if primtype == 'quad':
         obj.prim_quad( axis=axis, pos=position, rot=rotation, size=size)
         obj.save(PYCORE_OBJ_OUT)
         if do_flush:
-            obj.flush()
+            obj._flush()
 
     if primtype == 'circle':
         obj.prim_circle( axis=axis, pos=position, dia=size) #rot=rotation
         obj.save(PYCORE_OBJ_OUT)
         if do_flush:
-            obj.flush()
+            obj._flush()
 
     if primtype == 'sphere':
         obj.prim_sphere(  pos=position, rot=rotation, size=size)
         obj.save(PYCORE_OBJ_OUT)
         if do_flush:
-            obj.flush()
+            obj._flush()
 
     if primtype == 'locator':
         obj.prim_locator(  pos=position, rot=rotation, size=size)
         obj.save(PYCORE_OBJ_OUT)
         if do_flush:
-            obj.flush()
+            obj._flush()
 
     if primtype == 'locatorxyz':
         obj.prim_locator_xyz(  pos=position, rot=rotation, size=size)
         obj.save(PYCORE_OBJ_OUT)
         if do_flush:
-            obj.flush()
+            obj._flush()
 
     if primtype == 'cone':
         obj.prim_cone( axis=axis, pos=position, dia=size) #rot=rotation
         obj.save(PYCORE_OBJ_OUT)
         if do_flush:
-            obj.flush()
+            obj._flush()
 
 
 ##------------------

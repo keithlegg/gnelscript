@@ -208,42 +208,42 @@ def object_primitives():
     obj.prim_line( axis=axis, pos=position, rot=rotation, size=size)
     obj.save(PYCORE_OBJ_OUT)
     if do_flush:
-        obj.flush()
+        obj._flush()
 
     obj.prim_triangle( axis=axis, pos=position, rot=rotation, size=size)
     obj.save(PYCORE_OBJ_OUT)
     if do_flush:
-        obj.flush()
+        obj._flush()
 
     obj.prim_quad( axis=axis, pos=position, rot=rotation, size=size)
     obj.save(PYCORE_OBJ_OUT)
     if do_flush:
-        obj.flush()
+        obj._flush()
 
     obj.prim_circle( axis=axis, pos=position, dia=size) #rot=rotation
     obj.save(PYCORE_OBJ_OUT)
     if do_flush:
-        obj.flush()
+        obj._flush()
 
     obj.prim_sphere(  pos=position, rot=rotation, size=size)
     obj.save(PYCORE_OBJ_OUT)
     if do_flush:
-        obj.flush()
+        obj._flush()
 
     obj.prim_locator(  pos=position, rot=rotation, size=size)
     obj.save(PYCORE_OBJ_OUT)
     if do_flush:
-        obj.flush()
+        obj._flush()
 
     obj.prim_locator_xyz(  pos=position, rot=rotation, size=size)
     obj.save(PYCORE_OBJ_OUT)
     if do_flush:
-        obj.flush()
+        obj._flush()
 
     obj.prim_cone( axis=axis, pos=position, dia=size) #rot=rotation
     obj.save(PYCORE_OBJ_OUT)
     if do_flush:
-        obj.flush()
+        obj._flush()
 
 
 

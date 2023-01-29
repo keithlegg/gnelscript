@@ -145,12 +145,12 @@ class raytracer(object):
         ###########
         # keith attempting to add transparency  
         transparency = self.get_transparency(obj, M)
-        #if transparency:
-        #    #    print(obj['type'] , 'has transparency ', transparency)
-        #    export.one_vec_to_obj( M )
-        #    #save the normal at intersevtion point 
-        #    if N.any():
-        #        export.one_vec_to_obj( (N[0],N[1],N[2]), M )
+        if transparency:
+            #    print(obj['type'] , 'has transparency ', transparency)
+            export.one_vec_to_obj( M )
+            #save the normal at intersevtion point 
+            if N.any():
+                export.one_vec_to_obj( (N[0],N[1],N[2]), M )
         ###########
 
         toL = self.normalize(L - M)

@@ -550,14 +550,14 @@ def lighting_test( lightpos, fnum=1):
             # vector from face center to light
             obj2.one_vec_to_obj( v[2] , pos=v[0] )  
         obj2.save('light_to_face_vectors_%s.obj'%fnum)
-        obj2.flush() 
+        obj2._flush() 
 
         #----
         for v in  LV:  
             # unit length face normal, from world origin   
             obj2.one_vec_to_obj( v[1] , pos=v[0])  
         obj2.save('face_normal_vectors_%s.obj'%fnum)
-        obj2.flush() 
+        obj2._flush() 
 
         #----
         # experiment to extract the parts of the model that are facing the light 
@@ -572,7 +572,7 @@ def lighting_test( lightpos, fnum=1):
 
         obj2.insert_polygons(polys, obj.points) 
         obj2.save('visible_faces_%s.obj'%fnum)
-        obj2.flush() 
+        obj2._flush() 
 
 
 #lighting_test( (10,-3, 0) )

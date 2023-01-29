@@ -50,27 +50,28 @@ def model_geom_from_scratch():
     
 
 ##-------------------------------------------------------## 
-def model_obj_from_scratch(): 
+def model_obj_from_scratch(fileout): 
     """ build a new polygon object from points directly into an object """ 
 
     obj = object3d()
 
     #add new geom and auto increment the ids
     polys = [(1,2,3,4) ]
+
     pts = [(1,1,1),(0,1,1),(-1,-1,1),(2,-2,1)]
-    obj.insert_polygons([], pts) 
+    obj.points.extend(pts) 
 
     #add new geom and auto increment the ids
     pts = [(0,-3,-1),(2,-2,1),(3,-1,1)]
-    obj.insert_polygons([], pts)
+    obj.points.extend(pts) 
 
     #add polys without new points into same "shell"
-    obj.insert_polygons( [(1,2,3,4,5,6,7),(1,7,2)], None, asnew_shell=False)
+    obj.insert_polygons( plyids=[(1,2,3,4,5,6,7),(1,7,2)], ans=False)
     
     #add new polygon in a new "shell" 
-    obj.insert_polygons( [(1,2,3,4)], [(3,3,3), (3,-4,5), (-4,-2.5,3.1), (6.2,-2.7,8)], asnew_shell=True)
+    obj.insert_polygons( plyids=[(1,2,3,4)], points=[(3,3,3), (3,-4,5), (-4,-2.5,3.1), (6.2,-2.7,8)], ans=True)
 
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(fileout)
 
 
 ##-------------------------------------------------------## 
