@@ -10,6 +10,25 @@ from gnelscript.pygfx.obj3d import  *
 
 
 
+if SCIPY_IS_LOADED:
+    from scipy.spatial.transform import Rotation as R
+
+    def ut_matrix_rotations():
+        rot_degs = (45,45,45)
+
+        print('\n')
+        print("## scipy euler to matrix XYZ ") 
+        r = R.from_euler('XYZ', rot_degs, degrees=True)
+        print(r.as_matrix())
+        
+        print('\n')
+        print('## gnolmec euler to matrix ')
+        m = matrix33()
+        m.from_euler(rot_degs) 
+        print(m)
+
+
+
 
 if NUMPY_IS_LOADED:
 

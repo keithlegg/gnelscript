@@ -576,6 +576,9 @@ class vec3(object):
         if isinstance(other, tuple) or isinstance(other, list):
             return type(self)(self.x+other[0], self.y+other[1], self.z+other[2])  
 
+    def __neg__(self):
+        return type(self)(-(self.x), -(self.y), -(self.z))
+
     def __sub__(self, other):
         if NUMPY_IS_LOADED:
             if isinstance(other, np.ndarray):
@@ -598,13 +601,24 @@ class vec3(object):
         if isinstance(other, tuple) or isinstance(other, list):
             return type(self)(self.x*other[0], self.y*other[1], self.z*other[2])          
 
+
+    #def __div__(self, value) :
+    #    #if isinstance(other, vec3):                    
+    #    #    return type(self)(self.x-other.x, self.y-other.y, self.z-other.z)
+    #    if isinstance(other, float) or isinstance(other, int):
+    #        return type(self)(self.x/other, self.y/other, self.z/other)
+
     def __truediv__(self, other):
+        if isinstance(other, vec3):                    
+            self.x = other.x/other.length()
+            self.y = other.y/other.length()
+            self.z = other.y/other.length()
+            return type(self)(self.x, self.y, self.z)
+        if isinstance(other, float) or isinstance(other, int):
+            return type(self)(self.x/other, self.y/other, self.z/other)
         #untested - normalized? 
         #return type(self)(self.x / other.x, self.y / other.y)
-        self.x = other.x/other.length()
-        self.y = other.y/other.length()
-        self.z = other.y/other.length()
-        return type(self)(self.x, self.y, self.z)
+
 
     def __float__(self):
         return type(self)(float(self.x), float(self.y), float(self.z) )
@@ -1333,8 +1347,15 @@ class matrix33(object):
     def __setitem__(self, key, item):
         self.m[key] = item
 
+    """
     def __repr__(self):
         return '(%s, %s, %s, %s, %s, %s, %s, %s, %s )'%(
+                self.m[0], self.m[1], self.m[2],  self.m[3],  self.m[4],  
+                self.m[5],  self.m[6],  self.m[7], self.m[8] )
+    """
+
+    def __repr__(self):
+        return '%s, %s, %s,\n %s, %s, %s,\n %s, %s, %s'%(
                 self.m[0], self.m[1], self.m[2],  self.m[3],  self.m[4],  
                 self.m[5],  self.m[6],  self.m[7], self.m[8] )
 
@@ -1579,10 +1600,15 @@ class matrix33(object):
             tmp_buffer.append( self * pvec )
         return tmp_buffer
 
-    def from_euler(self, xrot, yrot, zrot):
+    def from_euler(self, rotation):
         """
             derived from the rotate_pts_3d function 
         """
+
+        xrot = rotation[0]
+        yrot = rotation[1]
+        zrot = rotation[2]
+
         dtr = self.mu.dtr
 
         # build rotationY (see diagram above) 
@@ -1729,12 +1755,20 @@ class matrix33(object):
             #print(type(angle_deg))
 
             if angle_rad==None and angle_deg==None:
-                print('from_vec3: no angle specified')
+                print('np_rotate: no angle specified')
                 return None 
             if angle_rad  and angle_deg :
-                print('from_vec3: angle must be rad or deg but not both')
+                print('np_rotate: angle must be rad or deg but not both')
+                return None 
+         
+            if type(angle_deg) is int or type(angle_deg) is float:
+                print('np_rotate: angle must have 3 items')
                 return None 
 
+            if type(angle_rad) is int or type(angle_rad) is float:
+                print('np_rotate: angle must have 3 items')
+                return None 
+                
             if angle_rad:
                 if type(angle_rad) is vec3:
                     theta = angle_rad.as_np
@@ -1799,7 +1833,7 @@ class matrix33(object):
         #        z = 0
         #    return np.array([x, y, z])
 
-        def rotationMatrixToEulerAngles(self, R) :
+        def to_euler(self, R) :
             #assert(self.isRotationMatrix(R))
             
             sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
@@ -2197,11 +2231,17 @@ class matrix44(object):
  
         return tmp_buffer
 
-    def from_euler(self, xrot, yrot, zrot):
+    def from_euler(self, rotation ):
         """
             derived from the rotate_pts_3d function 
             go read that doc for explanation  
         """
+        
+        xrot = rotation[0]
+        yrot = rotation[1]
+        zrot = rotation[2]
+
+
         dtr = self.mu.dtr
 
         ####

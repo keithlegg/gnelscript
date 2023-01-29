@@ -691,6 +691,56 @@ class point_operator(object):
         return out
 
     ##-------------------------------------------##
+    def calc_icosahedron(self, pos=(0,0,0), rot=(0,0,0), size=1):
+        """ DEBUG POS and ROT not working yet 
+        """
+
+        radius = size/2
+
+        #tmp = object3d()
+        tmp_pts =[]
+
+        #// constants
+        PI = 3.1415926;
+        H_ANGLE = PI/ 180*72;       # 72 degree = 360 / 5
+        V_ANGLE = math.atan(1.0/2); # elevation = 26.565 degree
+
+        z  = 0
+        xy = 0                            # coords
+        hAngle1 = -PI / 2 - H_ANGLE / 2   # start from -126 deg at 1st row
+        hAngle2 = -PI / 2                 # start from -90 deg at 2nd row
+
+        # the first top vertex at (0, 0, r)
+        tmp_pts.append( (0,0,radius) )
+
+        # compute 10 vertices at 1st and 2nd rows
+        for i in range(1,7):
+            n = len(tmp_pts) # add to this index each time
+
+            z  = radius * math.sin(V_ANGLE)  # elevaton
+            xy = radius * math.cos(V_ANGLE)  # length on XY plane
+            vtmp1 = [];vtmp2 = []
+            vtmp1.append( xy * math.cos(hAngle1)  )# x
+            vtmp2.append( xy * math.cos(hAngle2)  )
+            vtmp1.append( xy * math.sin(hAngle1)  )# y
+            vtmp2.append( xy * math.sin(hAngle2)  )
+            vtmp1.append(  z                      )# z
+            vtmp2.append( -z                      )
+            #// next horizontal angles
+            hAngle1 += H_ANGLE
+            hAngle2 += H_ANGLE
+            
+            tmp_pts.append(tuple(vtmp1))
+            tmp_pts.append(tuple(vtmp2))
+        
+        # the last bottom vertex at (0, 0, -r)
+        tmp_pts.append( (0,0,-radius) )
+
+        #tmp_pts = tmp.xform_pts(pos=pos, pts=tmp_pts)
+
+        return tmp_pts
+
+    ##-------------------------------------------##
     def calc_circle(self, pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
         """ spokes = num spokes 
             
@@ -1273,6 +1323,7 @@ class polygon_operator(point_operator):
         x = sum(ptsx)/len(ptsx)
         y = sum(ptsy)/len(ptsy)
         z = sum(ptsz)/len(ptsz)
+        #return vec3(x,y,z)
         return [x,y,z]
 
     ##-------------------------------------------## 
@@ -1789,8 +1840,8 @@ class polygon_operator(point_operator):
             if the face is roundish, symetical, etc, it will work okay 
         """
         pts = self.get_face_pts(fid)
-        return self.centroid(pts) 
-
+        out = self.centroid(pts) 
+        return out
     ##-------------------------------------------## 
     ##-------------------------------------------##  
     # operators that modify geometry data and/or build new geom 
@@ -2014,45 +2065,114 @@ class polygon_operator(point_operator):
 
     ##-------------------------------------------## 
     ##-------------------------------------------## 
-     
+
     def insert_polygons(self, plyids=None, 
                               points=None, 
-                              asnew_shell=True, 
-                              geom=None, 
+                              geom_obj=None, 
                               incrone=False, 
-                              pos=None):
+                              pos=None,
+                              ans=True ):
 
-        """  
-             Insert NEW geometry into this object
-             
-             you can do it with the paired "plyids" + "points", or a geom object
-             A geom object is very similar in a self contained flat data object. 
-
-             plyids, points  - use these or geom, but not both at same time 
-             asnew_shell     - reindex the points and append, else keep the same indices
-             geom            - geom to insert into, instead of object.polygons, object.points
-                               if true, will return the geom object when done 
-             incrone         - 
-             pos             - transform points to a position 
-
-             if points are 2D - automatically insert in 3D on the 0 Z axis
-        """
+        print("$$$$$ points %s polyids %s "%(len(points), len(plyids)))   
         
-        #if isinstance(points, vec3):
-        #    self.points.extend(points)
+        #     Insert new geometry into an object
+        #         you can pass a geom object to insert into 
+        #         if you dont specify it goes into self 
+        #         you can merge it with existing points or add new points 
+        #     data is NOT ZERO INDEXED 
+        #     you can pass in zero indexed data if you iuse incrone option 
+        #     - if you pass no plyids it will exit 
+        #     - if you pass plyids with no points it will merge polygons into existing points
+        #     -if you pass plyids with new points it will ALWAYS be a new shell regardless of asn 
+        #     it will attempt to merge into existing geometry first unless ans/as new shell is True 
+        #     plyids, points    - use these or geom, but not both at same time 
+        #     ans/ asnew_shell  - reindex the points and append, else keep the same indices
+        #     geom_obj          - geom to insert into, instead of object.polygons, object.points
+        #                         if true, will return the geom object when done 
+        #     incrone         - offset IDS by +1 (zero index nightmare)
+        #     pos             - offset point posititons  
+        #     if points are 2D - automatically insert in 3D on the 0 Z axis
+        
+        # if you pass plyids with no points and "ans True" it makes a copy of existing points 
+        # as new shell True will reindex new polygons 
+        # any points automatically are treated as new shell 
+        # as new shell False is only for adding polygons to existing geom 
 
- 
-        ##-- DEBUG experiment - just append points as new if no indexes specified
-        if len(points)<=4:
-            if points and not plyids:
-                tmp=[]
-                numpts = len(self.points)
-                for i,p in enumerate(points):
-                    tmp.append((i+numpts)-1)
-                plyids=[tmp]    
-    
-     
-        ##-- option to increment polyids by one automatically to solve zero index problem 
+        if not plyids and not geom_obj:
+            raise ValueError("insert_polygons: no new polygons to insert")    
+        
+        #if plyids and points:
+        #    ans=True 
+
+        #if geom_obj and plyids:
+        #    raise ValueError("insert_polygons: use geom obj or polyids but not both at same time") 
+        #if geom_obj and points:
+        #    raise ValueError("insert_polygons: use geom obj or polyids but not both at same time") 
+        
+
+        def push(ids):
+            # push a stack of ids by reindexing
+            n = self.numpts 
+            out = []
+
+            for p in ids:
+                t = []
+                for idx in p:
+                    t.append(idx+n)
+                out.append(t)
+            return out                  
+                      
+        #############################              
+        #debug checks for data -  make sure it is good first 
+        
+        # no empty point data 
+        if points is None and geom_obj is None and self.numpts==0 :
+            raise ValueError("insert_polygons: no existing or new point data to work with")
+
+        n = self.numpts 
+        for ply in plyids:
+            for fid in ply:  
+                #non numeric type
+                if not isinstance(fid, int):
+                    raise ValueError('## insert_polygons, bad data for index: %s'%fid)
+                # no indexes less than 0 with incrone                
+                if incrone:
+                    if fid<0:
+                        raise ValueError("insert_polygons: poly id too low: %s"%fid)  
+                # no indexes less than 1 without incrone 
+                else:    
+                    if fid<1:
+                        raise ValueError("insert_polygons: poly id too low: %s"%fid)  
+                # no indexes larger than dataset 
+                #if fid>n and fid>len(points):
+                #    print("##### ",len(points)-1, n-1)
+                #    raise ValueError("insert_polygons: poly id too high: %s"%fid)                    
+
+        # no duplicate indexes in same polygon
+        # no duplicate indexes in different order
+
+        if points:
+            #if vec3 data was passed in convert to tuple
+            if type(points[0]) is vec3:
+                tmp = []
+                for pv in points: 
+                    tmp.append(pv.aspt)
+                points = tmp
+        #############################
+        tmp_pts = [] 
+        tmp_plys = [] 
+
+        #############################
+
+        # option to offset the points in space 
+        if pos:
+            tmp=[]
+            for pt in points:
+                tmp.append((pt[0]+pos[0], pt[1]+pos[1], pt[2]+pos[2])) 
+            points=tmp
+
+        #############################
+        # option to increment polyids by one automatically to solve zero index problem 
         newplyids = []
         if incrone:
             for pid in plyids:
@@ -2060,62 +2180,46 @@ class polygon_operator(point_operator):
                 for pt in pid:
                     tmp.append(int(pt)+1)
                 newplyids.append(tmp)
-
             plyids = newplyids
 
-
-        ##-- append polygons (using existing point buffer)
-        for poly in plyids:
-            plytmp = []      
-            for idx in poly:
-                if not isinstance(idx, int):
-                    print('## insert_polygons, bad data for index: ', idx)
-                    return None 
-
-                if asnew_shell is True:
-                    plytmp.append(idx+self.numpts) # add the poly index to current count    
-                else:
+        ############################# 
+        # append polygons (using existing point buffer)
+        if ans is False:   
+            for poly in plyids:
+                plytmp = []      
+                for idx in poly:
                     plytmp.append(idx)  
 
-            # do the insert operation                    
-            if geom is None: 
-                self.polygons.append( tuple(plytmp) ) 
-            else:
-                geom[0].append( tuple(plytmp) )
-
-
-        ##-- append points,  only if new geom - 
-        # add new geom using python extend 
-        if asnew_shell is True:
-            if isinstance(points, tuple) or isinstance(points, list):
-                if pos:
-                    tmp=[]
-                    for pt in points:
-                        tmp.append((pt[0]+pos[0], pt[1]+pos[1], pt[2]+pos[2])) 
-                    points=tmp
-
-                # do the insert operation
-                if geom is None:
-                    
-                    if type(points[0]) is vec3:
-                        for pv in points: 
-                            self.points.append(pv.aspt)
-                    else:    
-                        #look at first point and assume all data is similar
-                        #if it is 2d add a zero Z axis 
-                        if len(points[0])==2:
-                            #print("insert_polygons: data appears to be 2D")
-                            for i,pt in enumerate(points):
-                                self.points.append( (points[i][0], points[i][1],0) )
-
-                        if len(points[0])==3:
-                            self.points.extend(points)
-
+                # do the insert operation                    
+                if geom_obj is None: 
+                    tmp_plys.append( tuple(plytmp) ) 
                 else:
-                    geom[1].extend(points)
-        
-        if geom is not None:
-            return geom
+                    geom_obj[0].append( tuple(plytmp) )
+
+        ################## 
+        # do the insert operation
+        if ans:
+            if geom_obj is None: 
+                tmp_pts.extend(points)
+                tmp_plys.extend(push(plyids))
+            else:
+                geom_obj[0].extend(plyids)  
+                geom_obj[1].extend(points)    
+        if not ans:
+            if geom_obj is None: 
+                tmp_pts= points
+                tmp_plys = plyids
+            else:
+                geom_obj[0]= plyids  
+                geom_obj[1]= points                  
+        ##-----
+        # merge the new geom into self 
+        if geom_obj:
+            return geom_obj
+        else:
+            self.points.extend(tmp_pts)
+            self.polygons.extend(tmp_plys)
+
 
     ##-------------------------------------------## 
     def add_poly_frpts(self, pts):
@@ -2390,8 +2494,9 @@ class polygon_operator(point_operator):
             self.insert_polygons(out_polys, out_pts)
 
     ##-------------------------------------------## 
-    def radial_triangulate_obj(self, as_new_obj=False, offset=None ):
-        """ put a vertex at the center of polygon 
+    def radial_triangulate_obj(self, as_new_obj=False, offset=None, norm_mult=None ):
+        """ 
+            put a vertex at the center of polygon 
             then form triangles in a circle 
             for N sided polygons 
 
@@ -2401,42 +2506,64 @@ class polygon_operator(point_operator):
                          added so I could turn a circle into an arrow :)   
         """
         
-
+        centers = [] 
+        normals = [] 
+       
         out_polys = []
         out_pts   = []
 
-        for poly in self.polygons:
-            fac_pts = []
-            for ptidx in poly:
-
-                # build a list of points that make up polygon
-                fac_pts.append(self.points[ptidx-1]) #not zero indexed?
-
+        for i,poly in enumerate(self.polygons):
+            n = self.get_face_normal(i)
+            if norm_mult is None:
+                n = n.normal
+            else:    
+                n = n*norm_mult
+              
             # calculate the center of each polygon
-            # this will be added as a new point, center of radial mesh      
-            fac_ctr = self.centroid(fac_pts)
-            
+            # this will be added as a new point, center of radial mesh 
+            fac_ctr = self.get_face_centroid(i)
             # offset is a spatial transform of the radial center point
-            #DEBUG TODO - option to move along face normal!!  
             if offset is not None:
-                fac_ctr[0] = fac_ctr[0]+offset[0]
-                fac_ctr[1] = fac_ctr[1]+offset[1]
-                fac_ctr[2] = fac_ctr[2]+offset[2]
+                if offset == 'normal':
+                    fac_ctr[0] = fac_ctr[0]+n[0]
+                    fac_ctr[1] = fac_ctr[1]+n[1]
+                    fac_ctr[2] = fac_ctr[2]+n[2]
+                elif offset == 'flipnormal':
+                    fac_ctr[0] = fac_ctr[0]-n[0]
+                    fac_ctr[1] = fac_ctr[1]-n[1]
+                    fac_ctr[2] = fac_ctr[2]-n[2]
+                else:    
+                    fac_ctr[0] = fac_ctr[0]+offset[0]
+                    fac_ctr[1] = fac_ctr[1]+offset[1]
+                    fac_ctr[2] = fac_ctr[2]+offset[2]
 
-            # start a new polygon dataset to append later 
-            out_pts.append(tuple(fac_ctr))
-            # add all the old points to our new dataset, plus our new center point   
-            out_pts.extend(self.points)
-
+            #centers.append(fac_ctr)
+            #normals.append(n)
+            # add new point to attach geom to 
+            out_pts.append(fac_ctr)
+            
             # iterate by two and connect to new radial center     
-            for i in range(int(len(poly))):
-                out_polys.append( (1, poly[i-1]+1, poly[i]+1 ) ) 
-         
+            for j in range(len(poly)):
+                newply = (len(self.points)+i+1, poly[j-1] , poly[j] )
+                out_polys.append( newply ) 
+
         if as_new_obj:
-            self.points = out_pts
-            self.polygons = out_polys
+            #DEBUG - THIS OVERWRITES EACH TIME 
+            #self.points = out_pts
+            #self.polygons = out_polys
+            pass 
         else:    
-            self.insert_polygons(out_polys, out_pts)
+            #print(out_pts)
+            #print(len(out_polys)) 
+            self.insert_polygons(ans=False, plyids=out_polys, points=out_pts )
+
+
+ 
+        #for c in centers:
+        #    self.prim_locator(c) 
+       
+
+
 
     ##-------------------------------------------## 
     def triangulate(self, force=False, offset=(0,0,0)):

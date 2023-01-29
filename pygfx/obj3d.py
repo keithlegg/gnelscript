@@ -139,7 +139,7 @@ class object3d(polygon_operator):
                     self.points=obj[0]                    
                 self.polygons=obj[1]                 
             else:
-                self.insert_polygons(obj[0], obj[1])
+                self.insert_polygons(plyids=obj[0], points=obj[1])
 
         # object3d type  
         if isinstance(obj, object3d):
@@ -156,9 +156,9 @@ class object3d(polygon_operator):
                     self.polygons=obj.polygons                 
             else:
                 if pos:
-                    self.insert_polygons(obj.polygons, obj.points, pos=pos)
+                    self.insert_polygons(plyids=obj.polygons, points=obj.points, pos=pos)
                 else:   
-                    self.insert_polygons(obj.polygons, obj.points)
+                    self.insert_polygons(plyids=obj.polygons, points=obj.points)
 
     ##------------------------------------------------##
     def append(self, otherobj):
@@ -518,7 +518,7 @@ class object3d(polygon_operator):
         self.insert_polygons([tuple(poly)], pts)
 
     ##------------------------------------------------## 
-    def prim_cone(self, axis, pos=(0,0,0), rot=(0,0,0), dia=1, spokes=8):
+    def prim_cone(self, axis='y', pos=(0,0,0), rot=(0,0,0), dia=1, spokes=8):
         """ first prim tool to use other tools and prims 
             made so we can make an arrow prim 
         """
@@ -595,7 +595,8 @@ class object3d(polygon_operator):
     
     ##------------------------------------------------## 
     def _icosahedron(self, pos, radius, build_wire=False, build_geom=False):
-        """ builds the points but not polygons for an icosahedron
+        """ should be in point gen?
+            builds the points but not polygons for an icosahedron
             there are some experimental geom functions here  
         """
     

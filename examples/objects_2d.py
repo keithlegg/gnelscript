@@ -13,7 +13,7 @@ mu = math_util()
 
 
 
-def model_geom_from_scratch(): 
+def model_geom_fr_scratch_2d(): 
     """ build a new polygon object in memory from points 
         then insert it into an object and export  
     """ 

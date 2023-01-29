@@ -43,7 +43,7 @@ def cvt_obj_to_vec3():
 
 
 ##-------------------------------------------------
-def do_intersection(self):
+def raycast(self):
     """ 
         test intersection of a single vector with a triangle  
     """
@@ -124,7 +124,8 @@ def rotate_around_vec(outfile):
 
     # construct a matrix to transform them 
     rotated_m33 = matrix33()
-    m = rotated_m33.from_vec3( vec3(1,0,0) , -45) 
+
+    m = rotated_m33.np_rotate( vec3(1,0,0) , -45) 
     
     
     # apply the matrix to the points in the model 
