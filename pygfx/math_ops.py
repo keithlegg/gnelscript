@@ -553,10 +553,10 @@ class vec3(object):
 
     def __init__(self,x=0,y=0,z=0):
         #this is sloppy - check the first item and assume we are initializing with a tuple xyz 
-        if type(x) is list or type(x) is tuple:
-            self.x=x[0];self.y=x[1];self.z=x[2]  
-        else:    
-            self.x=x;self.y=y;self.z=z  
+        #if type(x) is list or type(x) is tuple:
+        #    self.x=x[0];self.y=x[1];self.z=x[2]  
+        #else:    
+        self.x=x;self.y=y;self.z=z  
         self.mu = math_util() 
 
     def __repr__(self):
@@ -630,6 +630,8 @@ class vec3(object):
             return self.y
         if index==2:
             return self.z
+        # not sure the "proper" way to exit from a loop     
+        raise(IndexError)   
 
     def __setitem__(self, key, item):
         if key==0:
@@ -1806,7 +1808,7 @@ class matrix33(object):
         #    n = np.linalg.norm(I - shouldBeIdentity)
         #    return n < 1e-6
 
-        def isRotationMatrix(self, R) :
+        def np_is_rot_matrix(self, R) :
             Rt = np.transpose(R)
             shouldBeIdentity = np.dot(Rt, R)
             I = np.identity(3, dtype = R.dtype)
@@ -1814,24 +1816,24 @@ class matrix33(object):
             return n < 1e-6
 
         ##------------------------------------         
-        #def np_to_euler(self) :
-        #    # UNTESTED            
-        #    # https://learnopencv.com/rotation-matrix-to-euler-angles/
-        #    # Calculates rotation matrix to euler angles
-        #    # The result is the same as MATLAB except the order
-        #    # of the euler angles ( x and z are swapped ).
-        #    assert(self.np_is_rot_matrix(R))
-        #    sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
-        #    singular = sy < 1e-6
-        #    if  not singular :
-        #        x = math.atan2(R[2,1] , R[2,2])
-        #        y = math.atan2(-R[2,0], sy)
-        #        z = math.atan2(R[1,0], R[0,0])
-        #    else :
-        #        x = math.atan2(-R[1,2], R[1,1])
-        #        y = math.atan2(-R[2,0], sy)
-        #        z = 0
-        #    return np.array([x, y, z])
+        def np_to_euler(self, R) :
+            # UNTESTED            
+            # https://learnopencv.com/rotation-matrix-to-euler-angles/
+            # Calculates rotation matrix to euler angles
+            # The result is the same as MATLAB except the order
+            # of the euler angles ( x and z are swapped ).
+            assert(self.np_is_rot_matrix(R))
+            sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
+            singular = sy < 1e-6
+            if  not singular :
+                x = math.atan2(R[2,1] , R[2,2])
+                y = math.atan2(-R[2,0], sy)
+                z = math.atan2(R[1,0], R[0,0])
+            else :
+                x = math.atan2(-R[1,2], R[1,1])
+                y = math.atan2(-R[2,0], sy)
+                z = 0
+            return np.array([x, y, z])
 
         def to_euler(self, R) :
             #assert(self.isRotationMatrix(R))

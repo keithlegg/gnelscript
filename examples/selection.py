@@ -134,8 +134,8 @@ def modify_a_subselect(outfile):
 
     obj2 = object3d() 
     #obj2.insert_polygons(geom[0], newpts  )      
-    obj2.insert_polygons(geom2[0], geom2[1], asnew_shell=False  ) 
-    # obj2.insert_polygons(geom2[0], newpts2  , asnew_shell=False) 
+    obj2.insert_polygons(geom2[0], geom2[1], ans=False  ) 
+    # obj2.insert_polygons(geom2[0], newpts2  , ans=False) 
     obj2.save(outfile)
 
 

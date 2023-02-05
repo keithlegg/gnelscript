@@ -576,9 +576,9 @@ def scratch_obj2():
     # pts = [(0,-3,-1),(2,-2,1),(3,-1,1)]
     # obj.insert_polygons([], pts)
     # #add polys without new points into same "shell"
-    # obj.insert_polygons( [(1,2,3,4,5,6,7),(1,7,2)], None, asnew_shell=False)
+    # obj.insert_polygons( [(1,2,3,4,5,6,7),(1,7,2)], None, ans=False)
     # #add new polygon in a new "shell" 
-    # obj.insert_polygons( [(1,2,3,4)], [(3,3,3), (3,-4,5), (-4,-2.5,3.1), (6.2,-2.7,8)], asnew_shell=True)
+    # obj.insert_polygons( [(1,2,3,4)], [(3,3,3), (3,-4,5), (-4,-2.5,3.1), (6.2,-2.7,8)], ans=True)
 
     obj.save(PYCORE_OBJ_OUT)
 

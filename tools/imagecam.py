@@ -136,8 +136,11 @@ def firstpass_bw( iters, blur, contrast, bright, chops, inputfile, outputfolder,
 def firstpass( iters, blur, contrast, bright, chops, inputfile, outputfolder, outputfile ):
     """
         filter out noise of an image but keep the main shapes and color regions 
-
+        
+        todo:
+            add max size on long edge option 
     """
+
     simg = Image.open( inputfile )
 
     width = int(simg.width/chops)
@@ -171,6 +174,12 @@ def firstpass( iters, blur, contrast, bright, chops, inputfile, outputfolder, ou
 def secondpass(inputimage, outputpath, numbands, fast=False):
     """
     #from stack overflow  - get most common colors in an image 
+
+    TODO:
+        warn if numbands is too high? does it matter?
+        warn if image is too large? 
+        resize if too large?
+
     
     """
     print("calculating %s common colors. may take some time, especially on large images"%numbands)
@@ -278,9 +287,12 @@ def thirdpass( inputfile, outputfolder, fileformat, bmpinvert=False, po_invert=F
 
 
 def comic_pass( infolder, names, outfolder, colorbg_file, lineweight, bluramt, brightamt, blacklines=True ):
-    """ trace edges """
+    """ trace edges and merge with color background 
+    """
 
     edge_cases = [] 
+
+    rop = raster_op()
 
     # get size we are working with - assume they are all same size 
     infile = '%s/%s.bmp'%(infolder,names[0])
@@ -326,21 +338,54 @@ def comic_pass( infolder, names, outfolder, colorbg_file, lineweight, bluramt, b
     allwhite = Image.new('RGBA', [res_x,res_y], (255,)*4) # white mask to composite
     allblack = Image.new('RGBA', [res_x,res_y], (0,)*4)   # black mask to color lines where mask shows through 
 
-    for i,e in enumerate(edge_cases):
-        print(e)
-        tmp = Image.open(e)         
-        tmp = tmp.convert("RGBA")
-        alledges =  Image.blend(tmp, alledges, .5) 
+    
+    weighted = True
+
+    if weighted:
+        for i,e in enumerate(edge_cases):
+            tmp = Image.open(e)         
+            tmp = tmp.convert("RGBA")
+            alledges =  Image.blend(tmp, alledges, .5) 
+            #alledges = Image.combine((tmp, alledges), lambda pixels: max(pixels))
+            #r, g, b, a = tmp.split()
+            #alledges = Image.merge("RGB", (rr, gg, bb))
+        alledges = alledges.convert("L")
+        alledges = ImageOps.invert(alledges)
+
+
+    #attempt to get even line weight (all egdes combined in one)
+    #we get a near similar effect below if we skip blur and overdrive contrast
+    else:
+        ro = raster_op()
+        ro.create_buffer(res_x,res_y)
+        ro.bitmode = 'RGB'
+        alledges = ro.empty_buffer( (255,255,255) )
+        outpix = alledges.load() 
+        for i,e in enumerate(edge_cases):
+            image = Image.open(edge_cases[i])
+            inpix = image.load() 
+            for x in range(res_x):
+                for y in range(res_y):
+                    #edges are inverted so white == black
+                    if inpix[x,y]>240:
+                        outpix[x,y]=0 
+
+        alledges = alledges.convert("L")
+        alledges = ImageOps.invert(alledges)
 
     ########### 
     ## process lines   
-    
+ 
     if lineweight:
         ## blur lines pass
-        alledges = alledges.filter( ImageFilter.GaussianBlur(radius=bluramt) )
+        if bluramt:
+            alledges = alledges.filter( ImageFilter.GaussianBlur(radius=bluramt) )
         ## contrast lines 
         cont_en = ImageEnhance.Contrast(alledges)
         alledges = cont_en.enhance(lineweight)
+
+
+    alledges.save("%s/alledges.bmp"%(outfolder))
 
     ## bright pass  
     #bright_en = ImageEnhance.Brightness(simg)
@@ -355,10 +400,10 @@ def comic_pass( infolder, names, outfolder, colorbg_file, lineweight, bluramt, b
     ## end process lines
     ########### 
 
-    if blacklines:
-        alledges = alledges.convert("L")
-        alledges = ImageOps.invert(alledges)
-    alledges.save("%s/alledges.bmp"%(outfolder))  
+    #if blacklines:
+    #    alledges = alledges.convert("L")
+    #    alledges = ImageOps.invert(alledges)
+ 
 
     ##----
     # now composite them onto the color background 
@@ -388,7 +433,15 @@ def comic_pass( infolder, names, outfolder, colorbg_file, lineweight, bluramt, b
 ##----------------------------------------------------
 
 def redraw(  infolder, colorbg_file, lineweight, bluramt, brightamt, blacklines=True ):
-    """ trace edges """
+    """ trace edges 
+        and merge with external lines , generated ny hand or from comic_pass() 
+
+        todo:
+            run a second iteration:
+               1> take commonbands and run through firstpass
+               2> composite those regions with the BW masks generated in thirdpass()  
+
+    """
 
     edge_cases = [] 
 

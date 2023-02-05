@@ -108,11 +108,11 @@ class object3d(polygon_operator):
                 self.insert_polygons(obj[0], obj[1])
 
     ##------------------------------------------------##
-    def insert(self, obj, replace=False, asnew_shell=False, pos=None):
+    def insert(self, obj, replace=False, ans=False, pos=None):
         """ insert an object's geometry into this object 
             
             DEBUG - deafults to sharing the point indeces 
-            asnew_shell was added but seems to be broken 
+            ans/asnew_shell was added but seems to be broken 
 
         """
         #DEBUG - check for data in object first 
@@ -372,6 +372,9 @@ class object3d(polygon_operator):
 
     ##------------------------------------------------##
     def pts_to_linesegment(self, pt_list, periodic=False):
+        """
+           iterate a group of points and return insert redenrable geom geom into self 
+        """
 
         print(pt_list)
         

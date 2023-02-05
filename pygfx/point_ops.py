@@ -37,10 +37,24 @@ from gnelscript.pygfx.math_ops import NUMPY_IS_LOADED, matrix33, matrix44, vec2,
     
     BBOX3 - 3D left, top , right, bottom, fromt, back on Z axis 
 
-    GEOM  -  [[face ids], [vertices] ]
+    GEOM  -  [[[face ids]], [vertices] ]
         simplest way to define a 3d model. It is two arrays, face ids and vertices
         can be used to write translators to other formats  
         geom type is a 3d model basically obj format in memory 
+
+        BEWARE THE ZERO INDEX HEADACHE 
+        OBJS ARE NOT SERO INDEXED 
+        EVERTYTHING ELSE SHOULD BE 
+
+        # HOW TO ITERATE GEOM OBJECTS (POLY IDS)  
+        for ply in o[0]:
+            for i in range(len(ply)):
+                print(ply[i])
+
+        # HOW TO ITERATE GEOM OBJECTS WITH POLYIDS WITH ZERO INDEX   
+        for ply in o[0]:
+            for i in range(len(ply)):
+                print(o[1][ply[i]-1])
 
 
     POINT GROUPS -  [ [ID, (X,Y,Z)], ... ] 
@@ -49,7 +63,7 @@ from gnelscript.pygfx.math_ops import NUMPY_IS_LOADED, matrix33, matrix44, vec2,
         I think the choice was made NOT to zero index because OBJ is not zero indexec 
         give this a big think 
 
-        add check in all feunctions to ensure this - fix all fucntions!
+        add check in all functions to ensure this - fix all fucntions!
         a point group is another type of container (DEBUG partially implemented)
         it is only points with a an ID for each point
         it is a way to work with partial objects and not loose the ID of each point 
@@ -72,21 +86,6 @@ from gnelscript.pygfx.math_ops import NUMPY_IS_LOADED, matrix33, matrix44, vec2,
             def bbox(self)
                 pass  
 
-
-        class rawgeom(object):
-            def __init__(self):
-                self.points = []   
-                self.polys = [] 
-
-            def non_zero(self)
-                pass 
-            def centroid(self)
-                pass 
-            def bbox(self)
-                pass  
-            def load(self)
-                pass 
-
  
 
 """
@@ -107,10 +106,37 @@ def printgeom(geom):
     for pt in geom[1]:
         print( " pt %s"%str(pt) )
 
+##-------------------------------------------##
+##-------------------------------------------##  
 
+class rawgeom(object):
+    def __init__(self):
+        self.points = []   
+        self.polys = [] 
 
+    def show(self):
+        for i,fid in enumerate(self.polys):
+            print( " f_id %s - %s"%(i,fid))
+        for pt in geom[1]:
+            print( " pt %s"%str(self.points) )
 
+    def non_zero(self):
+        #zero index fix
+        pass 
 
+    @property    
+    def centroid(self):
+        pass 
+    
+    def bbox(self):
+        pass  
+
+    #def load(self):
+    def save(self):
+        pass 
+
+##-------------------------------------------##
+##-------------------------------------------##  
 
 class point_operator(object):
     """ what became of the original point generator 
@@ -1572,6 +1598,9 @@ class polygon_operator(point_operator):
             for pt in geom[1]:
                 out_pts.append(pt)               
 
+        if len(out_poly[0])==0:
+            return None
+
         return ( out_poly, out_pts )
 
     ##-------------------------------------------##  
@@ -1693,10 +1722,14 @@ class polygon_operator(point_operator):
             takes a geom object and returns another geom of the edges 
             it does this by iterating poly indices in groups of 2 
         """
+        if type(geom)is not list and type(geom)is not tuple:
+            raise ValueError('input must be geom type (list/tuple) not %s'%type(geom)) 
 
         out_edge_ids = []
         out_edge_pts = []
-         
+  
+        #DEBUG solve this damn data structure issue please
+        #polys = geom[0]
         polys = geom[0][0]
 
         for ply in polys:
@@ -1704,8 +1737,9 @@ class polygon_operator(point_operator):
             #print('### POINTS   ', geom[1] , type(geom[1]) )
             for idx in range(len(ply)):
                 # iterate by two and store segments
-                out_edge_ids.append((  ply[idx-1]            ,ply[idx]              )) # poly index
-                out_edge_pts.append((  geom[1][ply[idx-1]-2] , geom[1][ply[idx-1]-1]  )) # point index
+                cidx = ply[idx-1]
+                out_edge_ids.append((  cidx            ,ply[idx]          )) # poly index
+                out_edge_pts.append((  geom[1][cidx-2] , geom[1][cidx-1]  )) # point index
         return [out_edge_ids, out_edge_pts]
 
     ##-------------------------------------------##   
@@ -1805,9 +1839,12 @@ class polygon_operator(point_operator):
 
             DEBUG - the need for a standardized interface for slice, fid lookup is very apparent 
         """
-
+        
         if fid == None:
-            print("## error - need face id(s) to get normal")
+            print("## error get_face_normal - need face id(s) to get normal")
+            return None 
+        if fid>len(self.polygons):
+            print("## error get_face_normal - face id is too high")
             return None 
 
         if isinstance(fid, int):
@@ -1819,6 +1856,7 @@ class polygon_operator(point_operator):
 
         for f in fids:    
             tmp = self.get_face_geom(f) #returns [fidx, pts] 
+
             poly = tmp[0][0] #poly = face indices  
 
             nrmlvec = self.calc_tripoly_normal( (self.points[poly[0]-1],
@@ -2066,11 +2104,30 @@ class polygon_operator(point_operator):
     ##-------------------------------------------## 
     ##-------------------------------------------## 
 
+    def push_insert_poly(self, ids):
+        """
+            push a stack of ids by reindexing
+            insert directly into self 
+        """
+        n = self.numpts 
+        for p in ids:
+            t=[]
+            for idx in p:
+                t.append(idx+n)
+            #print('new polygon ',n, t)
+            self.polygons.append(t)
+   
+
     def push_plys(self, ids):
-        # push a stack of ids by reindexing
+        """
+            added as convenience for insert_polygons()
+            push a stack of ids by reindexing
+            array in <-> array out 
+
+        """
+
         n = self.numpts 
         out = []
-
         for p in ids:
             t = []
             for idx in p:
@@ -2138,7 +2195,7 @@ class polygon_operator(point_operator):
 
         n = self.numpts 
         for ply in plyids:
-            for fid in ply:  
+            for fid in ply:
                 #non numeric type
                 if not isinstance(fid, int):
                     raise ValueError('## insert_polygons, bad data for index: %s'%fid)
@@ -2369,11 +2426,22 @@ class polygon_operator(point_operator):
     ##-------------------------------------------##  
     def extrude_face(self, f_id, distance):
         """ 
-           proof of concept - but it makes bad topology - the edges are not connected 
+            proof of concept - but it makes bad topology - the edges and cap polys dont share verts
+            
+            STILL BROKEN 
+
+            obj = object3d()
+            obj.load('3d_obj/cube.obj')
+            obj.extrude_face(2, 2)
+            obj.extrude_face(3, 2)  <--- CRASHES IF YOU RUN TWICE 
+            obj.save('ext.obj')
 
         """
 
         geom  = self.sub_select_geom(ids=[f_id] , reindex=True)
+        if geom == None:
+            raise ValueError('no geometry found for FID %s'%f_id)
+
         nrml = self.get_face_normal(fid=f_id, unitlen=True) 
 
         nrml = nrml * distance 
@@ -2389,24 +2457,15 @@ class polygon_operator(point_operator):
         # iterate one set of edges assuming they both have the same number 
         for w in e_edges[0]:
             wall_poly = []
-            # each "wall" polygon is a quad because the egde is 2 points
-            # the extruded edge is another 2, so 4 points per poly 
-            
-            #edge geom is broken - it groups point in pairs
-            #this is a halfway working fix that uses single points
-            #for wi in w: 
-            #    wall_poly.append( s_edges[1][wi] )
-            #    wall_poly.append( e_edges[1][wi] )
-
             #this is the old "broken" extrude that works, but uses a paired point data struct
             wall_poly.extend(s_edges[1][w[0]-1]) # bottom half of quad polygon 
             wall_poly.extend(e_edges[1][w[0]-1]) # top half of quad polygon  
             
             # stitch the 4 points into a quad polygon                 
-            self.insert_polygons( [(1,2,4,3)], wall_poly, asnew_shell=True) 
+            self.insert_polygons( plyids=[(1,2,4,3)], points=wall_poly, ans=True) 
 
         # transformed face along normal (cap polygon) 
-        self.insert_polygons(geom[0], moved, asnew_shell=True) 
+        self.insert_polygons(plyids=geom[0][0], points=moved, ans=True) 
 
     ##-------------------------------------------##  
     def copy_sop(self, slice=None, ids=None, reindex=False, offset=(0,1,0), rot=(0,0,0), num=2, distance=2):
