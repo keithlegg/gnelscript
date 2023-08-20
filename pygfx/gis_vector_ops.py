@@ -48,10 +48,15 @@ class vectorflow(object3d):
         It turned into a tool turn geojson into GCODE  
         then the dag_ops tesselator was added for GCODE optimization and I got derailed making MC escher style vector renders  
 
+        
+        What it does: 
+            it can load a whole geojeson file or selected indeces of a json file 
+            it can append multiple geojson files together (beware the index changing though)
+
+
 
         ##-------------------------------##
         # IDEA 
-
         #1 - DAG - b tree 
         #2 - parent geom to nodes - add matrix scenegraph  
         #3-  crazy f-ing animation potential - vector ala cyriak  
@@ -846,23 +851,20 @@ class vectorflow(object3d):
 
     ##-------------------------------##
     ##-------------------------------##
-    def load_geojson(self, inputfile, zaxis, getfids=None, getids=None):
+    def load_geojson(self, inputfile, getfids=None, getids=None, zaxis=0):
         """ parse a geojson file - store points in arrays in GR_POLY buffer 
 
             Args:
             
-                inputfile - the file to load, duh. 
+                inputfile  - the file to load 
+                getfids    - feature ids to load 
+                             can be single int or list of ints 
                 
-                zaxis - value to set false zaxis to (2d to 3d)  
-
-                getfids - feature ids to load 
+                getds      - NOT WORKING!! ub-feature ids to load -   
                 
-                SUB FEATURE NEEDS WORK - DEBUG ONLY WORKS WITH ONE FEATURE
-                getids - sub-feature ids to load -  
-
+                zaxis      - value to set false zaxis to (2d to 3d) 
 
         """
-
         print('loading geojson file %s'%inputfile)
 
         plyidx = 1
@@ -878,28 +880,28 @@ class vectorflow(object3d):
 
         ##---------------
         ##---------------
-
-        #check that ids are in range  
+        #check that ids are in range, int type and in a list 
         if getfids:
-            print("#load_geojson getone mode ", getfids) 
-            for id in getfids:
-                if id>=len(features):
-                    print("id out of range %s"%id)
-                else:
-                    fixedids.append(id)
-
-            print("DEBUG IDS TO IMPORT ARE ", fixedids )
-
+            if type(getfids) == int:
+                fixedids = [int(getfids)]
+            else:
+                for id in getfids:
+                    if int(id)>=len(features):
+                        # print("id out of range %s"%id)
+                        pass
+                    else:
+                        fixedids.append(int(id))
+        
+        #########
         #check that ids are in range  
         if getids:
-            print("#load_geojson getone mode ", getids) 
+            print("#load_geojson getone SUB mode ", getids) 
             for id in getids:
                 if id>=len(features):
                     print("id out of range %s"%id)
                 else:
                     fixedids.append(id)
-
-            print("DEBUG IDS TO IMPORT ARE ", fixedids )
+            #print("DEBUG SUB IDS TO IMPORT ARE ", fixedids )
 
         ##---------------
         ##---------------
@@ -921,7 +923,7 @@ class vectorflow(object3d):
         ##---------------        
         # or just cherry pick some features to import (below we also can pick the sub-features) 
         if getfids:
-            for fid in getfids:
+            for fid in fixedids:
                 for i,f in enumerate(features):
                     if fid==i:
                         for coord in f.geometry.coordinates:
@@ -988,6 +990,11 @@ class vectorflow(object3d):
 
         self.gr_sort = tempbuffer
 
+
+    ##-------------------------------##
+    def export_extents_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False):
+        pass
+
     ##-------------------------------##
     def export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False):
 
@@ -1002,6 +1009,7 @@ class vectorflow(object3d):
         self.cmax = cmax      # maximum cut depth on Z axis 
 
         if do3d==True:
+            print("## WARNING ## 3D export is not working yet")
             self._calculate_paths3d()
         else:
             self._calculate_paths2d()

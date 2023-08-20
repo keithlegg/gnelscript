@@ -43,7 +43,12 @@ def dagoptimize(filename):
     #ids = pop.indexer(ids, span, unique, nth)
     #kip.load_geojson('%s/images/out/%s'%(GLOBAL_PROJ,'%s.json'%filename), 0, getfids=[0], getids=[2])
     
-    kip.load_geojson('%s/images/out/%s'%(GLOBAL_PROJ,'%s.json'%filename), 0, getfids=None, getids=None)
+
+
+    ##!! OLD ARGS - FIX THIS!!
+    #kip.load_geojson('%s/images/out/%s'%(GLOBAL_PROJ,'%s.json'%filename), 0, getfids=None, getids=None)
+
+
 
     kip._omit_ids(ids=[32])
 

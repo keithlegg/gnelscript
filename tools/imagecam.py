@@ -95,7 +95,6 @@ COMMON_EXT = 'png'
 
 
 ##----------------------------------------------------
-
 def firstpass_bw( iters, blur, contrast, bright, chops, inputfile, outputfolder, outputfile ):
     """
         UNTESTED 
@@ -132,7 +131,6 @@ def firstpass_bw( iters, blur, contrast, bright, chops, inputfile, outputfolder,
 
 
 ##----------------------------------------------------
-
 def firstpass( iters, blur, contrast, bright, chops, inputfile, outputfolder, outputfile ):
     """
         filter out noise of an image but keep the main shapes and color regions 
@@ -167,10 +165,7 @@ def firstpass( iters, blur, contrast, bright, chops, inputfile, outputfolder, ou
     #     simg = ImageOps.posterize(simg, bits=1)
     #     simg.save( posterfile)
 
-
-
 ##----------------------------------------------------
-
 def secondpass(inputimage, outputpath, numbands, fast=False):
     """
     #from stack overflow  - get most common colors in an image 
@@ -191,6 +186,7 @@ def secondpass(inputimage, outputpath, numbands, fast=False):
 
     ar = np.asarray(im)
     shape = ar.shape
+    ##DEBUG - will crash here if num bands exceedes what is in image data 
     ar = ar.reshape(scipy.product(shape[:2]), shape[2]).astype(float)
 
     #sort colors  WRONG 
@@ -225,9 +221,7 @@ def secondpass(inputimage, outputpath, numbands, fast=False):
     print("writing file ", '%s/commonbands.png'%outputpath) 
     imageio.imwrite('%s/commonbands.png'%outputpath, c.reshape(*shape).astype(np.uint8))
 
-
 ##----------------------------------------------------
-
 def thirdpass( inputfile, outputfolder, fileformat, bmpinvert=False, po_invert=False, fastmode=False  ):
     """ break an already posterized image into seperate images X colors """
 
@@ -282,10 +276,7 @@ def thirdpass( inputfile, outputfolder, fileformat, bmpinvert=False, po_invert=F
         else:
             print('POTRACE DISABLED')
 
-
 ##----------------------------------------------------
-
-
 def comic_pass( infolder, names, outfolder, colorbg_file, lineweight, bluramt, brightamt, blacklines=True ):
     """ trace edges and merge with color background 
     """
@@ -428,10 +419,7 @@ def comic_pass( infolder, names, outfolder, colorbg_file, lineweight, bluramt, b
     #     final =  Image.composite(allblack, colorbg, edge_mask) 
     #     final.save("%s/foofu_%s.bmp"%(outfolder,i))
 
-
-
 ##----------------------------------------------------
-
 def redraw(  infolder, colorbg_file, lineweight, bluramt, brightamt, blacklines=True ):
     """ trace edges 
         and merge with external lines , generated ny hand or from comic_pass() 
@@ -491,10 +479,7 @@ def redraw(  infolder, colorbg_file, lineweight, bluramt, brightamt, blacklines=
     final = Image.composite(colorbg, allblack, alledges) 
     final.save("%s/cartoon.bmp"%(infolder))
 
-
-
 ##----------------------------------------------------
-
 def geojson_to_ngc(folder, fnames, onefile=False):
     kiparser = vectorflow()
 
