@@ -45,6 +45,9 @@ from gnelscript.pygfx.grid_ops import tessellator
 from gnelscript.pygfx.gcode.linuxcnc import  parser_commands
 
 
+import geojson
+from geojson import Point, Feature, LineString, FeatureCollection, dump
+
 
 
 
@@ -657,6 +660,33 @@ class gcode_op(object3d):
 
 
     ##-------------------------------##
+    def cvt_obj3d_grpoly(self, index=None):
+        """ convert 3d obj polys into gr_poly buffer to export to json, ect 
+            we have to dump the z axis   
+        """         
+        print("converting %s polygons to grpoly format "%len(self.polygons))
+
+        idx = 0  
+    
+        for ig, poly in enumerate(self.polygons):
+            polygon = []
+            for ip, pt in enumerate(poly):
+                #polygons.append( (idx, idx+1) ) #2 point polygon indeces
+                #print(self.points[pt])
+
+                ptx = self.points[pt-1][0]
+                pty = self.points[pt-1][1]                
+                ptz = self.points[pt-1][2] 
+                polygon.append((ptx, pty, ptz))
+
+            # [[id, centroid, extents, len, points ]] 
+            #self.gr_sort.append([ig, self.centroid((ptx,pty,0.0)) ,[minx,miny, maxx, maxy], len(ply), ply])
+            
+            self.gr_polys.append(polygon)
+        
+        self._sort()
+
+    ##-------------------------------##
     def _calculate_paths2d(self, do_retracts=True):
         """ 
             this walks self.gr_poly and builds an OBJ and NGC file in self.outfile
@@ -835,7 +865,7 @@ class gcode_op(object3d):
             dump(feature_collection, f)
 
     ##-------------------------------##
-    def export_sorted_centroids(self, name, folder):
+    def export_sorted_centroids(self, folder, name):
         """ export a centroid for each polygon as a geojson file """
 
         features = []
@@ -901,10 +931,13 @@ class gcode_op(object3d):
         #self.scale_pts(self.scale)
         self.save(name)
 
+
     ##-----------
     def cvt_grpoly_obj3d(self, index=None):
         """ 
+            DEBUG - why not gr_sort? 
             load gr_polys into standard 3d data so we can run ops on it 
+           
         """   
         
         print("converting %s polygons "%len(self.gr_polys))
@@ -914,16 +947,23 @@ class gcode_op(object3d):
         
         for ig, grpoly in enumerate(self.gr_polys):
             
+            #DEBUG INDEX?
             # if index 
+            #print(grpoly)
 
             if index is None:
                 polygons = []
                 for ip, pt in enumerate(grpoly):
                     idx = ip+lidx
-                    polygons.append( (idx, idx+1) ) #2 point polygon indeces
-                
+                    
+                    #linesegments
+                    polygons.append( (idx+1, idx+2) ) #2 point polygon indeces
+                    
+                    #multipoint poly
+                    #polygons.append( idx+1 )  
+
                 self.polygons.append(polygons)
-                self.points.extend(self.clean_points(grpoly))
+                self.points.extend(self.clean_pts_str(grpoly))
                 lidx = len(grpoly)
 
                 #print(grpoly) 
@@ -1353,13 +1393,33 @@ class cam_op(gcode_op):
             print(line)
 
     ##-----------------------------------
-    def radial_intersect(self, step, stacks, spokes):
+    def radial_intersect(self, step, stacks, spokes, axis='y'):
         """ 
+           DEBUG - way too slow to use for rasterization 
+           probably only useful as a curiosity or toy 
+
            shoot a bunch of rays down from above in a circle to get the contours of an object
+           raycast only works with triangles
+
+           ARGS:
+               step - diameter change per iteration 
+               stacks - number of concentric rings 
+               spokes - number of spokes per ring 
+
         """
+        DEBUG = True 
         
+        numx = 8 
+        numy = 8
+
         # height to "shoot" from 
-        yval = 5 
+        #debug calc from 3d extents 
+        dist = 1  
+        
+        #debug calc from 3d extents
+        raylength = 2 
+
+        flipnormal = False
 
         n = object3d()
 
@@ -1367,26 +1427,67 @@ class cam_op(gcode_op):
         cen = self.centroid() 
        
         stack_pts = [] 
+        
+        #--------------        
+        # RECTANGULAR GRID
 
-        for s in range(1,stacks):
-            #stack_pts.append( self.calc_circle(pos=(cen[0],cen[1],cen[2]), rot=(0,0,0), dia=step*s, axis='y', periodic=True, spokes=spokes) )
-            stack_pts.append( self.calc_circle(pos=(0,0,0), rot=(0,0,0), dia=step*s, axis='y', periodic=True, spokes=spokes) )
+        #set extents for teselator - calc them from geom 
+        # [min_x, min_y, min_z, max_x, max_y, max_z ] 
+        # [minx, miny, maxx, maxy] 
+        if axis =='x':
+            self.tesl._set_extents( self.calc_2d_bbox( 'x' ) )
+        if axis =='y':
+            self.tesl._set_extents( self.calc_2d_bbox( 'y' ) )
+        if axis =='z':
+            self.tesl._set_extents( self.calc_2d_bbox( 'z' ) )
+
+        # build the grid using tesselator  
+        self.tesl.build_2d_cells(numx,numy)
+        for c in self.tesl.nodes:
+            cen = (c.coord_x+(c.width/2), c.coord_y+(c.height/2))
+            stack_pts.append((c.coord_x, c.coord_y, c.coord_z)) 
+        stack_pts = [stack_pts]
+
+         
+        #--------------
+        #RADIAL 
+        #for s in range(1,stacks):
+        #    #stack_pts.append( self.calc_circle(pos=(cen[0],cen[1],cen[2]), rot=(0,0,0), dia=step*s, axis='y', periodic=True, spokes=spokes) )
+        #    stack_pts.append( self.calc_circle(pos=(0,0,0), rot=(0,0,0), dia=step*s, axis=axis, periodic=True, spokes=spokes) )
+
+
 
         curve_geom = [] 
 
         for ring in stack_pts:
-            
             newcurve = [] 
-
             for pt in ring:
-                ray = (vec3(pt[0], yval, pt[2]), vec3(0, -1, 0))
                 
-                hits = self.ray_hit( ray[0], ray[1])
-                print(hits)
+                # X axis
+                if axis =='x':
+                    ray = (vec3(dist, pt[1], pt[2]), vec3(-raylength, 0, 0))
+                    if DEBUG:
+                        n.one_vec_to_obj(ray[1], pos=ray[0])
+                # Y axis
+                if axis =='y':
+                    ray = (vec3(pt[0], dist, pt[2]), vec3(0, -raylength, 0))
+                    if DEBUG:
+                        n.one_vec_to_obj(ray[1], pos=ray[0])
+                # Z axis
+                if axis =='z':
+                    ray = (vec3(pt[0], pt[1], dist), vec3(0, 0, -raylength))
+                    if DEBUG:
+                        n.one_vec_to_obj(ray[1], pos=ray[0])
 
+                hits = self.ray_hit( ray[0], ray[1], flipnormal)
+                
                 #n.prim_locator(pos=pt, size=.1)
                 #n.one_vec_to_obj(ray[1], ray[0])
                 
+                if hits:
+                    print('####### HITS ')
+                    print(hits)
+
                 for h in hits:
                     newcurve.append(h[1])
                     #n.prim_locator(h[1], size=.1)
@@ -1463,7 +1564,8 @@ class cam_op(gcode_op):
                 n.linegeom_fr_points(curve, periodic=False )
 
         n.save("waterline.obj")  
-        
+
+    ##-----------------------------------        
     def rc_waterline(self, radius, spokes, heights=None):
         """
            UNFINISHED 
@@ -1521,8 +1623,8 @@ class cam_op(gcode_op):
         n.save("waterline.obj")  
 
     ##-----------------------------------
-    def project_image(self, img_curves):
-        pass 
+    #def project_image(self, img_curves):
+    #    pass 
 
     ##-----------------------------------
     def zigzag_intersect(self, size_x, size_y, rows, cols, overstep=0):
@@ -1576,7 +1678,6 @@ class cam_op(gcode_op):
          
 
     ##-----------------------------------
-
     def zigzag_on_quad(self, fid, num):
         """ extract points on a 4 sided face 
             does not use raycasting - gets the edges of a face and sets points along those
@@ -1636,12 +1737,10 @@ class cam_op(gcode_op):
         return cuts
 
     ##-----------------------------------
-
-    def poly_bisect(self):
+    def poly_bisect(self, outfile):
         """
            test of polygon raycast code  
            if face is a quad you could get the two "vertical" egdes as vectors 
-
         """
 
         # project_pt
@@ -1697,8 +1796,7 @@ class cam_op(gcode_op):
             #polygon normal 
             #o.pts_to_linesegment([cen, cen+(result[2])] )
 
-        o.save('intersect.obj')
-        
+        #o.save(outfile)
         print(result)
 
     ##-----------------------------------
@@ -1720,23 +1818,33 @@ class cam_op(gcode_op):
 
     ##--    
 
-    def scanlines(self):
+    def scanlines(self, plyid):
         """ 
-        run a 3d scanline across a polygon 
+        DEBUG WIP 
+
+        run a 3d scanline across a polygon at any angle 
+
+        start with a triangle 
+        get the normal vector 
+        build a grid of normal vecotrs orthoganal to the face 
+        fire a ray from each one 
+
 
         return hits in the following order:
-
-
            1_______2              1_______2
           /        \             /        \   
         3/__________\4         6/__________\3 
          \           /          \           /     
          5\_________/6          5\_________/4 
 
-
         """
+        #self.triangulate()
 
-        pass 
+        if plyid is not None:
+            print(self.get_face_geom(plyid))
+
+   
+         
 
     ##-----------------------------------
     def face_sprial(self):

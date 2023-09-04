@@ -552,12 +552,14 @@ class vec2(object):
 class vec3(object):    
 
     def __init__(self,x=0,y=0,z=0):
+
+        #DEBUG source of bugs here there be 
         #this is sloppy - check the first item and assume we are initializing with a tuple xyz 
-        #if type(x) is list or type(x) is tuple:
-        #    self.x=x[0];self.y=x[1];self.z=x[2]  
-        #else:    
-        self.x=x;self.y=y;self.z=z  
-        self.mu = math_util() 
+        if type(x) is list or type(x) is tuple:
+            self.x=x[0];self.y=x[1];self.z=x[2]  
+        else:    
+            self.x=x;self.y=y;self.z=z  
+            self.mu = math_util() 
 
     def __repr__(self):
         return '(%s, %s, %s)' % (self.x, self.y, self.z)
@@ -935,15 +937,24 @@ class vec3(object):
     def ray_tri_intersect(self, orig, dir, v0, v1, v2):
         """ taken from C code at 
             https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution.html 
+
+            orig - location of ray source 
+            dir  - vector of ray direction 
+            v0   - tri pt1
+            v1   - tri pt2 
+            v2   - tri pt3
+
         """
 
         t = 0 
+
 
         #DEBUG  a but hacky 
         if type(dir) is not vec3:
             dir = vec3(dir)
         if type(orig) is not vec3:
             orig = vec3(orig)
+
 
         # compute the plane's normal
         v0v1 = vec3()

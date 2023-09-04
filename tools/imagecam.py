@@ -131,7 +131,7 @@ def firstpass_bw( iters, blur, contrast, bright, chops, inputfile, outputfolder,
 
 
 ##----------------------------------------------------
-def firstpass( iters, blur, contrast, bright, chops, inputfile, outputfolder, outputfile ):
+def firstpass( iters, blur, contrast, bright, chops, inputfile, outputfolder, outputfile, rotate=None ):
     """
         filter out noise of an image but keep the main shapes and color regions 
         
@@ -143,6 +143,9 @@ def firstpass( iters, blur, contrast, bright, chops, inputfile, outputfolder, ou
 
     width = int(simg.width/chops)
     height = int(simg.height/chops) 
+
+    if rotate:
+        simg = simg.rotate(rotate, expand=True)
 
     for i in range(iters):
         
@@ -157,7 +160,7 @@ def firstpass( iters, blur, contrast, bright, chops, inputfile, outputfolder, ou
             ### bright pass  
             bright_en = ImageEnhance.Brightness(simg)
             simg = bright_en.enhance(bright)
-        
+
         simg.save( "%s/%s_%d.%s"%(outputfolder, outputfile,i,"bmp") )
 
     # posterfile = "%s/%s_%d.%s"%(outputfolder, outputfile,1,"bmp")
@@ -182,7 +185,7 @@ def secondpass(inputimage, outputpath, numbands, fast=False):
     im = Image.open(inputimage )
 
     if fast:
-        im = im.resize((300, 300))      # optional, to reduce time
+        im = im.resize((fast, fast))      # optional, to reduce time
 
     ar = np.asarray(im)
     shape = ar.shape
@@ -222,8 +225,26 @@ def secondpass(inputimage, outputpath, numbands, fast=False):
     imageio.imwrite('%s/commonbands.png'%outputpath, c.reshape(*shape).astype(np.uint8))
 
 ##----------------------------------------------------
-def thirdpass( inputfile, outputfolder, fileformat, bmpinvert=False, po_invert=False, fastmode=False  ):
-    """ break an already posterized image into seperate images X colors """
+def thirdpass( inputfile, outputfolder, fileformat, bmpinvert=False, po_invert=False, fastmode=False, blurrad=None  ):
+    """ break an already posterized image into seperate images X colors 
+
+        
+        DEBUG NEED TO ADD THESE:
+        
+        #tsize = 10    - suppress "turd" size - speckles 
+        #chops = 100   - scale 
+ 
+        inputfile      -
+        outputfolder   -
+        blurrad        - bitmap blur (prior to tracing vectors)
+        fileformat     - format of vctor output (dxf,json) 
+                         if no format - dont run potrace - comic mode only uses BMP files 
+        bmpinvert      -
+
+        po_invert      - not working?
+        fastmode       -
+
+    """
 
     simg = pixel_op()
     simg.load( inputfile )
@@ -237,11 +258,7 @@ def thirdpass( inputfile, outputfolder, fileformat, bmpinvert=False, po_invert=F
     vwidth = int(width/chops)
     vheight = int(height/chops) 
 
-    
-    #fileformat = "dxf" 
-    #fileformat = "geojson" 
-
-    ##populate this from the output of second pass to get the five best tasty colors I know 
+    ## format of input - five best tasty colors I know 
     ## colors= [  ["a", (78,27,40)],
     ##            ["b", (163,91,94)],
     ##            ["c", (14,4,12)],
@@ -274,7 +291,7 @@ def thirdpass( inputfile, outputfolder, fileformat, bmpinvert=False, po_invert=F
             #print(command)
             subprocess.run(command)
         else:
-            print('POTRACE DISABLED')
+            print('thirdpass: POTRACE DISABLED')
 
 ##----------------------------------------------------
 def comic_pass( infolder, names, outfolder, colorbg_file, lineweight, bluramt, brightamt, blacklines=True ):
@@ -501,9 +518,8 @@ def geojson_to_ngc(folder, fnames, onefile=False):
         for file in fnames:
             kiparser.load_geojson('%s/%s'%(folder,file), 0, getfids=None, getids=None)
 
-        if sort:
+        #if sort:
             #DEBUG BROKEN  - see below 
-            pass 
 
         ##--
         #scale  
@@ -526,8 +542,8 @@ def geojson_to_ngc(folder, fnames, onefile=False):
             kiparser.load_geojson('%s/%s'%(folder,file), 0, getfids=None, getids=None)
             if sort:
                 kiparser.index_grsort()
-                kiparser.export_sorted_centroids(fspl[0], folder)
-                kiparser.export_sorted_extents(fspl[0], folder)
+                kiparser.export_sorted_centroids(folder, fspl[0])
+                kiparser.export_sorted_extents(folder, fspl[0])
                 #kiparser.show_buffers()
                 kiparser.make_grid(fspl[0], folder, 5, 5)
 

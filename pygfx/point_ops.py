@@ -557,7 +557,7 @@ class point_operator(object):
         return out
 
     ##-------------------------------------------##
-    def draw_splines(self, num, curves, drawctrls=False, drawhulls=False):
+    def draw_splines(self, num, curves, drawctrls=False, drawhulls=False, singlepoly=False):
         """ render a spline made of multiple cubic bezier curves
             
             ARGS:
@@ -597,7 +597,13 @@ class point_operator(object):
             if drawhulls:
                 self.linegeom_fr_points( [c[0], c[1], c[2], c[3]], color=(0,255,0) ) 
             curvepts = self.cubic_bezier(num, c[0], c[1], c[2], c[3])
-            self.linegeom_fr_points( curvepts ) 
+
+            if singlepoly:
+                self.linegeom_fr_points( curvepts, singlepoly=True ) 
+            else:
+                self.linegeom_fr_points( curvepts ) 
+
+ 
 
     ##-------------------------------------------##            
     def add_margin_bbox(self, bbox, size):
@@ -805,8 +811,11 @@ class point_operator(object):
         
         #out = self.xform_pts( pos, out) 
         #out = self.rotate_pts(rot, out) 
-        out = self.trs_points(out, translate=pos, rotate=rot)
+        if len(out)==0:
+            print('calc_circle: error - no points (bad axis?)')
+            raise ValueError('no data') 
 
+        out = self.trs_points(out, translate=pos, rotate=rot)
         if periodic:
             out.append( out[0] )
 
@@ -1278,8 +1287,48 @@ class polygon_operator(point_operator):
         return[x,y,z]
 
     ##-------------------------------------------## 
+    def calc_2d_bbox(self, axis='z', aspts=False):
+        """ UNTESTED 
+            derive a 2D BBOX from the built in 3D BBOX 
+            you need to tell it which axis to generate on 
+        """
+
+        # 3d format is [0 min_x, 1 min_y, 2 min_z, 3 max_x, 4 max_y, 5 max_z ]
+        bbox = self.calc_3d_bbox()
+
+        if axis=='x':
+            #miny, minz , maxy, maxz
+            if aspts:
+                return [(bbox[1],bbox[2]),
+                        (bbox[1],bbox[5]),
+                        (bbox[4],bbox[5]),
+                        (bbox[4],bbox[2])]
+            else:    
+                return [bbox[1], bbox[2], bbox[4], bbox[5]]
+        if axis=='y':
+            #minx, minz , maxx, maxz
+            if aspts:
+                return [(bbox[0],bbox[2]),
+                        (bbox[0],bbox[5]),
+                        (bbox[3],bbox[5]),
+                        (bbox[3],bbox[2])]
+            else:             
+                return [bbox[0], bbox[2], bbox[3], bbox[5]]       
+        if axis=='z':
+            #minx, miny , maxx, maxy
+            if aspts:
+                return [(bbox[0],bbox[1]),
+                        (bbox[0],bbox[4]),
+                        (bbox[3],bbox[4]),
+                        (bbox[3],bbox[1])]
+            else:             
+                return [bbox[0], bbox[1], bbox[3], bbox[4]]
+
+    ##-------------------------------------------##
     def calc_3d_bbox(self, pts=None, ptgrp=None, facgrp=None):
         """ get 3D bounds of points (or 3d object) 
+
+            returns [min_x, min_y, min_z, max_x, max_y, max_z ] 
 
             usage:
 
@@ -1471,7 +1520,7 @@ class polygon_operator(point_operator):
 
         return None
     ##-------------------------------------------##
-    def ray_hit(self, ray_orgin, ray_vector, fastmode=False):
+    def ray_hit(self, ray_orgin, ray_vector, fastmode=False, flipnormal=False):
         """ ONLY WORKS FOR TRIANGLES  
          
             Iterates all polygons (tris) return [[fid, hitlocation]]
@@ -1484,7 +1533,7 @@ class polygon_operator(point_operator):
                 pop = object3d()
                 pop.load('3d_obj/cube.obj')
                 pop.triangulate()
-                ray = (vec3(0,0,-1), vec3(0, 0, 1))
+                ray = (vec3(0,0,-1), vec3(0, 0, 2))
                 hits = pop.ray_hit( ray[0],  ray[1])
                 print(hits)  
             
@@ -1509,7 +1558,6 @@ class polygon_operator(point_operator):
         """
 
         hits = []
-        
         test = vec3()
 
         for x in range(self.numfids):
@@ -1517,15 +1565,16 @@ class polygon_operator(point_operator):
 
             if len(geom[1])>2:
                 
-                # right or left handed coords - IDK 
-                #vc1=vec3(geom[1][0]) 
-                #vc2=vec3(geom[1][1]) 
-                #vc3=vec3(geom[1][2])
-                
-                # right or left handed coords - IDK 
-                vc1=vec3(geom[1][2]) 
-                vc2=vec3(geom[1][1]) 
-                vc3=vec3(geom[1][0])
+                if flipnormal:
+                    # right or left handed coords - IDK 
+                    vc1=vec3(geom[1][0]) 
+                    vc2=vec3(geom[1][1]) 
+                    vc3=vec3(geom[1][2])
+                else: 
+                    # right or left handed coords - IDK 
+                    vc1=vec3(geom[1][2]) 
+                    vc2=vec3(geom[1][1]) 
+                    vc3=vec3(geom[1][0])
 
                 result = test.ray_tri_intersect(ray_orgin, ray_vector, vc1, vc2, vc3)
                 if result:
@@ -1538,8 +1587,13 @@ class polygon_operator(point_operator):
         self.exprt_ply_idx = 1
 
         return hits
-
-                 
+    
+    ##-------------------------------------------## 
+    # def raster_lines_poly(self, idx):
+    #     """generate a series of vector lines that represent a 
+    #        series of rasters across a polygon
+    #     """
+             
     ##-------------------------------------------## 
     def geom_to_ptgrp(self, geom):
         """ convert one weird data type into another 
@@ -2081,10 +2135,12 @@ class polygon_operator(point_operator):
             self.points.extend(pts)
 
     ##-------------------------------------------##  
-    def linegeom_fr_points(self, pts, color=(100,0,100), periodic=False ):
+    def linegeom_fr_points(self, pts, color=(100,0,100), periodic=False, singlepoly=False ):
         """ create renderable lines from array of 3D pts 
         """
         lptidx = self.numpts
+        
+        buffer = []
         for i in range(len(pts)):
             if i>0:
                 pt1 = pts[i-1]
@@ -2092,14 +2148,24 @@ class polygon_operator(point_operator):
                
                 self.points.append( (pt1[0], pt1[1], pt1[2], color[0], color[1], color[2]) ); lptidx+=1
                 self.points.append( (pt2[0], pt2[1], pt2[2], color[0], color[1], color[2]) ); lptidx+=1 
-                self.polygons.append([lptidx-1, lptidx])
-            
+                # each segment becomes a two point polygon 
+                if singlepoly == False: 
+                    self.polygons.append([lptidx-1, lptidx])
+                # make all segmants as one big polygon    
+                if singlepoly:
+                    buffer.append(lptidx-1)
+                    buffer.append(lptidx)
+        
+        # make all segmants as one big polygon
+        if singlepoly:
+            self.polygons.append(buffer)
+
         if periodic:
-                pt1 = pts[0]
-                pt2 = pts[len(pts)-1]            
-                self.points.append( (pt1[0], pt1[1], pt1[2], color[0], color[1], color[2]) ); lptidx+=1
-                self.points.append( (pt2[0], pt2[1], pt2[2], color[0], color[1], color[2]) ); lptidx+=1 
-                self.polygons.append([lptidx-1, lptidx])
+            pt1 = pts[0]
+            pt2 = pts[len(pts)-1]            
+            self.points.append( (pt1[0], pt1[1], pt1[2], color[0], color[1], color[2]) ); lptidx+=1
+            self.points.append( (pt2[0], pt2[1], pt2[2], color[0], color[1], color[2]) ); lptidx+=1 
+            self.polygons.append([lptidx-1, lptidx])
 
     ##-------------------------------------------## 
     ##-------------------------------------------## 
@@ -2948,11 +3014,17 @@ class polygon_operator(point_operator):
 
         buf.append('\n# Define the polygon geometry')
         buf.append('# No UV or normals at this time')
+        
         for ply in self.polygons:
             plybuf = ''
             for f in ply:
-                #plybuf = plybuf +(' %s'%str(int(f)+1) ) #add one because OBJ is NOT zero indexed
-                plybuf = plybuf +(' %s'%str(int(f)) ) #add one because OBJ is NOT zero indexed
+                #DEBUG - hack to deal with tuple - probably a bad idea 
+                if type(f)==tuple:
+                    for idx in f:
+                        plybuf = plybuf +(' %s'%str(int(idx)) ) 
+                else:    
+                    #plybuf = plybuf +(' %s'%str(int(f)+1) ) #add one because OBJ is NOT zero indexed
+                    plybuf = plybuf +(' %s'%str(int(f)) ) 
 
             if as_lines:
                 # save as lines

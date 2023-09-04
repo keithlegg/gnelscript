@@ -37,9 +37,6 @@ from gnelscript.pygfx.render import simple_render
 
 
 
-
-
-
 class vectorflow(object3d):
     """ copy of kicad parser for experimenting  
         not really GIS related but it DOES export geoJSON 
@@ -116,15 +113,28 @@ class vectorflow(object3d):
 
         self.global_scale =  0.0393701 #NOT FULLY IMPLEMENTED - inch to mm 
 
-    ##-------------------------------## 
+
+    ##-------------------------------##
+    def sample_data(self):
+        """ DAG + point generator = tesselator """
+        for cell in self.tesl.nodes:
+            cen = cell.getattrib('centroid')
+            #print('# ', cell.name,' ', cen )
+            
+            pts = self.pop2d.calc_circle_2d(cen[0],cen[1], .75, periodic=True, spokes=6)
+            cell.points.extend( pts )
+
+            pts2 = self.pop2d.batch_rotate_pts_2d( pts, cen, 180 )
+            cell.points.extend( pts2 )
+
     ##-------------------------------##   
     def _set_cam_properties(self, rh, ch, cdpi, cmax):
         self.rh = rh           
         self.ch = ch            
         self.cdpi = cdpi       
         self.cmax = cmax          
-
-
+    
+    ##-------------------------------## 
     def _set_extents(self, bbox):
         """ set global extents for generating data 
             based on PIL coordinate which is [left, top, right, bottom] 
@@ -135,6 +145,7 @@ class vectorflow(object3d):
         self.sort_miny = bbox[1]         
         self.sort_maxx = bbox[2]
         self.sort_maxy = bbox[3]
+
     ##-------------------------------##       
     def _omit_ids(self, ids=None, span=None, unique=True, nth=None):
         
@@ -156,7 +167,6 @@ class vectorflow(object3d):
             ply.append(first)
 
     ##-------------------------------## 
-
     def _make_outline(self, iterations):
         """ 
             DEBUG - NEED TO ADD 1/2 DIA OF CUTTING TOOL 
@@ -245,10 +255,7 @@ class vectorflow(object3d):
         print('original extents  %s %s %s %s '%(self.orig_minx, self.orig_miny, self.orig_maxx, self.orig_maxy))
         print('sorted extents    %s %s %s %s '%(self.sort_minx, self.sort_miny, self.sort_maxx, self.sort_maxy)) 
 
-
-
     ##-------------------------------##
-
     def show_buffers(self, sid=None):
         """
         
@@ -272,7 +279,6 @@ class vectorflow(object3d):
             grs = self.gr_sort[sid]
             print('gr_polys id %s size %s  '%( sid, len(grp) ) )
             print('gr_sort  id %s json id:%s extents %s len %s size: %s '%( sid, grs[0], grs[1], grs[2], grs[3] ) )
-
 
     ##---------------------- 
     def grply_inspect(self, index=None):
@@ -573,11 +579,12 @@ class vectorflow(object3d):
         # rapid move at end 
         self.outfile.append('m2') #program end
 
-
     ##-------------------------------##
     def _calculate_paths2d(self, do_retracts=True):
         """ 
-            this walks self.gr_poly and builds an OBJ and NGC file in self.outfile
+            SIMPLE SAUCE CAM PROGRAM 
+
+            walks self.gr_poly and builds an OBJ and NGC file in self.outfile
 
 
             https://linuxcnc.org/docs/html/gcode/g-code.html
@@ -708,13 +715,39 @@ class vectorflow(object3d):
         # rapid move at end 
         self.outfile.append('m2') #program end
 
-
-
     ##-------------------------------##     
     ##-------------------------------##
+    def export_geojson_lines(self, folder, name, periodic=False):
+        # export all loaded polygons in gr_sort buffer as a geojson polyline 
+        features = []
+
+        #[[id, centroid, extents, len, points ]]
+        for i,s in enumerate(self.gr_sort):
+
+            #make periodic - add the first point to the end 
+            if periodic:
+                s[4].append(s[4][0])
+
+            # [[id, centroid, extents, len, points ]]   
+            features.append(Feature(geometry=LineString(coordinates=s[4]), 
+                                 properties={"id" : i 
+                                            }
+                                 ) 
+                         )
+
+        feature_collection = FeatureCollection(features)
+        filename= '%s/%s'%(folder,name)
+        print('## EXPORTING file %s'%filename)
+
+        with open(filename, 'w') as f:
+            dump(feature_collection, f)
+    
+    ##-------------------------------##
     def export_grid_gfx(self, name, folder , borders=True, centroids=True):
-        #export cells as graphics  
-        
+        """
+            export cells as graphics 
+        """
+    
         self.gl_extents()
 
         if self.sort_minx==0 and self.sort_miny==0 and self.sort_maxx==0 and self.sort_maxy==0:
@@ -753,7 +786,7 @@ class vectorflow(object3d):
             dump(feature_collection, f)
 
     ##-------------------------------##
-    def export_sorted_centroids(self, name, folder):
+    def export_sorted_centroids(self, folder, name):
         """ export a centroid for each polygon as a geojson file """
 
         features = []
@@ -763,12 +796,112 @@ class vectorflow(object3d):
             features.append(Feature(geometry=Point((s[1][0],s[1][1])), properties={"id":i, "len" : len(s[4]) } ))
 
         feature_collection = FeatureCollection(features)
-        with open('%s/%s_ply_cntrs.json'%(folder,name), 'w') as f:
+        with open('%s/%s'%(folder,name), 'w') as f:
             dump(feature_collection, f)
 
     ##-------------------------------##
-    def export_sorted_extents(self, name, folder):
-        """ export the data extents as a geojson polyline """
+    def export_global_extents(self, folder, name, ngc=False):
+        """export only the global extents rectangle
+           
+           can export JSON or NGC 
+
+           serves an an example of a simple gcode exporter 
+
+           EXPORT_RASTER option adds raster lines across extents 
+
+        """ 
+         
+        EXPORT_RASTER = False 
+         
+        #[[id, centroid, extents, len, points ]]
+        features = []
+
+        do_retracts = True 
+        outfile = []
+
+        filename= '%s/%s'%(folder,name)
+
+        mx   = self.sort_minx
+        my   = self.sort_miny
+        maxx = self.sort_maxx
+        maxy = self.sort_maxy
+        height = maxy-my 
+        width  = maxx-mx 
+
+        numdivs = 100 
+        step = height/numdivs
+
+        # export gcode
+        if ngc:
+            lastpt = (0,0,0)
+            
+            outfile.append('(exported with export_global_extents )')
+            outfile.append('(linear scale set to %s of internal coordinates)'%self.global_scale )
+            outfile.append('  ')
+            outfile.append('g20') #inches for unit 
+            
+            # move to origin  
+            outfile.append('g0 x%s y%s z%s f30'% ( self.hp[0], self.hp[1], self.rh) )   #rapid move to 0 
+            if do_retracts:
+                outfile.append('g0z%s'% ( self.rh ) )  #retract in between cuts
+            outfile.append('  ')
+            outfile.append('(exporting filled polygons )')
+
+            # no formatting (full precision)
+            coords = self.extents_fr_bbox([mx,my,maxx,maxy], periodic=True)
+            pt1 = coords[0]
+
+            # first point at retract height 
+            if do_retracts:
+                outfile.append('x%s y%s z%s'% (  pt1[0] , pt1[1], self.rh ) )               
+            
+            # iterate points in polygon 
+            outfile.append( 'G1' )
+            for i,pt in enumerate(coords):
+                outfile.append( 'x%s y%s z%s'%( pt[0], pt[1], self.ch ) )
+            
+            outfile.append( 'G0' )
+            if do_retracts:
+                outfile.append( 'x%s y%s z%s'%( coords[0][0], coords[0][1], self.rh) )
+                outfile.append('g0z%s'% ( self.rh ) )  
+
+            outfile.append('  ')
+
+            print('## EXPORTING file %s'%filename)
+            with open(filename, 'w') as f:
+                for l in outfile:
+                    f.write("%s\n" % l)
+
+        #export json 
+        else:  
+            #sort extents  
+            coords = self.extents_fr_bbox([mx,my,maxx,maxy], periodic=True)
+            features.append(Feature(geometry=LineString(coordinates=coords), 
+                                    properties={"id" : 0 
+                                               }
+                                    ) 
+                            )
+            
+            # experiment to make raster lines across the data 
+            if EXPORT_RASTER:
+                for i in range(1,numdivs):
+                    dist = i*step
+                    coords = [[mx, my+dist],[maxx,my+dist]]
+                    features.append(Feature(geometry=LineString(coordinates=coords), 
+                            properties={"id" : i 
+                                       }
+                            ) 
+                    )
+
+            feature_collection = FeatureCollection(features)
+            print('## EXPORTING file %s'%filename)
+            with open(filename, 'w') as f:
+                dump(feature_collection, f)
+
+    ##-------------------------------##
+    def export_sorted_extents(self, folder, name):
+        """ export the extents of all loaded polygons as a geojson polyline 
+        """
 
         features = []
 
@@ -791,9 +924,11 @@ class vectorflow(object3d):
                                 ) 
                         )
                         
-
         feature_collection = FeatureCollection(features)
-        with open('%s/%s_ply_xtntx.json'%(folder,name), 'w') as f:
+        filename= '%s/%s'%(folder,name)
+        print('## EXPORTING file %s'%filename)
+
+        with open(filename, 'w') as f:
             dump(feature_collection, f)
 
     ##-------------------------------##
@@ -801,7 +936,7 @@ class vectorflow(object3d):
     def save_line_obj(self, name):
         """ dump a bunch of 3d points as a giant line to visualize in gnolmec 
             
-            do_retracts iterates the gr_polys buffer (not working yet)
+            #do_retracts iterates the gr_polys buffer (not working yet)
             otherwise it iterates the ngc_to_obj buffer 
 
         """   
@@ -819,11 +954,47 @@ class vectorflow(object3d):
         #self.scale_pts(self.scale)
         self.save(name)
 
-    ##-----------
+    ##-------------------------------##
+    def cvt_obj3d_grpoly(self, index=None):
+        """ convert 3d obj polys into gr_poly buffer to export to json, ect 
+            we have to dump the z axis   
+        """         
+        print("converting %s polygons to grpoly format "%len(self.polygons))
+
+        idx = 0  
+    
+        for ig, poly in enumerate(self.polygons):
+            polygon = []
+            for ip, pt in enumerate(poly):
+                #polygons.append( (idx, idx+1) ) #2 point polygon indeces
+                #print(self.points[pt])
+
+                ptx = self.points[pt-1][0]
+                pty = self.points[pt-1][1] 
+                
+                #allow for 2d and 3d data? 
+                if len(self.points[pt-1])<2:               
+                    ptz = self.points[pt-1][2] 
+                    polygon.append((ptx, pty, ptz))
+                else: 
+                    polygon.append((ptx, pty, 0))
+
+            # [[id, centroid, extents, len, points ]] 
+            #self.gr_sort.append([ig, self.centroid((ptx,pty,0.0)) ,[minx,miny, maxx, maxy], len(ply), ply])
+            
+            self.gr_polys.append(polygon)
+        
+        self._sort()
+ 
+    ##-------------------------------##
     def cvt_grpoly_obj3d(self, index=None):
         """ 
+            DEBUG - why not gr_sort? 
             load gr_polys into standard 3d data so we can run ops on it 
-        """   
+           
+        """
+
+        objtype = 'polyline' # 'singlepoly' 
         
         print("converting %s polygons "%len(self.gr_polys))
 
@@ -832,16 +1003,23 @@ class vectorflow(object3d):
         
         for ig, grpoly in enumerate(self.gr_polys):
             
+            #DEBUG INDEX?
             # if index 
+            #print(grpoly)
 
             if index is None:
                 polygons = []
                 for ip, pt in enumerate(grpoly):
                     idx = ip+lidx
-                    polygons.append( (idx, idx+1) ) #2 point polygon indeces
-                
+                    
+                    if objtype == 'polyline': 
+                        polygons.append( (idx+1, idx+2) )  
+                    
+                    if objtype == 'singlepoly':
+                        polygons.append( idx+1 )  
+
                 self.polygons.append(polygons)
-                self.points.extend(self.clean_points(grpoly))
+                self.points.extend(self.clean_pts_str(grpoly))
                 lidx = len(grpoly)
 
                 #print(grpoly) 
@@ -851,18 +1029,16 @@ class vectorflow(object3d):
 
     ##-------------------------------##
     ##-------------------------------##
-    def load_geojson(self, inputfile, getfids=None, getids=None, zaxis=0):
+    def load_geojson(self, inputfile, getfids=None, zaxis=0):
         """ parse a geojson file - store points in arrays in GR_POLY buffer 
-
+            
             Args:
             
-                inputfile  - the file to load 
-                getfids    - feature ids to load 
-                             can be single int or list of ints 
-                
-                getds      - NOT WORKING!! ub-feature ids to load -   
-                
-                zaxis      - value to set false zaxis to (2d to 3d) 
+                inputfile     - the file to load 
+                getfids       - feature ids to load 
+                                 can be single int or list of ints 
+            
+                zaxis         - value to set false zaxis to (2d to 3d) 
 
         """
         print('loading geojson file %s'%inputfile)
@@ -891,33 +1067,37 @@ class vectorflow(object3d):
                         pass
                     else:
                         fixedids.append(int(id))
-        
-        #########
-        #check that ids are in range  
-        if getids:
-            print("#load_geojson getone SUB mode ", getids) 
-            for id in getids:
-                if id>=len(features):
-                    print("id out of range %s"%id)
-                else:
-                    fixedids.append(id)
-            #print("DEBUG SUB IDS TO IMPORT ARE ", fixedids )
 
         ##---------------
         ##---------------
         # import all data ... 
         if getfids is None:
             for i,f in enumerate(features):
-                for coord in f.geometry.coordinates:
-                    ptidx = 1
-                    tmp_poly = [] 
-                    for pt in coord:
-                        if type(pt[0])==float and type(pt[1])==float:
-                            tmp_poly.append( (pt[0], pt[1], zaxis) )
-                            ptidx += 1  
-                    #print("loaded %s points in polygon "%len(tmp_poly)) 
-                    if tmp_poly:
-                        self.jsonbuffer.append(tmp_poly) 
+                # multipolygon type
+                if f.geometry.type == 'MultiPolygon':
+                    for coord in f.geometry.coordinates:                    
+                        for p,koord in enumerate(coord):
+                            ptidx = 1
+                            tmp_poly = [] 
+                            for pt in koord:
+                                if type(pt[0])==float and type(pt[1])==float:
+                                    tmp_poly.append( (pt[0], pt[1], zaxis) )
+                                    ptidx += 1  
+                            if tmp_poly:
+                                self.jsonbuffer.append(tmp_poly) 
+
+                # polygon type   
+                if f.geometry.type == 'Polygon':
+                    for coord in f.geometry.coordinates:
+                        ptidx = 1
+                        tmp_poly = [] 
+                        for pt in coord:
+                            if type(pt[0])==float and type(pt[1])==float:
+                                tmp_poly.append( (pt[0], pt[1], zaxis) )
+                                ptidx += 1  
+                        #print("loaded %s points in polygon "%len(tmp_poly)) 
+                        if tmp_poly:
+                            self.jsonbuffer.append(tmp_poly) 
                 plyidx += 1 
 
         ##---------------        
@@ -925,78 +1105,54 @@ class vectorflow(object3d):
         if getfids:
             for fid in fixedids:
                 for i,f in enumerate(features):
-                    if fid==i:
-                        for coord in f.geometry.coordinates:
-                            ptidx = 1
-                            tmp_poly = [] 
-                            for pt in coord:
-                                if type(pt[0])==float and type(pt[1])==float:
-                                    tmp_poly.append( (pt[0], pt[1], zaxis) )
-                                    ptidx += 1  
-                            #print("loaded %s points in polygon "%len(tmp_poly)) 
-                            if tmp_poly:
-                                self.jsonbuffer.append(tmp_poly) 
-                        plyidx += 1 
+                    #multipolygon - DEBUG - not fully tested yet 
+                    if f.geometry.type == 'MultiPolygon':
+                        if fid==i:                        
+                            for coord in f.geometry.coordinates:                    
+                                for p,koord in enumerate(coord):
+                                    ptidx = 1
+                                    tmp_poly = [] 
+                                    for pt in koord:
+                                        if type(pt[0])==float and type(pt[1])==float:
+                                            tmp_poly.append( (pt[0], pt[1], zaxis) )
+                                            ptidx += 1  
+                                    if tmp_poly:
+                                        self.jsonbuffer.append(tmp_poly) 
+                    #polygon type
+                    if f.geometry.type == 'Polygon':       
+                        if fid==i:
+                            for coord in f.geometry.coordinates:
+                                ptidx = 1
+                                tmp_poly = [] 
+                                for pt in coord:
+                                    if type(pt[0])==float and type(pt[1])==float:
+                                        tmp_poly.append( (pt[0], pt[1], zaxis) )
+                                        ptidx += 1  
+                                #print("loaded %s points in polygon "%len(tmp_poly)) 
+                                if tmp_poly:
+                                    self.jsonbuffer.append(tmp_poly) 
+                            plyidx += 1 
 
         ##---------------
-        # optional processing to get sub features by id 
-        # DEBUG seems sketchy - test this more 
-        
-        # get all sub features
-        if getids is None:
-            self.gr_polys = self.jsonbuffer 
-        
-        # pick out some sub features
-        else:
-            print("ids to load are is %s"%fixedids)
-            for id in fixedids: 
-                self.gr_polys.append(self.jsonbuffer[id]) 
+        self.gr_polys = self.jsonbuffer 
 
         ##---------------
-
-        print('cloning data, sorting and calculating extents ')
+        #print('cloning data, sorting and calculating extents ')
+        
         #make a copy of the data to work with - leaving the original in case we want to do something with it  
         self._sort()
         
-        print("loaded %s polygons from %s "%(plyidx,inputfile)) 
-
-    ##-------------------------------##
-    def export_extents_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False):
-        
-        #self.gl_extents()
-
-        tempbuffer = self.gr_sort
-        self.gr_sort = []
-
-        #self.prim_triangle('z', (0,0,0), (0,0,0) )
-        # [[id, centroid, extents, len, points ]] 
-        #self.gr_sort.append([0,0,0,0,self.points]) 
-        
-        pts = self.calc_square_diag((self.sort_minx,self.sort_miny ),
-                                   (self.sort_maxx,self.sort_maxy), add_zaxis=True ) 
-        pts.append( (self.sort_minx, self.sort_miny, 0) )
-        self.gr_sort.append([0,0,0,0,pts])
-
-        if do3d==True:
-            self._calculate_paths3d()
-        else:
-            self._calculate_paths2d()
-        
-        print("gr_sort buffer has %s polys in it. "%(len(self.gr_sort)))
-        fobj = open( filename,"w") #encoding='utf-8'
-        for line in self.outfile: 
-            fobj.write(line+'\n')
-        fobj.close()
-
-        self.gr_sort = tempbuffer
-
-
-    ##-------------------------------##
-    def export_extents_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False):
-        pass
+        print("loaded %s polygons from %s "%(plyidx, inputfile)) 
 
     ##-------------------------------##
     def export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False):
+        """ rh         - retrct height  
+            ch         - cut height 
+            cdpi       - cut depth per iteration 
+            cmax       - cut depth max 
+            filename 
+            do3d=False
+        """
 
         if ch==None:
             print("# exporting NGC file - cut height disabled (3d) ", filename)
@@ -1188,20 +1344,6 @@ class vectorflow(object3d):
                 pts.append( (pt[0]+cen[0], pt[1]+cen[1] ) )  
 
             cell.points.extend( pts )
-
-    ##-------------------------------##
-    def sample_data(self):
-        """ DAG + point generator = tesselator """
-        for cell in self.tesl.nodes:
-            cen = cell.getattrib('centroid')
-            #print('# ', cell.name,' ', cen )
-            
-            pts = self.pop2d.calc_circle_2d(cen[0],cen[1], .75, periodic=True, spokes=6)
-            cell.points.extend( pts )
-
-            pts2 = self.pop2d.batch_rotate_pts_2d( pts, cen, 180 )
-            cell.points.extend( pts2 )
-
 
     ##-------------------------------##
     ##-------------------------------##
