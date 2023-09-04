@@ -852,13 +852,13 @@ class simple_render(object):
                     s3 = ( (drwply[2][0]*scale)+center[0], (drwply[2][1]*scale)+center[1] )
                     e3 = ( (drwply[0][0]*scale)+center[0], (drwply[0][1]*scale)+center[1] )
       
-                ##########                ##########      
+                ##----------------------------------##      
                 #edge lines
                 l1 = [(s1[0], s1[1]), (e1[0], e1[1])]  
                 l2 = [(s2[0], s2[1]), (e2[0], e2[1])]  
                 l3 = [(s3[0], s3[1]), (e3[0], e3[1])]  
 
-                ##########                ##########   
+                ##----------------------------------##   
                 #add some color to the polygons here  
                     
                 if self.COLOR_MODE=='normal':  

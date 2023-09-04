@@ -591,6 +591,170 @@ def geojson_to_ngc(folder, fnames, onefile=False):
 
 
 
+class streamline(object):
+    """ you can call each pass manually or use this tool to try and do it all at once 
+
+        TODO:
+            make this a "script engine" for processing images 
+            each art project will get a script to tell it how to work 
+
+    """
+
+    def __init__(self):
+        self.vflo = vectorflow()
+
+        self.p1_settings = [7, 0, 1.1, 1.1, -99]
+        self.p2_settings = []
+        self.p3_settings = []
+        
+        self.inputimg = ''
+        self.input_folder = ''
+        self.output_folder = ''
+
+    ###########
+
+    def load_json(self, jsonfile):
+        """WIP 
+           test to work with some json data 
+           we want this to become scriptable later on 
+        """
+
+        #def load_geojson(self, inputfile, zaxis, getfids=None, getids=None):
+        self.vflo.load_geojson(jsonfile)
+          
+                
+        ## global scale the data  
+        # self.vflo.gl_scale()
+
+        ## global centroid  
+        # print(self.vflo.gl_centroid())
+
+
+        #this will dump the geometry into an object3d instance 
+        self.vflo.cvt_grpoly_obj3d()
+
+        self.vflo.show()
+        #print(len(self.vflo.points)) 
+
+
+
+        # kip.load_geojson('%s/images/out/%s.json'%(GLOBAL_PROJ, 'vselect') )
+        # kip.show_buffers()
+        # kip.show_setup()
+        # kip.export_global_extents('%s/images/'%GLOBAL_PROJ, 'foo_extents.ngc', ngc=True)
+        # kip.export_global_extents('%s/images/'%GLOBAL_PROJ, 'foo_extents.json', ngc=False)
+        # kip.export_sorted_centroids('%s/images/'%GLOBAL_PROJ, 'kentroidz.json')
+        # kip.export_ngc(1, 0, .1, 2, '%s/images/out/%s.ngc'%(GLOBAL_PROJ, 'cowtri.ngc') , do3d=True)
+        # print(kip.gr_sort[0])
+        # kip.export_ngc(1, 0, .1, 2, '%s/images/out/%s'%(GLOBAL_PROJ, 'wargames.ngc') , do3d=False)
+    
+    ###########
+
+    #def load_script(self, scriptpath):
+
+    def sample_script(self, scriptpath):
+        out = []
+
+        out.append('## sample worfarts script ')
+        out.append(' ')
+        out.append('## SETUP PARAMETERS  ')        
+        out.append('set path $global /Users/klegg/serv/gnolmec/images')
+        out.append(' ')
+
+        out.append('## IMAGE $input ')                
+        out.append('load image $input $global predator.jpg')
+        out.append('frame image $input 10px')
+        out.append('scale image $input ".8')
+        out.append('rotate image $input -45')
+        out.append('save image $input . color_input.jpg')
+
+        f = open(scriptpath, "w")
+        for line in out:
+            f.write('%s\n'%line)
+        f.close()
+
+
+    #def run(self, infile, outfolder, outname):
+    def run(self, scriptfile):
+
+        self.inputimg = infile
+        path = Path(infile)
+        self.input_folder =  path.parent.absolute()
+        self.output_folder = outfolder
+
+        #self._pass1(infile, outfolder, outname) 
+        #self._pass2( 4, outname, outfolder, outname,5) 
+        #self._pass3('%s/commonbands.png'%outfolder, outfolder)
+
+    def _pass1(self, infile, outfolder, outname, dobw=False):
+        """
+            0 iterations   - number of times to repeat  
+            1 blur         - pixels per step  
+            2 contrast     - contrast per step 
+            3 bright       - brightness per step 
+            4 scaling(divs)  - UNIMPLEMENTED
+            5 in            - full path to image 
+            6 out           - output folder 
+            7 out           - output filename 
+        """
+        args = self.p1_settings
+        
+        print('# running first pass on %s '%infile)
+
+        if dobw:
+            firstpass_bw(args[0], args[1], args[2], args[3], args[4], infile, outfolder, outname)
+        else:
+            firstpass(args[0], args[1], args[2], args[3], args[4], infile, outfolder, outname)
+
+    def _pass2(self, numbands, infilename, outfolder, outname, which=None):
+        """which is the iteration from first pass to use
+           if none specified, determine how many there are and take the middle  
+        """
+        args = self.p2_settings
+        
+        #figure out which image - take the middle if none specified
+        found = []
+        
+        usefile = ''
+
+        # look in folder and count the source images
+        # sloppy method to take the middle file
+        count = 0
+        for file in os.listdir(self.output_folder):
+            if outname in file:
+                count=count+1
+                found.append(file)
+        if which is None:        
+            half = int(len(found)/2)
+            for file in found:
+                if str(half) in file:
+                    usefile=file
+        else:
+            for file in found:
+                if str(which) in file:
+                    usefile=file           
+
+        infile = '%s/%s'%(outfolder,usefile)
+        print('#running secondpass on %s '%infile, outfolder)
+
+        secondpass(infile, outfolder , numbands, fast=False )
+
+    def _pass3(self, infilename, outfolder, mode='geojson'):
+        """
+           0 inputfile
+           1 outputfolder
+           2 fileformat
+           3 bmpinvert=False
+           4 po_invert=False
+           5 fastmode=False  
+        """
+
+        print('#running third pass on %s '%(infilename))
+
+        #set the RGB values from last tool and run this 
+        thirdpass( infilename, outfolder, mode )
+        
+
 
 
 

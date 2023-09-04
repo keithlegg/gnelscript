@@ -1287,14 +1287,18 @@ class polygon_operator(point_operator):
         return[x,y,z]
 
     ##-------------------------------------------## 
-    def calc_2d_bbox(self, axis='z', aspts=False):
+    def calc_2d_bbox(self, axis='z', pts=None, aspts=False):
         """ UNTESTED 
             derive a 2D BBOX from the built in 3D BBOX 
             you need to tell it which axis to generate on 
         """
 
         # 3d format is [0 min_x, 1 min_y, 2 min_z, 3 max_x, 4 max_y, 5 max_z ]
-        bbox = self.calc_3d_bbox()
+        if pts==None:
+            bbox = self.calc_3d_bbox()
+        else:
+            bbox = self.calc_3d_bbox(pts=pts)
+
 
         if axis=='x':
             #miny, minz , maxy, maxz

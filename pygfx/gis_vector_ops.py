@@ -115,6 +115,90 @@ class vectorflow(object3d):
 
 
     ##-------------------------------##
+    def scanline(self, numh, numv, drwply):
+        """
+           build a series of lines across a triangle that represent a raster scan
+           
+           numh - int num width  
+           numv - int num height 
+           drwply   - tuple of tuple of 3 floats, xyz  
+
+           returns [numh*numv]
+
+        """
+
+        bbox_pts = self.calc_2d_bbox(pts=drwply, aspts=True)        
+        bbox     = self.calc_2d_bbox(pts=drwply)
+        
+        #render the bounding box 
+        self.pts_to_linesegment(bbox_pts, periodic=False)
+
+        out_pts = [] 
+
+        #minx, miny , maxx, maxy
+        res_x = bbox[2]-bbox[0]
+        res_y = bbox[3]-bbox[1]
+        
+        center = (res_x/2, res_y/2)
+        self.prim_circle(pos=(center[0],center[1],0), dia=.1, axis='z')
+
+        vecmath = vec2()     # use for math operations
+
+        # build up line data for three sides of triangle
+        s1 = ( drwply[0][0], drwply[0][1] )
+        e1 = ( drwply[1][0], drwply[1][1] )
+        #
+        s2 = ( drwply[1][0], drwply[1][1])
+        e2 = ( drwply[2][0], drwply[2][1])
+        #
+        s3 = ( drwply[2][0], drwply[2][1])
+        e3 = ( drwply[0][0], drwply[0][1])
+
+
+        #render the triangle 
+        self.pts_to_linesegment(drwply, periodic=True)
+
+
+        # define the scanline geometry, iterate each horizontal line of image
+        for hscan in range(1,numv):
+            
+            thisline = []
+            xpos = center[0]
+            ypos = center[1]-((res_y/numv)*hscan)
+
+            # build the scan vector 
+            s_hvec = (-xpos, ypos)
+            e_hvec = ( xpos, ypos)
+            
+            #render the raster scan lines 
+            #self.pts_to_linesegment([s_hvec,e_hvec], periodic=False)
+
+            # take the 3 edges of a triangle and determine if the horizontal scanline intersects any 
+            i = vecmath.intersect(s_hvec, e_hvec, s1, e1) #left  side of triangle
+            j = vecmath.intersect(s_hvec, e_hvec, s2, e2) #right side of triangle
+            k = vecmath.intersect(s_hvec, e_hvec, s3, e3) #top   side of triangle
+
+
+            #out_pts.append([s_hvec,e_hvec])
+            #print(i,j,k)
+
+            # debug tool - show the "hits" for the horizontal scanline
+            if i: 
+                #output.draw_fill_circle( i[0], i[1], 1, (255,0,0) ) 
+                thisline.append( (i[0], i[1]) )
+            if j: 
+                #output.draw_fill_circle( j[0], j[1], 1, (0,255,0) ) 
+                thisline.append( (j[0], j[1]) )
+            if k: 
+                #output.draw_fill_circle( k[0], k[1], 1, (0,0,255) )  
+                thisline.append( (k[0], k[1]) )                
+
+            #put each row in its own array  
+            out_pts.append(thisline)
+
+        return out_pts
+
+    ##-------------------------------##
     def sample_data(self):
         """ DAG + point generator = tesselator """
         for cell in self.tesl.nodes:
@@ -987,14 +1071,17 @@ class vectorflow(object3d):
         self._sort()
  
     ##-------------------------------##
-    def cvt_grpoly_obj3d(self, index=None):
+    def cvt_grpoly_obj3d(self, index=None, objtype='singlepoly'):
         """ 
             DEBUG - why not gr_sort? 
             load gr_polys into standard 3d data so we can run ops on it 
            
+            ARGS:
+                objtype = 'polyline' or 'singlepoly'
+
         """
 
-        objtype = 'polyline' # 'singlepoly' 
+        #objtype = 'polyline' # 'singlepoly' 
         
         print("converting %s polygons "%len(self.gr_polys))
 

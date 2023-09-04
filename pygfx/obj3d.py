@@ -301,6 +301,12 @@ class object3d(polygon_operator):
             self.polygons.append( vec )  
 
     ##------------------------------------------------##
+    def one_2d_vec_to_obj(self, r2, pos=None, arrowhead=False):
+        if pos==None:
+            self.one_vec_to_obj((r2[0],r2[1],0) )
+        else:
+            self.one_vec_to_obj((r2[0],r2[1],0), pos=(pos[0],pos[1],0) )
+
     def one_vec_to_obj(self, r3, pos=None, arrowhead=False):
         """ single vector into a renderable 3D line 
             
@@ -376,8 +382,6 @@ class object3d(polygon_operator):
            iterate a group of points and return insert redenrable geom geom into self 
         """
 
-        print(pt_list)
-        
         for i,pt in enumerate(pt_list):
             if type(pt) is vec3:
                 pt = pt.aspt
