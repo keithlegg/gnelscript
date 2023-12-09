@@ -556,7 +556,10 @@ class vec3(object):
         #DEBUG source of bugs here there be 
         #this is sloppy - check the first item and assume we are initializing with a tuple xyz 
         if type(x) is list or type(x) is tuple:
-            self.x=x[0];self.y=x[1];self.z=x[2]  
+            if len(x)==2:
+                self.x=x[0];self.y=x[1];self.z=0
+            if len(x)==3:                
+                self.x=x[0];self.y=x[1];self.z=x[2]  
         else:    
             self.x=x;self.y=y;self.z=z  
             self.mu = math_util() 

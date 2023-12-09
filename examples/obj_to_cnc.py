@@ -2,6 +2,63 @@
 from gnelscript.pygfx.gis_vector_ops import *
 
 
+
+
+##------------------------------------------------##
+def scan_line_tool(filldensity, inobj, outfolder, outname):
+
+    #size of circles showing a "hit"
+    drawdia = .01 
+
+    loader = object3d()
+    loader.load(inobj)
+    loader.triangulate()
+
+    loader.rotate( 0,0, 30.5)
+
+    g = loader.get_face_geom(0)
+
+    vflo = vectorflow()
+    polygon = [g[1][0], g[1][1], g[1][2]]
+
+    #get extents of polygon
+    bbox     = vflo.calc_2d_bbox(pts=polygon)
+    res_x = bbox[2]-bbox[0]
+    res_y = bbox[3]-bbox[1]
+
+    hscanlines = int(res_y*filldensity)
+
+    pts = vflo.scanline( 8, hscanlines, polygon )
+    pop2 = point_operator_2d()
+
+    for row in pts:
+        if row:
+            if len(row)%2==0:
+                #DEBUG = USE THE DISTANCE TO CALC THE NUM BETWEEN 
+                p1 = vec3(row[0])
+                p2 = vec3(row[1])
+                scanlen = ((p1- p2).length)
+                numchunks = int(scanlen*filldensity)
+
+                newpts = pop2.locate_pt_along(row[0][0], row[0][1], row[1][0], row[1][1], numchunks)     
+                for npt in newpts:
+                    vflo.prim_circle(pos=(npt[0],npt[1],0), dia=drawdia, axis='z')
+            else:
+                print('ODD HITS %s'%len(row))
+                for npt in row:
+                    vflo.prim_circle(pos=(npt[0],npt[1],0), dia=drawdia, axis='z')
+
+       
+    #make origin lines
+    #vflo.prim_line(axis='x', size=2, pos=(0,0,0))
+    #vflo.prim_line(axis='y', size=2, pos=(0,0,0))
+
+    vflo.save('%s.obj'%outname) 
+    vflo.cvt_obj3d_grpoly()
+    vflo.export_geojson_lines(outfolder, '%s.json'%outname)
+    vflo.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(outfolder, outname), do3d=False)
+
+
 ##------------------------------------------------##
 def vector_scanlines(infile, outfolder, outfname):
     #DEBUG WIP 

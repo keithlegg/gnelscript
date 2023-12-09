@@ -18,6 +18,58 @@
 # ***** END GPL LICENCE BLOCK *****
 
 
+
+"""
+PYTHON MILLING TO DO 
+
+COMMANDS 
+    5. M62 - M65 Digital Output Control
+        M62 P- - turn on digital output synchronized with motion. The P- word specifies the digital output number.
+        M63 P- - turn off digital output synchronized with motion. The P- word specifies the digital output number.
+        M64 P- - turn on digital output immediately. The P- word specifies the digital output number.
+        M65 P- - turn off digital output immediately. The P- word specifies the digital output number.
+
+    The P-word ranges from 0 to a default value of 3. If needed the the number of I/O can be increased by using the num_dio parameter when loading the motion controller. See the Motion Section for more information.
+    The M62 & M63 commands will be queued. Subsequent commands referring to the same output number will overwrite the older settings. More than one output change can be specified by issuing more than one M62/M63 command.
+    The actual change of the specified outputs will happen at the beginning of the next motion command. If there is no subsequent motion command, the queued output changes won’t happen. It’s best to always program a motion G code (G0, G1, etc) right after the M62/63.
+    M64 & M65 happen immediately as they are received by the motion controller. They are not synchronized with movement, and they will break blending.
+
+
+#GENERAL TODO 
+   pendant
+   calibrate machine 
+   learn change tools mid cuts 
+   cut to same location 
+   flip over, etc 
+
+
+#PYTHON TODO 
+
+tool definition class 
+    diameter 
+    shape
+    height 
+    flutes 
+    speed 
+
+cut circles with tool 
+
+drill with tool 
+   
+gear generator 
+
+gerbox generator 
+
+flip paths (cut on backside)
+
+
+GUI
+laser pin?
+
+
+"""
+
+
 import math 
 import re 
 
@@ -354,7 +406,6 @@ class gcode_op(object3d):
 
 
     ##-------------------------------##
-
     def show_buffers(self, sid=None):
         """
         
@@ -1821,6 +1872,8 @@ class cam_op(gcode_op):
     def scanlines(self, plyid):
         """ 
         DEBUG WIP 
+
+        SEE scan_line_tool() in obj_to_cnc for a similar thing 
 
         run a 3d scanline across a polygon at any angle 
 

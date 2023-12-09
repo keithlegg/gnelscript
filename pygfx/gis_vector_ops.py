@@ -38,19 +38,17 @@ from gnelscript.pygfx.render import simple_render
 
 
 class vectorflow(object3d):
-    """ copy of kicad parser for experimenting  
-        not really GIS related but it DOES export geoJSON 
+    """ weird swiss army graphics tool. 
+
+        partially supports kicad graphics, gdcode, json and obj files   
 
         It started out as an importer for kicad files (graphic polygons and ???) to GCODE tool.
         It turned into a tool turn geojson into GCODE  
         then the dag_ops tesselator was added for GCODE optimization and I got derailed making MC escher style vector renders  
-
         
         What it does: 
             it can load a whole geojeson file or selected indeces of a json file 
             it can append multiple geojson files together (beware the index changing though)
-
-
 
         ##-------------------------------##
         # IDEA 
@@ -79,6 +77,8 @@ class vectorflow(object3d):
         self.mu          = math_util()
         self.tesl        = tessellator()
         self.pop2d       = object2d() 
+        self.pop3d       = object3d() 
+
         #self.kiparser    = pcbfile()
 
 
@@ -126,21 +126,22 @@ class vectorflow(object3d):
            returns [numh*numv]
 
         """
-
-        bbox_pts = self.calc_2d_bbox(pts=drwply, aspts=True)        
-        bbox     = self.calc_2d_bbox(pts=drwply)
+        
+        #derive 2D BBOX from 3D function  
+        bbox_pts = self.calc_2d_bbox( axis='z', pts=drwply, aspts=True)        
+        bbox     = self.calc_2d_bbox( axis='z', pts=drwply)
         
         #render the bounding box 
-        self.pts_to_linesegment(bbox_pts, periodic=False)
+        #self.pts_to_linesegment(bbox_pts, periodic=False)
 
         out_pts = [] 
 
         #minx, miny , maxx, maxy
         res_x = bbox[2]-bbox[0]
-        res_y = bbox[3]-bbox[1]
+        res_y = bbox[1]-bbox[3]
         
         center = (res_x/2, res_y/2)
-        self.prim_circle(pos=(center[0],center[1],0), dia=.1, axis='z')
+        #self.prim_circle(pos=(center[0], center[1], 0), dia=.2, axis='z')
 
         vecmath = vec2()     # use for math operations
 
@@ -167,11 +168,14 @@ class vectorflow(object3d):
             ypos = center[1]-((res_y/numv)*hscan)
 
             # build the scan vector 
+
+            #DEBUG -need to extend beyond extents to catch all hits
+            #buffer_dist = res_x
             s_hvec = (-xpos, ypos)
             e_hvec = ( xpos, ypos)
             
             #render the raster scan lines 
-            #self.pts_to_linesegment([s_hvec,e_hvec], periodic=False)
+            self.pts_to_linesegment([s_hvec,e_hvec], periodic=False)
 
             # take the 3 edges of a triangle and determine if the horizontal scanline intersects any 
             i = vecmath.intersect(s_hvec, e_hvec, s1, e1) #left  side of triangle
@@ -210,6 +214,34 @@ class vectorflow(object3d):
 
             pts2 = self.pop2d.batch_rotate_pts_2d( pts, cen, 180 )
             cell.points.extend( pts2 )
+    
+    ##-------------------------------##
+    def hole_cutter(self, tooldia, dia, spokes):
+        """ simple circle generator for chopping holes with gcode 
+            it is intended for 2d holes but will soon do 3d cuts as well. 
+
+            ARGS: 
+                tooldia - diamater of tool  
+                dia - diamater of final hole 
+                spokes - number of points around the circumfrence 
+
+            not done     
+                #iterations - how many times to repeat 
+                #itdeapth - ho deep to cut per iteration 
+
+            NOTES:
+                format of self.gr_sort = [[id, centroid, extents, len, points ]] 
+        """
+        cen = [0,0]
+
+        #pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
+        pts = self.pop3d.calc_circle(pos=(0,0,0), rot=(0,0,0), dia=dia, periodic=True, spokes=spokes)
+    
+        self.gr_polys.append(pts)
+        self._sort() 
+
+        #pts2 = self.pop2d.batch_rotate_pts_2d( pts, cen, 180 )
+        #hole_pts.extend( pts2 )
 
     ##-------------------------------##   
     def _set_cam_properties(self, rh, ch, cdpi, cmax):
@@ -441,7 +473,7 @@ class vectorflow(object3d):
     ##-------------------------------------------## 
     def gl_centroid(self):
         """ global centroid - DEBUG - NOT TESTED
-            we only work on gr_sort - gr_poly is a copy pf the orignial data
+            we only work on gr_sort - gr_poly is a copy pf the original data
  
         """
 
@@ -547,6 +579,12 @@ class vectorflow(object3d):
     def _calculate_paths3d(self, do_retracts=True, doround=True):
         """ 
              DEBUGGY 
+
+             takes gr_sort buffer and makes an executable gcode file with retracts on Z for each polygon
+         
+             format of self.gr_sort = [[id, centroid, extents, len, points ]] 
+
+
         """
         pl = 6 #numeric rounding places 
         lastpt = (0,0,0)
