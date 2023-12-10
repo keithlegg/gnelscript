@@ -11,7 +11,7 @@ from gnelscript.pygfx.obj3d import  *
 
 
 
-pt_op = point_operator()
+pt_op = point_operator_3d()
 
 
 """

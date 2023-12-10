@@ -9,9 +9,9 @@ class gear_generator(object3d):
     def __init__(self):
         super().__init__()         
         #self.contact_angle
-        self.tooth_spacing = 20 
-        self.num_teeth = 5
-        self.shaft_hole_dia = 4
+        self.tooth_spacing = .20 
+        self.num_teeth = .5
+        self.shaft_hole_dia = .4
 
 
     def build(self, shaftdia, dia, teeth_height, numteeth ):

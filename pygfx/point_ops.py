@@ -106,39 +106,11 @@ def printgeom(geom):
     for pt in geom[1]:
         print( " pt %s"%str(pt) )
 
-##-------------------------------------------##
-##-------------------------------------------##  
-
-class rawgeom(object):
-    def __init__(self):
-        self.points = []   
-        self.polys = [] 
-
-    def show(self):
-        for i,fid in enumerate(self.polys):
-            print( " f_id %s - %s"%(i,fid))
-        for pt in geom[1]:
-            print( " pt %s"%str(self.points) )
-
-    def non_zero(self):
-        #zero index fix
-        pass 
-
-    @property    
-    def centroid(self):
-        pass 
-    
-    def bbox(self):
-        pass  
-
-    #def load(self):
-    def save(self):
-        pass 
 
 ##-------------------------------------------##
 ##-------------------------------------------##  
 
-class point_operator(object):
+class point_operator_3d(object):
     """ what became of the original point generator 
         
          - merege this with PTGROUP by adding self.index [] ??
@@ -279,7 +251,7 @@ class point_operator(object):
     def test_data_grid(self, width, height, divs):
         """ 
             usage
-                pop3 = point_operator()
+                pop3 = point_operator_3d()
                 ids = pop3.test_data_grid( 5,5,1)
                 print(ids)
 
@@ -395,7 +367,7 @@ class point_operator(object):
             omits leftovers that dont fit 
 
             usage:
-                pop3 = point_operator()
+                pop3 = point_operator_3d()
                 pts = [1,2,3,4,5,6,7,8,9,0]
                 out = pop3.chunker(pts, 7) 
                 output: [[2, 3, 4, 5, 6, 7, 8]]
@@ -420,7 +392,7 @@ class point_operator(object):
         """ 
 
             usage:
-                pop3 = point_operator()
+                pop3 = point_operator_3d()
                 ids = pop3.test_data_grid( 5,5,1)
                 pop3.print_gridinfo(ids)
 
@@ -432,7 +404,7 @@ class point_operator(object):
     def print_grid(self, grid_array):
         """
             usage:        
-                pop3 = point_operator()
+                pop3 = point_operator_3d()
                 ids = pop3.test_data_grid( 5,5,1)
                 pop3.print_grid(ids)   
 
@@ -444,7 +416,7 @@ class point_operator(object):
     def get_grid_column(self, grid_array , colidx):
         """
             usage:        
-                pop3 = point_operator()
+                pop3 = point_operator_3d()
                 ids = pop3.test_data_grid( 5,5,1)
                 out = pop3.get_grid_column(ids , 2)
                 print(out)
@@ -463,7 +435,7 @@ class point_operator(object):
     def get_grid_row(self, grid_array , rowidx):
         """
             usage:
-                pop3 = point_operator()
+                pop3 = point_operator_3d()
                 ids = pop3.test_data_grid( 5,5,1)
                 out = pop3.get_grid_row(ids , 2)
                 print(out)       
@@ -953,7 +925,7 @@ class point_operator(object):
 ##-------------------------------------------##
 ##-------------------------------------------##    
 
-class polygon_operator(point_operator):
+class polygon_operator(point_operator_3d):
     """ polygon operator - should be called GEOM operator 
 
         3D model and tools to work on polygons 

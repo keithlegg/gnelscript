@@ -209,29 +209,13 @@ PARAM   = '#<'   # parameter (variable) , followed with brackets
 # dilated = line.buffer(0.5)
 # eroded = dilated.buffer(-0.3)
 
-##---------------------------##
-
-"""
-
-hmm - fake objects for shapely? good idea? 
-
-if not SHAPELY_IS_LOADED:
-
-    class Polygon(object):
-        pass 
-
-    class Point(object):
-        pass 
-
-    class LineString(object):
-        pass 
-"""
 
 ##---------------------------##
 
 class gcode_op(object3d):
     """ copy of vectorflow()  
     """
+
 
     def __init__(self):
         super().__init__()  
@@ -243,26 +227,25 @@ class gcode_op(object3d):
         self.pop2d       = object2d() 
         #self.kiparser    = pcbfile()
 
-
-        # geometry buffers for JSON, NGC,sorting, processing, etc 
+        ##----------------------------------##
+        # geometry buffers for file translation - JSON, NGC,sorting, processing, etc 
         self.gr_polys      = [] # list of list of points 
         self.gr_sort       = [] # [[id, centroid, extents, len, points ]]  
         self.ngc_buffer    = [] # list of list of points 
         self.jsonbuffer    = [] # list of list of points 
 
-        # GEOM ARRAYS for export   
         self.ngc_to_obj    = [] # text buffer for obj 
         self.filled_polys  = [] # list of list of points 
 
-        self.omit_ids      = [] #list of feature ids to NOT export (but leave in)
+        ##----------------------------------##
+        # geometry buffers for the actual work (where the geometry goes, not the geom itself) 
+        # self.op_origin = [0,0,0]
+        # self.op_is_parttop = True
+        # self.op_is_parttop = True
 
-        self.rh = 1            # retract height 
-        self.ch = .1           # cut height (top, start of cut)
-        self.cdpi = .01        # cut depth per iteration on Z axis
-        self.cmax = 1          # maximum cut depth on Z axis 
 
-        self.hp = (0,0,self.rh) # home position 
-
+        ##----------------------------------##        
+        # geometry buffers that get set automatically by other functions 
         self.orig_minx = 0
         self.orig_miny = 0         
         self.orig_maxx = 0
@@ -273,7 +256,19 @@ class gcode_op(object3d):
         self.sort_maxx = 0
         self.sort_maxy = 0
 
+        ##----------------------------------##
+
+        self.omit_ids      = [] #list of feature ids to NOT export (but leave in)
+
+        self.rh = 1            # retract height 
+        self.ch = .1           # cut height (top, start of cut)
+        self.cdpi = .01        # cut depth per iteration on Z axis
+        self.cmax = 1          # maximum cut depth on Z axis 
+
+        self.hp = (0,0,self.rh) # home position 
+
         self.global_scale =  0.0393701 #NOT FULLY IMPLEMENTED - inch to mm 
+
 
     ##-------------------------------## 
     ##-------------------------------##   
@@ -298,7 +293,7 @@ class gcode_op(object3d):
     def _omit_ids(self, ids=None, span=None, unique=True, nth=None):
         
         #DEBUG - not fully working - see indexer docs - nths with crash if you try it 
-        pop = point_operator()
+        pop = point_operator_3d()
         ids = pop.indexer(ids, span, unique, nth)
         
         print(" ### omit ids: ", ids)
@@ -1941,7 +1936,7 @@ class gcode(object3d):
 
 
     def lineartest(self):
-        pop = point_operator()
+        pop = point_operator_3d()
         #calc_circle(self, pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
         circ_pts = pop.calc_circle()
 

@@ -39,7 +39,7 @@ def dagoptimize(filename):
     
     #DEBUG - EXPONENT COORDS ARE GETTING THROUGH AND MESSING UP THINGS 
 
-    #pop = point_operator()
+    #pop = point_operator_3d()
     #ids = pop.indexer(ids, span, unique, nth)
     #kip.load_geojson('%s/images/out/%s'%(GLOBAL_PROJ,'%s.json'%filename), 0, getfids=[0], getids=[2])
     

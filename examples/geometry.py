@@ -71,11 +71,11 @@ def model_obj_from_scratch(fileout):
     #add new polygon in a new "shell" 
     obj.insert_polygons( plyids=[(1,2,3,4)], points=[(3,3,3), (3,-4,5), (-4,-2.5,3.1), (6.2,-2.7,8)], ans=True)
 
-    obj.save(fileout)
+    obj.save(fileout+'.obj')
 
 
 ##-------------------------------------------------------## 
-def model_geom_from_scratch_calc_normals(): 
+def model_geom_from_scratch_calc_normals(fileout): 
 
     obj   = object3d() # container for 3D object 
     geom  = [[],[]]    # container for some random geometry (optional)
@@ -86,7 +86,7 @@ def model_geom_from_scratch_calc_normals():
 
     # if you pass a geom container it will populate it 
     # instead of putting the geometry into the object  
-    geom = obj.insert_polygons(polys, pts, geom=geom) 
+    geom = obj.insert_polygons(polys, pts) 
     # use insert to add geom to object 
     obj.insert(geom) 
 
@@ -100,12 +100,12 @@ def model_geom_from_scratch_calc_normals():
 
     # see what we have done, or not done 
     # obj.show() 
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(fileout+'.obj')
 
     #######################
     obj2 = object3d()
     obj2.vectorlist_to_obj([normal.normal]) #, pos=centroid)
-    obj2.save(PYCORE_OBJ_OUT)
+    obj2.save(fileout+'_vect.obj')
 
 #model_geom_from_scratch_calc_normals() 
 

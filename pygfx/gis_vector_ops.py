@@ -37,6 +37,19 @@ from gnelscript.pygfx.render import simple_render
 
 
 
+
+class work_order(object3d):
+    """container for gcode_ops (defined in milling_ops.py)
+    """
+
+    def __init__(self):
+        super().__init__() 
+
+    def add(self):
+        pass 
+
+
+
 class vectorflow(object3d):
     """ weird swiss army graphics tool. 
 
@@ -113,6 +126,8 @@ class vectorflow(object3d):
 
         self.global_scale =  0.0393701 #NOT FULLY IMPLEMENTED - inch to mm 
 
+
+        self.work_order = work_order() #list of gcode_ops (defined in milling_ops.py)
 
     ##-------------------------------##
     def scanline(self, numh, numv, drwply):
@@ -216,7 +231,7 @@ class vectorflow(object3d):
             cell.points.extend( pts2 )
     
     ##-------------------------------##
-    def hole_cutter(self, tooldia, dia, spokes):
+    def hole_cutter_2d(self, tooldia, dia, spokes):
         """ simple circle generator for chopping holes with gcode 
             it is intended for 2d holes but will soon do 3d cuts as well. 
 
@@ -266,7 +281,7 @@ class vectorflow(object3d):
     def _omit_ids(self, ids=None, span=None, unique=True, nth=None):
         
         #DEBUG - not fully working - see indexer docs - nths with crash if you try it 
-        pop = point_operator()
+        pop = point_operator_3d()
         ids = pop.indexer(ids, span, unique, nth)
         
         print(" ### omit ids: ", ids)
