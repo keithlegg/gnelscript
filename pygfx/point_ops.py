@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
-# ***** END GPL LICENCE BLOCK *****
+# ***** END GPL LICENSE BLOCK *****
 
 import os
 import math 
@@ -283,6 +283,8 @@ class point_operator_3d(object):
             the idea is to additively build up a list of ids 
             you can start with an optional list of ids,
             then add in a range.  
+ 
+            ids    - list of ids (optional data to start with)
 
             span   - batch add numbers in a [start, end] [start,end] 
                      choose to count by Nths, single or list of them 
@@ -291,9 +293,10 @@ class point_operator_3d(object):
             unique is True by default - it guarantees each id is unique
                     - if off, an index will be repeated 
 
-            nth - skipover N indices while iterating. Outputs two lists ,
-                  the "goods" and the "bads"
- 
+            nth - removes every N index
+                  skips over N indices while iterating. Outputs two lists ,
+                  the "goods" and the "bads" in order of  [ goods, rejects ] 
+
             ------------------------------------------
 
             usage:
@@ -328,7 +331,9 @@ class point_operator_3d(object):
                         if i not in pids:
                             pids.append(i)
             else: 
-                pids.extend(ids)            
+                for i in ids:
+                    if type(i) is int:                 
+                        pids.extend(ids)            
         #### 
         # then do the span
         if span and len(span)>1:
@@ -344,6 +349,7 @@ class point_operator_3d(object):
 
         ####        
         # iterate that on Nth 
+        #not just for span - operate on IDS too ??
         if nth:
             if nth<len(pids):
                 new_pids = []
@@ -578,11 +584,14 @@ class point_operator_3d(object):
  
 
     ##-------------------------------------------##            
-    def add_margin_bbox(self, bbox, size):
-        """ BBOX is 2D [-x,-y, +x, +y ]
+    def bbox_buffer_2d(self, bbox, size):
+        """ was called add_margin_bbox 
+
+            BBOX is 2D [-x,-y, +x, +y ]
 
             return center (x,y) from two diagonal coordinates 
             assuming a bbox is [left, top, right, bottom ] it "grows" the size of it 
+
         """
         
         out = []
@@ -594,7 +603,7 @@ class point_operator_3d(object):
 
     ##-------------------------------------------##
     def extents_fr_bbox(self, bbox, offset=None, periodic=False):
-        """ return 2d pts geom from a 2d bbox  
+        """ return 2D pts geom from a 2D bbox  
             
             args:
                bbox   - iterable of 4 numbers (PIL bbox [left, top, right, bottom]) 
@@ -648,11 +657,16 @@ class point_operator_3d(object):
         return out
 
     ##-------------------------------------------##
-    def calc_square_pt(self, size, origin=None ):
+    def calc_2d_square_pt(self, size, origin=None ):
         """ UNTESTED 
             DEBUG - this is unclamped  
             calc the XY coodrinates for a square  
             (top left, top right , bottom right, bottom left ) 
+
+            usage: 
+                pop3 = point_operator_3d()
+                sq = pop3.calc_2d_square_pt(1,[0,0])
+                print(sq)
         """
         
         out =[]  
@@ -670,7 +684,7 @@ class point_operator_3d(object):
         return out
 
     ##-------------------------------------------##    
-    def calc_bbox_pt(self, size, origin=None ):
+    def calc_2d_bbox_pt(self, size, origin=None ):
         """ 
             BBOX is 2D on Z axis 
 
@@ -697,6 +711,8 @@ class point_operator_3d(object):
     ##-------------------------------------------##
     def calc_icosahedron(self, pos=(0,0,0), rot=(0,0,0), size=1):
         """ DEBUG POS and ROT not working yet 
+
+        
         """
 
         radius = size/2
@@ -2820,6 +2836,11 @@ class polygon_operator(point_operator_3d):
 
     ##-------------------------------------------## 
     #load/dump numbered point caches and reload - very powerful idea!
+    # def import_pts(self)
+
+    # def import_faces(self)
+
+    ##-------------------------------------------## 
     def load(self, filename, doflush=True):
         """ 
             DEBUG - DOES NOT CLEAR BUFFERS FIRST!!

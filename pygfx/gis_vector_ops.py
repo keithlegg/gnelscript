@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
-# ***** END GPL LICENCE BLOCK *****
+# ***** END GPL LICENSE BLOCK *****
 
 import geojson
 from geojson import Point, Feature, LineString, FeatureCollection, dump
@@ -1093,7 +1093,12 @@ class vectorflow(object3d):
 
     ##-------------------------------##
     def cvt_obj3d_grpoly(self, index=None):
-        """ convert 3d obj polys into gr_poly buffer to export to json, ect 
+        """ 
+            THIS IS A FUNDAMENTALLY FLAWED HACK
+            WE WANT A 3D FORMAT FROM TOP TO BOTTOM. 
+            THIS IS PSUDEO 3D FROM 2D DATA 
+
+            convert 3d obj polys into gr_poly buffer to export to json, ect 
             we have to dump the z axis   
         """         
         print("converting %s polygons to grpoly format "%len(self.polygons))
@@ -1285,8 +1290,8 @@ class vectorflow(object3d):
         print("loaded %s polygons from %s "%(plyidx, inputfile)) 
 
     ##-------------------------------##
-    def export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False):
-        """ rh         - retrct height  
+    def export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False, retracts=True):
+        """ rh         - retract height  
             ch         - cut height 
             cdpi       - cut depth per iteration 
             cmax       - cut depth max 
@@ -1306,9 +1311,9 @@ class vectorflow(object3d):
 
         if do3d==True:
             print("## WARNING ## 3D export is not working yet")
-            self._calculate_paths3d()
+            self._calculate_paths3d(do_retracts=retracts)
         else:
-            self._calculate_paths2d()
+            self._calculate_paths2d(do_retracts=retracts)
         
         print("gr_sort buffer has %s polys in it. "%(len(self.gr_sort)))
         fobj = open( filename,"w") #encoding='utf-8'

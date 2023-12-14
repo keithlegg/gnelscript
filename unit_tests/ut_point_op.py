@@ -19,7 +19,7 @@ pt_op = point_operator_3d()
 pt_op.tuple_pop(self, listTuples, tup):
 
 
-def add_margin_bbox(self, bbox, size):
+def bbox_buffer_2d(self, bbox, size):
 
 def extents_fr_bbox(self, bbox, offset=None):
 
@@ -27,9 +27,9 @@ def closest_to_axis(self, points, val, axis):
 
 def calc_square_diag(self, tl, br):
 
-def calc_square_pt(self, size, origin=None ):
+def calc_2d_square_pt(self, size, origin=None ):
 
-def calc_bbox_pt(self, size, origin=None ):
+def calc_2d_bbox_pt(self, size, origin=None ):
 
 def calc_circle(self, pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
 
@@ -41,6 +41,21 @@ def locate_pt_along3d(self, x1, y1, z1, x2, y2, z2, num):
 
 
 """
+
+
+
+def ut_bbox_diag_buffer():
+	ptop = point_operator_3d()
+
+	#gn_dir(polygon_operator)
+	
+	bb = ptop.bbox_buffer_2d([0,0,0,0],5)
+
+	xtntx = ptop.extents_fr_bbox(bb)
+
+	diag = ptop.calc_square_diag(xtntx[0], xtntx[2])
+
+	print(diag)
 
 
 ############################################################################################################################

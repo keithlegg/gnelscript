@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
-# ***** END GPL LICENCE BLOCK *****
+# ***** END GPL LICENSE BLOCK *****
 
 
 import os, sys, math
@@ -250,7 +250,7 @@ class raster_op(object):
         
         if margin:
             if margin <0:
-                inside_data=self.ptgen.add_margin_bbox(inside_data, margin)
+                inside_data=self.ptgen.bbox_buffer_2d(inside_data, margin)
                 self.fb = self.fb.crop( inside_data )
                 self.cvt_24bit_alpha()#convert back to RGBA   
 

@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
-# ***** END GPL LICENCE BLOCK *****
+# ***** END GPL LICENSE BLOCK *****
 
 
 
@@ -578,7 +578,7 @@ class gcode_op(object3d):
     ##-------------------------------------------## 
     def gl_move_center(self):
         """
-            we only work on gr_sort - gr_poly is a copy pf the orignial data
+            we only work on gr_sort - gr_poly is a copy pf the original data
         """
         print("global tansform to center ") 
 

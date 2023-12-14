@@ -560,13 +560,13 @@ def geojson_to_ngc(folder, fnames, onefile=False):
             kiparser.export_ngc("%s/%s.ngc"%(folder, fspl[0]) )
 
     ##--
-    #bbox = kiparser.calc_bbox_pt(2, (5,5))
+    #bbox = kiparser.calc_2d_bbox_pt(2, (5,5))
     #pts = kiparser.cvt_2d_to_3d(kiparser.extents_fr_bbox(bbox, periodic=True))
     #debug - need to solve the clean_pts_str debacle?
     #kiparser.gr_polys.append(pts)
 
     ##--
-    #bbox = kiparser.calc_bbox_pt(1.75, (-3,3))
+    #bbox = kiparser.calc_2d_bbox_pt(1.75, (-3,3))
     #pts = kiparser.cvt_2d_to_3d(kiparser.extents_fr_bbox(bbox, periodic=True))
     #debug - need to solve the clean_pts_str debacle?    
     #kiparser.gr_polys.append(pts)
