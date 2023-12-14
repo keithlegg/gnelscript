@@ -108,6 +108,22 @@ class object3d(polygon_operator):
                 self.insert_polygons(obj[0], obj[1])
 
     ##------------------------------------------------##
+
+    def insert2d_vec(self, obj):
+        #DEBUG - NOT DONE!
+        if isinstance(obj, tuple):
+            for o in obj:
+                vec = vec3(o[0],o[1],0) 
+                self.one_vec_to_obj(vec)
+
+        ## VEC2 TYPE - UNTESTED
+        #if isinstance(obj, vec2):
+        #    if pos:            
+        #        self.one_vec_to_obj(obj, pos=pos, arrowhead=False)
+        #    else:            
+        #        self.one_vec_to_obj(obj)
+
+    ##------------------------------------------------##
     def insert(self, obj, replace=False, ans=False, pos=None):
         """ insert an object's geometry into this object 
             

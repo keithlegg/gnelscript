@@ -1,0 +1,29 @@
+
+COMMENT = '#'  
+
+VID = 'v'
+FID = 'f'
+
+
+SEQUENCE = ['VID','FLOAT','FLOAT','FLOAT']
+SEQUENCE = ['FID','INT*']
+
+
+
+#COMMENT = '('     
+#PARAM_L   = '<'   # parameter (variable)  
+#PARAM_R   = '>'   # parameter (variable)  
+#XCOORD = 'X'
+#YCOORD = 'Y'
+#ZCOORD = 'Z'
+#ACOORD = 'A'
+#BCOORD = 'B'
+#ECOORD = 'E'
+
+
+
+
+
+
+
+

@@ -43,11 +43,14 @@ def locate_pt_along3d(self, x1, y1, z1, x2, y2, z2, num):
 """
 
 
+#DOCUMENT TOOL
+#gn_dir(polygon_operator)
+
+
+
 
 def ut_bbox_diag_buffer():
 	ptop = point_operator_3d()
-
-	#gn_dir(polygon_operator)
 	
 	bb = ptop.bbox_buffer_2d([0,0,0,0],5)
 

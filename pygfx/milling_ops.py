@@ -1903,12 +1903,11 @@ class cam_op(gcode_op):
        pass 
 
 ##------------------------------------------
-
+"""
 class gcode(object3d):
-    """ first stab of gcode translator - got put on hold 
-        kicad ops has the first working simple gcode exporter
-    """
-
+    ## first stab of gcode translator - got put on hold 
+    ## kicad ops has the first working simple gcode exporter
+    
     def __init__(self):
         super().__init__()  
 
@@ -1935,7 +1934,8 @@ class gcode(object3d):
         self.segments  = [] # [index, command, xyz_pos] 
 
 
-    def lineartest(self):
+
+    def milling_test_linear(self):
         pop = point_operator_3d()
         #calc_circle(self, pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
         circ_pts = pop.calc_circle()
@@ -1978,7 +1978,7 @@ class gcode(object3d):
             print(s[1])
 
     def save_3d_object(self, filename):
-        """ dump the XYZ positions into a polyline object """
+        ## dump the XYZ positions into a polyline object 
 
         obj   = object3d() # container for 3D object 
         data = []
@@ -2006,7 +2006,7 @@ class gcode(object3d):
         return words
 
     def parse_params(self, string):
-        """ discover and retain any parameters in the file """
+        ## discover and retain any parameters in the file 
         if PARAM in string:
             tmp = self.between_token_list(string, [PARAM, '>']) 
 
@@ -2022,20 +2022,17 @@ class gcode(object3d):
                     pass
 
     def between_token_list(self, string, tokens, return_match=False):
-        """ give a list of tokens, return a list of betweens 
-            
-            string = 'y987a123b541c307d999'
-            tokens = ['a','b','c','d']
-            out = self.between_token_list( string, tokens)
+        ## give a list of tokens, return a list of betweens 
+        ## string = 'y987a123b541c307d999'
+        ## tokens = ['a','b','c','d']
+        ## out = self.between_token_list( string, tokens)
+        ## out will be:
+        ##      ['123', '541', '307']
+        ## unless return_match is True,
+        ##     then out will be:
+        ##         [ ['a',123'], ['b',541'], ['c',307'] ]
 
-            out will be:
-                 ['123', '541', '307']
-
-            unless return_match is True,
-                then out will be:
-                    [ ['a',123'], ['b',541'], ['c',307'] ]
-
-        """
+        
 
         #return re.split( tokens_str ,string)
         match = ''
@@ -2073,14 +2070,15 @@ class gcode(object3d):
     def save_gcode(self, filename):
         f = open( filename,"w", encoding='utf-8')
         
-        #for seg in self.segments:
-        #    #f.write(seg[])
-        #    print( seg[0], seg[2])
+        for seg in self.segments:
+            #f.write(seg[])
+            print( seg[0], seg[2])
+
 
     def load_gcode(self, filename):
 
         if os.path.lexists(filename) == 0:
-            self.scribe("%s DOES NOT EXIST !! "%filename )
+            self._scribe("%s DOES NOT EXIST !! "%filename )
             #raise
             
         if os.path.lexists(filename):
@@ -2162,11 +2160,76 @@ class gcode(object3d):
                         #self.segments.append( [n_idx, [self.POSX, self.POSY, self.POSZ], comm ] )
 
 
+"""
 
 
+##############################################################
+
+## CLIPPER LIBRARY TESTS 
+
+"""
+def clipper_test1():
+    import pyclipper
+
+    subj = (
+        ((180, 200), (260, 200), (260, 150), (180, 150)),
+        ((215, 160), (230, 190), (200, 190))
+    )
+    clip = ((190, 210), (240, 210), (240, 130), (190, 130))
+
+     
+    #convert 2d into 3d 
+    obj = object3d()
+
+    pts = obj.cvt_2d_to_3d(subj[0])
+    obj.linegeom_fr_points(pts) 
+
+    pts = obj.cvt_2d_to_3d(subj[1])
+    obj.linegeom_fr_points(pts) 
 
 
+    pts = obj.cvt_2d_to_3d(clip)
+    obj.linegeom_fr_points(pts) 
+
+    #run clipper
+    pc = pyclipper.Pyclipper()
+    pc.AddPath(clip, pyclipper.PT_CLIP, True)
+    pc.AddPaths(subj, pyclipper.PT_SUBJECT, True)
+
+    solution = pc.Execute(pyclipper.CT_INTERSECTION, pyclipper.PFT_EVENODD, pyclipper.PFT_EVENODD)
+
+    for s in solution:
+        pts = obj.cvt_2d_to_3d(s)
+        obj.linegeom_fr_points(pts) 
+
+    obj.save('fooker.obj')
 
 
+def clipper_test2():
+    import pyclipper
+
+    subj = ((348, 257), (364, 148), (362, 148), (326, 241), (295, 219), (258, 88), (440, 129), (370, 196), (372, 275))
+ 
+    pco = pyclipper.PyclipperOffset()
+    pco.AddPath(subj, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)
+
+    solution = pco.Execute(-5)
+
+     
+    #convert 2d into 3d 
+    obj = object3d()
+
+    pts = obj.cvt_2d_to_3d(subj)
+    obj.linegeom_fr_points(pts) 
+
+
+    for s in solution:
+        pts = obj.cvt_2d_to_3d(s)
+        obj.linegeom_fr_points(pts) 
+
+    obj.scale_pts((.1,.1,.1))
+    obj.save('fooker.obj')
+
+"""    
 
 

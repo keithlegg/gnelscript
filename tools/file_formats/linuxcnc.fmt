@@ -1,0 +1,117 @@
+
+COMMENT = '#'     
+COMMENT = '('     
+
+PARAM_L   = '<'   # parameter (variable)  
+PARAM_R   = '>'   # parameter (variable)  
+
+XCOORD = 'X'
+YCOORD = 'Y'
+ZCOORD = 'Z'
+ACOORD = 'A'
+BCOORD = 'B'
+ECOORD = 'E'
+
+
+SEQUENCE = ['XCOORD','FLOAT']
+SEQUENCE = ['YCOORD','FLOAT']
+SEQUENCE = ['ZCOORD','FLOAT']
+SEQUENCE = ['ACOORD','FLOAT']
+
+
+################
+
+
+
+ 
+A  A axis of machine
+B  B axis of machine
+C  C axis of machine
+D  Tool radius compensation number
+F  Feed rate
+G  General function (See table Modal Groups)
+H  Tool length offset index
+I  X offset for arcs and G87 canned cycles
+J  Y offset for arcs and G87 canned cycles
+K  Z offset for arcs and G87 canned cycles.
+   Spindle-Motion Ratio for G33 synchronized movements.
+L  generic parameter word for G10, M66 and others
+M  Miscellaneous function (See table Modal Groups)
+N  Line number
+P  Dwell time in canned cycles and with G4.
+   Key used with G10.
+Q  Feed increment in G73, G83 canned cycles
+R  Arc radius or canned cycle plane
+S  Spindle speed
+T  Tool selection
+U  U axis of machine
+V  V axis of machine
+W  W axis of machine
+X  X axis of machine
+Y  Y axis of machine
+Z  Z axis of machine
+
+ 
+
+ 
+    FROM http://linuxcnc.org/docs/html/gcode.html
+
+
+  G0    Rapid Move
+  G1    Linear Move
+  G2, G3  I J K or R, P Arc Move
+  G4  P Dwell
+  G5  I J P Q Cubic Spline
+  G5.1  I J Quadratic Spline
+  G5.2  P L NURBS
+  G38.2 - G38.5   Straight Probe
+  G33 K ($) Spindle Synchronized Motion
+  G33.1 K ($) Rigid Tapping
+  G80     Cancel Canned Cycle
+
+
+  G81 R L (P) Drilling Cycle
+  G82 R L (P) Drilling Cycle, Dwell
+  G83 R L Q Drilling Cycle, Peck
+  G84 R L (P) ($) Right-hand Tapping Cycle, Dwell
+  G73 R L Q Drilling Cycle, Chip Breaking
+  G74 R L (P) ($) Left-hand Tapping Cycle, Dwell
+  G85 R L (P) Boring Cycle, Feed Out
+  G89 R L (P) Boring Cycle, Dwell, Feed Out
+  G76 P Z I J R K Q H L E ($) Threading Cycle
+
+
+  G90, G91    Distance Mode
+  G90.1, G91.1    Arc Distance Mode
+  G7    Lathe Diameter Mode
+  G8    Lathe Radius Mode
+
+  M3, M4, M5  S ($)   Spindle Control
+  M19 R Q (P) ($) Orient Spindle
+  G96, G97    S D ($) Spindle Control Mode
+
+ 
+
+
+
+<xscale> = 1.0
+<yscale> = 1.0
+<zscale> = 1.0
+<fscale> = 10000.0
+<toolno> = 1
+<rpm>    = 1600
+
+
+#  X-Axis (table)  
+#  Y-Axis (saddle)  
+#  Z-Axis (quill)  
+
+
+
+
+
+
+
+
+
+

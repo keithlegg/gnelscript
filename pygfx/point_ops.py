@@ -819,10 +819,14 @@ class point_operator_3d(object):
         """
 
         if type(points) is tuple:
-            if asvec3:
-                return (pt[0], pt[1], 0) 
-            else:
-                return vec3(pt[0], pt[1], 0)                             
+            newpts = []
+            for pt in points:
+                if asvec3:
+                    newpts.append(vec3(pt[0], pt[1], 0))  
+                else:
+                    newpts.append( (pt[0], pt[1], 0)) 
+            return newpts
+
         else:
             newpts = []
             for pt in points:

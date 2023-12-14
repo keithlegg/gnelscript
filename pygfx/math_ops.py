@@ -813,7 +813,6 @@ class vec3(object):
         return [rotx,roty]
 
     ##----------------------------------------
-
     def insert(self, iterable):
         """ convert an np.array, tuple or list  to vec3  
             does not check size, so just assume 3 items (x,y,z)

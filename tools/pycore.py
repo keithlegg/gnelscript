@@ -838,7 +838,7 @@ def linuxcnctest():
 def linuxcnctest2():
     """ standalone gcode experiment """
     gcode = generate_gcode()
-    gcode.lineartest()
+    gcode.milling_test_linear()
     
     #print( gcode.outfile )
     gcode.savengc("cineballs.ngc")
