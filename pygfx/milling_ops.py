@@ -210,6 +210,24 @@ PARAM   = '#<'   # parameter (variable) , followed with brackets
 # eroded = dilated.buffer(-0.3)
 
 
+
+"""
+anycubic_fmt = {
+    "brand": "Ford",
+    "model": "Mustang",
+    "year": 1964
+}
+
+
+linuxcnc_fmt = {
+    "brand": "Ford",
+    "model": "Mustang",
+    "year": 1964
+}
+"""
+
+
+
 ##---------------------------##
 
 class gcode_op(object3d):
@@ -391,6 +409,7 @@ class gcode_op(object3d):
     ##-------------------------------------------## 
     ##-------------------------------------------## 
     def show_setup(self):
+        print('##--------------------------##')        
         print("retract height %s"%self.rh)
         print("cut height     %s"%self.ch)
         print("cut max        %s"%self.cmax)
@@ -605,6 +624,175 @@ class gcode_op(object3d):
         out = out.replace('\'','')
         return out
     
+
+    ##-------------------------------##
+    def export_3dprint(self, filename):
+        """   
+            DEBUG - NOT DONE  
+        """
+
+        print("# exporting 3d printer NGC file ", filename)
+
+        self._calculate_3dprint()
+
+        print("gr_sort buffer has %s polys in it. "%(len(self.gr_sort)))
+        fobj = open( filename,"w") #encoding='utf-8'
+        for line in self.outfile: 
+            fobj.write(line+'\n')
+        fobj.close()
+
+
+    ##-------------------------------##
+    def _calculate_3dprint(self, do_retracts=True, doround=True):
+        """ 
+             DEBUGGY 
+        """
+        pl = 2 #numeric rounding places 
+        lastpt = (0,0,0)
+
+        self.outfile.append('( exported with _calculate_3dprint )')
+        self.outfile.append('(linear scale set to %s of internal coordinates)'%self.global_scale )
+        self.outfile.append('  ')
+
+        self.outfile.append('M73 P0 R19')
+        self.outfile.append('M201 X2500 Y2500 Z800 E2500 ; sets maximum accelerations, mm/sec^2')
+        self.outfile.append('M203 X300 Y250 Z8 E80 ; sets maximum feedrates, mm / sec')
+        self.outfile.append('M204 S2500 T2500 ; sets acceleration (S) and retract acceleration (R), mm/sec^2')
+        self.outfile.append('M205 X15.00 Y10.00 Z2.00 E10.00 ; sets the jerk limits, mm/sec')
+        self.outfile.append('M205 S0 T0 ; sets the minimum extruding and travel feed rate, mm/sec')
+        self.outfile.append(';TYPE:Custom')
+        self.outfile.append('  ')
+
+        self.outfile.append('G90 ; use absolute coordinates')
+        self.outfile.append('M83 ; extruder relative mode')
+        self.outfile.append('M104 S215 ; set extruder temp')
+        self.outfile.append('M140 S40 ; set bed temp')
+        self.outfile.append('M190 S40 ; wait for bed temp')
+        self.outfile.append('M109 S215 ; wait for extruder temp')
+        self.outfile.append('  ')
+
+        self.outfile.append('G28                      ; move X/Y/Z to min endstops')
+        self.outfile.append('G1 Z0.28                 ; lift nozzle a bit ')
+        self.outfile.append('G92 E0 ')
+        self.outfile.append('  ')
+
+        self.outfile.append('G1 Y3 F1800              ; zero the extruded length ')
+        self.outfile.append('G1 X60  E25 F500         ; Extrude 25mm of filament in a 5cm line. ')
+        self.outfile.append('G92 E0                   ; zero the extruded length again ')
+        self.outfile.append('G1 E-2 F500              ; Retract a little ')
+        self.outfile.append('G1 X70 F4000             ; Quickly wipe away from the filament line')
+        self.outfile.append('M117                  ')
+        self.outfile.append('  ')
+
+        self.outfile.append('G21     ; set units to millimeters')
+        self.outfile.append('G90     ; use absolute coordinates')
+        self.outfile.append('M82     ; use absolute distances for extrusion')
+        self.outfile.append('G92 E0  ; Filament gcode')
+        self.outfile.append('M107    ;LAYER_CHANGE')
+        
+        #self.outfile.append(';Z:0.28')
+        #self.outfile.append(';HEIGHT:0.28')
+        #self.outfile.append('; BEFORE_LAYER_CHANGE 0 @ 0.28mm')
+        self.outfile.append('G1 E-2 F4800')
+        self.outfile.append('G92 E0')
+        self.outfile.append('G1 Z.28 F7200')
+        
+        #self.outfile.append('; AFTER_LAYER_CHANGE 0 @ 0.28mm')
+        self.outfile.append('G1 X70.004 Y91.359')
+        self.outfile.append('G1 E2 F4800')
+        self.outfile.append('M204 S2000')
+        self.outfile.append('  ')
+
+        ##-----------------------------------------##
+
+        #move to origin  
+        
+        #self.outfile.append('g0 x%s y%s z%s f30'% ( self.hp[0], self.hp[1], self.rh) )   #rapid move to 0 
+        #self.ngc_to_obj.append( ( self.hp[0], self.hp[1], self.rh) ) 
+
+   
+        ##-----------------------------------------##
+        self.outfile.append('  ')
+        self.outfile.append('(exporting filled polygons )')
+
+        ##-----------------------------------------##
+        # build the gcode up with simple linear movements 
+
+        self.outfile.append('  ')
+        self.outfile.append('(exporting graphic polygons )')
+        
+        ##------------------------------
+
+        # graphical polygons - build the gcode up with simple linear movements
+        for row in self.gr_sort:
+            
+            # preprocess 
+            export_ply = True 
+
+            if row[0] in self.omit_ids:
+                print("# omitting polygon ID %s"%row[0])
+                export_ply = False
+
+            #modified to export sorted data - easy peasy  
+            gr_poly = row[4]
+
+            ##--
+
+            if len(gr_poly) and export_ply:
+                self.outfile.append( ' ' )                
+                self.outfile.append('(exporting new polygon )')
+                
+                ##-- 
+                #DEBUG - need to sort out clean points - want to run as close to final export 
+                #it looses precision 
+
+                # no formatting (full precision)
+                if doround:                
+                    pt1=(round(gr_poly[0][0],pl) ,round(gr_poly[0][1],pl)) 
+                else:
+                    pt1 = gr_poly[0]
+       
+
+                ## iterate points in polygon 
+                self.outfile.append( 'M204 S2000')  
+                self.outfile.append( 'G92 E0' )   #move while extruding
+
+                for i,pt in enumerate(gr_poly):
+                    self.outfile.append( 'G1 X%s Y%s E%s'%( pt[0], pt[1],  pt[2] ) )                    
+                    if doround:
+                        tmp = ( round(pt[0],pl), round(pt[1],pl), round(pt[2],pl) ) 
+                        pt = tmp  
+
+                    self.outfile.append( 'G1 X%s Y%s E%s'%( round(pt[0],pl), round(pt[1],pl),  round(pt[2],pl) ) )
+                    self.ngc_to_obj.append( (pt[0], pt[1],  pt[2]) )                   
+                
+                self.outfile.append( 'G1 E2 F4800') #stop extruding??
+ 
+        self.outfile.append( ' ' )
+        self.outfile.append( ' ' )
+
+        self.outfile.append(';WIPE_END')
+        self.outfile.append('G92 E0')
+        self.outfile.append('M107')
+        self.outfile.append(';TYPE:Custom')
+        self.outfile.append('; Filament-specific end gcode ')
+        self.outfile.append(';END gcode for filament')
+        self.outfile.append('M104 S0                                    ; Extruder off ')
+        self.outfile.append('M140 S0                                    ; Heatbed off ')
+        self.outfile.append('M107                                       ; Fan off ')
+        self.outfile.append('G91                                        ; relative positioning ')
+        self.outfile.append('G1 E-5 F3000  ')
+        self.outfile.append('G1 Z+0.3 F3000                             ; lift print head ')
+        self.outfile.append('G28 X0  F3000')
+        self.outfile.append('M84                                        ; disable stepper motors')
+        self.outfile.append('M73 P100 R0')
+
+        self.outfile.append('  ')
+
+        ##-----------------------------------------##
+        # rapid move at end 
+        self.outfile.append('m2') #program end
+
     ##-------------------------------##
     def _calculate_paths3d(self, do_retracts=True, doround=True):
         """ 
@@ -751,6 +939,7 @@ class gcode_op(object3d):
                 M9 - 
                 M3 - 
                 M2 - program end 
+
         """
 
         lastpt = (0,0,0)
@@ -759,8 +948,9 @@ class gcode_op(object3d):
         self.outfile.append('(linear scale set to %s of internal coordinates)'%self.global_scale )
         self.outfile.append('  ')
 
-        self.outfile.append('g20')                  #inches for unit 
-        
+        self.outfile.append('g20') # inches for unit 
+        #self.outfile.append('G21')  # mm for unit 
+
         ##-----------------------------------------##
 
         #move to origin  
@@ -1162,7 +1352,7 @@ class gcode_op(object3d):
         self.gr_sort = tempbuffer
 
     ##-------------------------------##
-    def export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False):
+    def export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False, do_retracts=False):
 
         if ch==None:
             print("# exporting NGC file - cut height disabled (3d) ", filename)
@@ -1175,9 +1365,9 @@ class gcode_op(object3d):
         self.cmax = cmax      # maximum cut depth on Z axis 
 
         if do3d==True:
-            self._calculate_paths3d()
+            self._calculate_paths3d(do_retracts=do_retracts, doround=True)
         else:
-            self._calculate_paths2d()
+            self._calculate_paths2d(do_retracts=do_retracts, doround=True)
         
         print("gr_sort buffer has %s polys in it. "%(len(self.gr_sort)))
         fobj = open( filename,"w") #encoding='utf-8'

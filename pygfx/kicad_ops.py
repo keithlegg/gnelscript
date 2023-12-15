@@ -20,10 +20,11 @@
 import re 
 
 #from pygfx.obj3d import object3d
-from gnelscript.pygfx.milling_ops import gcode
+#from gnelscript.pygfx.milling_ops import gcode
 
+#class pcbfile(gcode):
 
-class pcbfile(gcode):
+class pcbfile():
     """ 
        A bit of history:
            the first tool i built 

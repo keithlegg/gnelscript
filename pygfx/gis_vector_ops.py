@@ -378,6 +378,7 @@ class vectorflow(object3d):
     ##-------------------------------------------## 
     ##-------------------------------------------## 
     def show_setup(self):
+        print('##--------------------------##')
         print("retract height %s"%self.rh)
         print("cut height     %s"%self.ch)
         print("cut max        %s"%self.cmax)
@@ -1290,7 +1291,7 @@ class vectorflow(object3d):
         print("loaded %s polygons from %s "%(plyidx, inputfile)) 
 
     ##-------------------------------##
-    def export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False, retracts=True):
+    def export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False, do_retracts=True):
         """ rh         - retract height  
             ch         - cut height 
             cdpi       - cut depth per iteration 
@@ -1320,7 +1321,6 @@ class vectorflow(object3d):
         for line in self.outfile: 
             fobj.write(line+'\n')
         fobj.close()
-
 
     ##-------------------------------##
     ##-------------------------------##

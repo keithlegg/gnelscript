@@ -651,7 +651,8 @@ class streamline(object):
     ###########
 
     #def load_script(self, scriptpath):
-
+    
+    """
     def sample_script(self, scriptpath):
         out = []
 
@@ -673,18 +674,36 @@ class streamline(object):
             f.write('%s\n'%line)
         f.close()
 
-
-    #def run(self, infile, outfolder, outname):
     def run(self, scriptfile):
 
         self.inputimg = infile
         path = Path(infile)
         self.input_folder =  path.parent.absolute()
         self.output_folder = outfolder
+    
+    """
 
-        #self._pass1(infile, outfolder, outname) 
-        #self._pass2( 4, outname, outfolder, outname,5) 
-        #self._pass3('%s/commonbands.png'%outfolder, outfolder)
+    def oldrun (self, infile, outfolder, outname, numbands=4, dopass='all'):
+        self.inputimg = infile
+        path = Path(infile)
+        self.input_folder =  path.parent.absolute()
+        self.output_folder = outfolder
+        
+        whichiter = 5
+
+        if dopass==1:                
+            self._pass1(infile, outfolder, outname) 
+
+        if dopass==2:                
+            self._pass2( numbands, outname, outfolder, outname, whichiter) 
+
+        if dopass==3:                
+            self._pass3('%s/commonbands.png'%outfolder, outfolder)
+
+        if dopass=='all':                
+            self._pass1(infile, outfolder, outname) 
+            self._pass2( numbands, outname, outfolder, outname, whichiter) 
+            self._pass3('%s/commonbands.png'%outfolder, outfolder)
 
     def _pass1(self, infile, outfolder, outname, dobw=False):
         """
@@ -710,6 +729,7 @@ class streamline(object):
         """which is the iteration from first pass to use
            if none specified, determine how many there are and take the middle  
         """
+
         args = self.p2_settings
         
         #figure out which image - take the middle if none specified
@@ -752,8 +772,11 @@ class streamline(object):
         print('#running third pass on %s '%(infilename))
 
         #set the RGB values from last tool and run this 
-        thirdpass( infilename, outfolder, mode )
+
+        thirdpass( infilename, outfolder, mode, bmpinvert=True )
         
+        #thirdpass( infilename, outfolder, mode, bmpinvert=True, po_invert=True, fastmode=False )
+
 
 
 
