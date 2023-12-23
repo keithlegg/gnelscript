@@ -130,6 +130,19 @@ class vectorflow(object3d):
         self.work_order = work_order() #list of gcode_ops (defined in milling_ops.py)
 
     ##-------------------------------##
+    def flush(self):
+        #DEBUG - no worky, no testy 
+        print('flushing geometry buffers')
+        self.gr_polys      = []  
+        self.gr_sort       = []   
+        self.ngc_buffer    = []  
+        self.jsonbuffer    = []  
+        self.ngc_to_obj    = [] 
+        self.filled_polys  = []  
+        self.omit_ids      = [] 
+        self.outfile       = []
+
+    ##-------------------------------##
     def scanline(self, numh, numv, drwply):
         """
            build a series of lines across a triangle that represent a raster scan
@@ -592,7 +605,7 @@ class vectorflow(object3d):
         return out
     
     ##-------------------------------##
-    def _calculate_paths3d(self, do_retracts=True, doround=True):
+    def _calculate_paths3d(self, do_laser=False, do_retracts=True, doround=True):
         """ 
              DEBUGGY 
 
@@ -718,7 +731,7 @@ class vectorflow(object3d):
         self.outfile.append('m2') #program end
 
     ##-------------------------------##
-    def _calculate_paths2d(self, do_retracts=True):
+    def _calculate_paths2d(self, do_laser=False, do_retracts=True):
         """ 
             SIMPLE SAUCE CAM PROGRAM 
 
@@ -741,7 +754,8 @@ class vectorflow(object3d):
         """
 
         lastpt = (0,0,0)
-        
+        laserpwm = 1000.00
+
         self.outfile.append('(exported with _calculate_paths2d )')
         self.outfile.append('(linear scale set to %s of internal coordinates)'%self.global_scale )
         self.outfile.append('  ')
@@ -827,11 +841,22 @@ class vectorflow(object3d):
 
                 ## iterate points in polygon 
                 self.outfile.append( 'G1' )
+                
+                #LASER ON/OFF could be M103/M105 or it could be M03/M05. It depends on the parameters of the GRBL.
+                if do_laser:
+                    #M3 Constant Laser Power Mode
+                    #M4 Dynamic Laser Power Mode
+                    #DEBUG LOOK INTO - S-MIN and S-MAX (Power Modulation)
+
+                    self.outfile.append( 'M3 S%s'%laserpwm )
+ 
                 for i,pt in enumerate(gr_poly):
                     self.outfile.append( 'x%s y%s z%s'%( pt[0], pt[1], self.ch ) )
                     self.ngc_to_obj.append( (pt[0], pt[1], self.ch) )                   
                 
                 self.outfile.append( 'G0' )
+                if do_laser:
+                    self.outfile.append( 'M5 S0' )
 
                 # move to last point at CH  
                 #self.ngc_to_obj.append( (gr_poly[0][0], gr_poly[0][1], self.ch))   
@@ -1175,6 +1200,35 @@ class vectorflow(object3d):
 
     ##-------------------------------##
     ##-------------------------------##
+    ##-------------------------------------------##   
+    def scale_gcode(self, amt ):
+        #derived from scale_pts
+        # build a scale matrix 
+        
+        amtx = 1.0
+        amty = 1.0
+        amtz = 1.0
+        
+        if isinstance(amt,tuple) or isinstance(amt,list):
+            amtx = amt[0]
+            amty = amt[1]
+            amtz = amt[2]
+        else:
+            amtx = amt
+            amty = amt
+            amtz = amt            
+
+        sc_m33 = self.m33.identity
+        sc_m33[0]  = amtx
+        sc_m33[4]  = amty
+        sc_m33[8]  = amtz    
+
+        #for ply in self.gr_polys:
+        #    print(ply[0])
+        for ply in self.gr_sort:
+            ply[4] = sc_m33.batch_mult_pts(ply[4])
+        #return    
+
     def load_geojson(self, inputfile, getfids=None, zaxis=0):
         """ parse a geojson file - store points in arrays in GR_POLY buffer 
             
@@ -1209,7 +1263,7 @@ class vectorflow(object3d):
             else:
                 for id in getfids:
                     if int(id)>=len(features):
-                        # print("id out of range %s"%id)
+                        print("id out of range %s"%id)
                         pass
                     else:
                         fixedids.append(int(id))
@@ -1220,31 +1274,32 @@ class vectorflow(object3d):
         if getfids is None:
             for i,f in enumerate(features):
                 # multipolygon type
-                if f.geometry.type == 'MultiPolygon':
-                    for coord in f.geometry.coordinates:                    
-                        for p,koord in enumerate(coord):
+                if f.geometry:
+                    if f.geometry.type == 'MultiPolygon':
+                        for coord in f.geometry.coordinates:                    
+                            for p,koord in enumerate(coord):
+                                ptidx = 1
+                                tmp_poly = [] 
+                                for pt in koord:
+                                    if type(pt[0])==float and type(pt[1])==float:
+                                        tmp_poly.append( (pt[0], pt[1], zaxis) )
+                                        ptidx += 1  
+                                if tmp_poly:
+                                    self.jsonbuffer.append(tmp_poly) 
+
+                    # polygon type   
+                    if f.geometry.type == 'Polygon':
+                        for coord in f.geometry.coordinates:
                             ptidx = 1
                             tmp_poly = [] 
-                            for pt in koord:
+                            for pt in coord:
                                 if type(pt[0])==float and type(pt[1])==float:
                                     tmp_poly.append( (pt[0], pt[1], zaxis) )
                                     ptidx += 1  
+                            #print("loaded %s points in polygon "%len(tmp_poly)) 
                             if tmp_poly:
                                 self.jsonbuffer.append(tmp_poly) 
-
-                # polygon type   
-                if f.geometry.type == 'Polygon':
-                    for coord in f.geometry.coordinates:
-                        ptidx = 1
-                        tmp_poly = [] 
-                        for pt in coord:
-                            if type(pt[0])==float and type(pt[1])==float:
-                                tmp_poly.append( (pt[0], pt[1], zaxis) )
-                                ptidx += 1  
-                        #print("loaded %s points in polygon "%len(tmp_poly)) 
-                        if tmp_poly:
-                            self.jsonbuffer.append(tmp_poly) 
-                plyidx += 1 
+                    plyidx += 1 
 
         ##---------------        
         # or just cherry pick some features to import (below we also can pick the sub-features) 
@@ -1291,7 +1346,7 @@ class vectorflow(object3d):
         print("loaded %s polygons from %s "%(plyidx, inputfile)) 
 
     ##-------------------------------##
-    def export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False, do_retracts=True):
+    def export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False, do_retracts=True, do_laser=False):
         """ rh         - retract height  
             ch         - cut height 
             cdpi       - cut depth per iteration 
@@ -1312,9 +1367,9 @@ class vectorflow(object3d):
 
         if do3d==True:
             print("## WARNING ## 3D export is not working yet")
-            self._calculate_paths3d(do_retracts=retracts)
+            self._calculate_paths3d(do_laser=do_laser, do_retracts=do_retracts)
         else:
-            self._calculate_paths2d(do_retracts=retracts)
+            self._calculate_paths2d(do_laser=do_laser, do_retracts=do_retracts)
         
         print("gr_sort buffer has %s polys in it. "%(len(self.gr_sort)))
         fobj = open( filename,"w") #encoding='utf-8'

@@ -647,6 +647,10 @@ class gcode_op(object3d):
         """ 
              DEBUGGY 
         """
+        splat = 5 
+        stax = 5
+        zincr = .5
+
         pl = 2 #numeric rounding places 
         lastpt = (0,0,0)
 
@@ -686,10 +690,12 @@ class gcode_op(object3d):
 
         self.outfile.append('G21     ; set units to millimeters')
         self.outfile.append('G90     ; use absolute coordinates')
-        self.outfile.append('M82     ; use absolute distances for extrusion')
+        #self.outfile.append('M82     ; use absolute distances for extrusion')
+        self.outfile.append('M83     ; use relative distances for extrusion')
+
         self.outfile.append('G92 E0  ; Filament gcode')
-        self.outfile.append('M107    ;LAYER_CHANGE')
-        
+        self.outfile.append('M107    ;fan off / LAYER_CHANGE')
+
         #self.outfile.append(';Z:0.28')
         #self.outfile.append(';HEIGHT:0.28')
         #self.outfile.append('; BEFORE_LAYER_CHANGE 0 @ 0.28mm')
@@ -699,7 +705,7 @@ class gcode_op(object3d):
         
         #self.outfile.append('; AFTER_LAYER_CHANGE 0 @ 0.28mm')
         self.outfile.append('G1 X70.004 Y91.359')
-        self.outfile.append('G1 E2 F4800')
+        self.outfile.append('G1 E2 F2000') #extrusion feed rate 
         self.outfile.append('M204 S2000')
         self.outfile.append('  ')
 
@@ -723,50 +729,45 @@ class gcode_op(object3d):
         
         ##------------------------------
 
+
+        #self.outfile.append( 'G1 E0') #extruder off                
+        #self.outfile.append( 'G1 E-2 F500 ') #retract filament little 
+        #self.outfile.append( 'G1 Z%s'%(self.rh ) )  #retract head to set height 
+
         # graphical polygons - build the gcode up with simple linear movements
-        for row in self.gr_sort:
-            
-            # preprocess 
-            export_ply = True 
+        for si in range(stax):
+            for rc,row in enumerate(self.gr_sort):
 
-            if row[0] in self.omit_ids:
-                print("# omitting polygon ID %s"%row[0])
-                export_ply = False
+                # preprocess 
+                export_ply = True 
 
-            #modified to export sorted data - easy peasy  
-            gr_poly = row[4]
+                if row[0] in self.omit_ids:
+                    print("# omitting polygon ID %s"%row[0])
+                    export_ply = False
 
-            ##--
+                #modified to export sorted data - easy peasy  
+                gr_poly = row[4]
 
-            if len(gr_poly) and export_ply:
-                self.outfile.append( ' ' )                
-                self.outfile.append('(exporting new polygon )')
-                
-                ##-- 
-                #DEBUG - need to sort out clean points - want to run as close to final export 
-                #it looses precision 
+                ##grab a polygon off the stack and print it 
+                if len(gr_poly) and export_ply:
+                    self.outfile.append( ' ' )                
+                    self.outfile.append('(exporting new polygon %s)'%rc)
 
-                # no formatting (full precision)
-                if doround:                
-                    pt1=(round(gr_poly[0][0],pl) ,round(gr_poly[0][1],pl)) 
-                else:
-                    pt1 = gr_poly[0]
-       
+                    # no formatting (full precision)
+                    if doround:                
+                        pt1=(round(gr_poly[0][0],pl) ,round(gr_poly[0][1],pl)) 
+                    else:
+                        pt1 = gr_poly[0]
+           
 
-                ## iterate points in polygon 
-                self.outfile.append( 'M204 S2000')  
-                self.outfile.append( 'G92 E0' )   #move while extruding
+                    ## iterate points in each polygon 
+                    for i,pt in enumerate(gr_poly):
+                        if doround:
+                            tmp = ( round(pt[0],pl), round(pt[1],pl), round(pt[2],pl) ) 
+                            pt = tmp  
+                        self.outfile.append( 'G1 Z%s'%(pt[2]+(si*zincr) ) ) 
+                        self.outfile.append( 'G1 X%s Y%s E%s'%( pt[0], pt[1], splat ) )  
 
-                for i,pt in enumerate(gr_poly):
-                    self.outfile.append( 'G1 X%s Y%s E%s'%( pt[0], pt[1],  pt[2] ) )                    
-                    if doround:
-                        tmp = ( round(pt[0],pl), round(pt[1],pl), round(pt[2],pl) ) 
-                        pt = tmp  
-
-                    self.outfile.append( 'G1 X%s Y%s E%s'%( round(pt[0],pl), round(pt[1],pl),  round(pt[2],pl) ) )
-                    self.ngc_to_obj.append( (pt[0], pt[1],  pt[2]) )                   
-                
-                self.outfile.append( 'G1 E2 F4800') #stop extruding??
  
         self.outfile.append( ' ' )
         self.outfile.append( ' ' )

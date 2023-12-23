@@ -221,7 +221,8 @@ class point_operator_3d(object):
         tmp_buffer = [] 
 
         # apply the transform here
-        for pt in pts:  
+        for pt in pts: 
+            print(pt)
             if m33 is not None:
                 tmp_buffer.append( m33 * pt )
             if m44 is not None:
@@ -1783,13 +1784,18 @@ class polygon_operator(point_operator_3d):
         polys = geom[0][0]
 
         for ply in polys:
-            #print('### POLY     ', ply   )
-            #print('### POINTS   ', geom[1] , type(geom[1]) )
+            
+            print('### POLY     ', ply   )
+            print('### POINTS   ', geom[1] , type(geom[1]) )
+            
             for idx in range(len(ply)):
                 # iterate by two and store segments
                 cidx = ply[idx-1]
+                print(cidx)
+
                 out_edge_ids.append((  cidx            ,ply[idx]          )) # poly index
-                out_edge_pts.append((  geom[1][cidx-2] , geom[1][cidx-1]  )) # point index
+                #out_edge_pts.append((  geom[1][cidx-2] , geom[1][cidx-1]  )) # point index
+
         return [out_edge_ids, out_edge_pts]
 
     ##-------------------------------------------##   
@@ -1969,11 +1975,11 @@ class polygon_operator(point_operator_3d):
 
         # build a scale matrix 
         
-        amtx = 1
-        amty = 1
-        amtz = 1
+        amtx = 1.0
+        amty = 1.0
+        amtz = 1.0
                         
-        if isinstance(amt,tuple):
+        if isinstance(amt,tuple) or isinstance(amt,list):
             amtx = amt[0]
             amty = amt[1]
             amtz = amt[2]
