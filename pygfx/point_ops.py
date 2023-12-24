@@ -222,7 +222,6 @@ class point_operator_3d(object):
 
         # apply the transform here
         for pt in pts: 
-            print(pt)
             if m33 is not None:
                 tmp_buffer.append( m33 * pt )
             if m44 is not None:

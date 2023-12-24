@@ -534,13 +534,25 @@ class vectorflow(object3d):
         self.gl_extents()
 
     ##-------------------------------------------## 
-    def gl_rotate(self, rot):
+    def gl_rotate(self, amt):
         """
-            DEBUG - NOT TESTED  
             global rotate the entire dataset in 2d  
             this allows 3D moves but you probably want 2D - zero the Z axis for pos or just send it 2 coords
         """
-        print("global rotate ", rot) 
+        print("global rotate ", amt) 
+
+        rotx = 0.0
+        roty = 0.0
+        rotz = 0.0
+        
+        if isinstance(amt,tuple) or isinstance(amt,list):
+            rotx = amt[0]
+            roty = amt[1]
+            rotz = amt[2]
+        else:
+            rotx = amt
+            roty = amt
+            rotz = amt         
 
         pop = polygon_operator()
 
@@ -549,31 +561,43 @@ class vectorflow(object3d):
                 #self.gr_sort[i][4] = pop.trs_points(self.gr_sort[i][4], rotate=(-rot[0], -rot[1], -rot[2] ))
 
                 # ROUNDING WAS CAUSING GLITCHES IN THE NCVIEWER APP - MAY OR MAY NOT BE AN ISSUE 
-                self.gr_sort[i][4] = pop.rotate_pts(rot=(-rot[0], -rot[1], -rot[2] ), pts=self.gr_sort[i][4], doround=True)
+                self.gr_sort[i][4] = pop.rotate_pts(rot=(-rotx, -roty, -rotz ), pts=self.gr_sort[i][4], doround=True)
 
         # dont forget to recalculate extents 
         self.gl_extents()
 
     ##-------------------------------------------## 
-    def gl_scale(self, scale):
-        """
-            DEBUG - NOT TESTED  
-            global rotate the entire dataset in 2d  
-            this allows 3D moves but you probably want 2D - zero the Z axis for pos or just send it 2 coords
-        """
-        print("global scale ", scale) 
+    def gl_scale(self, amt):        
+        #derived from scale_pts
+        # build a scale matrix 
+        
+        amtx = 1.0
+        amty = 1.0
+        amtz = 1.0
+        
+        if isinstance(amt,tuple) or isinstance(amt,list):
+            amtx = amt[0]
+            amty = amt[1]
+            amtz = amt[2]
+        else:
+            amtx = amt
+            amty = amt
+            amtz = amt            
 
-        pop = polygon_operator()
+        sc_m33 = self.m33.identity
+        sc_m33[0]  = amtx
+        sc_m33[4]  = amty
+        sc_m33[8]  = amtz    
 
-        for i,row in enumerate(self.gr_sort):
-            if len(scale)==2:
-                self.gr_sort[i][4] = pop.trs_points(self.gr_sort[i][4], scale=(-scale[0], -scale[1]) )
-            if len(scale)==3:
-                self.gr_sort[i][4] = pop.trs_points(self.gr_sort[i][4], scale=(-scale[0], -scale[1], -scale[0] ))
-
+        #for ply in self.gr_polys:
+        #    print(ply[0])
+        for ply in self.gr_sort:
+            ply[4] = sc_m33.batch_mult_pts(ply[4])
+        
         # dont forget to recalculate extents 
         self.gl_extents()
 
+    
     ##-------------------------------------------## 
     def gl_move_center(self):
         """
@@ -590,7 +614,21 @@ class vectorflow(object3d):
 
         # dont forget to recalculate extents 
         self.gl_extents()
- 
+
+    ##-------------------------------------------##  
+    def gl_translate(self, xval, yval, zval):
+        """
+            we only work on gr_sort - gr_poly is a copy pf the orignial data
+        """
+        print("global tansform all pts ") 
+        pop = polygon_operator()
+
+        for i,row in enumerate(self.gr_sort):
+            self.gr_sort[i][4] = pop.trs_points(self.gr_sort[i][4], (xval, yval, zval ))
+
+        # dont forget to recalculate extents 
+        self.gl_extents()
+
     ##-------------------------------##
     def _scrub(self, inp):
         """ clean up parsed characters from kicad file """
@@ -637,26 +675,6 @@ class vectorflow(object3d):
         self.outfile.append('  ')
         self.outfile.append('(exporting filled polygons )')
 
-        # build the gcode up with simple linear movements 
-        ##------------------------------
-
-        # #DEBUG - FILL_POLYS ARE A LAYOVER FROM KICAD STUFF - UNTESTED 
-        # for fill_poly in self.filled_polys:
-        #     if do_retracts:
-        #         pt1 = fill_poly[0] 
-        #         self.outfile.append('G0 x%s y%s z%s'% (  pt1[0], pt1[1], self.rh ) )  #first point at retract height   
-        #         self.ngc_to_obj.append( ( self.hp[0], self.hp[1], self.rh) ) 
-        #     for i,pt in enumerate(fill_poly):
-        #         self.outfile.append( 'G1 x%s y%s z%s'%( pt[0], pt[1], pt[2] ) )
-        #         self.ngc_to_obj.append( ( pt[0], pt[1], pt[2] ) )             
-        #         lastpt =( round(pt[0]*self.global_scale,pl) , pt[1], pt[2] )
-        #     self.outfile.append( 'G0 x%s y%s z%s'%(lastpt[0], lastpt[1], lastpt[2]) )
-        #     self.ngc_to_obj.append( (lastpt[0], lastpt[1], lastpt[2])   ) 
-        #     if do_retracts:
-        #         self.outfile.append('g0z%s'% ( self.rh ) )  #retract in between cuts
-        #         self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.rh)   ) 
-        #         self.outfile.append('  ')
-
         ####
         self.outfile.append('  ')
         self.outfile.append('(exporting graphic polygons )')
@@ -681,24 +699,26 @@ class vectorflow(object3d):
             if len(gr_poly) and export_ply:
                 self.outfile.append('(exporting new polygon )')
                 
-                ##-- 
-                #DEBUG - need to sort out clean points - want to run as close to final export 
-                #it looses precision 
-
                 # no formatting (full precision)
                 if doround:                
-                    pt1=(round(gr_poly[0][0],pl) ,round(gr_poly[0][1],pl)) 
+                    pt1=(round(gr_poly[0][0],pl) ,round(gr_poly[0][1],pl), round(gr_poly[0][2],pl) ) 
                 else:
                     pt1 = gr_poly[0]
 
-                ## first point at retract height 
+                ## first point with/without retracts 
                 if do_retracts:
+                    self.outfile.append( 'G0' )
                     #move to first point RH 
                     self.outfile.append('x%s y%s z%s'% (  pt1[0] , pt1[1], self.rh ) )               
                     self.ngc_to_obj.append( ( pt1[0], pt1[1], self.rh ) )             
+                    self.outfile.append( 'G1' )
+                else:
+                    self.outfile.append( 'G0' )
+                    self.outfile.append('x%s y%s z%s'% (  pt1[0] , pt1[1], pt1[2]) )               
+                    self.ngc_to_obj.append( ( pt1[0], pt1[1], pt1[2] ) )             
+                    self.outfile.append( 'G1' )
 
                 ## iterate points in polygon 
-                self.outfile.append( 'G1' )
                 for i,pt in enumerate(gr_poly):
                     if doround:
                         tmp = ( round(pt[0],pl), round(pt[1],pl), round(pt[2],pl) ) 
@@ -706,10 +726,9 @@ class vectorflow(object3d):
 
                     self.outfile.append( 'x%s y%s z%s'%( pt[0], pt[1],  pt[2] ) )
                     self.ngc_to_obj.append( (pt[0], pt[1],  pt[2]) )                   
-                
-                self.outfile.append( 'G0' )
 
                 if do_retracts:
+                    self.outfile.append( 'G0' )
                     if doround:
                         gpt=(round(gr_poly[0][0],pl) ,round(gr_poly[0][1],pl)) 
                     else:
@@ -718,8 +737,9 @@ class vectorflow(object3d):
                     self.ngc_to_obj.append( (gpt[0], gpt[1], self.rh)  )
                     self.outfile.append( 'x%s y%s z%s'%( gpt[0], gpt[1], self.rh) )
 
-                    #### retract in between cuts
+                    # retract in between cuts
                     self.outfile.append('g0z%s'% ( self.rh ) )  
+
 
                 self.outfile.append('  ')
 
@@ -737,24 +757,38 @@ class vectorflow(object3d):
 
             walks self.gr_poly and builds an OBJ and NGC file in self.outfile
 
-
+            #milling commands 
             https://linuxcnc.org/docs/html/gcode/g-code.html
             Top 10 tasty GCODE commands:
                 S - surface speed
+                
                 G20 (Use inch)
                 G21 (Use mm)
+
                 G90 (Set Absolute Coordinates)
                 G0 -  Rapid Move
                 G1 -  Linear Move
+                
                 M3, M4, M5  S ($)   Spindle Control
                 M6 - 
                 M9 - 
                 M3 - 
                 M2 - program end 
+
+            #Laser commands  
+                LASER ON/OFF could be M103/M105 or it could be M03/M05. depends on GRBL 
+                M3 Constant Laser Power Mode
+                M4 Dynamic Laser Power Mode
+                S-MIN and S-MAX  Power Modulation
+
+            #3d print commands
+
         """
 
         lastpt = (0,0,0)
-        laserpwm = 1000.00
+        #power is 0 to 1000 (I think)
+        laserpwm = 100.00
+
 
         self.outfile.append('(exported with _calculate_paths2d )')
         self.outfile.append('(linear scale set to %s of internal coordinates)'%self.global_scale )
@@ -778,6 +812,7 @@ class vectorflow(object3d):
         # build the gcode up with simple linear movements 
         ##------------------------------
 
+        """
         #DEBUG - FILL_POLYS ARE A LAYOVER FROM KICAD STUFF - UNTESTED 
         for fill_poly in self.filled_polys:
             if do_retracts:
@@ -797,11 +832,15 @@ class vectorflow(object3d):
                 self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.rh)   ) 
                 self.outfile.append('  ')
 
+        """
         ####
+
         self.outfile.append('  ')
         self.outfile.append('(exporting graphic polygons )')
         
         ##------------------------------
+
+
 
         # graphical polygons - build the gcode up with simple linear movements
         for row in self.gr_sort:
@@ -820,8 +859,6 @@ class vectorflow(object3d):
 
             if len(gr_poly) and export_ply:
                 self.outfile.append('(exporting new polygon )')
-
-                
                 ##-- 
                 #DEBUG - need to sort out clean points - want to run as close rto final xport 
                 #it looses precision 
@@ -833,31 +870,31 @@ class vectorflow(object3d):
 
                 ##-- 
 
-                #### first point at retract height 
+                #### rapid move to first point (with ot wiothour retract) 
                 if do_retracts:
-                    #move to first point RH 
+                    self.outfile.append( 'G0' )    
                     self.outfile.append('x%s y%s z%s'% (  pt1[0] , pt1[1], self.rh ) )               
                     self.ngc_to_obj.append( ( pt1[0], pt1[1], self.rh ) )             
+                    self.outfile.append( 'G1' )
+                else:
+                    self.outfile.append( 'G0' )    
+                    #move to first point RH 
+                    self.outfile.append('x%s y%s z%s'% (  pt1[0] , pt1[1], self.ch ) )               
+                    self.ngc_to_obj.append( ( pt1[0], pt1[1], self.ch ) )             
+                    self.outfile.append( 'G1' )
 
-                ## iterate points in polygon 
-                self.outfile.append( 'G1' )
-                
-                #LASER ON/OFF could be M103/M105 or it could be M03/M05. It depends on the parameters of the GRBL.
+
                 if do_laser:
-                    #M3 Constant Laser Power Mode
-                    #M4 Dynamic Laser Power Mode
-                    #DEBUG LOOK INTO - S-MIN and S-MAX (Power Modulation)
-
+                    #laser on
                     self.outfile.append( 'M3 S%s'%laserpwm )
- 
+
                 for i,pt in enumerate(gr_poly):
                     self.outfile.append( 'x%s y%s z%s'%( pt[0], pt[1], self.ch ) )
                     self.ngc_to_obj.append( (pt[0], pt[1], self.ch) )                   
                 
-                self.outfile.append( 'G0' )
+ 
                 if do_laser:
                     self.outfile.append( 'M5 S0' )
-
                 # move to last point at CH  
                 #self.ngc_to_obj.append( (gr_poly[0][0], gr_poly[0][1], self.ch))   
                 #self.outfile.append( 'x%s y%s z%s'%( (gr_poly[0][0], gr_poly[0][1], self.ch) ) )
@@ -1120,10 +1157,6 @@ class vectorflow(object3d):
     ##-------------------------------##
     def cvt_obj3d_grpoly(self, index=None):
         """ 
-            THIS IS A FUNDAMENTALLY FLAWED HACK
-            WE WANT A 3D FORMAT FROM TOP TO BOTTOM. 
-            THIS IS PSUDEO 3D FROM 2D DATA 
-
             convert 3d obj polys into gr_poly buffer to export to json, ect 
             we have to dump the z axis   
         """         
@@ -1136,12 +1169,13 @@ class vectorflow(object3d):
             for ip, pt in enumerate(poly):
                 #polygons.append( (idx, idx+1) ) #2 point polygon indeces
                 #print(self.points[pt])
-
                 ptx = self.points[pt-1][0]
                 pty = self.points[pt-1][1] 
                 
+                print(len(self.points[pt-1]))
+
                 #allow for 2d and 3d data? 
-                if len(self.points[pt-1])<2:               
+                if len(self.points[pt-1])==3:               
                     ptz = self.points[pt-1][2] 
                     polygon.append((ptx, pty, ptz))
                 else: 
@@ -1149,7 +1183,6 @@ class vectorflow(object3d):
 
             # [[id, centroid, extents, len, points ]] 
             #self.gr_sort.append([ig, self.centroid((ptx,pty,0.0)) ,[minx,miny, maxx, maxy], len(ply), ply])
-            
             self.gr_polys.append(polygon)
         
         self._sort()
@@ -1201,33 +1234,7 @@ class vectorflow(object3d):
     ##-------------------------------##
     ##-------------------------------##
     ##-------------------------------------------##   
-    def scale_gcode(self, amt ):
-        #derived from scale_pts
-        # build a scale matrix 
-        
-        amtx = 1.0
-        amty = 1.0
-        amtz = 1.0
-        
-        if isinstance(amt,tuple) or isinstance(amt,list):
-            amtx = amt[0]
-            amty = amt[1]
-            amtz = amt[2]
-        else:
-            amtx = amt
-            amty = amt
-            amtz = amt            
 
-        sc_m33 = self.m33.identity
-        sc_m33[0]  = amtx
-        sc_m33[4]  = amty
-        sc_m33[8]  = amtz    
-
-        #for ply in self.gr_polys:
-        #    print(ply[0])
-        for ply in self.gr_sort:
-            ply[4] = sc_m33.batch_mult_pts(ply[4])
-        #return    
 
     def load_geojson(self, inputfile, getfids=None, zaxis=0):
         """ parse a geojson file - store points in arrays in GR_POLY buffer 
@@ -1275,6 +1282,17 @@ class vectorflow(object3d):
             for i,f in enumerate(features):
                 # multipolygon type
                 if f.geometry:
+                    ##DEBUG ADDING THIS DATA TYPE 
+                    if f.geometry.type == 'LineString':
+                        tmp_poly = []
+                        for coord in f.geometry.coordinates: 
+                            #tmp_poly.append(coord)
+                            tmp_poly.append( (coord[0], coord[1], zaxis) )
+
+                        if tmp_poly:
+                            #print(tmp_poly)
+                            self.jsonbuffer.append(tmp_poly) 
+
                     if f.geometry.type == 'MultiPolygon':
                         for coord in f.geometry.coordinates:                    
                             for p,koord in enumerate(coord):
@@ -1478,6 +1496,8 @@ class vectorflow(object3d):
             
             #no rotation 
             ropr.render_obj((100,0,255), 0, 0, 0, 1, renderscale, object3d=obj)
+            #with rotation
+            #ropr.render_obj((100,0,255), i*30, -i*30, i*30, 1, renderscale, object3d=obj)
 
             #coords are in pixels - rather huge for a model 
             #ropr.vec_fr_buffer.scale_pts((.01,.01,.01))

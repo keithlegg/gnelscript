@@ -15,6 +15,8 @@ if NUMPY_IS_LOADED:
     from gnelscript.tools.raytrace import  *
 
 
+from gnelscript.pygfx.gis_vector_ops import *
+
 
 
 def bloody_simple_2drender( imagename, pts=None, 
@@ -136,33 +138,36 @@ if NUMPY_IS_LOADED:
 
 ##-----------------------------------------
 
-def tesselator():
+def tesselator(path, outfilename):
     kip = vectorflow()
     kip._set_extents( (-10, -10, 10, 10) )
-    kip.make_grid(1, GLOBAL_PROJ, 9, 9)
+    kip.make_grid(1, path, 3, 3)
     o = object3d()
 
+    
     divs = 6
     degs = 360/divs 
     for x in range(divs):
         o.prim_triangle('z',(0,0,0),(0,0,x*degs))
     o.scale_pts((1.5,1.5,1.5))
+   
+    #o.load(path+'/3d_obj/teapot.obj')
 
-    #kip.tess_vec_render(1, '%s/3d_obj/'%GLOBAL_PROJ, 'monkey.obj')
+    #kip.tess_vec_render(1, '%s/3d_obj/'%path, 'monkey.obj')
     kip.tess_vec_render(1, '', o)
     ##--
-    #kip.tess_objclone(objfile='%s/3d_obj/centered.obj'%GLOBAL_PROJ )
+    #kip.tess_objclone(objfile='%s/3d_obj/centered.obj'%path )
     #kip.tess_objclone(objfile=o )
     #kip.tess_objclone( pts=o.cvt_pts_2d() )
     ##-- 
-    kip.export_grid_gfx('gridgfx', GLOBAL_PROJ, borders=False, centroids=False)
-    #kip.export_grid_gfx('gridgfx', GLOBAL_PROJ, borders=True, centroids=True)
+    kip.export_grid_gfx(outfilename, path, borders=False, centroids=False)
+    #kip.export_grid_gfx('gridgfx', path, borders=True, centroids=True)
 
 
-def sq_tesselator(size, grdivs, rotdivs, scpts):
+def sq_tesselator(size, path, grdivs, rotdivs, scpts):
     kip = vectorflow()
     kip._set_extents( (-size, -size, size, size) )
-    kip.make_grid(1, GLOBAL_PROJ, grdivs, grdivs)
+    kip.make_grid(1, path, grdivs, grdivs)
     o = object3d()
     divs = rotdivs
     degs = 360/divs 
@@ -170,8 +175,8 @@ def sq_tesselator(size, grdivs, rotdivs, scpts):
         o.prim_triangle('z',(0,0,0),(0,0,x*degs))
     o.scale_pts((scpts,scpts,scpts))
     kip.tess_vec_render(1, '', o)
-    kip.export_grid_gfx('gridgfx', GLOBAL_PROJ, borders=False, centroids=False)
-    #kip.export_grid_gfx('gridgfx', GLOBAL_PROJ, borders=True, centroids=True)
+    kip.export_grid_gfx('gridgfx', path, borders=False, centroids=False)
+    #kip.export_grid_gfx('gridgfx', path, borders=True, centroids=True)
 
 
 #sq_tesselator(10,9,6,1.5)
