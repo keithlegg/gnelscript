@@ -249,32 +249,35 @@ class vectorflow(object3d):
             cell.points.extend( pts2 )
     
     ##-------------------------------##
-    def hole_cutter_2d(self, tooldia, dia, spokes):
+    def hole_cutter_2d(self, tooldia, holes):
         """ simple circle generator for chopping holes with gcode 
-            it is intended for 2d holes but will soon do 3d cuts as well. 
+            
 
             ARGS: 
-                tooldia - diamater of tool  
-                dia - diamater of final hole 
-                spokes - number of points around the circumfrence 
-
-            not done     
-                #iterations - how many times to repeat 
-                #itdeapth - ho deep to cut per iteration 
+                holes = [ [dia, spokes, (x,y,z)/(x,y) ] ]
 
             NOTES:
                 format of self.gr_sort = [[id, centroid, extents, len, points ]] 
         """
-        cen = [0,0]
 
-        #pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
-        pts = self.pop3d.calc_circle(pos=(0,0,0), rot=(0,0,0), dia=dia, periodic=True, spokes=spokes)
+        for h in holes:
+            print(h)
+
+            dia = h[0]
+            spokes = h[1]
+            pt = h[2]
+
+            if len(pt)<3:
+                cen = [pt[0],pt[1],self.ch]
+            if len(pt)==3:            
+                cen=pt   
+
+            #pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
+            pts = self.pop3d.calc_circle(pos=cen, rot=(0,0,0), dia=dia, periodic=True, spokes=spokes)
     
-        self.gr_polys.append(pts)
-        self._sort() 
+            self.gr_polys.append(pts)
 
-        #pts2 = self.pop2d.batch_rotate_pts_2d( pts, cen, 180 )
-        #hole_pts.extend( pts2 )
+        self._sort()
 
     ##-------------------------------##   
     def _set_cam_properties(self, rh, ch, cdpi, cmax):
@@ -332,7 +335,7 @@ class vectorflow(object3d):
             ply = sort[4]
 
             for i, c in enumerate(range(iterations)):
-                depth = self.ch+(i*self.cdpi)
+                depth = self.ch-(i*self.cdpi)
                 for pt in ply:
                     if depth < self.cmax:
                         newply.append( (pt[0] ,pt[1], depth) )
@@ -1212,6 +1215,7 @@ class vectorflow(object3d):
     ##-------------------------------##
     def cvt_grpoly_3dobj(self, index=None):
         """DEBUG - sort of works but only with one polygon  """
+        print("DEBUG cvt_grpoly_3dobj only works with 1 polygon")
         points = [] 
         pids = [] 
 
@@ -1226,7 +1230,6 @@ class vectorflow(object3d):
             
         self.points = points 
         self.polygons.append(pids) 
-
 
     ##-------------------------------##            
     def cvt_obj3d_grpoly(self, index=None):
@@ -1471,7 +1474,6 @@ class vectorflow(object3d):
     ##-------------------------------##
     def make_grid(self, distance, folder, xcuts, ycuts, bbox=None):
         """ chop a square into smaller squares 
-
         """
 
         if bbox:
