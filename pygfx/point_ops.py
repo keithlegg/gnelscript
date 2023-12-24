@@ -1322,7 +1322,10 @@ class polygon_operator(point_operator_3d):
 
     ##-------------------------------------------##
     def calc_3d_bbox(self, pts=None, ptgrp=None, facgrp=None):
-        """ get 3D bounds of points (or 3d object) 
+        """ 
+            DEBUG - crashes if self.points is empty! 
+
+            get 3D bounds of points (or 3d object) 
 
             returns [min_x, min_y, min_z, max_x, max_y, max_z ] 
 

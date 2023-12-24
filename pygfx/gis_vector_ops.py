@@ -116,13 +116,18 @@ class vectorflow(object3d):
 
         self.orig_minx = 0
         self.orig_miny = 0         
+        self.orig_minz = 0
         self.orig_maxx = 0
         self.orig_maxy = 0
+        self.orig_maxz = 0
 
         self.sort_minx = 0
         self.sort_miny = 0         
+        self.sort_minz = 0
         self.sort_maxx = 0
         self.sort_maxy = 0
+        self.sort_maxz = 0
+
 
         self.global_scale =  0.0393701 #NOT FULLY IMPLEMENTED - inch to mm 
 
@@ -455,7 +460,9 @@ class vectorflow(object3d):
     ##-------------------------------------------## 
     ##-------------------------------------------## 
     def gl_extents(self):
-        """ global extents DEBUG - NOT TESTED
+        """ DEBUG - NOT WORKING YET 
+
+            global 2D/3D extents 
 
             we only work on gr_sort - gr_poly is a copy pf the orignial data
 
@@ -463,16 +470,18 @@ class vectorflow(object3d):
             if you want to re-run, use this 
         """
 
-        # we only work on gr_sort - gr_poly is a copy pf the orignial data 
+        # #start with gr_sort - we will do OBJ below
         # [[id, centroid, extents, len, points ]]
         for row in self.gr_sort:
             ply = row[4] 
 
             minx = 0
             miny = 0         
+            minz = 0  
             maxx = 0
             maxy = 0
-       
+            maxz = 0
+
             #print('### len ', len(ply))
             for i,pt in enumerate(ply):
                 if i == 0:
@@ -480,6 +489,11 @@ class vectorflow(object3d):
                     maxx=pt[0]
                     miny=pt[1]
                     maxy=pt[1]
+                    
+                    if len(pt)==3:
+                        #some data will be 2D, some 3D
+                        minz=pt[0]
+                        maxz=pt[0]
 
                 if pt[0]<minx:
                     minx=pt[0]    
@@ -489,15 +503,50 @@ class vectorflow(object3d):
                     miny=pt[1]  
                 if pt[1]>maxy:
                     maxy=pt[1] 
-            
+
+                if len(pt)==3:
+                    #some data will be 2D, some 3D
+                    if pt[2]<minz:
+                        minz=pt[2]  
+                    if pt[2]>maxz:
+                        maxz=pt[2] 
+
             if minx<self.sort_minx:
                 self.sort_minx=minx
             if miny<self.sort_miny:
                 self.sort_miny=miny
+            if minz<self.sort_minz:
+                self.sort_minz=minz
+
             if maxx>self.sort_maxx:
                 self.sort_maxx=maxx
             if maxy>self.sort_maxy:
                 self.sort_maxy=maxy
+            if maxz>self.sort_maxz:
+                self.sort_maxz=maxz
+
+        if len(self.points):
+            #do OBJ geometry next 
+            bbox = self.calc_3d_bbox()
+            #return [min_x, min_y, min_z, max_x, max_y, max_z ]
+            for e in bbox:
+                if bbox[0]<self.sort_minx:
+                    self.sort_minx=bbox[0]
+                if bbox[1]<self.sort_miny:
+                    self.sort_miny=bbox[1]
+                if bbox[2]<self.sort_minz:
+                    self.sort_minz=bbox[2]
+
+                if bbox[3]>self.sort_maxx:
+                    self.sort_maxx=bbox[3]
+                if bbox[4]>self.sort_maxy:
+                    self.sort_maxy=bbox[4]
+                if bbox[5]>self.sort_maxz:
+                    self.sort_maxz=bbox[5]
+
+
+        return [self.sort_minx, self.sort_miny, self.sort_minz, 
+                self.sort_maxx, self.sort_maxy, self.sort_maxz ]
 
     ##-------------------------------------------## 
     def gl_centroid(self):
@@ -870,24 +919,28 @@ class vectorflow(object3d):
 
                 ##-- 
 
-                #### rapid move to first point (with ot wiothour retract) 
-                if do_retracts:
+                #### rapid move to first point (with ot without retract)
+                if do_retracts and not do_laser:
                     self.outfile.append( 'G0' )    
                     self.outfile.append('x%s y%s z%s'% (  pt1[0] , pt1[1], self.rh ) )               
                     self.ngc_to_obj.append( ( pt1[0], pt1[1], self.rh ) )             
-                    self.outfile.append( 'G1' )
-                else:
+                    
+                    self.outfile.append('x%s y%s z%s'% (  pt1[0] , pt1[1], self.ch ) )               
+                    self.ngc_to_obj.append( ( pt1[0], pt1[1], self.rh ) ) 
+
+                if not do_retracts or do_laser:
                     self.outfile.append( 'G0' )    
                     #move to first point RH 
                     self.outfile.append('x%s y%s z%s'% (  pt1[0] , pt1[1], self.ch ) )               
                     self.ngc_to_obj.append( ( pt1[0], pt1[1], self.ch ) )             
-                    self.outfile.append( 'G1' )
 
-
+                
+                ##draw the polygons   
                 if do_laser:
                     #laser on
                     self.outfile.append( 'M3 S%s'%laserpwm )
 
+                self.outfile.append( 'G1' )
                 for i,pt in enumerate(gr_poly):
                     self.outfile.append( 'x%s y%s z%s'%( pt[0], pt[1], self.ch ) )
                     self.ngc_to_obj.append( (pt[0], pt[1], self.ch) )                   
@@ -899,7 +952,9 @@ class vectorflow(object3d):
                 #self.ngc_to_obj.append( (gr_poly[0][0], gr_poly[0][1], self.ch))   
                 #self.outfile.append( 'x%s y%s z%s'%( (gr_poly[0][0], gr_poly[0][1], self.ch) ) )
 
-                if do_retracts:
+                if do_retracts and not do_laser:
+                    self.outfile.append( 'G0' )  
+                    self.ngc_to_obj.append( (gr_poly[0][0], gr_poly[0][1], self.ch)  )
                     self.ngc_to_obj.append( (gr_poly[0][0], gr_poly[0][1], self.rh)  )
                     self.outfile.append( 'x%s y%s z%s'%( gr_poly[0][0], gr_poly[0][1], self.rh) )
 
@@ -1155,6 +1210,25 @@ class vectorflow(object3d):
         self.save(name)
 
     ##-------------------------------##
+    def cvt_grpoly_3dobj(self, index=None):
+        """DEBUG - sort of works but only with one polygon  """
+        points = [] 
+        pids = [] 
+
+        for ply in self.gr_sort:
+            idx=1
+            #if index == ply[0]:
+            for i,pt in enumerate(ply[4]):
+                points.append(pt)
+                if i < len(ply[4])-2:
+                    pids.append(idx)               
+                idx+=1
+            
+        self.points = points 
+        self.polygons.append(pids) 
+
+
+    ##-------------------------------##            
     def cvt_obj3d_grpoly(self, index=None):
         """ 
             convert 3d obj polys into gr_poly buffer to export to json, ect 
@@ -1171,8 +1245,6 @@ class vectorflow(object3d):
                 #print(self.points[pt])
                 ptx = self.points[pt-1][0]
                 pty = self.points[pt-1][1] 
-                
-                print(len(self.points[pt-1]))
 
                 #allow for 2d and 3d data? 
                 if len(self.points[pt-1])==3:               
