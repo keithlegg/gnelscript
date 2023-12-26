@@ -148,29 +148,15 @@ class vectorflow(object3d):
         self.outfile       = []
 
     ##-------------------------------##
-    def scanline(self, numh, numv, drwply):
-        """
-           build a series of lines across a triangle that represent a raster scan
-           
-           numh - int num width  
-           numv - int num height 
-           drwply   - tuple of tuple of 3 floats, xyz  
-
-           returns [numh*numv]
-
-        """
+    def scanline_ngon(self, numh, numv, drwply):
         
         #derive 2D BBOX from 3D function  
         bbox_pts = self.calc_2d_bbox( axis='z', pts=drwply, aspts=True)        
         bbox     = self.calc_2d_bbox( axis='z', pts=drwply)
-        
-        
-        self.pts_to_linesegment(bbox_pts, periodic=True)
-
-        #render the bounding box 
-        #self.pts_to_linesegment(bbox_pts, periodic=False)
 
         out_pts = [] 
+        
+        debug = True 
 
         #minx, miny , maxx, maxy
         res_x = bbox[2]-bbox[0]
@@ -178,17 +164,20 @@ class vectorflow(object3d):
         
         xhalf = res_x/2 
         yhalf = res_y/2 
-
         ydivs = (res_y/numv)
 
-        #center needs to derive from calc_bbox 
-        bbox = self.calc_3d_bbox()
+        # render the bounding box (OBJ) 
+        if debug:
+            self.pts_to_linesegment(bbox_pts, periodic=False)
+        
+        # center needs to derive from calc_bbox
+        bbox = self.calc_3d_bbox(pts=bbox_pts)
 
         center = (abs(bbox[0]+bbox[3])/2, abs(bbox[1]+bbox[4])/2)
         
-        print(center)
-
-        self.prim_circle(pos=(center[0], center[1], 0), dia=.2, axis='z')
+        #to debug center calc  
+        #print(center)
+        #self.prim_circle(pos=(center[0], center[1], 0), dia=.2, axis='z')
 
         vecmath = vec2()     # use for math operations
 
@@ -203,9 +192,9 @@ class vectorflow(object3d):
         e3 = ( drwply[0][0], drwply[0][1])
 
 
-        #render the triangle 
-        self.pts_to_linesegment(drwply, periodic=True)
-
+        #render the triangle  (OBJ)
+        if debug:
+            self.pts_to_linesegment(drwply, periodic=True)
 
         # define the scanline geometry, iterate each horizontal line of image
         for hscan in range(1,numv):
@@ -221,7 +210,101 @@ class vectorflow(object3d):
             s_hvec = (center[0]-xhalf, ypos)
             e_hvec = (center[0]+xhalf, ypos)
             
-            #render the raster scan lines 
+            #render the raster scan lines (OBJ) 
+            if debug:
+                self.pts_to_linesegment([s_hvec,e_hvec], periodic=False)
+
+            #iterate all points, build line segments and brute force test intersetion with scanline 
+            for i,pt in enumerate(drwply):
+                if i>0:
+                    #2d segment start and end 
+                    s_v = drwply[i-1]
+                    e_v = drwply[i]
+                    
+                    #run the test (slow but it works) 
+                    hit = vecmath.intersect(s_hvec, e_hvec, (s_v[0],s_v[1]), (e_v[0],e_v[1]) )  
+                    if hit:
+                        thisline.append( hit )  
+              
+
+            #put each row in its own array  
+            out_pts.append(thisline)
+
+        return out_pts
+
+    ##-------------------------------##
+    def scanline_triangle(self, numh, numv, drwply):
+        """
+           build a series of lines across a triangle that represent a raster scan
+           
+           numh - int num width  
+           numv - int num height 
+           drwply   - tuple of tuple of 3 floats, xyz  
+
+           returns [numh*numv]
+
+        """
+        
+        #derive 2D BBOX from 3D function  
+        bbox_pts = self.calc_2d_bbox( axis='z', pts=drwply, aspts=True)        
+        bbox     = self.calc_2d_bbox( axis='z', pts=drwply)
+                
+
+
+        out_pts = [] 
+
+        #minx, miny , maxx, maxy
+        res_x = bbox[2]-bbox[0]
+        res_y = bbox[1]-bbox[3]
+        
+        xhalf = res_x/2 
+        yhalf = res_y/2 
+
+        ydivs = (res_y/numv)
+
+        # render the bounding box (OBJ) 
+        #self.pts_to_linesegment(bbox_pts, periodic=False)
+        
+        # center needs to derive from calc_bbox
+        bbox = self.calc_3d_bbox(pts=bbox_pts)
+
+        center = (abs(bbox[0]+bbox[3])/2, abs(bbox[1]+bbox[4])/2)
+        
+        #to debug center calc  
+        #print(center)
+        #self.prim_circle(pos=(center[0], center[1], 0), dia=.2, axis='z')
+
+        vecmath = vec2()     # use for math operations
+
+        # build up line data for three sides of triangle
+        s1 = ( drwply[0][0], drwply[0][1] )
+        e1 = ( drwply[1][0], drwply[1][1] )
+        #
+        s2 = ( drwply[1][0], drwply[1][1])
+        e2 = ( drwply[2][0], drwply[2][1])
+        #
+        s3 = ( drwply[2][0], drwply[2][1])
+        e3 = ( drwply[0][0], drwply[0][1])
+
+
+        #render the triangle  (OBJ)
+        self.pts_to_linesegment(drwply, periodic=True)
+
+        # define the scanline geometry, iterate each horizontal line of image
+        for hscan in range(1,numv):
+
+            thisline = []
+
+            #ypos = center[1]+(hscan*ydivs)
+            ypos = (center[1]-yhalf)+(hscan*ydivs)
+            # build the scan vector 
+
+            #DEBUG -need to extend beyond extents to catch all hits
+            #buffer_dist = res_x
+            s_hvec = (center[0]-xhalf, ypos)
+            e_hvec = (center[0]+xhalf, ypos)
+            
+            #render the raster scan lines (OBJ) 
             self.pts_to_linesegment([s_hvec,e_hvec], periodic=False)
 
             # take the 3 edges of a triangle and determine if the horizontal scanline intersects any 
