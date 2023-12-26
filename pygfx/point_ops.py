@@ -1324,6 +1324,7 @@ class polygon_operator(point_operator_3d):
     def calc_3d_bbox(self, pts=None, ptgrp=None, facgrp=None):
         """ 
             DEBUG - crashes if self.points is empty! 
+                    made attempt to work with 2D data - treat Z as 0 , maybe a bad idea 
 
             get 3D bounds of points (or 3d object) 
 
@@ -1344,10 +1345,17 @@ class polygon_operator(point_operator_3d):
         #grab a point from data to initialize
         min_x=pts[0][0]
         min_y=pts[0][1]
-        min_z=pts[0][2]
+        if len(pts)==3:
+            min_z=pts[0][2]
+        else:
+            min_z = 0 
+
         max_x=pts[0][0]
         max_y=pts[0][1]
-        max_z=pts[0][2]
+        if len(pts)==3:        
+            max_z=pts[0][2]
+        else:
+            max_z = 0 
 
         for pt in pts:
             if pt[0]<min_x:
@@ -1359,11 +1367,12 @@ class polygon_operator(point_operator_3d):
                 min_y=pt[1]
             if pt[1]>max_y:
                 max_y=pt[1]
-
-            if pt[2]<min_z:
-                min_z=pt[2]
-            if pt[2]>max_z:
-                max_z=pt[2]
+            
+            if len(pt)==3:
+                if pt[2]<min_z:
+                    min_z=pt[2]
+                if pt[2]>max_z:
+                    max_z=pt[2]
 
         return [min_x, min_y, min_z, max_x, max_y, max_z ]
 
@@ -3013,7 +3022,9 @@ class polygon_operator(point_operator_3d):
         #DEBUG - PUT MORE ERROR CHECKING ON VERTS, I HAD SOME BAD DATA GET THROUGH 
         #EX: - v 1 2 3) (4,5,6)
         for p in self.points:
-            if len(p) == 3:
+            if len(p) == 2:
+                buf.append('v %s %s %s'%( p[0], p[1], 0) ) #attempt to work with 2D data. BAD IDEA? 
+            elif len(p) == 3:
                 buf.append('v %s %s %s'%( p[0], p[1], p[2]) ) #x y z components 
             elif len(p) == 6:
                 buf.append('v %s %s %s %s %s %s'%( p[0], p[1], p[2], p[3], p[4], p[5]) ) #x y z components                 

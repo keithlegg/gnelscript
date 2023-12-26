@@ -164,6 +164,9 @@ class vectorflow(object3d):
         bbox_pts = self.calc_2d_bbox( axis='z', pts=drwply, aspts=True)        
         bbox     = self.calc_2d_bbox( axis='z', pts=drwply)
         
+        
+        self.pts_to_linesegment(bbox_pts, periodic=True)
+
         #render the bounding box 
         #self.pts_to_linesegment(bbox_pts, periodic=False)
 
@@ -173,8 +176,19 @@ class vectorflow(object3d):
         res_x = bbox[2]-bbox[0]
         res_y = bbox[1]-bbox[3]
         
-        center = (res_x/2, res_y/2)
-        #self.prim_circle(pos=(center[0], center[1], 0), dia=.2, axis='z')
+        xhalf = res_x/2 
+        yhalf = res_y/2 
+
+        ydivs = (res_y/numv)
+
+        #center needs to derive from calc_bbox 
+        bbox = self.calc_3d_bbox()
+
+        center = (abs(bbox[0]+bbox[3])/2, abs(bbox[1]+bbox[4])/2)
+        
+        print(center)
+
+        self.prim_circle(pos=(center[0], center[1], 0), dia=.2, axis='z')
 
         vecmath = vec2()     # use for math operations
 
@@ -195,17 +209,17 @@ class vectorflow(object3d):
 
         # define the scanline geometry, iterate each horizontal line of image
         for hscan in range(1,numv):
-            
-            thisline = []
-            xpos = center[0]
-            ypos = center[1]-((res_y/numv)*hscan)
 
+            thisline = []
+
+            #ypos = center[1]+(hscan*ydivs)
+            ypos = (center[1]-yhalf)+(hscan*ydivs)
             # build the scan vector 
 
             #DEBUG -need to extend beyond extents to catch all hits
             #buffer_dist = res_x
-            s_hvec = (-xpos, ypos)
-            e_hvec = ( xpos, ypos)
+            s_hvec = (center[0]-xhalf, ypos)
+            e_hvec = (center[0]+xhalf, ypos)
             
             #render the raster scan lines 
             self.pts_to_linesegment([s_hvec,e_hvec], periodic=False)
@@ -249,10 +263,20 @@ class vectorflow(object3d):
             cell.points.extend( pts2 )
     
     ##-------------------------------##
+    def draw_dots_2d(self, dia, spokes, holes):
+        """ render some points as circles
+             inspired by hole cutter but just to see some coords in an image 
+        """
+
+        for h in holes:
+            for pt in h:
+                pts = self.pop3d.calc_circle(pos=(pt[0],pt[1],0), rot=(0,0,0), dia=dia, periodic=True, spokes=spokes)
+                self.gr_polys.append(pts)
+        self._sort()
+
     def hole_cutter_2d(self, tooldia, holes):
         """ simple circle generator for chopping holes with gcode 
             
-
             ARGS: 
                 holes = [ [dia, spokes, (x,y,z)/(x,y) ] ]
 
@@ -262,20 +286,20 @@ class vectorflow(object3d):
 
         for h in holes:
             print(h)
+            if h:
+                dia = h[0]
+                spokes = h[1]
+                pt = h[2]
 
-            dia = h[0]
-            spokes = h[1]
-            pt = h[2]
+                if len(pt)<3:
+                    cen = [pt[0],pt[1],self.ch]
+                if len(pt)==3:            
+                    cen=pt   
 
-            if len(pt)<3:
-                cen = [pt[0],pt[1],self.ch]
-            if len(pt)==3:            
-                cen=pt   
-
-            #pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
-            pts = self.pop3d.calc_circle(pos=cen, rot=(0,0,0), dia=dia, periodic=True, spokes=spokes)
-    
-            self.gr_polys.append(pts)
+                #pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
+                pts = self.pop3d.calc_circle(pos=cen, rot=(0,0,0), dia=dia, periodic=True, spokes=spokes)
+        
+                self.gr_polys.append(pts)
 
         self._sort()
 
