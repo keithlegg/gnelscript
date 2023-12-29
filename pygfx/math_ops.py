@@ -1579,6 +1579,8 @@ class matrix33(object):
             the order that you mutliply will call a different object!!!
             make sure you do "this * other", NOT "other * this"
 
+            DONT FIX THE ROUNDING ERROR HERE - KEEP THE PRECISION!
+            
         """
 
         if isinstance(n, vec3):

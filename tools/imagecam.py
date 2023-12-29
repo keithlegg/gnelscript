@@ -224,6 +224,7 @@ def secondpass(inputimage, outputpath, numbands, fast=False):
     print("writing file ", '%s/commonbands.png'%outputpath) 
     imageio.imwrite('%s/commonbands.png'%outputpath, c.reshape(*shape).astype(np.uint8))
 
+
 ##----------------------------------------------------
 def thirdpass( inputfile, outputfolder, fileformat, bmpinvert=False, po_invert=False, fastmode=False, blurrad=None  ):
     """ break an already posterized image into seperate images X colors 
@@ -683,27 +684,30 @@ class streamline(object):
     
     """
 
-    def oldrun (self, infile, outfolder, outname, numbands=4, dopass='all'):
+    def oldrun (self, whichiter, infile, outfolder, outname, numbands=4, invbmp=False, invpo=False, dopass='all'):
         self.inputimg = infile
         path = Path(infile)
         self.input_folder =  path.parent.absolute()
         self.output_folder = outfolder
         
-        whichiter = 5
+
 
         if dopass==1:                
             self._pass1(infile, outfolder, outname) 
 
-        if dopass==2:                
+        if dopass==2: 
+            print('using iteration %s/%s_%s as input'%(outfolder, outname, whichiter) )   
             self._pass2( numbands, outname, outfolder, outname, whichiter) 
 
         if dopass==3:                
-            self._pass3('%s/commonbands.png'%outfolder, outfolder)
+            #infilename, outfolder, mode='geojson',bmpinvert=False, po_invert=False
+            self._pass3('%s/commonbands.png'%outfolder, outfolder, mode='geojson',bmpinvert=invbmp, po_invert=invpo)
 
         if dopass=='all':                
             self._pass1(infile, outfolder, outname) 
             self._pass2( numbands, outname, outfolder, outname, whichiter) 
-            self._pass3('%s/commonbands.png'%outfolder, outfolder)
+            #infilename, outfolder, mode='geojson',bmpinvert=False, po_invert=False
+            self._pass3('%s/commonbands.png'%outfolder, outfolder, mode='geojson',bmpinvert=invbmp, po_invert=invpo)
 
     def _pass1(self, infile, outfolder, outname, dobw=False):
         """
@@ -718,7 +722,7 @@ class streamline(object):
         """
         args = self.p1_settings
         
-        print('# running first pass on %s '%infile)
+        print('\n # running first pass on %s '%infile)
 
         if dobw:
             firstpass_bw(args[0], args[1], args[2], args[3], args[4], infile, outfolder, outname)
@@ -755,30 +759,67 @@ class streamline(object):
                     usefile=file           
 
         infile = '%s/%s'%(outfolder,usefile)
-        print('#running secondpass on %s '%infile, outfolder)
+        print('# running secondpass on %s '%infile, outfolder)
 
         secondpass(infile, outfolder , numbands, fast=False )
 
-    def _pass3(self, infilename, outfolder, mode='geojson'):
+    def _pass3(self, infilename, outfolder, mode='geojson',bmpinvert=False, po_invert=False):
         """
            0 inputfile
            1 outputfolder
            2 fileformat
            3 bmpinvert=False
            4 po_invert=False
-           5 fastmode=False  
         """
 
         print('#running third pass on %s '%(infilename))
 
         #set the RGB values from last tool and run this 
 
-        thirdpass( infilename, outfolder, mode, bmpinvert=True )
-        
-        #thirdpass( infilename, outfolder, mode, bmpinvert=True, po_invert=True, fastmode=False )
+        #thirdpass( infilename, outfolder, mode, bmpinvert=True )
+        thirdpass( infilename, outfolder, mode, bmpinvert=bmpinvert, po_invert=po_invert, fastmode=False )
 
 
 
+
+
+
+def test_scanline2(jsonfile, outpath, outname):
+    vflo = vectorflow()
+    vflo2 = vectorflow()
+    
+    vflo.load_geojson(jsonfile)
+    vflo2.load_geojson(jsonfile)
+    
+    vflo2.rh = .01
+
+    for ply in vflo.gr_sort:
+        polypts = ply[4]
+        pts = vflo.scanline_ngon(5, 20, polypts)
+        vflo2.scanlines_to_segments(pts)
+
+    vflo2.cvt_obj3d_grpoly()
+    vflo2.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(outpath, outname) , do3d=False, do_retracts=False, do_laser=True)
+    #vflo2.save('scanz.obj') 
+
+
+
+
+def test_scanline(jsonfile, outpath, outname):
+    vflo = vectorflow()
+    vflo2 = vectorflow()
+    
+    vflo.load_geojson(jsonfile)
+    vflo2.load_geojson(jsonfile)
+
+    polypts = vflo.gr_sort[230][4]
+    print(polypts)
+    
+    pts = vflo.scanline_ngon(5, 20, polypts)
+    vflo2.scanlines_to_segments(pts)
+
+    vflo2.cvt_obj3d_grpoly()
+    vflo2.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(outpath, outname) , do3d=True, do_retracts=True)
 
 
 ##----------------------------------------------------

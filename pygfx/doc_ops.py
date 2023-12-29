@@ -26,3 +26,8 @@ def gn_dir(module):
             print('%s%s'%(indent,d))
 
 
+
+def gn_dir_type(module):
+    for a in module.__dict__:
+        print(a)
+

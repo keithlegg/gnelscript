@@ -135,6 +135,19 @@ class vectorflow(object3d):
         self.work_order = work_order() #list of gcode_ops (defined in milling_ops.py)
 
     ##-------------------------------##
+    def dump_raw_pts(self, fid, filename):
+        """export a single polygon for playing with  
+        """
+        
+        outfile =[] 
+        outfile.append(self.gr_sort[fid][4])           
+
+        print('## EXPORTING file %s'%filename)
+        with open(filename, 'w') as f:
+            for l in outfile:
+                f.write("%s\n" % l)
+
+    ##-------------------------------##
     def flush(self):
         #DEBUG - no worky, no testy 
         print('flushing geometry buffers')
@@ -148,15 +161,41 @@ class vectorflow(object3d):
         self.outfile       = []
 
     ##-------------------------------##
+    def scanlines_to_segments(self, lines):
+        """ DEBUG - NOT WORKING - need to skip over blank spaces (ODD pts)
+            take output of scanline_ngon and draw the fills for each line 
+              
+        """
+        zcoord = 0 
+
+        for l in lines:
+            #if length is EVEN - polygon has workable topolgy 
+            if len(l)%2==0:
+                #print(len(l))
+                for i in range(0,len(l),2):
+                    #print(i)
+                    spt =  (l[i-1][0], l[i-1][1], zcoord)                         
+                    ept =  (l[i][0]  , l[i][1]  , zcoord) 
+                    self.pts_to_linesegment([spt,ept], periodic=False)
+
+    ##-------------------------------##
     def scanline_ngon(self, numh, numv, drwply):
-        
+        """
+            get extents of polygon 
+            build up a grid of horizontal scanlines
+            iterate each line segment testing for 2D intersection 
+            return a list of those for each line
+            if the number is EVEN assume its multiple lines 
+            if the number is ODD is has poor topology 
+
+        """
         #derive 2D BBOX from 3D function  
         bbox_pts = self.calc_2d_bbox( axis='z', pts=drwply, aspts=True)        
         bbox     = self.calc_2d_bbox( axis='z', pts=drwply)
 
         out_pts = [] 
         
-        debug = True 
+        debug = False 
 
         #minx, miny , maxx, maxy
         res_x = bbox[2]-bbox[0]
@@ -804,12 +843,9 @@ class vectorflow(object3d):
     ##-------------------------------##
     def _calculate_paths3d(self, do_laser=False, do_retracts=True, doround=True):
         """ 
-             DEBUGGY 
-
-             takes gr_sort buffer and makes an executable gcode file with retracts on Z for each polygon
-         
-             format of self.gr_sort = [[id, centroid, extents, len, points ]] 
-
+            takes gr_sort buffer and makes an executable gcode file with retracts on Z for each polygon
+           
+            format of self.gr_sort = [[id, centroid, extents, len, points ]] 
 
         """
         pl = 6 #numeric rounding places 
@@ -850,19 +886,30 @@ class vectorflow(object3d):
                 print("# omitting polygon ID %s"%row[0])
                 export_ply = False
 
-            #modified to export sorted data - easy peasy  
-            gr_poly = row[4]
 
+            #precache the rounded values so we dont confuse the logic of exporting below 
+            if doround:
+                strpoly = [] 
+                for i,npt in enumerate(row[4]):
+                    xc = f"{npt[0]:.18f}"
+                    yc = f"{npt[1]:.18f}"
+                    zc = f"{npt[2]:.18f}"
+                    
+                    if 'e' in xc or 'e' in yc or 'e' in zc:
+                        print('ERROR EXPONENT FOUND ')
+                        print(i, (xc,yc,zc))
+
+                    strpoly.append((xc,yc,zc))
+
+                gr_poly = strpoly 
+            else:
+                gr_poly = row[4]
             ##--
 
             if len(gr_poly) and export_ply:
                 self.outfile.append('(exporting new polygon )')
-                
-                # no formatting (full precision)
-                if doround:                
-                    pt1=(round(gr_poly[0][0],pl) ,round(gr_poly[0][1],pl), round(gr_poly[0][2],pl) ) 
-                else:
-                    pt1 = gr_poly[0]
+
+                pt1 = gr_poly[0]
 
                 ## first point with/without retracts 
                 if do_retracts:
@@ -879,19 +926,12 @@ class vectorflow(object3d):
 
                 ## iterate points in polygon 
                 for i,pt in enumerate(gr_poly):
-                    if doround:
-                        tmp = ( round(pt[0],pl), round(pt[1],pl), round(pt[2],pl) ) 
-                        pt = tmp  
-
                     self.outfile.append( 'x%s y%s z%s'%( pt[0], pt[1],  pt[2] ) )
                     self.ngc_to_obj.append( (pt[0], pt[1],  pt[2]) )                   
 
                 if do_retracts:
                     self.outfile.append( 'G0' )
-                    if doround:
-                        gpt=(round(gr_poly[0][0],pl) ,round(gr_poly[0][1],pl)) 
-                    else:
-                        gpt=gr_poly[0]
+                    gpt=gr_poly[0]
 
                     self.ngc_to_obj.append( (gpt[0], gpt[1], self.rh)  )
                     self.outfile.append( 'x%s y%s z%s'%( gpt[0], gpt[1], self.rh) )
@@ -910,7 +950,7 @@ class vectorflow(object3d):
         self.outfile.append('m2') #program end
 
     ##-------------------------------##
-    def _calculate_paths2d(self, do_laser=False, do_retracts=True):
+    def _calculate_paths2d(self, do_laser=False, do_retracts=True, laserpwm=300, doround=True):
         """ 
             SIMPLE SAUCE CAM PROGRAM 
 
@@ -944,9 +984,8 @@ class vectorflow(object3d):
 
         """
 
+        pl = 6 #numeric rounding places
         lastpt = (0,0,0)
-        #power is 0 to 1000 (I think)
-        laserpwm = 100.00
 
 
         self.outfile.append('(exported with _calculate_paths2d )')
@@ -998,9 +1037,6 @@ class vectorflow(object3d):
         self.outfile.append('(exporting graphic polygons )')
         
         ##------------------------------
-
-
-
         # graphical polygons - build the gcode up with simple linear movements
         for row in self.gr_sort:
             
@@ -1010,24 +1046,34 @@ class vectorflow(object3d):
             if row[0] in self.omit_ids:
                 print("# omitting polygon ID %s"%row[0])
                 export_ply = False
+ 
+            #precache the rounded values so we dont confuse the logic of exporting below 
+            if doround:
+                strpoly = [] 
+                for i,npt in enumerate(row[4]):
+                    #xc = str(round(npt[0],pl))
+                    #yc = str(round(npt[1],pl))
+                    #zc = str(round(npt[2],pl))
+                    xc = f"{npt[0]:.18f}"
+                    yc = f"{npt[1]:.18f}"
+                    zc = f"{npt[2]:.18f}"
+                    
+                    if 'e' in xc or 'e' in yc or 'e' in zc:
+                        print('ERROR EXPONENT FOUND ')
+                        print(i, (xc,yc,zc))
 
-            #modified to export sorted data - easy peasy  
-            gr_poly = row[4]
-            
+                    strpoly.append((xc,yc,zc))
+
+                gr_poly = strpoly 
+            else:
+                gr_poly = row[4]
+
             ##--
 
             if len(gr_poly) and export_ply:
                 self.outfile.append('(exporting new polygon )')
-                ##-- 
-                #DEBUG - need to sort out clean points - want to run as close rto final xport 
-                #it looses precision 
 
-                # no formatting (full precision)
                 pt1 = gr_poly[0]
-                # do round to get rid of bad string formatting ( exponent in floats) 
-                #pt1 = self.clean_pts_str(gr_poly[0])
-
-                ##-- 
 
                 #### rapid move to first point (with ot without retract)
                 if do_retracts and not do_laser:
@@ -1319,25 +1365,6 @@ class vectorflow(object3d):
         #self.scale_pts(self.scale)
         self.save(name)
 
-    ##-------------------------------##
-    def cvt_grpoly_3dobj(self, index=None):
-        """DEBUG - sort of works but only with one polygon  """
-        print("DEBUG cvt_grpoly_3dobj only works with 1 polygon")
-        points = [] 
-        pids = [] 
-
-        for ply in self.gr_sort:
-            idx=1
-            #if index == ply[0]:
-            for i,pt in enumerate(ply[4]):
-                points.append(pt)
-                if i < len(ply[4])-2:
-                    pids.append(idx)               
-                idx+=1
-            
-        self.points = points 
-        self.polygons.append(pids) 
-
     ##-------------------------------##            
     def cvt_obj3d_grpoly(self, index=None):
         """ 
@@ -1369,6 +1396,25 @@ class vectorflow(object3d):
         
         self._sort()
  
+    ##-------------------------------##
+    def cvt_grpoly_3dobj(self, index=None):
+        """DEBUG - sort of works but only with one polygon  """
+        print("DEBUG cvt_grpoly_3dobj only works with 1 polygon")
+        points = [] 
+        pids = [] 
+
+        for ply in self.gr_sort:
+            idx=1
+            #if index == ply[0]:
+            for i,pt in enumerate(ply[4]):
+                points.append(pt)
+                if i < len(ply[4])-2:
+                    pids.append(idx)               
+                idx+=1
+            
+        self.points = points 
+        self.polygons.append(pids) 
+
     ##-------------------------------##
     def cvt_grpoly_obj3d(self, index=None, objtype='singlepoly'):
         """ 
@@ -1546,7 +1592,7 @@ class vectorflow(object3d):
         print("loaded %s polygons from %s "%(plyidx, inputfile)) 
 
     ##-------------------------------##
-    def export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False, do_retracts=True, do_laser=False):
+    def export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False, do_retracts=True, do_laser=False, laserpwm=400):
         """ rh         - retract height  
             ch         - cut height 
             cdpi       - cut depth per iteration 
@@ -1569,7 +1615,7 @@ class vectorflow(object3d):
             print("## WARNING ## 3D export is not working yet")
             self._calculate_paths3d(do_laser=do_laser, do_retracts=do_retracts)
         else:
-            self._calculate_paths2d(do_laser=do_laser, do_retracts=do_retracts)
+            self._calculate_paths2d(do_laser=do_laser, do_retracts=do_retracts,laserpwm=laserpwm)
         
         print("gr_sort buffer has %s polys in it. "%(len(self.gr_sort)))
         fobj = open( filename,"w") #encoding='utf-8'
