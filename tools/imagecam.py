@@ -690,8 +690,6 @@ class streamline(object):
         self.input_folder =  path.parent.absolute()
         self.output_folder = outfolder
         
-
-
         if dopass==1:                
             self._pass1(infile, outfolder, outname) 
 
@@ -708,6 +706,15 @@ class streamline(object):
             self._pass2( numbands, outname, outfolder, outname, whichiter) 
             #infilename, outfolder, mode='geojson',bmpinvert=False, po_invert=False
             self._pass3('%s/commonbands.png'%outfolder, outfolder, mode='geojson',bmpinvert=invbmp, po_invert=invpo)
+
+        if dopass=='skipfirst':
+            #use the source file and dont try to cleanup first  
+            print(infile, outfolder, outname) 
+
+            self._pass2( numbands, infile, outfolder, outname, whichiter) 
+            
+            #infilename, outfolder, mode='geojson',bmpinvert=False, po_invert=False
+            #self._pass3('%s/commonbands.png'%outfolder, outfolder, mode='geojson',bmpinvert=invbmp, po_invert=invpo)
 
     def _pass1(self, infile, outfolder, outname, dobw=False):
         """

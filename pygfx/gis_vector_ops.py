@@ -97,7 +97,9 @@ class vectorflow(object3d):
 
         # geometry buffers for JSON, NGC,sorting, processing, etc 
         self.gr_polys      = [] # list of list of points 
-        self.gr_sort       = [] # [[id, centroid, extents, len, points ]]  
+        self.gr_sort       = [] #               [[id, centroid, extents, len, points ]]  
+        #self.gr_sort2      = [] # work buffer - [[id, centroid, extents, len, points ]]  
+
         self.ngc_buffer    = [] # list of list of points 
         self.jsonbuffer    = [] # list of list of points 
 
@@ -147,6 +149,29 @@ class vectorflow(object3d):
             for l in outfile:
                 f.write("%s\n" % l)
 
+    ##-------------------------------##
+    def filter_by_bbox(self, xsize, ysize, underover='bigger'):
+        """ sifting screen for polygon bboxes. 
+            filter out big or small based on threshold 
+            
+            ARGS:
+                underover - 
+                      bigger  : return only polygons bigger than the threshold
+                      smaller : return only polygons smaller than the threshold
+
+        """
+        tmp = []
+        for ply in self.gr_sort:
+            bbox = ply[2]
+
+            if underover=='bigger':
+                if abs(bbox[2]-bbox[0])>xsize or abs(bbox[3]-bbox[1])>ysize:
+                    tmp.append(ply)
+            if underover=='smaller':
+                if abs(bbox[2]-bbox[0])<xsize or abs(bbox[3]-bbox[1])<ysize:
+                    tmp.append(ply)
+
+        self.gr_sort = tmp        
     ##-------------------------------##
     def flush(self):
         #DEBUG - no worky, no testy 
@@ -499,7 +524,7 @@ class vectorflow(object3d):
         """
 
         #print("indexing sort buffer ")
-        self.gr_sort   = []
+        self.gr_sort = []
 
         #print(" gr_polys buffer has %s polys in it "%len(self.gr_polys) )
         for x,ply in enumerate(self.gr_polys):
@@ -533,7 +558,8 @@ class vectorflow(object3d):
                 self.orig_maxx=maxx
             if maxy>self.orig_maxy:
                 self.orig_maxy=maxy
-
+            
+            #DEBUG - consider 3D bbox and padding with spaces for future data
             self.gr_sort.append([x, self.centroid(ply) ,[minx,miny, maxx, maxy], len(ply), ply])
         
 
