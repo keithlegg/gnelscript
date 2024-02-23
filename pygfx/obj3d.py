@@ -619,16 +619,19 @@ class object3d(polygon_operator):
     
     ##------------------------------------------------## 
     def _icosahedron(self, pos, radius, build_wire=False, build_geom=False):
-        """ should be in point gen?
-            builds the points but not polygons for an icosahedron
-            there are some experimental geom functions here  
+        """ first stab at a 3d sphere 
+            see also pointgen.calc_icosahedron()   
         """
     
         tmp = object3d()
 
         #// constants
         PI = 3.1415926;
-        H_ANGLE = PI/ 180*72;       # 72 degree = 360 / 5
+
+        numdivs = 5
+        divangle = 360/numdivs
+
+        H_ANGLE = PI/180*divangle;       # 72 degree = 360 / 5
         V_ANGLE = math.atan(1.0/2); # elevation = 26.565 degree
 
         z  = 0
@@ -646,11 +649,11 @@ class object3d(polygon_operator):
         last_pt = None 
 
         # compute 10 vertices at 1st and 2nd rows
-        for i in range(1,7):
+        for i in range(1,(numdivs+2)):
             n = tmp.numpts # add to this index each time
-
             z  = radius * math.sin(V_ANGLE)  # elevaton
             xy = radius * math.cos(V_ANGLE)  # length on XY plane
+
             vtmp1 = [];vtmp2 = []
             vtmp1.append( xy * math.cos(hAngle1)  )# x
             vtmp2.append( xy * math.cos(hAngle2)  )
@@ -682,7 +685,7 @@ class object3d(polygon_operator):
                     tmp.polygons.append( (n+1, n+2, n+3) )
         
         # the last bottom vertex at (0, 0, -r)
-        tmp.points.append( (0,0,-radius) )
+        tmp.points.append( (0, 0, -radius) )
         last_pt = tmp.numpts 
  
         if build_geom:
@@ -786,15 +789,15 @@ class object3d(polygon_operator):
                 #    v2---*---v3   
                 #       newV2      
 
-                #newV1 = computeHalfVertex(size, v1, v2)
-                #newV2 = computeHalfVertex(size, v2, v3)
-                #newV3 = computeHalfVertex(size, v1, v3)
+                newV1 = computeHalfVertex(size, v1, v2)
+                newV2 = computeHalfVertex(size, v2, v3)
+                newV3 = computeHalfVertex(size, v1, v3)
 
                 # add 4 new triangles to vertex array
-                self.points.append((v1,    newV1, newV3) )
-                self.points.append((newV1, v2,    newV2) )
-                self.points.append((newV1, newV2, newV3) )
-                self.points.append((newV3, newV2, v3)    )
+                self.points.extend((v1,    newV1, newV3) )
+                self.points.extend((newV1, v2,    newV2) )
+                self.points.extend((newV1, newV2, newV3) )
+                self.points.extend((newV3, newV2, v3)    )
 
                 # add indices of 4 new triangles
                 self.polygons.append((index,   index+1, index+2) )
@@ -816,7 +819,7 @@ class object3d(polygon_operator):
         obj = self._icosahedron(pos=pos, radius=size, build_geom=True)
         
         #DEBUG NOT WORKING YET # 
-        #obj._subdiv(size)
+        obj._subdiv(size)
         
         self.insert(obj)
 

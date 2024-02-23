@@ -125,7 +125,7 @@ def rotate_around_vec(outfile):
     # construct a matrix to transform them 
     rotated_m33 = matrix33()
 
-    m = rotated_m33.np_rotate( vec3(1,0,0) , -45) 
+    m = rotated_m33.np_rotate( vec3(1,0,0) , (-45,0,0)) 
     
     
     # apply the matrix to the points in the model 

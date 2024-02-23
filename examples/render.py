@@ -141,7 +141,8 @@ if NUMPY_IS_LOADED:
 def tesselator(path, outfilename):
     kip = vectorflow()
     kip._set_extents( (-10, -10, 10, 10) )
-    kip.make_grid(1, path, 3, 3)
+    
+    kip.make_grid(.3, path, 3, 3)
     o = object3d()
 
     

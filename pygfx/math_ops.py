@@ -89,8 +89,7 @@ class math_util(object):
 
     ##-------------------------------------------##
     def dtr (self, deg ):
-
-        #print('##################')
+        #print('########## DTR ########')
         #print(deg, type(deg) )
 
         if type(deg)==int: 
@@ -670,7 +669,7 @@ class vec3(object):
             https://stackoverflow.com/questions/21622956/how-to-convert-direction-vector-to-euler-angles
         
         """
-        
+
         """
         D = (XD,YD,ZD) # direction 
         U = (XU,YU,ZU) # up
@@ -690,8 +689,20 @@ class vec3(object):
         angle_B = atan2( Dot(W0,U) / abs(W0), Dot(U0,U) / abs(U0) )
 
         """
-        pass  
-
+        pass 
+        
+        """  
+        Z1xy = math.sqrt(Z1x * Z1x + Z1y * Z1y);
+        if Z1xy > 0:
+            pre = math.atan2(Y1x * Z1y - Y1y*Z1x, X1x * Z1y - X1y * Z1x);
+            nut = math.atan2(Z1xy, Z1z);
+            rot = -math.atan2(-Z1x, Z1y);
+        else:
+            pre = 0.;
+            nut = (Z1z > 0.) ? 0. : PI;
+            rot = -math.atan2(X1y, X1x);
+        """ 
+ 
 
     ##----------------------------------------
     def project_pt(self, offset):
@@ -1597,15 +1608,15 @@ class matrix33(object):
 
         if type(n) == type(self):
             return type(self)(
-                    self.m[0]*n[0]  + self.m[1]*n[3]  + self.m[2]*n[6],
-                    self.m[0]*n[1]  + self.m[1]*n[4]  + self.m[2]*n[7],
-                    self.m[0]*n[2]  + self.m[1]*n[5]  + self.m[2]*n[8],
-                    self.m[3]*n[0]  + self.m[4]*n[3]  + self.m[5]*n[6],
-                    self.m[3]*n[1]  + self.m[4]*n[4]  + self.m[5]*n[7],
-                    self.m[3]*n[2]  + self.m[4]*n[5]  + self.m[5]*n[8],
-                    self.m[6]*n[0]  + self.m[7]*n[3]  + self.m[8]*n[6],
-                    self.m[6]*n[1]  + self.m[7]*n[4]  + self.m[8]*n[7],
-                    self.m[6]*n[2]  + self.m[7]*n[5]  + self.m[8]*n[8]   
+                    self.m[0]*n[0] + self.m[1]*n[3] + self.m[2]*n[6],
+                    self.m[0]*n[1] + self.m[1]*n[4] + self.m[2]*n[7],
+                    self.m[0]*n[2] + self.m[1]*n[5] + self.m[2]*n[8],
+                    self.m[3]*n[0] + self.m[4]*n[3] + self.m[5]*n[6],
+                    self.m[3]*n[1] + self.m[4]*n[4] + self.m[5]*n[7],
+                    self.m[3]*n[2] + self.m[4]*n[5] + self.m[5]*n[8],
+                    self.m[6]*n[0] + self.m[7]*n[3] + self.m[8]*n[6],
+                    self.m[6]*n[1] + self.m[7]*n[4] + self.m[8]*n[7],
+                    self.m[6]*n[2] + self.m[7]*n[5] + self.m[8]*n[8]   
                    )
 
     def batch_mult_pts(self, pts):

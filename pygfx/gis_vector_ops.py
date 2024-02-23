@@ -399,6 +399,11 @@ class vectorflow(object3d):
     ##-------------------------------##
     def sample_data(self):
         """ DAG + point generator = tesselator """
+        print('# generating sample data from tesselator nodes')
+        if len(self.tesl.nodes)==0:
+            print('# error - no nodes in tesselator: exiting')
+            return None 
+
         for cell in self.tesl.nodes:
             cen = cell.getattrib('centroid')
             #print('# ', cell.name,' ', cen )
@@ -421,6 +426,7 @@ class vectorflow(object3d):
                 self.gr_polys.append(pts)
         self._sort()
 
+    ##-------------------------------##
     def hole_cutter_2d(self, tooldia, holes):
         """ simple circle generator for chopping holes with gcode 
             
@@ -737,25 +743,24 @@ class vectorflow(object3d):
         
         return ( self.sort_maxx-(width/2), self.sort_maxy-(height/2) )
 
-    ##-------------------------------------------## 
-    def gl_move(self, pos):
-        """
-            DEBUG - NOT TESTED  
-            global move the entire dataset in 2d (ignore Z axis) 
-            this allows 3D moves but you probably want 2D - zero the Z axis for pos or just send it 2 coords
-        """
-        print("global move ", pos) 
-
-        pop = polygon_operator()
-
-        for i,row in enumerate(self.gr_sort):
-            if len(pos)==2:
-                self.gr_sort[i][4] = pop.trs_points(self.gr_sort[i][4], (-pos[0], -pos[1]) )
-            if len(pos)==3:
-                self.gr_sort[i][4] = pop.trs_points(self.gr_sort[i][4], (-pos[0], -pos[1], -pos[0] ))
-
-        # dont forget to recalculate extents 
+    def get_extents_poly(self, zheight=0.0):
         self.gl_extents()
+        
+        width  = abs(self.sort_maxx - self.sort_minx) 
+        height = abs(self.sort_maxy - self.sort_miny)   
+        center = ( self.sort_maxx-(width/2), self.sort_maxy-(height/2) )
+        
+        print('## --------------- ')
+        print('width  ', width  ) 
+        print('height ', height )
+        print('center ', center )
+        
+        tl = (self.sort_minx, self.sort_maxy, zheight)
+        tr = (self.sort_maxx, self.sort_maxy, zheight)
+        br = (self.sort_maxx, self.sort_miny, zheight)
+        bl = (self.sort_minx, self.sort_miny, zheight)
+
+        return [tl,tr,br,bl,tl]
 
     ##-------------------------------------------## 
     def gl_rotate(self, amt):
@@ -820,7 +825,6 @@ class vectorflow(object3d):
         
         # dont forget to recalculate extents 
         self.gl_extents()
-
     
     ##-------------------------------------------## 
     def gl_move_center(self):
@@ -849,6 +853,26 @@ class vectorflow(object3d):
 
         for i,row in enumerate(self.gr_sort):
             self.gr_sort[i][4] = pop.trs_points(self.gr_sort[i][4], (xval, yval, zval ))
+
+        # dont forget to recalculate extents 
+        self.gl_extents()
+
+    ##-------------------------------------------## 
+    def gl_move(self, pos):
+        """
+            DEBUG - NOT TESTED  
+            global move the entire dataset in 2d (ignore Z axis) 
+            this allows 3D moves but you probably want 2D - zero the Z axis for pos or just send it 2 coords
+        """
+        print("global move ", pos) 
+
+        pop = polygon_operator()
+
+        for i,row in enumerate(self.gr_sort):
+            if len(pos)==2:
+                self.gr_sort[i][4] = pop.trs_points(self.gr_sort[i][4], (-pos[0], -pos[1]) )
+            if len(pos)==3:
+                self.gr_sort[i][4] = pop.trs_points(self.gr_sort[i][4], (-pos[0], -pos[1], -pos[0] ))
 
         # dont forget to recalculate extents 
         self.gl_extents()
@@ -1660,7 +1684,7 @@ class vectorflow(object3d):
         else:
             self.tesl._set_extents([self.sort_minx, self.sort_miny, self.sort_maxx, self.sort_maxy]) 
 
-        self.tesl.build_2d_cells(xcuts, ycuts)
+        self.tesl.build_2d_cells(xcuts, ycuts, distance)
         
 
         #temporary export of geom I HAVE TO SEE THIS BEFORE I GO TO BED!

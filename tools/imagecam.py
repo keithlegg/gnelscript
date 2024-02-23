@@ -684,7 +684,17 @@ class streamline(object):
     
     """
 
-    def oldrun (self, whichiter, infile, outfolder, outname, numbands=4, invbmp=False, invpo=False, dopass='all'):
+    def oldrun(self, whichiter, infile, outfolder, outname, numbands=4, invbmp=False, invpo=False, dopass='all'):
+        """whichiter
+           infile
+           outfolder
+           outname
+           numbands
+           invbmp
+           invpo
+           dopass
+        """
+
         self.inputimg = infile
         path = Path(infile)
         self.input_folder =  path.parent.absolute()
