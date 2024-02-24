@@ -132,9 +132,48 @@ class vectorflow(object3d):
 
 
         self.global_scale =  0.0393701 #NOT FULLY IMPLEMENTED - inch to mm 
+        #self.work_order = work_order() #list of gcode_ops (defined in milling_ops.py)
 
+    ##-------------------------------##
+    def machine_size(self, units='inch'):
+        #1000 1200 
+        mm_to_inch = 25.4
 
-        self.work_order = work_order() #list of gcode_ops (defined in milling_ops.py)
+        maxx = 1000
+        maxy = 1200
+
+        if units=='inch':
+            return float(maxx/mm_to_inch),float(maxy/mm_to_inch) 
+
+        if units=='mm':        
+            return maxx, maxy
+
+    @property
+    def machine_center(self):
+        maxx, maxy = self.machine_size 
+
+        return [ abs(maxx/2), abs(maxy/2) ]
+
+    ##-------------------------------##        
+    def export_machine_size(self, folder, name, type='laser_ngc'):
+        """Trust the machine"""
+
+        maxx, maxy = self.machine_size
+        
+        zheight = 0 
+
+        tl = (0    , maxy , zheight)
+        tr = (maxx , maxy , zheight)
+        br = (maxx , 0    , zheight)
+        bl = (0    , 0    , zheight)
+
+        poly = [tl,tr,br,bl,tl]
+        
+        xx = vectorflow()
+        xx.gr_polys.append(poly)
+        xx._sort()
+        if type=='laser_ngc':
+            xx.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(folder,name), do_laser=True, do3d=False, do_retracts=False) 
 
     ##-------------------------------##
     def dump_raw_pts(self, fid, filename):
@@ -150,6 +189,36 @@ class vectorflow(object3d):
                 f.write("%s\n" % l)
 
     ##-------------------------------##
+    def polysize_info(self):
+        biggest_x = 0 
+        biggest_y = 0
+
+        smallest_x = 100
+        smallest_y = 100
+
+        tmp = []
+        for ply in self.gr_sort:
+            bbox = ply[2]
+            
+            ply_sizex = abs(bbox[2]-bbox[0])
+            ply_sizey = abs(bbox[3]-bbox[1])
+            
+            if ply_sizex > biggest_x:
+                biggest_x = ply_sizex
+            if ply_sizey > biggest_y:
+                biggest_y = ply_sizey
+            
+            if ply_sizex < smallest_x:
+                smallest_x = ply_sizex  
+            if ply_sizey< smallest_y:
+                smallest_y = ply_sizey  
+
+        print('# done filtering polygons by size')
+        print('# largest  :', [biggest_x ,biggest_y]  )        
+        print('# smallest :', [smallest_x,smallest_y] )
+
+
+    ##-------------------------------##        
     def filter_by_bbox(self, xsize, ysize, underover='bigger'):
         """ sifting screen for polygon bboxes. 
             filter out big or small based on threshold 
@@ -160,18 +229,26 @@ class vectorflow(object3d):
                       smaller : return only polygons smaller than the threshold
 
         """
+
         tmp = []
         for ply in self.gr_sort:
             bbox = ply[2]
+            
+            ply_sizex = abs(bbox[2]-bbox[0])
+            ply_sizey = abs(bbox[3]-bbox[1])
 
             if underover=='bigger':
-                if abs(bbox[2]-bbox[0])>xsize or abs(bbox[3]-bbox[1])>ysize:
-                    tmp.append(ply)
-            if underover=='smaller':
-                if abs(bbox[2]-bbox[0])<xsize or abs(bbox[3]-bbox[1])<ysize:
+                if ply_sizex > xsize or ply_sizey>ysize:
                     tmp.append(ply)
 
-        self.gr_sort = tmp        
+            if underover=='smaller':
+                if ply_sizex < xsize or ply_sizey<ysize:
+                    tmp.append(ply)
+
+        # debug hmmm - not sure on workflow here 
+        #self.gr_sort = tmp
+        return tmp       
+
     ##-------------------------------##
     def flush(self):
         #DEBUG - no worky, no testy 
@@ -641,15 +718,24 @@ class vectorflow(object3d):
     ##-------------------------------------------## 
     ##-------------------------------------------## 
     def gl_extents(self):
-        """ DEBUG - NOT WORKING YET 
-
-            global 2D/3D extents 
+        """ global 2D/3D extents 
 
             we only work on gr_sort - gr_poly is a copy pf the orignial data
 
             if you run sort() - it automatically sets extents while it is sorting  
             if you want to re-run, use this 
         """
+
+        #reset all values first to random point in model (first)
+        #               [[id, centroid, extents, len, points ]] 
+        randpt = self.gr_sort[0][4][0]
+        self.sort_minx=randpt[0]
+        self.sort_miny=randpt[1]
+        self.sort_minz=randpt[2]
+        self.sort_maxx=randpt[0]
+        self.sort_maxy=randpt[1]
+        self.sort_maxz=randpt[2]
+
 
         # #start with gr_sort - we will do OBJ below
         # [[id, centroid, extents, len, points ]]
@@ -742,7 +828,17 @@ class vectorflow(object3d):
         height = abs(self.sort_maxy - self.sort_miny)         
         
         return ( self.sort_maxx-(width/2), self.sort_maxy-(height/2) )
+    
+    ##-------------------------------------------## 
+    def gl_width_height(self):
+        self.gl_extents()
+        
+        width  = abs(self.sort_maxx - self.sort_minx) 
+        height = abs(self.sort_maxy - self.sort_miny)         
+        
+        return (width, height )
 
+    ##-------------------------------------------## 
     def get_extents_poly(self, zheight=0.0):
         self.gl_extents()
         
@@ -762,6 +858,39 @@ class vectorflow(object3d):
 
         return [tl,tr,br,bl,tl]
 
+
+    ##-------------------------------------------## 
+    def export_extents_ngc(self, folder, name, scale=None, type='laser_ngc'):
+        """ 
+        DEBUG - seems off - data is close but wrong 
+        """
+        poly = self.get_extents_poly()
+        xx = vectorflow()
+        xx.gr_polys.append(poly)
+        xx._sort()
+        if scale:
+            xx.gl_scale(scale)
+
+        if type=='laser_ngc':
+            xx.export_ngc(1, 0, .1, 2, '%s/%s_extents.ngc'%(folder,name), do_laser=True, do3d=False, do_retracts=False)
+
+    ##-------------------------------------------## 
+    def gl_ensure_positive_xy(self):
+        """
+        DEBUG NOT DONE 
+
+        get centroid 
+        get width 
+        get height
+        """
+        centroid = self.gl_centroid()
+        w,h = self.gl_width_height()
+        print(w,h,centroid)
+
+
+        pass 
+
+    
     ##-------------------------------------------## 
     def gl_rotate(self, amt):
         """
@@ -779,8 +908,8 @@ class vectorflow(object3d):
             roty = amt[1]
             rotz = amt[2]
         else:
-            rotx = amt
-            roty = amt
+            #rotx = amt
+            #roty = amt
             rotz = amt         
 
         pop = polygon_operator()
@@ -1202,7 +1331,37 @@ class vectorflow(object3d):
 
         with open(filename, 'w') as f:
             dump(feature_collection, f)
-    
+
+    ##-------------------------------##
+    def export_geojson_polygon(self, folder, name):
+        """
+        DEBUG - WIP 
+            types are: Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon
+
+        # export all loaded polygons in gr_sort buffer as a geojson polyline 
+        """
+
+        features = []
+
+        # >>> Polygon([[(2.38, 57.322), (23.194, -20.28), (-120.43, 19.15), (2.38,   57.322)]])  
+        # {"coordinates": [[[2.3..., 57.32...], [23.19..., -20.2...], [-120.4..., 19.1...]]], "type": "Polygon"}
+
+        #[[id, centroid, extents, len, points ]]
+        for i,s in enumerate(self.gr_sort):
+            # [[id, centroid, extents, len, points ]]   
+            features.append(Feature(geometry=Polygon(self.cvt_3d_to_2d(s[4])), 
+                                 properties={"id" : i 
+                                            }
+                                 ) 
+                         )
+
+        feature_collection = FeatureCollection(features)
+        filename= '%s/%s'%(folder,name)
+        print('## EXPORTING file %s'%filename)
+
+        with open(filename, 'w') as f:
+            dump(feature_collection, f)
+
     ##-------------------------------##
     def export_grid_gfx(self, name, folder , borders=True, centroids=True):
         """
@@ -1464,8 +1623,6 @@ class vectorflow(object3d):
             
         self.points = points 
         self.polygons.append(pids) 
-
-    ##-------------------------------##
     def cvt_grpoly_obj3d(self, index=None, objtype='singlepoly'):
         """ 
             DEBUG - why not gr_sort? 
@@ -1512,8 +1669,6 @@ class vectorflow(object3d):
     ##-------------------------------##
     ##-------------------------------##
     ##-------------------------------------------##   
-
-
     def load_geojson(self, inputfile, getfids=None, zaxis=0):
         """ parse a geojson file - store points in arrays in GR_POLY buffer 
             
@@ -1734,6 +1889,62 @@ class vectorflow(object3d):
             pts3 = self.pop2d.calc_circle_2d(cen[0],cen[1], 1.5, periodic=True, spokes=12)
             cell.points.append( pts3 )
 
+
+    ##-------------------------------##
+    def vec_render_obj(self, rx,ry,rz,  renderscale, path, objfile):
+        single_line = False
+
+        framesize = self.machine_size 
+        cen = self.machine_center
+
+        ropr = simple_render() 
+        obj = object3d()
+        
+        if type(objfile)==str:
+            obj.load('%s/%s'%(path,objfile))
+        if type(objfile)==object3d:
+            obj.polygons=objfile.polygons
+            obj.points=objfile.points    
+
+
+        #no rotation 
+        #ropr.render_obj((100,0,255), 0, 0, 0, 1, renderscale, object3d=obj)
+        
+        #with rotation
+        ropr.render_obj((100,0,255), rx, ry, rz, 1, renderscale, object3d=obj)
+
+        #coords are in pixels - rather huge for a model 
+        #ropr.vec_fr_buffer.scale_pts((.01,.01,.01))
+    
+        ropr.vec_fr_buffer.move_center()
+      
+        # used to test the vector render engine 
+        #ropr.vec_fr_buffer.save('%s/test_%s.obj'%(path,i) )
+
+        out_pts = [] 
+
+        # draw as a single line without breaks       
+        if single_line:
+            pts = [] 
+            for pt in ropr.vec_fr_buffer.points:
+                pts.append( (pt[0]+cen[0], pt[1]+cen[1] ) )  
+            out_pts.append( pts )
+
+        # draw as proper line segments         
+        else:
+            for ply in ropr.vec_fr_buffer.polygons:
+                pts = []
+                #in this setup it will only be two point polys - vector render only does that                    
+                if len(ply)==2:
+                    # pts are zero indexed hence the -1
+                    pt1 = ropr.vec_fr_buffer.points[ply[0]-1] 
+                    pt2 = ropr.vec_fr_buffer.points[ply[1]-1] 
+                    pts.append( (pt1[0]+cen[0], pt1[1]+cen[1]) )
+                    pts.append( (pt2[0]+cen[0], pt2[1]+cen[1]) )
+                out_pts.append( pts )
+
+        return out_pts 
+        
     ##-------------------------------##
     def tess_vec_render(self, renderscale, path, objfile):
         """ make a grid and invoke render at each location 
@@ -1752,7 +1963,7 @@ class vectorflow(object3d):
 
         if type(objfile)==str:
             obj.load('%s/%s'%(path,objfile))
-        if type(objfile==object3d):
+        if type(objfile)==object3d:
             obj.polygons=objfile.polygons
             obj.points=objfile.points    
 

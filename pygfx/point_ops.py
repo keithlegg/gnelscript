@@ -810,6 +810,30 @@ class point_operator_3d(object):
         return out
 
     ##-------------------------------------------##  
+    def cvt_3d_to_2d(self, points, asvec3=False):
+        """ inverse of 2d to 3d - throw out z axis 
+
+        """
+
+        if type(points) is tuple:
+            newpts = []
+            for pt in points:
+                if asvec3:
+                    newpts.append(vec3(pt[0], pt[1]))  
+                else:
+                    newpts.append( (pt[0], pt[1])) 
+            return newpts
+
+        else:
+            newpts = []
+            for pt in points:
+                if asvec3:
+                    newpts.append( vec3(pt[0], pt[1])   )                
+                else:
+                    newpts.append( (pt[0], pt[1])   )
+            return newpts
+        return None
+    ##-------------------------------------------##  
     def cvt_2d_to_3d(self, points, asvec3=False):
         """ convert a single (tuple) or multiple (list) 2d points 
             into 3d by adding an empty z axis 
