@@ -501,15 +501,15 @@ class object3d(polygon_operator):
         self.insert_polygons( poly, pts)
 
     ##------------------------------------------------##  
-    def prim_quad(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1, periodic=False):
+    def prim_quad(self, axis='y', pos=(0,0,0), rot=(0,0,0), sizex=1, sizey=1, sizez=1, periodic=False):
         """ single polygon operations (that can be stacked together ?) """
 
         if axis == 'x':
-            pts = [(0,-size,-size), (0,-size,size), (0,size,size), (0,size,-size) ] #X AXIS
+            pts = [(0,-sizey,-sizez), (0,-sizey,sizez), (0,sizey,sizez), (0,sizey,-sizez) ] #X AXIS
         if axis == 'y':
-            pts = [(-size,0,-size), (-size,0,size), (size,0,size), (size,0,-size) ] #Y AXIS
+            pts = [(-sizex,0,-sizez), (-sizex,0,sizez), (sizex,0,sizez), (sizex,0,-sizez) ] #Y AXIS
         if axis == 'z':
-            pts = [(-size,-size,0), (-size,size,0), (size,size,0), (size,-size,0) ] #Z AXIS
+            pts = [(-sizex,-sizey,0), (-sizex,sizey,0), (sizex,sizey,0), (sizex,-sizey,0) ] #Z AXIS
 
         if periodic:
             poly    = [(1,2,3,4,1)]

@@ -474,7 +474,7 @@ class vectorflow(object3d):
         return out_pts
 
     ##-------------------------------##
-    def sample_data(self):
+    def sample_cell_data(self):
         """ DAG + point generator = tesselator """
         print('# generating sample data from tesselator nodes')
         if len(self.tesl.nodes)==0:
@@ -485,12 +485,23 @@ class vectorflow(object3d):
             cen = cell.getattrib('centroid')
             #print('# ', cell.name,' ', cen )
             
-            pts = self.pop2d.calc_circle_2d(cen[0],cen[1], .75, periodic=True, spokes=6)
+            pts = self.pop2d.calc_circle_2d(cen[0],cen[1], .1, periodic=True, spokes=6)
             cell.points.extend( pts )
 
             pts2 = self.pop2d.batch_rotate_pts_2d( pts, cen, 180 )
             cell.points.extend( pts2 )
-    
+
+    ##-------------------------------##
+    def render_cells(self):
+        """ DAG + point generator = tesselator """
+
+        for i,cell in enumerate(self.tesl.nodes):
+            #cen = cell.getattrib('centroid')
+            self.gr_polys.append(self.cvt_2d_to_3d(cell.points))
+        
+        self._sort()
+ 
+
     ##-------------------------------##
     def draw_dots_2d(self, dia, spokes, holes):
         """ render some points as circles
@@ -875,19 +886,13 @@ class vectorflow(object3d):
             xx.export_ngc(1, 0, .1, 2, '%s/%s_extents.ngc'%(folder,name), do_laser=True, do3d=False, do_retracts=False)
 
     ##-------------------------------------------## 
-    def gl_ensure_positive_xy(self):
+    def gl_move_extents_corner(self, which='tl'):
         """
-        DEBUG NOT DONE 
-
-        get centroid 
-        get width 
-        get height
+        shift all data to a corner   
         """
         centroid = self.gl_centroid()
         w,h = self.gl_width_height()
         print(w,h,centroid)
-
-
         pass 
 
     
@@ -1418,6 +1423,28 @@ class vectorflow(object3d):
         feature_collection = FeatureCollection(features)
         with open('%s/%s'%(folder,name), 'w') as f:
             dump(feature_collection, f)
+
+    ##-------------------------------##
+    def cvt_grsort_todag(self, folder, name):
+        """ export a centroid for each polygon as a tesselation node (DAG) """
+
+        features = []
+
+        zdepth = 0
+
+        #[[id, centroid, extents, len, points ]]
+        for i,s in enumerate(self.gr_sort):
+            #               [[id, centroid, extents, len, points ]] 
+            xtn = s[2] 
+            
+            width = abs(xtn[2]-xtn[0])
+            height = abs(xtn[3]-xtn[1])
+            self.tesl.new_cell_2d('ply_%s'%i, width,height, i,0,0, s[1][0],s[1][1],zdepth ) 
+        
+
+        ## loading/saving not implemented yet - need a wrapper for CELLS VS DAGNODES 
+        #self.tesl.save_graph_file('%s/%s'%(folder,name))
+        #self.tesl.save_tesselation('%s/%s'%(folder,name))
 
     ##-------------------------------##
     def export_global_extents(self, folder, name, ngc=False):

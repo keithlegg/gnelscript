@@ -38,6 +38,12 @@ from gnelscript.pygfx.dag_ops import *
 
 
 class cell(node_base):
+    """ what is idx VS coord ?? 
+        IDX (index) is an index to help locate the cell on a 3d grid and optionally name the cell 
+        the coord is the location in space , which has no need to coresepond to the index itself, but may if its a cubic structure 
+        
+    """
+
     def __init__(self, name,
                        width, height, 
                        idx_x , idx_y , idx_z, 
@@ -108,6 +114,8 @@ class tessellator(data_graph):
     
     def show(self):
         for c in self.nodes:
+            print('DEBUG type cell ', type(c))
+
             print("# name %s %s %s "%(c.name, c.coord_x+(c.width/2), c.coord_y+(c.height/2) ) )
 
     ##----------- 
@@ -133,6 +141,18 @@ class tessellator(data_graph):
                  width, height,
                  idx_x, idx_y, idx_z, 
                  coordx, coordy, 0)
+
+        c.set_position([coordx, coordy, coordz])
+        #c.set_rotation ([, , ])
+
+        c.addattr('centroid', [coordx,coordy])
+
+        c.addattr('idx_x', idx_x)
+        c.addattr('idx_y', idx_y)
+        c.addattr('idx_z', idx_z)
+
+        c.addattr('width', width)
+        c.addattr('height', height)
 
         self.add(c)
 
@@ -242,7 +262,25 @@ class tessellator(data_graph):
         pass 
 
     ##----------- 
+    def load_tesselation(self, filename):
+        #DEBUG - need to make a proper wrapper for cells VS DAG nodes 
 
+        #for c in self.nodes:
+        #    print("# name %s %s %s "%(c.name, c.coord_x+(c.width/2), c.coord_y+(c.height/2) ) ) 
+
+        self.load_graph_file(filename) 
+        
+        for c in self.nodes:
+            print(c)
+
+    ##----------- 
+    def save_tesselation(self, filename):
+        #DEBUG - need to make a proper wrapper for cells VS DAG nodes
+
+        #for c in self.nodes:
+        #    print("# name %s %s %s "%(c.name, c.coord_x+(c.width/2), c.coord_y+(c.height/2) ) ) 
+
+        self.save_graph_file(filename)           
 
 
 

@@ -715,8 +715,8 @@ class data_graph(object):
          valuelist = element.ATTRVALS  #VALUES OF ATTRS
          attrindex =0
          for attr in attrlist:
-          self.textbuffer.append((self.textindent*' ')+'#ATTR '+attr+' '+str(valuelist[attrindex])+' \n')
-          attrindex = attrindex+1
+             self.textbuffer.append((self.textindent*' ')+'#ATTR '+attr+' '+str(valuelist[attrindex])+' \n')
+             attrindex = attrindex+1
          
       #save the file to disk 
       self.write_file()
@@ -1478,7 +1478,7 @@ class data_tree_file_io (object):
             
             #DEBUG 
             #file_object.write(unicode(line)+'\n')    
-            print(line)        
+            #print(line)        
             file_object.write(str(line)+'\n')
         file_object.close()
  
