@@ -799,9 +799,189 @@ class streamline(object):
 
 
 
+##----------------------------------------------------
+
+def tesselate_json(folder, injson, outjson):
+    vflo = vectorflow()
+    vflo.load_geojson( '%s/%s'%(folder, injson) )
+    vflo.cvt_grsort_todag()
+
+    #clear input geom and rebuild from cells  
+    vflo.gr_sort = []
+    vflo.gr_poly = []
+
+    vflo.sample_cell_data()
+    vflo.render_cells()
+
+    vflo.export_geojson_polygon(folder, outjson)
+    vflo.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(folder, outjson), do_laser=True, do3d=False, do_retracts=False)  
 
 
-def test_scanline2(jsonfile, outpath, outname):
+#obj_to_tesselation()
+
+##----------------------------------------------------
+def draw_test(folder):
+    vflo = vectorflow()
+    vflo.prim_quad( sizex=7, sizey=4, axis='z') 
+    vflo.cvt_obj3d_grpoly()
+    vflo.export_geojson_polygon(folder, 'bounds.json')
+
+
+##----------------------------------------------------
+##----------------------------------------------------
+def iso_flat_render(folder, rotation, objfile, outjson):
+    #render by simply dropping the Z axis
+    #Z SORT goes all to hell if any polygons happen to intersect
+    vflo = vectorflow()
+    vflo.load( '%s/3d_obj/%s'%(folder, objfile) )
+    vflo.rotate_pts(rot=rotation)
+    vflo.cvt_obj3d_grpoly()
+
+    #vflo.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(folder, 'vvvxxbef'), do3d=False, do_retracts=False)
+    #vflo.export_sorted_extents(folder,'vvvxxbef.json')
+    #vflo.export_sorted_centroids(folder, 'centers.json')
+    #vflo.export_geojson_lines(folder, 'vvvxxbef.json', periodic=False)
+    
+    vflo.export_geojson_polygon(folder, outjson)
+
+
+def vector_render_3dobj(folder):
+    #use the render object to make 2d path segments from a 3d object  
+    vflo = vectorflow()
+    #vflo.load('%s/3d_obj/spacetime.obj'%folder)
+    pts = vflo.vec_render_obj( 45,45,45, 1.0, '%s/3d_obj'%folder, 'spacetime.obj')
+
+    for pt in pts:
+        vflo.gr_polys.append(vflo.cvt_2d_to_3d(pt))
+    vflo._sort()
+
+    vflo.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(folder, 'vicbeef'), do3d=False, do_retracts=False)
+    #vflo.export_geojson_lines()
+
+#vector_render_ngc()
+
+##----------------------------------------------------
+##----------------------------------------------------
+def test_streamline(folder, bands, name, dopass='all', whichiter=2): 
+    adbe = streamline()
+    #adbe.sample_script('test.wrf')
+    #adbe.load_json('%s/images/out/%s.json'%(folder, 'voronoi2'))
+
+    #infile, outfolder, outname, numbands=4, dopass='all', invbmp=False, invpo=False
+    adbe.oldrun(whichiter,
+                '%s/images/in/%s'%(folder,name),
+                '%s/images/out'%folder,
+                'smithz',
+                numbands=bands,
+                dopass=dopass,
+                invbmp = True, 
+                invpo = False
+                )
+
+    def makegcode(num):
+        vflo = vectorflow()
+        for x in range(num-1):
+            vflo.load_geojson('%s/images/out/%s.json'%(folder,x))
+        vflo.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(folder, name), do3d=False, do_retracts=False)
+
+    def makegcode_single(num, fid):
+        vflo = vectorflow()
+        vflo.load_geojson('%s/images/out/1.json'%folder,getfids=fid)
+        vflo.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(folder, name), do3d=False, do_retracts=False)
+
+    #makegcode(bands)
+
+
+
+
+##----------------------------------------------------
+def optimize_gcode(jsonfile, outname='processed'):
+    """
+        sort polygons by size from biggest to smallest 
+        anything smaller than 1/4 of total gets sorted by quadtree 
+        quadtree 
+    """
+    vflo = vectorflow()
+    
+    vflo.load_geojson(jsonfile) 
+
+    filter_small_polys = False
+    reorient           = False
+    
+    #vflo.load_geojson('/Users/klegg/serv/gnolmec/images/out/1.json') 
+    #vflo.load_geojson('/Users/klegg/serv/gnolmec/images/out/2.json') 
+           
+    #vflo.polysize_info()
+    
+    if filter_small_polys:
+        vflo.gr_sort = vflo.filter_by_bbox(.2,.2)
+ 
+    #####################
+    ## various common tranforms 
+    
+    #if model is negative corner 
+    if reorient:
+        vflo.gl_rotate(-90)
+
+        #if model needs center shift 
+        width,height = vflo.gl_width_height()
+        vflo.gl_translate(width*.5,height/2,0)
+        vflo.gl_scale([3,3,1])
+
+
+    #if you need to center 
+    #vflo.gl_move_center()
+
+
+    ## NOTDONE ## #vflo.gl_move_extents_corner()
+
+    #######################
+
+    vflo.export_extents_ngc(GLOBAL_PROJ, outname)
+    vflo.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(GLOBAL_PROJ, outname), do_laser=True, do3d=False, do_retracts=False)
+
+
+
+
+##----------------------------------------------------
+def json_to_ngc(folder, name, scale, frame=1):
+    vflo = vectorflow()
+    vflo.load_geojson('%s/%s.json'%(folder,frame))
+    
+    vflo.gl_scale(scale)
+    
+    #my machine has long axis on (Y?)
+    vflo.gl_rotate(-90)
+
+    #vflo.filter_by_bbox
+    
+    vflo.export_extents_ngc()
+
+    vflo.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(GLOBAL_PROJ, '%s%s'%(name,frame)), do_laser=True, do3d=False, do_retracts=False)
+
+
+
+
+
+
+##----------------------------------------------------
+
+def dump_poly(fid, jsonfile):
+    vflo = vectorflow()
+    vflo.load_geojson(jsonfile)
+    vflo.dump_raw_pts(fid,'poly%s.txt'%fid)
+
+
+##----------------------------------------------------
+def dump_json(fid, jsonfile):
+    vflo = vectorflow()
+    vflo.load_geojson(jsonfile, getfids=fid)
+    vflo.export_geojson_lines(GLOBAL_PROJ, 'poly%s.json'%fid) 
+
+
+##----------------------------------------------------
+##----------------------------------------------------
+def json_to_laser(jsonfile, outpath, outname):
     vflo = vectorflow()
     vflo2 = vectorflow()
     
@@ -820,8 +1000,12 @@ def test_scanline2(jsonfile, outpath, outname):
     #vflo2.save('scanz.obj') 
 
 
+#def batch_laser(folder, name):
+#    for a in range(5):
+#        json_to_laser('/Users/klegg/serv/gnolmec/images/out/%s.json'%a, folder, 'holez%s'%a)
 
-
+##----------------------------------------------------
+##----------------------------------------------------
 def test_scanline(jsonfile, outpath, outname):
     vflo = vectorflow()
     vflo2 = vectorflow()
@@ -839,6 +1023,28 @@ def test_scanline(jsonfile, outpath, outname):
     vflo2.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(outpath, outname) , do3d=True, do_retracts=True)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##----------------------------------------------------
+##----------------------------------------------------
 ##----------------------------------------------------
 """
 def vectorizer(inputfile, outputfile=None):

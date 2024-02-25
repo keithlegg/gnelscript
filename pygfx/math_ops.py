@@ -492,6 +492,11 @@ class vec2(object):
             intersect = m_blue >= m_red
         return intersect
 
+    def intersect_2d_from_3D(self, pt1, pt2 ):
+        #just call the 2D from X2 3D coords for convenience
+
+        return self.intersect( pt1[0], pt1[1], pt2[0], pt2[1] )
+
     def intersect(self, v1s, v1e, v2s, v2e ):
         """ intersect 2 lines in 2D 
             v1s - line1 start 

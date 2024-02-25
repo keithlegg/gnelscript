@@ -482,14 +482,33 @@ class vectorflow(object3d):
             return None 
 
         for cell in self.tesl.nodes:
-            cen = cell.getattrib('centroid')
-            #print('# ', cell.name,' ', cen )
+            e1m = cell.getattrib('e1mid')[0]
+            e2m = cell.getattrib('e2mid')[0]
+            e3m = cell.getattrib('e3mid')[0]
+            e4m = cell.getattrib('e4mid')[0]
             
-            pts = self.pop2d.calc_circle_2d(cen[0],cen[1], .1, periodic=True, spokes=6)
-            cell.points.extend( pts )
+            #BBOX center - not quite accurate, use the projected center below
+            #cen = cell.getattrib('centroid') 
+            tmp = vec2() 
+            cen = tmp.intersect_2d_from_3D([e1m,e3m], [e2m,e4m])
 
-            pts2 = self.pop2d.batch_rotate_pts_2d( pts, cen, 180 )
-            cell.points.extend( pts2 )
+
+            #mark the center with a shape (debug need to use multipolygon instead of linetype )
+            #pts = self.pop2d.calc_circle_2d(cen[0],cen[1], .01, periodic=True, spokes=3)
+            #cell.points.extend( pts )
+
+            #if you connect the midpoint of edges, it subdivides 
+            #cell.points.extend( [e1m,e3m] )
+            #cell.points.extend( [e2m,e4m] )
+
+            #lines radiating from center are basically a 2nd order divison 
+            #cell.points.extend( [cen, e1m] )
+            #cell.points.extend( [cen, e2m] )
+            #cell.points.extend( [cen, e3m] )
+            #cell.points.extend( [cen, e4m] )                        
+            
+            #this makes a quad diagonal inside the original 
+            cell.points.extend( [e1m, e2m, e3m, e4m] ) 
 
     ##-------------------------------##
     def render_cells(self):
@@ -497,7 +516,8 @@ class vectorflow(object3d):
 
         for i,cell in enumerate(self.tesl.nodes):
             #cen = cell.getattrib('centroid')
-            self.gr_polys.append(self.cvt_2d_to_3d(cell.points))
+            if cell.points:
+                self.gr_polys.append(self.cvt_2d_to_3d(cell.points))
         
         self._sort()
  
@@ -1425,11 +1445,10 @@ class vectorflow(object3d):
             dump(feature_collection, f)
 
     ##-------------------------------##
-    def cvt_grsort_todag(self, folder, name):
+    def cvt_grsort_todag(self):
         """ export a centroid for each polygon as a tesselation node (DAG) """
 
         features = []
-
         zdepth = 0
 
         #[[id, centroid, extents, len, points ]]
@@ -1439,8 +1458,46 @@ class vectorflow(object3d):
             
             width = abs(xtn[2]-xtn[0])
             height = abs(xtn[3]-xtn[1])
-            self.tesl.new_cell_2d('ply_%s'%i, width,height, i,0,0, s[1][0],s[1][1],zdepth ) 
-        
+
+            #fancy filtering based on polygons 
+            #does it have 4 sides? 5== peridoic 4 pts 
+            if(len(s[4])==5): 
+                
+                ## helper function - easier but limited 
+                #self.tesl.new_cell_2d('ply_%s'%i, width,height, i,0,0, s[1][0],s[1][1],zdepth ) 
+                
+                ## construct the cell manually with more control 
+                newc = cell('ply_%s'%i, width, height, i,0,0, s[1][0], s[1][1], s[1][2])
+                
+                #debug - data may not always be 3D - need to resolve this 
+                newc.set_position([s[1][0], s[1][1], s[1][2]])
+                
+                newc.addattr('idx_x', i)
+                #newc.addattr('idx_y', idx_y)
+                #newc.addattr('idx_z', idx_z)
+
+                newc.addattr('width', width)
+                newc.addattr('height', height)
+
+                ####
+                
+                # this is center of bbox - you can derive a more accurate center by bisecting the opposing edge midpoints of quad polygons
+                newc.addattr('centroid', [s[1][0], s[1][1], s[1][2]])
+
+                ## DEBUG midpoints of opposing edges can also derive an angle per cell  
+                e1mid = self.locate_pt_along3d(s[4][0], s[4][1], 1)
+                e2mid = self.locate_pt_along3d(s[4][1], s[4][2], 1)
+                e3mid = self.locate_pt_along3d(s[4][2], s[4][3], 1)
+                e4mid = self.locate_pt_along3d(s[4][3], s[4][0], 1)
+                newc.addattr('e1mid', e1mid)
+                newc.addattr('e2mid', e2mid)
+                newc.addattr('e3mid', e3mid)
+                newc.addattr('e4mid', e4mid)
+
+                ####
+
+                self.tesl.add(newc)
+
 
         ## loading/saving not implemented yet - need a wrapper for CELLS VS DAGNODES 
         #self.tesl.save_graph_file('%s/%s'%(folder,name))
