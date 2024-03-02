@@ -804,13 +804,15 @@ class streamline(object):
 def tesselate_json(folder, injson, outjson):
     vflo = vectorflow()
     vflo.load_geojson( '%s/%s'%(folder, injson) )
+    
+    #builds a node for each centroid of a quad poly
     vflo.cvt_grsort_todag()
 
     #clear input geom and rebuild from cells  
     vflo.gr_sort = []
     vflo.gr_poly = []
 
-    vflo.sample_cell_data()
+    vflo.build_tesselation_sample()
     vflo.render_cells()
 
     vflo.export_geojson_polygon(folder, outjson)
@@ -845,18 +847,23 @@ def iso_flat_render(folder, rotation, objfile, outjson):
     vflo.export_geojson_polygon(folder, outjson)
 
 
-def vector_render_3dobj(folder):
+def vector_render_3dobj(folder, objname, outngc):
     #use the render object to make 2d path segments from a 3d object  
     vflo = vectorflow()
+    
     #vflo.load('%s/3d_obj/spacetime.obj'%folder)
-    pts = vflo.vec_render_obj( 45,45,45, 1.0, '%s/3d_obj'%folder, 'spacetime.obj')
+    pts = vflo.vec_render_obj( 35,35, 90, 1.0, '%s/3d_obj'%folder, objname)
 
     for pt in pts:
         vflo.gr_polys.append(vflo.cvt_2d_to_3d(pt))
     vflo._sort()
+    
+    #DEBUG this should be done by render  
+    #vflo.move_center()
 
-    vflo.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(folder, 'vicbeef'), do3d=False, do_retracts=False)
-    #vflo.export_geojson_lines()
+    #vflo.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(folder, outngc), do3d=False, do_retracts=False)
+    vflo.export_geojson_lines(folder, outngc)
+    #vflo.export_geojson_polygon(folder, outngc)
 
 #vector_render_ngc()
 
@@ -960,25 +967,6 @@ def json_to_ngc(folder, name, scale, frame=1):
     vflo.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(GLOBAL_PROJ, '%s%s'%(name,frame)), do_laser=True, do3d=False, do_retracts=False)
 
 
-
-
-
-
-##----------------------------------------------------
-
-def dump_poly(fid, jsonfile):
-    vflo = vectorflow()
-    vflo.load_geojson(jsonfile)
-    vflo.dump_raw_pts(fid,'poly%s.txt'%fid)
-
-
-##----------------------------------------------------
-def dump_json(fid, jsonfile):
-    vflo = vectorflow()
-    vflo.load_geojson(jsonfile, getfids=fid)
-    vflo.export_geojson_lines(GLOBAL_PROJ, 'poly%s.json'%fid) 
-
-
 ##----------------------------------------------------
 ##----------------------------------------------------
 def json_to_laser(jsonfile, outpath, outname):
@@ -1026,21 +1014,118 @@ def test_scanline(jsonfile, outpath, outname):
 
 
 
+##----------------------------------------------------
+##----------------------------------------------------
+
+
+def iterate_fids(folder, infile, outfile):
+    vflo = vectorflow()
+    vflo.load_geojson(infile )
+    numpolys =(len(vflo.gr_sort))
+    vflo.flush()
+    print("FOUND %s POLYGONS "%numpolys)
+
+    for x in range(numpolys):
+        vflo.flush()
+        vflo.load_geojson(infile,getfids=x)
+        vflo.scale_gcode([.5,.5,.5])
+        vflo.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(folder, '%s_%s'%(outfile,x)), do3d=False, do_retracts=True, do_laser=True)
+
+
+##----------------------------------------------------
+##----------------------------------------------------
+def test_3dprinting(folder, infile, outfile):
+    gop = gcode_op()
+
+    #gn_dir(gop)
+    #gop.prim_sphere()
+    #gop.prim_cube()
+    
+    #gop.load_geojson(infile, 0) 
+    
+    gop.rh = 10 
+
+    gop.show_setup()
+
+    origin = [100,100,0]
+    gop.prim_quad( axis='z', pos=origin, rot=(0,0,0), size=10, periodic=True)
+    
+    #origin = [140,140,0]
+    #gop.prim_quad( axis='z', pos=origin, rot=(0,0,0), size=10, periodic=True)
+
+    gop.cvt_obj3d_grpoly()
+
+    print(gop.gr_polys)
+
+    #             (rh, ch, cdpi, cmax, filename                           , do3d=False)
+    #gop.export_ngc(1,   0,   .1,    2, '%s/%s.ngc'%(folder, 'isofoo'), do3d=True )
+
+    #gop.export_3dprint( '%s/%s.gcode'%(folder, 'isofoo') )
+
+
+##----------------------------------------------------
+def test_milling(folder, infile, outfile):
+    gop = gcode_op()
+
+    #gn_dir(gop)
+    #gop.prim_sphere()
+    #gop.prim_cube()
+    origin = [100,100,0]
+
+    #gop.load_geojson(infile, 0)  
+
+    for x in range(20):
+        gop.prim_quad( axis='z', pos=origin, rot=(0,0,0), size=10)
+
+    gop.cvt_obj3d_grpoly()
+
+    #             (rh, ch, cdpi, cmax, filename                           , do3d=False)
+    #gop.export_ngc(1,   0,   .1,    2, '%s/%s.ngc'%(GLOBAL_PROJ, 'isofoo'), do3d=True )
+
+    gop.export_3dprint( '%s/%s.gcode'%(folder, outfile) )
+
+    #gop.show_setup()
 
 
 
 
+##----------------------------------------------------
 
 
+def recursive_spiral():
+    """DEBUG not done - converting from external code  
+    """ 
+    vflo = vectorflow()
+    def draw_spiral(x, y, length, direction):
+        L = length
+        c = 0
+        while length>1 or c<3:
+            if length>2:
+                draw_spiral(x,y,length*0.255,160+direction)
+            
+            #turtle.up()
+            #turtle.seth(direction)
+            #turtle.goto(x,y)
+            v = vec3(x,y,0)
+            v = v* vec3(direction,0,0)
 
+            vflo.prim_circle(axis='y', pos=v, spokes=4)
+            #def prim_circle(self, axis, pos=(0,0,0), rot=(0,0,0), dia=1, spokes=9):
 
+            #if length <= 2: 
+            #    turtle.down()
+            #turtle.fd(length)
+            #x,y = turtle.xcor(), turtle.ycor()
 
+            #print(length, direction,x,y)
 
-
-
-
-
-
+            length *= 0.93
+            direction += 20
+            c += 1
+    draw_spiral(1,-1,30,9)
+    vflo.cvt_obj3d_grpoly()
+    #vflo.export_geojson_polygon(GLOBAL_PROJ, 'spiral.json')
+    vflo.export_geojson_lines(GLOBAL_PROJ, 'spiral.json') 
 
 
 ##----------------------------------------------------

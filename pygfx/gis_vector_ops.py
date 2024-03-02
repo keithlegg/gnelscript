@@ -135,12 +135,16 @@ class vectorflow(object3d):
         #self.work_order = work_order() #list of gcode_ops (defined in milling_ops.py)
 
     ##-------------------------------##
-    def machine_size(self, units='inch'):
-        #1000 1200 
+    def machine_size(self, units='inch', scale=None):
+
         mm_to_inch = 25.4
 
         maxx = 1000
         maxy = 1200
+        
+        if scale and scale!=0:
+            maxx = maxx*scale
+            maxy = maxy*scale              
 
         if units=='inch':
             return float(maxx/mm_to_inch),float(maxy/mm_to_inch) 
@@ -150,8 +154,7 @@ class vectorflow(object3d):
 
     @property
     def machine_center(self):
-        maxx, maxy = self.machine_size 
-
+        maxx, maxy = self.machine_size() 
         return [ abs(maxx/2), abs(maxy/2) ]
 
     ##-------------------------------##        
@@ -176,7 +179,7 @@ class vectorflow(object3d):
             xx.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(folder,name), do_laser=True, do3d=False, do_retracts=False) 
 
     ##-------------------------------##
-    def dump_raw_pts(self, fid, filename):
+    def export_poly_rawpts(self, fid, filename):
         """export a single polygon for playing with  
         """
         
@@ -474,7 +477,7 @@ class vectorflow(object3d):
         return out_pts
 
     ##-------------------------------##
-    def sample_cell_data(self):
+    def build_tesselation_sample(self):
         """ DAG + point generator = tesselator """
         print('# generating sample data from tesselator nodes')
         if len(self.tesl.nodes)==0:
@@ -512,7 +515,8 @@ class vectorflow(object3d):
 
     ##-------------------------------##
     def render_cells(self):
-        """ DAG + point generator = tesselator """
+        """ bake the points stored in each node into the points to be dumped to a file 
+        """
 
         for i,cell in enumerate(self.tesl.nodes):
             #cen = cell.getattrib('centroid')
@@ -871,6 +875,7 @@ class vectorflow(object3d):
 
     ##-------------------------------------------## 
     def get_extents_poly(self, zheight=0.0):
+
         self.gl_extents()
         
         width  = abs(self.sort_maxx - self.sort_minx) 
@@ -889,6 +894,9 @@ class vectorflow(object3d):
 
         return [tl,tr,br,bl,tl]
 
+
+    def gl_bbox(self):
+        return self.cvt_3d_to_2d(self.get_extents_poly())
 
     ##-------------------------------------------## 
     def export_extents_ngc(self, folder, name, scale=None, type='laser_ngc'):
@@ -910,10 +918,22 @@ class vectorflow(object3d):
         """
         shift all data to a corner   
         """
-        centroid = self.gl_centroid()
-        w,h = self.gl_width_height()
-        print(w,h,centroid)
-        pass 
+        shift = [0,0]
+
+        bbox = self.gl_bbox()
+        if which=='br':
+            shift = bbox[0]
+        if which=='bl':
+            shift = bbox[1]
+        if which=='tl':
+            shift = bbox[2]
+        if which=='tr':
+            shift = bbox[3]
+
+        self.gl_translate(shift[0], shift[1], 0)
+    
+
+         
 
     
     ##-------------------------------------------## 
@@ -1446,7 +1466,16 @@ class vectorflow(object3d):
 
     ##-------------------------------##
     def cvt_grsort_todag(self):
-        """ export a centroid for each polygon as a tesselation node (DAG) """
+        """ export a centroid for each polygon as a tesselation node (DAG) 
+            
+            There are more than one ways to calc a centroid: 
+                you can always take the middle of a bbox, but it is not always the most accurate 
+                if the polygon is square (4 sides) you can draw a line from the mid point of two opposing 
+                edges, and intersect those forming a simple "projected" centroid 
+
+                This function can do both, but keep in mind it only works with 4 sided 
+
+        """
 
         features = []
         zdepth = 0
@@ -1754,7 +1783,10 @@ class vectorflow(object3d):
     ##-------------------------------##
     ##-------------------------------------------##   
     def load_geojson(self, inputfile, getfids=None, zaxis=0):
-        """ parse a geojson file - store points in arrays in GR_POLY buffer 
+        """ DEBUG - kind of works but we need to deal with multiple types of GEOM 
+                    This was built with lines in mind originally 
+
+            parse a geojson file - store points in arrays in GR_POLY buffer 
             
             Args:
             
@@ -1973,9 +2005,8 @@ class vectorflow(object3d):
             pts3 = self.pop2d.calc_circle_2d(cen[0],cen[1], 1.5, periodic=True, spokes=12)
             cell.points.append( pts3 )
 
-
     ##-------------------------------##
-    def vec_render_obj(self, rx,ry,rz,  renderscale, path, objfile):
+    def vec_render_obj(self, rx,ry,rz,  renderscale, folder, objfile):
         single_line = False
 
         framesize = self.machine_size 
@@ -1985,7 +2016,7 @@ class vectorflow(object3d):
         obj = object3d()
         
         if type(objfile)==str:
-            obj.load('%s/%s'%(path,objfile))
+            obj.load('%s/%s'%(folder,objfile))
         if type(objfile)==object3d:
             obj.polygons=objfile.polygons
             obj.points=objfile.points    
@@ -2003,7 +2034,7 @@ class vectorflow(object3d):
         ropr.vec_fr_buffer.move_center()
       
         # used to test the vector render engine 
-        #ropr.vec_fr_buffer.save('%s/test_%s.obj'%(path,i) )
+        #ropr.vec_fr_buffer.save('%s/test_%s.obj'%(folder,i) )
 
         out_pts = [] 
 
@@ -2136,6 +2167,16 @@ class vectorflow(object3d):
                 pts.append( (pt[0]+cen[0], pt[1]+cen[1] ) )  
 
             cell.points.extend( pts )
+    ##-------------------------------##
+
+    ##-------------------------------##
+    def load_ngc(self, filename):
+        """DEBUG - TEST 
+        """
+        
+
+        pass 
+
 
     ##-------------------------------##
     ##-------------------------------##

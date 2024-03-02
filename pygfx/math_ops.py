@@ -493,8 +493,7 @@ class vec2(object):
         return intersect
 
     def intersect_2d_from_3D(self, pt1, pt2 ):
-        #just call the 2D from X2 3D coords for convenience
-
+        #just call the 2D intersect from 2X3D coords for convenience
         return self.intersect( pt1[0], pt1[1], pt2[0], pt2[1] )
 
     def intersect(self, v1s, v1e, v2s, v2e ):
