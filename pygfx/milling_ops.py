@@ -245,9 +245,8 @@ class gcode_object(object3d):
         
         self.param_names  = [] # [name, value ]
         self.param_values = [] # [name, value ]
-
-        #swappable dialects of gcode commands 
-        self.dialect = parser_commands
+        # #swappable dialects of gcode commands 
+        # self.dialect = parser_commands
 
         self.coord_words = ['N','G', 'X','Y','Z','U','V','W','I','J','K','R','P','F'] # ,'A','B','C','D']
         
@@ -258,8 +257,39 @@ class gcode_object(object3d):
 
         self.segments  = [] # [index, command, xyz_pos] 
 
+    ##-------------------------------##
+    def _scrub(self, inp):
+        """ clean up parsed characters from (kicad) file """
 
+        out = inp.lower()
+        out = out.strip()
+        out = out.replace('(','')
+        out = out.replace(')','')
+        out = out.replace(' ','')
+        out = out.replace('\"','')
+        out = out.replace('\'','')
+        return out
 
+    ##-------------------------------##
+    def _clean(self, inp):
+        out = inp.strip()
+        out = out.replace('(','')
+        out = out.replace(')','')
+        out = out.replace(' ','')
+        out = out.replace('\"','')
+        out = out.replace('\'','')
+        return out
+
+    ##-------------------------------##
+    def _seek_coords(self, tokens):
+        out = [0,0,0]
+
+        for token in tokens:
+            print(token)
+
+ 
+
+    ##-------------------------------##
     def milling_test_linear(self):
         pop = point_operator_3d()
         #calc_circle(self, pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
@@ -302,19 +332,6 @@ class gcode_object(object3d):
         for s in self.segments:
             print(s[1])
 
-    def save_3d_object(self, filename):
-        ## dump the XYZ positions into a polyline object 
-
-        obj   = object3d() # container for 3D object 
-        data = []
-
-        line_data = []
-        for pt in self.segments:
-            line_data.append( pt[1] )
-
-        obj.pts_to_linesegment(line_data)
-        obj.save( filename )
-
     def contains_coord_words(self, string): 
         # check for any known coordinate words
         has_coords = False 
@@ -341,10 +358,6 @@ class gcode_object(object3d):
                         tmp2 = tmp[1].split('=')
                         self.param_names.append(tmp[0])
                         self.param_values.append(tmp2[1].replace(' ',''))
-                else:
-                    #IT IS ALREADY PARSED!
-                    #deal with this here or in another function??
-                    pass
 
     def between_token_list(self, string, tokens, return_match=False):
         ## give a list of tokens, return a list of betweens 
@@ -409,15 +422,19 @@ class gcode_object(object3d):
         if os.path.lexists(filename):
             f = open( filename,"r", encoding='utf-8')
             contents = f.readlines()
-
-
-            #scan entire file for parametrs first 
-            for lin in contents:
-                self.parse_params(lin)
-
-            print("#### params ", self.param_names )
+          
+            # #scan entire file for parametrs first 
+            # for lin in contents:
+            #     self.parse_params(lin)
+            # print("#### param_names  ", self.param_names )
+            # print("#### param_values ", self.param_values )
 
             cleaned_contents = []
+
+            lastx = 0  
+            lasty = 0  
+            lastz = 0  
+            tmp_poly = []
 
             for lin in contents:
 
@@ -429,33 +446,52 @@ class gcode_object(object3d):
                     self.commented.append(lin)
 
                 else:
-
-
                     # seperate the line index out and split from rest of command
                     lindex = self.between_token_list(lin, self.coord_words, return_match=True)
-                    #n_idx = lindex[0]   
-                    #comm = lin[len(str(n_idx)):] 
                     if lindex:
-                        #print('############### ', lindex)
+                        #print( lindex)
 
                         # execute the parameters(variables) if they exist 
                         for i,tok in enumerate(lindex):
-                            for j,p in enumerate(self.param_names):
-                                if p in tok[1]:
-                                    # substitute the value with the name 
-                                    tok[1] = (tok[1].replace('#<%s>'%self.param_names[j], self.param_values[j]) )
-                                    try:
-                                        # DONT LOAD ANY GCODE TEXTFILES WITH EXECUTABLE PYTHON IN THEM!
-                                        # THIS IS A SECURITY HOLE FOR WANKERS TO EXPLOIT 
-                                        
-                                        # eval the damn thing and capture the result 
-                                        #print( tok[0], eval(tok[1])[0])
-                                        pass
-                                        
-                                    except:
-                                        pass    
+                            xval=None;yval=None;zval=None
 
-                        print( lindex )
+                            if self._clean(tok[0])=='G':
+                                if self._clean(tok[1])=='0':
+                                    if len(tmp_poly):
+                                        self.segments.append(tmp_poly)
+                                        tmp_poly = []
+
+                                if self._clean(tok[1])=='1':
+                                        self.segments.append(tmp_poly)
+                                        tmp_poly = []
+
+                            if self._clean(tok[0])=='N':
+                                if 'G43' not in lin: 
+                                    for t in lindex:
+                                        if self._clean(t[0])=='X':
+                                            xval = float(t[1])
+                                            lastx = xval  
+                                        if self._clean(t[0])=='Y':
+                                            yval = float(t[1])
+                                            lasty = yval                             
+                                        if self._clean(t[0])=='Z':
+                                            zval = float(t[1])
+                                            lastz = zval 
+
+
+                                    tmp_poly.append( (xval if xval else lastx, 
+                                                      yval if yval else lasty,
+                                                      zval if zval else lastz) )
+
+ 
+                            
+
+
+                            #for j,p in enumerate(self.param_names):
+
+
+                        #print( lindex )
+
 
                         ## #check for comments on the line but not at start   
                         ## if COMMENT in lin:
@@ -870,19 +906,6 @@ class gcode_op(gcode_object):
 
         # dont forget to recalculate extents 
         self.gl_extents()
- 
-    ##-------------------------------##
-    def _scrub(self, inp):
-        """ clean up parsed characters from kicad file """
-
-        out = inp.lower()
-        out = out.strip()
-        out = out.replace('(','')
-        out = out.replace(')','')
-        out = out.replace(' ','')
-        out = out.replace('\"','')
-        out = out.replace('\'','')
-        return out
     
 
     ##-------------------------------##

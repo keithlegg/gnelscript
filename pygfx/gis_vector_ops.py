@@ -1053,7 +1053,7 @@ class vectorflow(object3d):
 
     ##-------------------------------##
     def _scrub(self, inp):
-        """ clean up parsed characters from kicad file """
+        """ clean up parsed characters from (kicad) file """
 
         out = inp.lower()
         out = out.strip()
@@ -1063,7 +1063,7 @@ class vectorflow(object3d):
         out = out.replace('\"','')
         out = out.replace('\'','')
         return out
-    
+
     ##-------------------------------##
     def _calculate_paths3d(self, do_laser=False, do_retracts=True, doround=True):
         """ 

@@ -395,7 +395,7 @@ class object3d(polygon_operator):
     ##------------------------------------------------##
     def pts_to_linesegment(self, pt_list, periodic=False):
         """
-           iterate a group of points and return insert redenrable geom geom into self 
+           iterate a group of points and return insert renderable geom geom into self 
         """
 
         for i,pt in enumerate(pt_list):
