@@ -1088,11 +1088,32 @@ def test_milling(folder, infile, outfile):
 
 
 
+##----------------------------------------------------
+
+def load_gcode(basepath, path, name):
+    vflo = vectorflow()
+
+    gop = gcode_op()
+    gop.load_gcode('%s/%s/%s.ngc'%(basepath, path, name) )
+    for ply in  gop.segments:
+        #print(len(ply))
+        vflo.gr_polys.append(ply) 
+    vflo._sort()
+
+    #if you want to prove the data is in true 3D, do this. 
+    #vflo.gl_rotate([45,45,45]) 
+
+    #vflo.export_geojson_polygon(basepath, 'textgrave')
+    vflo.export_geojson_lines(basepath, '%s.json'%name)
+
+    # OBJ not working very well 
+    #vflo.cvt_grpoly_obj3d() 
+    #vflo.save('%s/%s.obj'%(basepath, name) )
 
 ##----------------------------------------------------
 
 
-def recursive_spiral():
+def recursive_spiral(basepath):
     """DEBUG not done - converting from external code  
     """ 
     vflo = vectorflow()
@@ -1124,8 +1145,9 @@ def recursive_spiral():
             c += 1
     draw_spiral(1,-1,30,9)
     vflo.cvt_obj3d_grpoly()
-    #vflo.export_geojson_polygon(GLOBAL_PROJ, 'spiral.json')
-    vflo.export_geojson_lines(GLOBAL_PROJ, 'spiral.json') 
+    #vflo.export_geojson_polygon(basepath, 'spiral.json')
+    vflo.export_geojson_lines(basepath, 'spiral.json') 
+
 
 
 ##----------------------------------------------------

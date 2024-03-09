@@ -1736,6 +1736,7 @@ class vectorflow(object3d):
             
         self.points = points 
         self.polygons.append(pids) 
+        
     def cvt_grpoly_obj3d(self, index=None, objtype='singlepoly'):
         """ 
             DEBUG - why not gr_sort? 

@@ -125,6 +125,9 @@ parser_commands =  {
     #"G90": "abs_progr",  # data in a word represents the coordinate value of the point from part program zero.
     #"G91": "incr_progr", # data in a word is distance along designated axis from the existing position to the desired position
 
+    #G98  
+
+     
     #"G175": "inside_mill_cycle",   # G175 X__Y__Z__R__Z__Z__P__F__P__F__F__;
     #"G176": "outside_mill_circle", # G176 X__Y__Z__R__Z__Z__P__F__P__F__F__;
 
