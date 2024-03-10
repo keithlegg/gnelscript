@@ -2249,37 +2249,33 @@ class polygon_operator(point_operator_3d):
     #def push_pts(self, ids):
 
 
-    def insert_polygons(self, plyids=None, 
-                              points=None, 
-                              geom_obj=None, 
-                              incrone=False, 
-                              pos=None,
-                              ans=True ):
+    def insert_polygons(self, plyids=None, points=None, geom_obj=None, 
+                              incrone=False, pos=None, ans=True ):
+        """    
+            Insert new geometry into an object
+                you can pass a geom object to insert into 
+                if you dont specify it goes into self 
+                you can merge it with existing points or add new points 
+            data is NOT ZERO INDEXED 
+            you can pass in zero indexed data if you iuse incrone option 
+            - if you pass no plyids it will exit 
+            - if you pass plyids with no points it will merge polygons into existing points
+            -if you pass plyids with new points it will ALWAYS be a new shell regardless of asn 
+            it will attempt to merge into existing geometry first unless ans/as new shell is True 
+            plyids, points    - use these or geom, but not both at same time 
+            ans/ asnew_shell  - reindex the points and append, else keep the same indices
+            geom_obj          - geom to insert into, instead of object.polygons, object.points
+                                if true, will return the geom object when done 
+            incrone         - offset IDS by +1 (zero index nightmare)
+            pos             - offset point posititons  
+            if points are 2D - automatically insert in 3D on the 0 Z axis
+        
+            if you pass plyids with no points and "ans True" it makes a copy of existing points 
+            as new shell True will reindex new polygons 
+            any points automatically are treated as new shell 
+            as new shell False is only for adding polygons to existing geom 
+        """
 
-    
-        #     Insert new geometry into an object
-        #         you can pass a geom object to insert into 
-        #         if you dont specify it goes into self 
-        #         you can merge it with existing points or add new points 
-        #     data is NOT ZERO INDEXED 
-        #     you can pass in zero indexed data if you iuse incrone option 
-        #     - if you pass no plyids it will exit 
-        #     - if you pass plyids with no points it will merge polygons into existing points
-        #     -if you pass plyids with new points it will ALWAYS be a new shell regardless of asn 
-        #     it will attempt to merge into existing geometry first unless ans/as new shell is True 
-        #     plyids, points    - use these or geom, but not both at same time 
-        #     ans/ asnew_shell  - reindex the points and append, else keep the same indices
-        #     geom_obj          - geom to insert into, instead of object.polygons, object.points
-        #                         if true, will return the geom object when done 
-        #     incrone         - offset IDS by +1 (zero index nightmare)
-        #     pos             - offset point posititons  
-        #     if points are 2D - automatically insert in 3D on the 0 Z axis
-        
-        # if you pass plyids with no points and "ans True" it makes a copy of existing points 
-        # as new shell True will reindex new polygons 
-        # any points automatically are treated as new shell 
-        # as new shell False is only for adding polygons to existing geom 
-        
         if points is None:
             points=[]
 
@@ -2919,6 +2915,12 @@ class polygon_operator(point_operator_3d):
         if os.path.lexists(filename):
             f = open( filename,"r", encoding='utf-8')
             contents = f.readlines()
+            
+            #if data exists it, FIDS need to be offset 
+            fs = self.numpts 
+            
+            print('######num ', fs)
+             
             for x in contents :
                 #lines = x
                 nonewline = x.split('\n')
@@ -2956,6 +2958,8 @@ class polygon_operator(point_operator_3d):
                             poly    = []
                             uv_poly = []
 
+
+
                             for fid in fids:
                                 
                                 ## DEAL WITH THIS STUFF - '47//1'
@@ -2973,17 +2977,17 @@ class polygon_operator(point_operator_3d):
                                     tmp = fid.split('/')
                                     if len(tmp):
                                         # first slash delineated integer is face ID
-                                        poly.append(int(tmp[0]))    
+                                        poly.append(int(tmp[0])+fs)    
                                         # second slash delineated integer is face UV
                                         if tmp[1]: 
-                                            uv_poly.append(int(tmp[1]))
+                                            uv_poly.append(int(tmp[1])+fs)
                                         
                                         # third item is vertex normal 
                                         #if tmp[2]: 
 
 
                                 else:    
-                                    poly.append(int(fid))   
+                                    poly.append(int(fid)+fs)   
 
                             self.polygons.append( poly )
                             self.uv_polys.append(uv_poly) 

@@ -17,8 +17,11 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-import geojson
-from geojson import Point, Feature, LineString, FeatureCollection, dump
+from gnelscript import GEOJSON_IS_LOADED
+
+if GEOJSON_IS_LOADED:
+    import geojson
+    from geojson import Point, Polygon, Feature, LineString, FeatureCollection, dump
 
 
 from gnelscript.pygfx.math_ops import  *
@@ -53,6 +56,8 @@ class work_order(object3d):
 class vectorflow(object3d):
     """ 
         coordinate agnostic geometery processor 
+
+        MAKE IT AS 3D AS POSSIBLE !!! - ONLY MAKE 2D WHEN REQUIRED  !!!
 
         partially supports kicad graphics, gdcode, json and obj files   
 
@@ -121,6 +126,24 @@ class vectorflow(object3d):
         self.sort_maxx = 0
         self.sort_maxy = 0
         self.sort_maxz = 0
+
+
+    ##-------------------------------##
+    def insert_gr_sort (self, points ):
+        # add a new poly with all the fixins 
+         
+        #is it 2D or 3D?? 
+        #self.checkdata(points)
+        
+        idx = len(self.gr_sort)
+        
+        cen = self.centroid(points)
+        bbox = self.calc_3d_bbox(points)
+
+        self.gr_sort.append([idx , cen, bbox, len(points), points])
+
+        #               [[id, centroid, extents, len, points ]]  
+
 
 
     ##-------------------------------##
@@ -1350,34 +1373,35 @@ class vectorflow(object3d):
             dump(feature_collection, f)
 
     ##-------------------------------##
-    def export_geojson_polygon(self, folder, name):
-        """
-        DEBUG - WIP 
-            types are: Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon
+    if GEOJSON_IS_LOADED:
+        def export_geojson_polygon(self, folder, name):
+            """
+            DEBUG - WIP 
+                types are: Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon
 
-        # export all loaded polygons in gr_sort buffer as a geojson polyline 
-        """
+            # export all loaded polygons in gr_sort buffer as a geojson polyline 
+            """
 
-        features = []
+            features = []
 
-        # >>> Polygon([[(2.38, 57.322), (23.194, -20.28), (-120.43, 19.15), (2.38,   57.322)]])  
-        # {"coordinates": [[[2.3..., 57.32...], [23.19..., -20.2...], [-120.4..., 19.1...]]], "type": "Polygon"}
+            # >>> Polygon([[(2.38, 57.322), (23.194, -20.28), (-120.43, 19.15), (2.38,   57.322)]])  
+            # {"coordinates": [[[2.3..., 57.32...], [23.19..., -20.2...], [-120.4..., 19.1...]]], "type": "Polygon"}
 
-        #[[id, centroid, extents, len, points ]]
-        for i,s in enumerate(self.gr_sort):
-            # [[id, centroid, extents, len, points ]]   
-            features.append(Feature(geometry=Polygon(self.cvt_3d_to_2d(s[4])), 
-                                 properties={"id" : i 
-                                            }
-                                 ) 
-                         )
+            #[[id, centroid, extents, len, points ]]
+            for i,s in enumerate(self.gr_sort):
+                # [[id, centroid, extents, len, points ]]   
+                features.append(Feature(geometry=Polygon(self.cvt_3d_to_2d(s[4])), 
+                                     properties={"id" : i 
+                                                }
+                                     ) 
+                             )
 
-        feature_collection = FeatureCollection(features)
-        filename= '%s/%s'%(folder,name)
-        print('## EXPORTING file %s'%filename)
+            feature_collection = FeatureCollection(features)
+            filename= '%s/%s'%(folder,name)
+            print('## EXPORTING file %s'%filename)
 
-        with open(filename, 'w') as f:
-            dump(feature_collection, f)
+            with open(filename, 'w') as f:
+                dump(feature_collection, f)
 
     ##-------------------------------##
     def export_grid_gfx(self, name, folder , borders=True, centroids=True):
@@ -1674,6 +1698,8 @@ class vectorflow(object3d):
             for ip, pt in enumerate(poly):
                 #polygons.append( (idx, idx+1) ) #2 point polygon indeces
                 #print(self.points[pt])
+                
+                #subtract 1 beacuse OBJ data is not zero indexed 
                 ptx = self.points[pt-1][0]
                 pty = self.points[pt-1][1] 
 

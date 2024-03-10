@@ -126,7 +126,7 @@ import os
 from gnelscript import SHAPELY_IS_LOADED
 
 if SHAPELY_IS_LOADED:
-    from shapely import Point, LineString, Polygon
+    from shapely import buffer, Point, LineString, Polygon, BufferCapStyle, BufferJoinStyle
 
 
 from gnelscript.pygfx.obj3d import object3d
@@ -621,11 +621,46 @@ class cnc_op(gcode_object, vectorflow ):
         self.HEAD_POSZ = 0
 
     ##-------------------------------## 
+    ##-------------------------------## 
     if SHAPELY_IS_LOADED:
-        def test(self):
+        def test_shapely(self):
             line = LineString([(2, 0), (2, 4), (3, 4)])
             print(line)
 
+        ##-------------------------------## 
+        def cvt_grsort_shapely(self):
+            #               [[id, centroid, extents, len, points ]]  
+            
+            geom = [] 
+            for poly in self.gr_sort:
+                geom.append( Polygon(self.cvt_3d_to_2d(poly[4])) )
+            
+            return geom
+
+        #def shply_buffer(self, geom_obj):
+        #        #buff = buffer(Point(10, 10), 2, quad_segs=2)
+        #        buff = buffer(poly, 2, quad_segs=2)
+        #        
+        #        return buff
+
+        ##-------------------------------## 
+        def cvt_shapely_grsort(self, shapely_geom, zval=0):
+            xx, yy = shapely_geom.exterior.coords.xy
+
+            x = xx.tolist()
+            y = yy.tolist()
+
+            ply = [] 
+
+            for i in range(0,len(x)):
+                #2d or 3D ??
+                #ply.append( (x, y) )
+                ply.append( (x[i], y[i], zval) )
+
+            self.insert_gr_sort(ply)  
+
+
+    ##-------------------------------## 
     ##-------------------------------## 
     def _set_cam_properties_mop(self, rh, ch, cdpi, cmax):
         self.rh = rh           
@@ -1275,6 +1310,8 @@ class cam_op(cnc_op):
     def batch_ray_intersect(self, step, stacks, spokes, outname, axis='y'):
         """ 
            DEBUG - WAY TOO SLOW to use for real work
+           DEBUG - only works with triangular gemoetry (you can run the triangulate command first )
+
            it had to iterate each face to check the intersections 
 
            probably only useful as a curiosity or toy 
@@ -1288,6 +1325,10 @@ class cam_op(cnc_op):
                spokes - number of spokes per ring 
 
         """
+        if self.numtris==0:
+            print('## batch_ray_intersect - NO TRIANGLES ')
+            return None 
+
         DEBUG = True 
         MODE = 'radial' #default
 

@@ -234,13 +234,37 @@ class object3d(polygon_operator):
 
     ##-------------------------------------------
     @property
+    def numlines(self):
+        lines = 0
+        for p in self.polygons:
+            if len(p)==2:
+                lines+=1
+        return lines 
+    ##-------------------------------------------        
+    @property
+    def numtris(self):
+        tris = 0
+        for p in self.polygons:
+            if len(p)==3:
+                tris+=1
+        return tris 
+    ##-------------------------------------------
+    @property
+    def numquads(self):
+        quads = 0
+        for p in self.polygons:
+            if len(p)==3:
+                quads+=1
+        return quads 
+    ##-------------------------------------------
+    @property
     def numply(self):
         return len(self.polygons)
-
+    ##-------------------------------------------
     @property
     def numpts(self):
         return len(self.points)   
-
+    ##-------------------------------------------
     @property
     def numfacnrml(self):
         return len(self.normals)  
@@ -507,7 +531,7 @@ class object3d(polygon_operator):
         sy = size
         sz = size
 
-        self.prim_rect(axis='y', pos=(0,0,0), rot=(0,0,0), sizex=sx, sizey=sy, sizez=sz, periodic=periodic)
+        self.prim_rect(axis=axis, pos=pos, rot=rot, sizex=sx, sizey=sy, sizez=sz, periodic=periodic)
 
 
     def prim_rect(self, axis='y', pos=(0,0,0), rot=(0,0,0), sizex=1, sizey=1, sizez=1, periodic=False):
