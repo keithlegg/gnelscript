@@ -47,6 +47,7 @@ from gnelscript.pygfx.obj2d import  *
 
 from gnelscript.pygfx.kicad_ops import *
 from gnelscript.pygfx.gis_vector_ops import *
+from gnelscript.pygfx.milling_ops import *
 
 
 
@@ -1035,7 +1036,12 @@ def iterate_fids(folder, infile, outfile):
 ##----------------------------------------------------
 ##----------------------------------------------------
 def test_3dprinting(folder, infile, outfile):
-    gop = gcode_op()
+    """
+       #DEBUG - very experimental 
+    
+    """
+
+    gop = cnc_op()
 
     #gn_dir(gop)
     #gop.prim_sphere()
@@ -1058,14 +1064,19 @@ def test_3dprinting(folder, infile, outfile):
     print(gop.gr_polys)
 
     #             (rh, ch, cdpi, cmax, filename                           , do3d=False)
-    #gop.export_ngc(1,   0,   .1,    2, '%s/%s.ngc'%(folder, 'isofoo'), do3d=True )
+    gop.export_ngc(1,   0,   .1,    2, '%s/%s.ngc'%(folder, outfile), do3d=True )
 
     #gop.export_3dprint( '%s/%s.gcode'%(folder, 'isofoo') )
 
 
 ##----------------------------------------------------
 def test_milling(folder, infile, outfile):
-    gop = gcode_op()
+    """
+       #DEBUG - very experimental 
+    
+    """
+        
+    gop = cnc_op()
 
     #gn_dir(gop)
     #gop.prim_sphere()
@@ -1093,7 +1104,7 @@ def test_milling(folder, infile, outfile):
 def load_gcode(basepath, path, name):
     vflo = vectorflow()
 
-    gop = gcode_op()
+    gop = cnc_op()
     gop.load_gcode('%s/%s/%s.ngc'%(basepath, path, name) )
     for ply in  gop.segments:
         #print(len(ply))
@@ -1109,6 +1120,30 @@ def load_gcode(basepath, path, name):
     # OBJ not working very well 
     #vflo.cvt_grpoly_obj3d() 
     #vflo.save('%s/%s.obj'%(basepath, name) )
+
+
+##----------------------------------------------------
+
+def kicad_to_json(path, infile, outfile):
+    vflo = vectorflow()
+    pcb = pcbfile()
+    pcb.load_kicadpcb(0, path,infile )
+    
+    vflo.gr_polys = pcb.gr_polys
+    vflo._sort()
+    
+    #move_center is for 3d obj buffer
+    #vflo.move_center()
+    
+    #this is for json/ngc buffer
+    vflo.gl_move_center() 
+
+    
+    #kicad uses top left origin - we need to flip it 
+    vflo.gl_scale([1,-1,1])
+
+    vflo.export_geojson_polygon(path, outfile)
+
 
 ##----------------------------------------------------
 

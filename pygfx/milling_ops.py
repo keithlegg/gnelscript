@@ -277,15 +277,13 @@ linuxcnc_fmt = {
 
 
 class gcode_object(object3d):
-    ## first stab of gcode translator - got put on hold 
+    ## first stab of gcode translator 
     ## kicad ops has the first working simple gcode exporter
     
     def __init__(self):
         super().__init__()  
 
         self.DEBUG_MODE = True
-        # self.linear_units = 'in'
-        # self.z_axis  ?? 
 
         #comments get dumped into this array (full or partial line)
         self.commented = [] # [index, string] 
@@ -296,11 +294,6 @@ class gcode_object(object3d):
         # self.dialect = parser_commands
 
         self.coord_words = ['N','G', 'X','Y','Z','U','V','W','I','J','K','R','P','F'] # ,'A','B','C','D']
-        
-        # simulated position of the cutting head
-        self.POSX = 0
-        self.POSY = 0
-        self.POSZ = 0
 
         self.segments  = [] # [index, command, xyz_pos] 
 
@@ -334,51 +327,12 @@ class gcode_object(object3d):
         for token in tokens:
             print(token)
 
- 
-
     ##-------------------------------##
-    def milling_test_linear(self):
-        pop = point_operator_3d()
-        #calc_circle(self, pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
-        circ_pts = pop.calc_circle()
-
-
-        # n099    (This is a test plot nc program to be run on backplot)
-        # n100    (Author Ray Henry 10-Feb-2000)
-        # n101    g20
-        # n102    g0 x0 y0 z0 f30
-        # n103    x1 y1(start xy circle)
-        # n104    g17 g02 i.5 j.5
-        # n106    g0 z.1 (add xy lettering)
-        # n107    y1.75
-        # n108    z0
-        # n109    g1 y1.25 x1.4
-        # n110    y1.5 x1.2
-        # n111    y1.25 x1
-        # n112    y1.75 x1.4
-        self.outfile.append('g20')                  #inches for unit 
-        self.outfile.append('g0 x0 y0 z0 f30')      #rapid move to 0 
-        for i,pt in enumerate(circ_pts):
-            if i==0:
-                self.outfile.append( 'g1 x%s y%s'%(pt[0], pt[1]) )
-            else:    
-                self.outfile.append( 'g1 x%s y%s'%(pt[0], pt[1]) )
-
-        #rapid move at end 
-        #self.outfile.append('g0z1')
-        self.outfile.append('g0 x0 y0 z0 f30')      #rapid move to 0 
-
-        #program end 
-        self.outfile.append('%')
-        self.outfile.append('m2')
-
-
     def show_data(self):
-        print("## ## ## ## ## ## ## ## ## ##")
-
         for s in self.segments:
             print(s[1])
 
+    ##-------------------------------##
     def contains_coord_words(self, string): 
         # check for any known coordinate words
         has_coords = False 
@@ -387,6 +341,7 @@ class gcode_object(object3d):
                 has_coords = True
         return  has_coords       
 
+    ##-------------------------------##
     def which_coord_words(self, string):
         words = []
         for cw2 in self.coord_words:
@@ -394,6 +349,7 @@ class gcode_object(object3d):
                 words.append(cw2)
         return words
 
+    ##-------------------------------##
     def parse_params(self, string):
         ## discover and retain any parameters in the file 
         if PARAM in string:
@@ -406,6 +362,7 @@ class gcode_object(object3d):
                         self.param_names.append(tmp[0])
                         self.param_values.append(tmp2[1].replace(' ',''))
 
+    ##-------------------------------##
     def between_token_list(self, string, tokens, return_match=False):
         ## give a list of tokens, return a list of betweens 
         ## string = 'y987a123b541c307d999'
@@ -452,6 +409,7 @@ class gcode_object(object3d):
             return out2
 
 
+    ##-------------------------------##
     def save_gcode(self, filename):
         f = open( filename,"w", encoding='utf-8')
         
@@ -460,6 +418,7 @@ class gcode_object(object3d):
             print( seg[0], seg[2])
 
 
+    ##-------------------------------##
     def calc_arc(self, R, Theta1, Theta2, Xc, Yc):
         """
             appears to work but not fully tested 
@@ -480,7 +439,7 @@ class gcode_object(object3d):
 
 
             USAGE:
-                gcc = gcode_op()
+                gcc = cnc_op()
                 gcc.calc_arc( .5, 90, 0, 2.25, 3) 
 
         """
@@ -511,6 +470,7 @@ class gcode_object(object3d):
         return pts
 
 
+    ##-------------------------------##
     def load_gcode(self, filename):
 
         if os.path.lexists(filename) == 0:
@@ -630,15 +590,41 @@ class gcode_object(object3d):
 
                         #self.segments.append( [n_idx, [self.POSX, self.POSY, self.POSZ], comm ] )
 
-##---------------------------##
 
-class gcode_op(gcode_object, vectorflow ):
-    """ copy of vectorflow()  
+
+##--------------------------------------------------------------------------##
+##--------------------------------------------------------------------------##
+
+class cnc_op(gcode_object, vectorflow ):
+    """ 
+     gcode parsing was complex enough to get its own class (gcode_object)  
+     vectorflow is the experimental tool to seamlessly integreate OBJ, JSON, and NGC 
+
+     This is the main place for all general CNC stuff 
+     
+     - hole drilling 
+     - dialate/erode 
+     - etc 
+
+     the complex cutting edge stuff will go in cam_op 
+
     """
 
 
     def __init__(self):
         super().__init__()  
+        
+
+        # simulated position of the cutting head
+        self.HEAD_POSX = 0
+        self.HEAD_POSY = 0
+        self.HEAD_POSZ = 0
+
+    ##-------------------------------## 
+    if SHAPELY_IS_LOADED:
+        def test(self):
+            line = LineString([(2, 0), (2, 4), (3, 4)])
+            print(line)
 
     ##-------------------------------## 
     def _set_cam_properties_mop(self, rh, ch, cdpi, cmax):
@@ -687,7 +673,7 @@ class gcode_op(gcode_object, vectorflow ):
             ply = sort[4]
 
             for i, c in enumerate(range(iterations)):
-                depth = self.ch+(i*self.cdpi)
+                depth = self.ch-(i*self.cdpi)
                 for pt in ply:
                     if depth < self.cmax:
                         newply.append( (pt[0] ,pt[1], depth) )
@@ -877,10 +863,8 @@ class gcode_op(gcode_object, vectorflow ):
         self.outfile.append('m2') #program end
 
     ##-------------------------------##
+    """
     def _calculate_paths3d(self, do_retracts=True, doround=True):
-        """ 
-             DEBUGGY 
-        """
         pl = 6 #numeric rounding places 
         lastpt = (0,0,0)
 
@@ -974,13 +958,11 @@ class gcode_op(gcode_object, vectorflow ):
         ##-----------------------------------------##
         # rapid move at end 
         self.outfile.append('m2') #program end
-
+    """
     ##-------------------------------##
     def _calculate_paths2d_mop(self, do_retracts=True):
         """ 
             this walks self.gr_poly and builds an OBJ and NGC file in self.outfile
-
-
             https://linuxcnc.org/docs/html/gcode/g-code.html
             Top 10 tasty GCODE commands:
                 S - surface speed
@@ -1275,10 +1257,12 @@ class gcode_op(gcode_object, vectorflow ):
             dump(feature_collection, f)
 
 
-##---------------------------##
+##-----------------------------------------##
 
-class cam_op(gcode_op):
-    
+class cam_op(cnc_op):
+    """ True 3D milling operations  
+    """
+
     def __init__(self):
         super().__init__()  
         self.tesl = tessellator() 
@@ -1286,10 +1270,6 @@ class cam_op(gcode_op):
     def obj_to_wkt(self):
         print(self.points)
 
-    if SHAPELY_IS_LOADED:
-        def test(self):
-            line = LineString([(2, 0), (2, 4), (3, 4)])
-            print(line)
 
     ##-----------------------------------
     def batch_ray_intersect(self, step, stacks, spokes, outname, axis='y'):
@@ -1483,7 +1463,6 @@ class cam_op(gcode_op):
                 n.linegeom_fr_points(curve, periodic=False )
 
         n.save("%s_waterline.obj"%outname)  
-
 
     ##-----------------------------------
     #def project_image(self, img_curves):
@@ -1719,7 +1698,7 @@ class cam_op(gcode_op):
 
        pass 
 
-##------------------------------------------
+##-----------------------------------------##
 
 
 

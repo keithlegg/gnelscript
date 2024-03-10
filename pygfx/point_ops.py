@@ -1417,21 +1417,29 @@ class polygon_operator(point_operator_3d):
         if pts is None:
             pts = self.points
 
+        if pts is None:
+            print('warning centroid .. no points loaded')
+            return None  
+            
         ptsx = []
         ptsy = []
         ptsz = []
 
-        for pt in pts:
-            ptsx.append(pt[0])
-            ptsy.append(pt[1])
-            ptsz.append(pt[2])  
+        if pts:
+            for pt in pts:
+                ptsx.append(pt[0])
+                ptsy.append(pt[1])
+                ptsz.append(pt[2])  
 
-        #average them 
-        x = sum(ptsx)/len(ptsx)
-        y = sum(ptsy)/len(ptsy)
-        z = sum(ptsz)/len(ptsz)
-        #return vec3(x,y,z)
-        return [x,y,z]
+            #average them 
+            x = sum(ptsx)/len(ptsx)
+            y = sum(ptsy)/len(ptsy)
+            z = sum(ptsz)/len(ptsz)
+            #return vec3(x,y,z)
+            return [x,y,z]
+        
+        #hmm should we return None or 0,0,0 if no data... 
+        return None  
 
     ##-------------------------------------------## 
     def three_vec3_to_normal(self, v1, v2, v3, unitlen=False):

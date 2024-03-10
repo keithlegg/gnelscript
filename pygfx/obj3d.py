@@ -501,7 +501,16 @@ class object3d(polygon_operator):
         self.insert_polygons( poly, pts)
 
     ##------------------------------------------------##  
-    def prim_quad(self, axis='y', pos=(0,0,0), rot=(0,0,0), sizex=1, sizey=1, sizez=1, periodic=False):
+    def prim_quad(self, axis='y', pos=(0,0,0), rot=(0,0,0), size=1, periodic=False):
+        
+        sx = size
+        sy = size
+        sz = size
+
+        self.prim_rect(axis='y', pos=(0,0,0), rot=(0,0,0), sizex=sx, sizey=sy, sizez=sz, periodic=periodic)
+
+
+    def prim_rect(self, axis='y', pos=(0,0,0), rot=(0,0,0), sizex=1, sizey=1, sizez=1, periodic=False):
         """ single polygon operations (that can be stacked together ?) """
 
         if axis == 'x':

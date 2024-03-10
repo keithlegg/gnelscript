@@ -39,7 +39,7 @@ from gnelscript.pygfx.render import simple_render
 
 
 class work_order(object3d):
-    """container for gcode_ops (defined in milling_ops.py)
+    """container for cnc_op (defined in milling_ops.py)
     """
 
     def __init__(self):
@@ -51,7 +51,8 @@ class work_order(object3d):
 
 
 class vectorflow(object3d):
-    """ weird swiss army graphics tool. 
+    """ 
+        coordinate agnostic geometery processor 
 
         partially supports kicad graphics, gdcode, json and obj files   
 
@@ -67,18 +68,7 @@ class vectorflow(object3d):
         # IDEA 
         #1 - DAG - b tree 
         #2 - parent geom to nodes - add matrix scenegraph  
-        #3-  crazy f-ing animation potential - vector ala cyriak  
-
-        ##-------------------------------##
-        #TODO: 
-
-        ## def import_polys(self, pts):
-
-        ## def remove_polys(self, pts):
-        ##     indexer 
-
-        ## def export_polys(self, pts):
-        ##     indexer  
+        #3-  crazy vector animation potential if you attach a matrix to each node 
 
     """
 
@@ -86,14 +76,16 @@ class vectorflow(object3d):
         super().__init__()  
         
         self.outfile = []
+        
+        self.vf_gl_scale =  0.0393701 #NOT FULLY IMPLEMENTED - inch to mm 
 
         self.mu          = math_util()
         self.tesl        = tessellator()
         self.pop2d       = object2d() 
         self.pop3d       = object3d() 
 
-        #self.kiparser    = pcbfile()
-
+        #self.kiparser      = pcbfile()
+        #self.gcodearser    = gcode_object()
 
         # geometry buffers for JSON, NGC,sorting, processing, etc 
         self.gr_polys      = [] # list of list of points 
@@ -131,17 +123,24 @@ class vectorflow(object3d):
         self.sort_maxz = 0
 
 
-        self.global_scale =  0.0393701 #NOT FULLY IMPLEMENTED - inch to mm 
-        #self.work_order = work_order() #list of gcode_ops (defined in milling_ops.py)
+    ##-------------------------------##
+    #def scale_to_unit(self, inunits='mm', outunits='mm'):
+    #    pass
+
 
     ##-------------------------------##
     def machine_size(self, units='inch', scale=None):
 
         mm_to_inch = 25.4
 
+        # laser cutter 
         maxx = 1000
         maxy = 1200
         
+        # bridgeport 
+        #maxx = 1000
+        #maxy = 1200
+
         if scale and scale!=0:
             maxx = maxx*scale
             maxy = maxy*scale              
@@ -607,33 +606,6 @@ class vectorflow(object3d):
             first = ply[0]
             ply.append(first)
 
-    ##-------------------------------## 
-    def _make_outline(self, iterations):
-        """ 
-            DEBUG - NEED TO ADD 1/2 DIA OF CUTTING TOOL 
-            WE NEED DIALATE AND ERODE TO MAKE THIS WORK 
-            first attempt at a Z operation - spiral down a polygon 
-
-        """
-        
-        #spirals = [] 
-
-        for idx, sort in enumerate(self.gr_sort):
-
-            newply = []            
-            ply = sort[4]
-
-            for i, c in enumerate(range(iterations)):
-                depth = self.ch-(i*self.cdpi)
-                for pt in ply:
-                    if depth < self.cmax:
-                        newply.append( (pt[0] ,pt[1], depth) )
-                    if depth>self.cmax:
-                        print("cut too deep ")
-
-            #spirals.append(newply)
-            self.gr_sort[idx][4] = newply  
-
     ##-------------------------------##       
     def _sort(self):
         """ assemble data into [[id, centroid, extents, len, points ]] - put that in self.gr_sort   
@@ -1076,7 +1048,7 @@ class vectorflow(object3d):
         lastpt = (0,0,0)
 
         self.outfile.append('( exported with _calculate_paths3d )')
-        self.outfile.append('(linear scale set to %s of internal coordinates)'%self.global_scale )
+        self.outfile.append('(linear scale set to %s of internal coordinates)'%self.vf_gl_scale )
         self.outfile.append('  ')
 
         self.outfile.append('g20')                  #inches for unit 
@@ -1213,7 +1185,7 @@ class vectorflow(object3d):
 
 
         self.outfile.append('(exported with _calculate_paths2d )')
-        self.outfile.append('(linear scale set to %s of internal coordinates)'%self.global_scale )
+        self.outfile.append('(linear scale set to %s of internal coordinates)'%self.vf_gl_scale )
         self.outfile.append('  ')
 
         self.outfile.append('g20')                  #inches for unit 
@@ -1569,7 +1541,7 @@ class vectorflow(object3d):
             lastpt = (0,0,0)
             
             outfile.append('(exported with export_global_extents )')
-            outfile.append('(linear scale set to %s of internal coordinates)'%self.global_scale )
+            outfile.append('(linear scale set to %s of internal coordinates)'%self.vf_gl_scale )
             outfile.append('  ')
             outfile.append('g20') #inches for unit 
             
@@ -2168,112 +2140,6 @@ class vectorflow(object3d):
                 pts.append( (pt[0]+cen[0], pt[1]+cen[1] ) )  
 
             cell.points.extend( pts )
-    ##-------------------------------##
-
-    ##-------------------------------##
-    def load_ngc(self, filename):
-        """DEBUG - TEST 
-        """
-        
-
-        pass 
-
-
-    ##-------------------------------##
-    ##-------------------------------##
-    def load_kicadpcb(self, filename):
-        """ a parser that is not recursive, but clever enough to scan all the 
-            entities in the file that have coordinates and store then in a list with a type identifier 
-        """ 
-        
-        var_module_name    = ''
-        var_module_pos     = []
-        var_module_lines   = []
-
-        var_pad_name       = ''
-        var_pad_size       = 0
-        var_pad_xcoord     = 0
-        var_pad_ycoord     = 0
-
-        var_segment_start  = []
-        var_segment_end    = []
-
-        var_line_width     = 0
-        var_line_start_xy  = []
-        var_line_end_xy    = []
-
-        f = open(filename, 'r')
-
-        # how deep in the parentheticals are we?
-        depth = 0 
-        newpoly = []
-
-        for lc,line in enumerate(f):
-            if '(' in line or ')' in line:
-    
-                #okay we are in a parenthetical - count the depth to break up the gr_polys
-                for x in range(line.count('(')):
-                    depth+=1
-                for x in range(line.count(')')):
-                    depth-=1
-                
-                ## ---
-
-                linetoked = line.split(' ') 
-                cleanspaces = []
-                for t in linetoked:
-                    if t!='':
-                        cleanspaces.append( self._scrub(t) )
-                
-                ## ---
-                if len(cleanspaces[0]):
-                    #print(cleanspaces)
-                    coord = [] 
-
-                    # walk the cleaned line tokens, we know depth, we know if there was a gr_poly  
-                    for i,tok in enumerate(cleanspaces):
-                        if tok !='':
-                            if tok=='gr_poly' and depth==2:
-                                if len(newpoly):
-                                    self.gr_polys.append(newpoly)
-                                    newpoly = []
-
-                            if depth==3:
-                                if tok == 'xy':   
-                                    xcoord = float( self._scrub(cleanspaces[i+1]) )
-                                    ycoord = float( self._scrub(cleanspaces[i+2]) )
-
-                                    coord.append( (xcoord, ycoord, self.ch ) )
-
-                                # if tok == 'start':   
-                                #     coord.append( (float(self._scrub(cleanspaces[i+1]))  , float(self._scrub(cleanspaces[i+2]) )) ) 
-                                # if tok == 'end':   
-                                #     coord.append( (float(self._scrub(cleanspaces[i+1]))  , float(self._scrub(cleanspaces[i+2]) )) ) 
-                                # if tok == 'center':   
-                                #     coord.append( (float(self._scrub(cleanspaces[i+1]))  , float(self._scrub(cleanspaces[i+2]) )) ) 
-                        
-                    #print(coord)    
-                    if coord:
-                        newpoly.append(coord[0] )
-            
-        #if data is in buffer - keep it 
-        if len(newpoly):
-            self.gr_polys.append(newpoly)
-
-        ##----
-        # copy all gr_polys to gr_sort to process
-        self._sort()
-
-
-
-
-
-
-
-
-
-
-
 
 
 
