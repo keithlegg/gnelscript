@@ -29,7 +29,7 @@ def scan_line_tool(filldensity, inobj, outfolder, outname):
     hscanlines = int(res_y*filldensity)
 
     pts = vflo.scanline( 8, hscanlines, polygon )
-    pop2 = point_operator_2d()
+    pop2 = pop2d()
 
     for row in pts:
         if row:

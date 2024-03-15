@@ -18,9 +18,7 @@ from gnelscript.pygfx.obj3d import  *
 ## for g in geom:
 ##     print(g)
 
-        
-PYCORE_OBJ_IN = 'objects/sphere.obj'
-PYCORE_OBJ_OUT = 'PYCORE.obj'
+
 
 
 
@@ -70,20 +68,20 @@ def do_obj_intersection(filename):
 
 ##-------------------------------------------------------## 
 
-def test_copysop():
+def test_copysop(objin, objout):
     """ copy SOP is a subselect, copy and transform the result
         ala Houdini 
         optional loop and increment 
     """
     obj = object3d() 
-    obj.load(PYCORE_OBJ_IN)
+    obj.load(objin)
 
     #be cautious of large number of polys. It gets slow real quick!
     obj.copy_sop(span=(1,20), offset=(0,.5,0), num=2, distance=.5)
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(objout)
 
 ##-------------------------------------------------------## 
-def test_rotate_points():
+def test_rotate_points(objin, objout):
     """ simple example to use one of the 3 standard transform tools 
         
         the 3 tools are:
@@ -102,10 +100,10 @@ def test_rotate_points():
     #pts = [(2,2,2), (4,4,4), (8,8,8)]
     pts2 = obj.rotate_pts((45,45,45) )
     #print(pts2)
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(objout)
 
 ##-------------------------------------------------------## 
-def modify_part_of_an_object():
+def modify_part_of_an_object(objout):
     """ extract a span of polygons
         spatially trasform them
         insert result into a new object  
@@ -119,10 +117,10 @@ def modify_part_of_an_object():
 
     obj2 = object3d() 
     obj2.insert_polygons(geom[0], newpts  )      
-    obj2.save(PYCORE_OBJ_OUT)
+    obj2.save(objout)
 
 ##-------------------------------------------------------## 
-def triangulate_test():
+def triangulate_test(objout):
     """ UNFINISHED - 
         test stacks of operations, 
         repeating this ame op over , etc 
@@ -131,10 +129,10 @@ def triangulate_test():
     obj.prim_circle() 
     obj.radial_triangulate_obj( offset=None)#as_new_obj=False
     #obj.radial_triangulate_obj()
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(objout)
 
 ##-------------------------------------------------------## 
-def multi_face_triangulate_offset():
+def multi_face_triangulate_offset(objout):
     """ broken - DEBUG """
     
     obj = object3d()
@@ -152,11 +150,11 @@ def multi_face_triangulate_offset():
     #    print(i)
     #    obj.radial_triangulate_face(i, offset=n[1] , as_new_obj= True )
 
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(objout)
 
 
 ##-------------------------------------------------------## 
-def circle_with_cube_all_pts():
+def circle_with_cube_all_pts(objout):
     """ make a circle with a rotated cube at each point """
 
     obj = object3d()
@@ -169,11 +167,11 @@ def circle_with_cube_all_pts():
         tmp.prim_cube(size=.05, pos=pt, rot=(ct,ct,ct), pivot='world')
         ct += 10
         obj.insert(tmp)  
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(objout)
 
 
 ##-------------------------------------------------------## 
-def spherical_to_point():
+def spherical_to_point(objout):
     """ test of spherical coordinates to a cartesian point 
         done in a nested loop to make a sphere
     """
@@ -188,12 +186,12 @@ def spherical_to_point():
             pt=  sp.to_cartesian() 
             obj.prim_cube(pos=pt, size=.1, linecolor=(255,0,0), rot=(0,0,0), pivot='world')
 
-    obj.save(PYCORE_OBJ_OUT) 
+    obj.save(objout) 
 
 
 
 ##-------------------------------------------------------## 
-def object_primitives():
+def object_primitives(objout):
     """ demo various built in primitive objects """
 
     obj = object3d() 
@@ -206,42 +204,42 @@ def object_primitives():
     do_flush = True
 
     obj.prim_line( axis=axis, pos=position, rot=rotation, size=size)
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(objout)
     if do_flush:
         obj._flush()
 
     obj.prim_triangle( axis=axis, pos=position, rot=rotation, size=size)
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(objout)
     if do_flush:
         obj._flush()
 
     obj.prim_quad( axis=axis, pos=position, rot=rotation, size=size)
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(objout)
     if do_flush:
         obj._flush()
 
     obj.prim_circle( axis=axis, pos=position, dia=size) #rot=rotation
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(objout)
     if do_flush:
         obj._flush()
 
     obj.prim_sphere(  pos=position, rot=rotation, size=size)
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(objout)
     if do_flush:
         obj._flush()
 
     obj.prim_locator(  pos=position, rot=rotation, size=size)
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(objout)
     if do_flush:
         obj._flush()
 
     obj.prim_locator_xyz(  pos=position, rot=rotation, size=size)
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(objout)
     if do_flush:
         obj._flush()
 
     obj.prim_cone( axis=axis, pos=position, dia=size) #rot=rotation
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(objout)
     if do_flush:
         obj._flush()
 
@@ -249,7 +247,7 @@ def object_primitives():
 
 
 ##-------------------------------------------------------## 
-def test_point_transform(): 
+def test_point_transform(objout): 
     """ example of translate, rotate, scale of raw points 
         translate tools work with "ptgroups", or raw points
     """
@@ -263,12 +261,12 @@ def test_point_transform():
 
     obj.points = obj.xform_pts( (0,2,0),  pts=obj.points ) 
 
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(objout)
 
 
 
 ##-------------------------------------------------------## 
-def face_extrude():
+def face_extrude(objout):
     """ brute force test of face extrude 
         extrudes all faces in a polygon object 
         also will display a cheapo test "progress bar"
@@ -286,12 +284,12 @@ def face_extrude():
             ct+=1
         obj.extrude_face(i, 10/i)
 
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(objout)
 
 
 ##-------------------------------------------------------## 
 
-def circle_with_cube_all_pts():
+def circle_with_cube_all_pts(objout):
     """ BROKEN - FIX THIS 
         make a circle with a rotated cube at each point 
     """
@@ -307,4 +305,4 @@ def circle_with_cube_all_pts():
         tmp.prim_cube(linecolor=(255,0,0), size=.05, pos=pt, rot=(ct,ct,ct), pivot='world')
         ct += 10
         obj.insert(tmp)  
-    obj.save(PYCORE_OBJ_OUT)
+    obj.save(objout)

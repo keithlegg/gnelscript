@@ -100,11 +100,12 @@ class pop3d(object):
     """
 
     def __init__(self):
-        self.mu   = mu()
-        self.m33  = matrix33()      
-        self.m44  = matrix44()  # used for point rotations, and more? 
-        self.vec2     = vec2()     
-        self.vec3     = vec3()      
+        self.mu     = mu()
+        self.m33    = matrix33()      
+        self.m44    = matrix44()  # used for point rotations, and more? 
+        self.vec2   = vec2()     
+        self.vec3   = vec3()      
+
 
     ##-------------------------------------------##
     #def mirror(self, origin, axis):

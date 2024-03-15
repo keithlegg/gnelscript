@@ -6,7 +6,7 @@ from math import sqrt
 from PIL import Image, ImageOps
 
 from gnelscript.pygfx.math_ops import  NUMPY_IS_LOADED
-from gnelscript.pygfx.point_ops_2d import point_operator_2d
+from gnelscript.pygfx.point_ops_2d import pop2d
 
 
 if NUMPY_IS_LOADED:
@@ -19,7 +19,7 @@ else:
 class raster_op(object):
     
     def __init__(self):
-        self.ptgen = point_operator_2d()
+        self.ptgen = pop2d()
 
         self.debug_msg = False
         self.res_x = None

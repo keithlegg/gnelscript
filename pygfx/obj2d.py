@@ -9,6 +9,8 @@ import math
 from gnelscript.pygfx.point_ops_2d import *
 from gnelscript.pygfx.obj2d import *
 
+from gnelscript.pygfx.poly_ops_2d import polygon_operator_2d
+
 
 
 class object2d(polygon_operator_2d):

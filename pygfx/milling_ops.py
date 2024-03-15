@@ -92,9 +92,6 @@ J=Incremental Y coordinate of start point
 import math 
 import re 
 
-#from pygfx.point_ops import polygon_operator
-#from pygfx.math_ops import vec3 
-
 import os 
 
 

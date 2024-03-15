@@ -2,33 +2,24 @@
 # gnelscript
 
 
-Python graphics power tools. Procedural 2D/3D Modeling. 
-Connects to several oddball formats (obj, kicad, geojson, ngc/gcode).
+Python graphics tools. Anything goes. 
 
-Flexible enough to build your own text based geometry formats and parsers. 
-
-Basic 3D Renderer and raster utils with Python PIL.
-(basic) gcode generator for milling with Linux CNC.    
-lots of random goodies:
-    raycasting, 2D vector render, tesselator, directed acylic graph. 
-
-
-I am writing this to learn 3D math. 
-
+Its a sandbox for playing with numbers and pictures. I am writing this to learn 3D math. 
 It is for fun and to be used as a platform to teach 3D math and graphics. 
+
+If you want to do serious 3D work in python I suggest you have a look at the "trimesh" library instead.
 
 
     Organized by the following modules:
        -  math_ops         - math, vectors, matrices, the core logic of it all  
-       -  point_ops        - points, polygons, and objects, the "brains" of geometry processing
+       -  point_ops        - 3D points, (polygons moved to poly_ops) 
        -  point_ops_2d     - 2d points, polygons
+       -  poly_ops         - polygons, and objects, the "brains" of geometry processing
        -  obj2d            - data structure for 2D models.   Inherits all the other stuff  
        -  obj3d            - data structure for 3D models.   Inherits all the other stuff     
        -  raster_ops       - image manipulation with PIL, framebuffer  
        -  render           - brain dead simple 3D rendering, examples of using pygfx modules to build a 3D render  
        -  milling_ops      - process G-code files for CNC/CAM related stuff. Experimental. 
-       -  kicad_ops        - parse the kicad pcb format for CNC/CAM related stuff. Experimental.
-       -  gis_vector_ops   - GIS data import and export. Experimental.
        -  grid_ops         - do things in a spatial grid like tesselations,etc - derived from dag_ops 
 
 
@@ -76,18 +67,18 @@ Raster tools structure:
        |-point_ops       - functions to work with coordinates directly
           |-polygon_ops     - deals with polygon indices, point indices 
               |             - geometry is stored as vertex arrays and face indexes with a flat data structure  
-              |-object      - deals with groups of polygons, normals, polygon operators loading, saving, ect 
+              |-object3d    - deals with groups of polygons, normals, polygon operators loading, saving, ect 
            
  
 
 Designed to be a self contained python module that you import into other places.
-It has some numpy functions that can be disabled with a global.
 
+I am looking at adding other libraries like numpy, trimesh, shapely and networkx 
 
+To enable other libraries go to __init__ and set 
 
-To enable numpy go to __init__ and set 
+[LIBRARY]_IS_LOADED =True
 
-NUMPY_IS_LOADED=True
 
 
 To use examples - just imort them like this 

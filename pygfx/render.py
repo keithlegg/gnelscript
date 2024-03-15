@@ -206,7 +206,7 @@ class simple_render(object):
 
         self.uvx = 0 #pointer for UV map X axis  
         self.uvy = 0 #pointer for UV map X axis
-        self.ptgen = point_operator_2d()
+        self.ptgen = pop2d()
 
         half_x = resx/2 
         half_y = resy/2 
