@@ -1,22 +1,3 @@
-# ***** BEGIN GPL LICENSE BLOCK *****
-#
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-#
-# ***** END GPL LICENSE BLOCK *****
-
 
 from gnelscript import NUMPY_IS_LOADED
 
@@ -68,7 +49,7 @@ class object3d(polygon_operator):
                     m33=matrix33()
                     self.points = self.apply_matrix_pts(pts=self.points, m33=m33.from_np(matrix)) 
                 if matrix.size==16:
-                    m444=matrix44()
+                    m44=matrix44()
                     self.points = self.apply_matrix_pts(pts=self.points, m44=m44.from_np(matrix)) 
 
     def reset(self):
@@ -477,6 +458,104 @@ class object3d(polygon_operator):
                     self.one_vec_to_obj(v[0], v[1])                 
                
 
+    ##------------------------------------- 
+    def lookat(self, pt1, pt2):
+        """
+            DEBUG highly experimental 
+            rotate an object to a line between two points (pt1 -> pt2)  
+            optional - move to location (pt1)   
+        """
+        import trimesh  
+
+        shim = vec3()  
+        angle = shim.np_angle_between(pt1, pt2, out='deg')
+        direction = pt1 - pt2
+        print("direction", direction)
+        print("angle ", angle)
+
+        rotation_matrix = trimesh.geometry.align_vectors([0, 0, 1], direction, return_angle=False)
+        #distance = shim.np_dist_between(pt1, pt2)
+
+        beam = self.prim_triangle(axis='y')
+        self * rotation_matrix
+        
+        #beam.apply_translation(pt1 - direction*0.5)
+
+
+    """
+    #input two XYZ points, return distance between points
+    def distance_between_points(point1, point2):
+        # Convert the points to numpy arrays.
+        point1 = np.array(point1)
+        point2 = np.array(point2)
+        # Calculate the difference between the two points.
+        difference = np.subtract(point2, point1)
+        # Calculate the norm of the difference vector.
+        norm = np.linalg.norm(difference)
+        # Return the distance.
+        return norm
+
+    def find_angle_between_points(point1, point2):
+        # Calculate the angle between the two vectors
+        angle = np.arccos(np.dot(point1, point2-point1) / (np.linalg.norm(point1) * np.linalg.norm(point2-point1)))
+        #print("NormP1 ", np.linalg.norm(point1))
+        #print("NormP2 ", np.linalg.norm(point2))
+        return np.degrees(angle)
+     
+    def read_blue_points_file(filename):
+          points = []
+          with open(filename, "r") as f:
+            for line in f:
+              point = [float(x) for x in line.split(",")]
+              points.append(point)
+          return np.array(points)
+
+
+    def connect_points():
+        connection_points = read_blue_points_file("fooker.txt")
+
+        cylinders = []
+        beams = []
+        scene = trimesh.Scene()
+        # Sort the array by the X coordinate
+        connection_points = connection_points[connection_points[:, 0].argsort()]
+        print(connection_points)
+
+        # Create Cylinders
+        for point in connection_points:
+            height = point[2]
+            cylinder = trimesh.primitives.Cylinder(radius=0.5, height=height, transform=None, sections=32, mutable=True)
+            cylinder.apply_translation((point[0],point[1],height/2))
+            cylinder.collide = False
+            cylinders.append(cylinder)
+
+        for index, point in enumerate(connection_points):
+            if index < len(connection_points) - 1:
+                current_cylinder = point
+                next_cylinder = connection_points[index + 1]
+
+                Angle = find_angle_between_points(current_cylinder, next_cylinder)
+                Direction = current_cylinder - next_cylinder
+                print("direction", Direction)
+                print("angle ", Angle)
+
+                rotation_matrix = trimesh.geometry.align_vectors([0, 0, 1], Direction, return_angle=False)
+
+                print("r matrix ", rotation_matrix)
+                distance = distance_between_points(current_cylinder, next_cylinder)
+                print(distance)
+
+                beam = trimesh.primitives.Cylinder(radius = 0.1, height = distance, transform=rotation_matrix, sections=32, mutable=True)
+
+                beam.apply_translation(current_cylinder - Direction*0.5)
+                beams.append(beam)
+
+        scene.add_geometry(cylinders)
+        scene.add_geometry(beams)
+        scene.export("op.stl")
+    """
+
+
     ##------------------------------------------------## 
     ##------------------------------------------------## 
     #        BUILT IN PRIMITIVE OBJECTS
@@ -554,7 +633,7 @@ class object3d(polygon_operator):
         self.insert_polygons(poly, pts)
 
     ##------------------------------------------------##  
-    def prim_circle(self, axis, pos=(0,0,0), rot=(0,0,0), dia=1, spokes=9):
+    def prim_circle(self, axis='y', pos=(0,0,0), rot=(0,0,0), dia=1, spokes=9):
         """ UNFINSIHED single polygon operations  """    
 
         # print('## debug prim circle ', axis , pos   )

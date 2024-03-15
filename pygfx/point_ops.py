@@ -1,21 +1,3 @@
-# ***** BEGIN GPL LICENSE BLOCK *****
-#
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-#
-# ***** END GPL LICENSE BLOCK *****
 
 import os
 import math 
@@ -110,11 +92,9 @@ def printgeom(geom):
 ##-------------------------------------------##
 ##-------------------------------------------##  
 
-class point_operator_3d(object):
-    """ what became of the original point generator 
-        
-         - merege this with PTGROUP by adding self.index [] ??
-         - or have new ptgroup inherit this object? 
+class pop3d(object):
+    """ point_operator_3d() 
+        what became of the original point generator 
 
         deal with raw points, not geom, ptgrps, facgrps. JUST points 
     """
@@ -129,21 +109,20 @@ class point_operator_3d(object):
     ##-------------------------------------------##
     #def mirror(self, origin, axis):
         """ mirror a set of points """
-     
-    ##-------------------------------------------##   
-
-    # def array(self, origin, axis):
-    #     pass
-
-    ##-------------------------------------------##   
-
-    # def clone(self, origin, axis):
-    #     pass
 
     ##-------------------------------------------## 
     #def grow_selection(self, ptgrp, facgrp, u_num, v_num):
 
+
     ##-------------------------------------------## 
+    #def merge_all_pts(self):
+
+    #def merge_pts_line(self):
+    #attempt to form a series of pts into a single line 
+    
+    #def merge_segs_line(self):
+    #attempt to form a series of line segs into a single line 
+
     #def weld_edges(self, obj):
 
     ##-------------------------------------------##  
@@ -251,7 +230,7 @@ class point_operator_3d(object):
     def test_data_grid(self, width, height, divs):
         """ 
             usage
-                pop3 = point_operator_3d()
+                pop3 = pop3d()
                 ids = pop3.test_data_grid( 5,5,1)
                 print(ids)
 
@@ -373,7 +352,7 @@ class point_operator_3d(object):
             omits leftovers that dont fit 
 
             usage:
-                pop3 = point_operator_3d()
+                pop3 = pop3d()
                 pts = [1,2,3,4,5,6,7,8,9,0]
                 out = pop3.chunker(pts, 7) 
                 output: [[2, 3, 4, 5, 6, 7, 8]]
@@ -398,7 +377,7 @@ class point_operator_3d(object):
         """ 
 
             usage:
-                pop3 = point_operator_3d()
+                pop3 = pop3d()
                 ids = pop3.test_data_grid( 5,5,1)
                 pop3.print_gridinfo(ids)
 
@@ -410,7 +389,7 @@ class point_operator_3d(object):
     def print_grid(self, grid_array):
         """
             usage:        
-                pop3 = point_operator_3d()
+                pop3 = pop3d()
                 ids = pop3.test_data_grid( 5,5,1)
                 pop3.print_grid(ids)   
 
@@ -422,7 +401,7 @@ class point_operator_3d(object):
     def get_grid_column(self, grid_array , colidx):
         """
             usage:        
-                pop3 = point_operator_3d()
+                pop3 = pop3d()
                 ids = pop3.test_data_grid( 5,5,1)
                 out = pop3.get_grid_column(ids , 2)
                 print(out)
@@ -441,7 +420,7 @@ class point_operator_3d(object):
     def get_grid_row(self, grid_array , rowidx):
         """
             usage:
-                pop3 = point_operator_3d()
+                pop3 = pop3d()
                 ids = pop3.test_data_grid( 5,5,1)
                 out = pop3.get_grid_row(ids , 2)
                 print(out)       
@@ -664,7 +643,7 @@ class point_operator_3d(object):
             (top left, top right , bottom right, bottom left ) 
 
             usage: 
-                pop3 = point_operator_3d()
+                pop3 = pop3d()
                 sq = pop3.calc_2d_square_pt(1,[0,0])
                 print(sq)
         """
@@ -969,7 +948,7 @@ class point_operator_3d(object):
 ##-------------------------------------------##
 ##-------------------------------------------##    
 
-class polygon_operator(point_operator_3d):
+class polygon_operator(pop3d):
     """ polygon operator - should be called GEOM operator 
 
         3D model and tools to work on polygons 
@@ -1079,6 +1058,43 @@ class polygon_operator(point_operator_3d):
         return len(self.points)-1
 
 
+    ##-------------------------------------------## 
+    def dump_pts_csv(self, pts, outfile):
+
+        buffer = ''
+
+        for pt in pts:
+            print(pt)
+
+            buffer = buffer+'%s,%s,%s\n'%(pt[0], pt[1], pt[2])
+
+        #save it to disk now
+        fobj = open( outfile,"w") #encoding='utf-8'
+        fobj.write(buffer)
+        fobj.close()
+ 
+
+
+    ##-------------------------------------------## 
+    def contiguous_segs_to_poly (self, linesegs ):
+        """ DEBUG NOT DONE 
+            take an array of [[start,end],..] and connect it to a single polygon
+            this only works if the points are mathematically a match 
+
+            (we could perhaps add some distance matching later )
+
+            ARGS: 
+                linesegs [[XYZ,XYZ], [XYZ,XYZ],.. ]
+
+            RETURNS:
+                polygon  [XYZ,XYZ,XYZ]                
+        """
+    
+        #DEBUG
+        pass 
+        
+    
+    ##-------------------------------------------## 
     def clean_pts_str(self, pts=None):
         """ 
             returns clamped strings from float, should work with 2D or 3D points 
@@ -1424,8 +1440,12 @@ class polygon_operator(point_operator_3d):
         ptsx = []
         ptsy = []
         ptsz = []
-
-        if pts:
+        
+        if len(pts[0])==2:
+            print('# centroid: error data appears to not be 3d')
+            return None 
+            
+        if pts is not None:
             for pt in pts:
                 ptsx.append(pt[0])
                 ptsy.append(pt[1])
@@ -3075,9 +3095,11 @@ class polygon_operator(point_operator_3d):
             plybuf = ''
             for f in ply:
                 #DEBUG - hack to deal with tuple - probably a bad idea 
-                if type(f)==tuple:
+                if type(f)==tuple or type(f)==list:
+                    print('#DEBUG tuple point index hack! ')
                     for idx in f:
                         plybuf = plybuf +(' %s'%str(int(idx)) ) 
+                    print(plybuf)   
                 else:    
                     #plybuf = plybuf +(' %s'%str(int(f)+1) ) #add one because OBJ is NOT zero indexed
                     plybuf = plybuf +(' %s'%str(int(f)) ) 

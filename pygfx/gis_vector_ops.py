@@ -1,28 +1,21 @@
-# ***** BEGIN GPL LICENSE BLOCK *****
-#
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-#
-# ***** END GPL LICENSE BLOCK *****
 
-from gnelscript import GEOJSON_IS_LOADED
+from gnelscript import GEOJSON_IS_LOADED, SHAPELY_IS_LOADED
 
 if GEOJSON_IS_LOADED:
-    import geojson
-    from geojson import Point, Polygon, Feature, LineString, FeatureCollection, dump
+    from geojson import dump 
 
+    from geojson import Point as gjpt
+    from geojson import Polygon as gjply
+    from geojson import Feature as gjftr
+    from geojson import LineString as gjln
+    from geojson import FeatureCollection as gjfc
+    from geojson import load as gjload
+
+if SHAPELY_IS_LOADED:
+    from shapely import buffer, BufferCapStyle, BufferJoinStyle
+    from shapely import Point as shp_pt
+    from shapely import Polygon as shp_ply
+    from shapely import LineString as shp_ln
 
 from gnelscript.pygfx.math_ops import  *
 from gnelscript.pygfx.grid_ops import  *
@@ -73,7 +66,7 @@ class vectorflow(object3d):
         # IDEA 
         #1 - DAG - b tree 
         #2 - parent geom to nodes - add matrix scenegraph  
-        #3-  crazy vector animation potential if you attach a matrix to each node 
+        #3-  scengraph for vector animation (attach a matrix to each node) 
 
     """
 
@@ -145,7 +138,151 @@ class vectorflow(object3d):
         #               [[id, centroid, extents, len, points ]]  
 
 
+    ##-------------------------------##
+    ##-------------------------------##
 
+    ##-------------------------------##
+    """
+
+    https://stackoverflow.com/questions/76435070/how-do-i-use-python-trimesh-to-get-boundary-vertex-indices
+
+    def boundary(mesh, close_paths=True):
+        # Set of all edges and of boundary edges (those that appear only once).
+        edge_set = set()
+        boundary_edges = set()
+
+        # Iterate over all edges, as tuples in the form (i, j) (sorted with i < j to remove ambiguities).
+        # For each edge, three cases are possible:
+        # 1. The edge has never been visited before. In this case, we can add it to the edge set and as a boundary
+        #    candidate as well.
+        # 2. The edge had already been visited once. We want to keep it into the set of all edges but remove it from the
+        #    boundary set.
+        # 3. The edge had already been visited at least twice. This is generally an indication that there is an issue with
+        #    the mesh. More precisely, it is not a manifold, and boundaries are not closed-loops.
+        for e in map(tuple, mesh.edges_sorted):
+            if e not in edge_set:
+                edge_set.add(e)
+                boundary_edges.add(e)
+            elif e in boundary_edges:
+                boundary_edges.remove(e)
+            else:
+                raise RuntimeError(f"The mesh is not a manifold: edge {e} appears more than twice.")
+
+        # Given all boundary vertices, we create a simple dictionary that tells who are their neighbours.
+        neighbours = defaultdict(lambda: [])
+        for v1, v2 in boundary_edges:
+            neighbours[v1].append(v2)
+            neighbours[v2].append(v1)
+
+        # We now look for all boundary paths by "extracting" one loop at a time. After obtaining a path, we remove its edges
+        # from the "boundary_edges" set. The algorithm terminates when all edges have been used.
+        boundary_paths = []
+
+        while len(boundary_edges) > 0:
+            # Given the set of remaining boundary edges, get one of them and use it to start the current boundary path.
+            # In the sequel, v_previous and v_current represent the edge that we are currently processing.
+            v_previous, v_current = next(iter(boundary_edges))
+            boundary_vertices = [v_previous]
+
+            # Keep iterating until we close the current boundary curve (the "next" vertex is the same as the first one).
+            while v_current != boundary_vertices[0]:
+                # We grow the path by adding the vertex "v_current".
+                boundary_vertices.append(v_current)
+
+                # We now check which is the next vertex to visit.
+                v1, v2 = neighbours[v_current]
+                if v1 != v_previous:
+                    v_current, v_previous = v1, v_current
+                elif v2 != v_previous:
+                    v_current, v_previous = v2, v_current
+                else:
+                    # This line should be un-reachable. I am keeping it only to detect bugs in case I made a mistake when
+                    # designing the algorithm.
+                    raise RuntimeError(f"Next vertices to visit ({v1=}, {v2=}) are both equal to {v_previous=}.")
+
+            # Close the path (by repeating the first vertex) if needed.
+            if close_paths:
+                boundary_vertices.append(boundary_vertices[0])
+
+            # "Convert" the vertices from indices to actual Cartesian coordinates.
+            boundary_paths.append(mesh.vertices[boundary_vertices])
+
+            # Remove all boundary edges that were added to the last path.
+            boundary_edges = set(e for e in boundary_edges if e[0] not in boundary_vertices)
+
+        # Return the list of boundary paths.
+        return boundary_paths
+
+
+
+    def boundary_indices(self):
+        
+        # Get the indices of vertices that are on the boundaries of the mesh.
+        # For each of n boundaries, return the boundary indices.
+        # Returns:
+        #     boundaries (ndarray): An (number of boundaries) x (variable) array of boundary face indices.
+        
+        # Proposed solution from StackExchange:
+        # https://stackoverflow.com/questions/76435070/how-do-i-use-python-trimesh-to-get-boundary-vertex-indices/76907565#76907565
+        connections = self.trimesh_obj.edges[trimesh.grouping.group_rows(
+            self.trimesh_obj.edges_sorted, require_count=1)]
+
+        # Start with the first vertex and then walk the graph of connections
+        if (len(connections) == 0):
+            # No boundaries!
+            log.error("Mesh has no boundary edges!")
+            raise ValueError("Mesh has no boundary edges!")
+
+        # Tweak: Re-order the first entry, lowest first
+        connections[0] = sorted(connections[0])
+
+        # Use ChatGPT to reduce connections to lists of connected vertices
+        adj_dict = {}
+        for conn in connections:
+            for vertex in conn:
+                adj_dict.setdefault(vertex, []).extend(c for c in conn if c != vertex)
+
+        groups = []
+        visited = set()
+
+        def dfs(vertex, group):
+            group.append(vertex)
+            visited.add(vertex)
+            for conn_vertex in adj_dict[vertex]:
+                if conn_vertex not in visited:
+                    dfs(conn_vertex, group)
+
+        for vertex in adj_dict:
+            if vertex in visited:
+                continue
+            group = []
+            dfs(vertex, group)
+            groups.append(group)
+
+        # Convert to numpy arrays
+        boundaries = np.empty((len(groups)), dtype=object)
+        for index, boundary in enumerate(groups):
+            # Close the boundary by add the first element to the end
+            boundary.append(boundary[0])
+            new_array = np.asarray(boundary, dtype=int)
+            boundaries[index] = new_array
+
+        return boundaries
+
+        """
+
+    ##-------------------------------##        
+    # def reindex_contiguous_segs (self, linesegs ):
+    #     """ repair the messy trimesh plane geom 
+    #         linesegs = list of list of line segments
+    #                    only works if all segments are "watertight"  
+    #     """
+    #     fixed = [] 
+    #     for seg in linesegs: 
+    #         print(seg)
+
+
+    ##-------------------------------##
     ##-------------------------------##
     #def scale_to_unit(self, inunits='mm', outunits='mm'):
     #    pass
@@ -613,7 +750,7 @@ class vectorflow(object3d):
     def _omit_ids(self, ids=None, span=None, unique=True, nth=None):
         
         #DEBUG - not fully working - see indexer docs - nths with crash if you try it 
-        pop = point_operator_3d()
+        pop = pop3d()
         ids = pop.indexer(ids, span, unique, nth)
         
         print(" ### omit ids: ", ids)
@@ -638,31 +775,41 @@ class vectorflow(object3d):
 
         #print("indexing sort buffer ")
         self.gr_sort = []
+        
+        if len(self.gr_polys)==0:
+            return None 
 
         #print(" gr_polys buffer has %s polys in it "%len(self.gr_polys) )
         for x,ply in enumerate(self.gr_polys):
+            
+            #print(type(ply))
+
             minx = 0
             miny = 0         
             maxx = 0
             maxy = 0
 
-            #print('### len ', len(ply))
-            for i,pt in enumerate(ply):
-                if i == 0:
-                    minx=pt[0]
-                    maxx=pt[0]
-                    miny=pt[1]
-                    maxy=pt[1]
 
-                if pt[0]<minx:
-                    minx=pt[0]    
-                if pt[0]>maxx:
-                    maxx=pt[0]  
-                if pt[1]<miny:
-                    miny=pt[1]  
-                if pt[1]>maxy:
-                    maxy=pt[1] 
-            
+            try:
+                #print('### len ', len(ply))
+                for i,pt in enumerate(ply):
+                    if i == 0:
+                        minx=pt[0]
+                        maxx=pt[0]
+                        miny=pt[1]
+                        maxy=pt[1]
+
+                    if pt[0]<minx:
+                        minx=pt[0]    
+                    if pt[0]>maxx:
+                        maxx=pt[0]  
+                    if pt[1]<miny:
+                        miny=pt[1]  
+                    if pt[1]>maxy:
+                        maxy=pt[1] 
+            except: 
+                print('_sort blew up !! ---------> ',pt)
+
             if minx<self.orig_minx:
                 self.orig_minx=minx
             if miny<self.orig_miny:
@@ -671,7 +818,7 @@ class vectorflow(object3d):
                 self.orig_maxx=maxx
             if maxy>self.orig_maxy:
                 self.orig_maxy=maxy
-            
+
             #DEBUG - consider 3D bbox and padding with spaces for future data
             self.gr_sort.append([x, self.centroid(ply) ,[minx,miny, maxx, maxy], len(ply), ply])
         
@@ -1347,36 +1494,41 @@ class vectorflow(object3d):
 
     ##-------------------------------##     
     ##-------------------------------##
-    def export_geojson_lines(self, folder, name, periodic=False):
-        # export all loaded polygons in gr_sort buffer as a geojson polyline 
-        features = []
+    if GEOJSON_IS_LOADED:
+        #def export_geojson_multiline(self, folder, name ):
 
-        #[[id, centroid, extents, len, points ]]
-        for i,s in enumerate(self.gr_sort):
+        def export_geojson_lines(self, folder, name, periodic=False):
+            # export all loaded polygons in gr_sort buffer as a single geojson polyline 
+            features = []
 
-            #make periodic - add the first point to the end 
-            if periodic:
-                s[4].append(s[4][0])
+            #[[id, centroid, extents, len, points ]]
+            for i,s in enumerate(self.gr_sort):
 
-            # [[id, centroid, extents, len, points ]]   
-            features.append(Feature(geometry=LineString(coordinates=s[4]), 
-                                 properties={"id" : i 
-                                            }
-                                 ) 
-                         )
+                #make periodic - add the first point to the end 
+                if periodic:
+                    s[4].append(s[4][0])
 
-        feature_collection = FeatureCollection(features)
-        filename= '%s/%s'%(folder,name)
-        print('## EXPORTING file %s'%filename)
+                # [[id, centroid, extents, len, points ]]   
+                features.append(gjftr(geometry=gjln(coordinates=s[4]), 
+                                     properties={"id" : i 
+                                                }
+                                     ) 
+                             )
 
-        with open(filename, 'w') as f:
-            dump(feature_collection, f)
+            feature_collection = gjfc(features)
+            filename= '%s/%s'%(folder,name)
+            print('## EXPORTING file %s'%filename)
+
+            with open(filename, 'w') as f:
+                dump(feature_collection, f)
 
     ##-------------------------------##
-    if GEOJSON_IS_LOADED:
         def export_geojson_polygon(self, folder, name):
             """
             DEBUG - WIP 
+            DEBUG - this is mixing shapely objects with GEOJSON objects 
+                the entire toolchain needs a rethink about geometry types - uhhhg 
+
                 types are: Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon
 
             # export all loaded polygons in gr_sort buffer as a geojson polyline 
@@ -1390,13 +1542,14 @@ class vectorflow(object3d):
             #[[id, centroid, extents, len, points ]]
             for i,s in enumerate(self.gr_sort):
                 # [[id, centroid, extents, len, points ]]   
-                features.append(Feature(geometry=Polygon(self.cvt_3d_to_2d(s[4])), 
+                #features.append(gjftr(geometry=shp_ply(self.cvt_3d_to_2d(s[4])), 
+                features.append(gjftr(geometry=gjply(s[4]), 
                                      properties={"id" : i 
                                                 }
                                      ) 
                              )
 
-            feature_collection = FeatureCollection(features)
+            feature_collection = gjfc(features)
             filename= '%s/%s'%(folder,name)
             print('## EXPORTING file %s'%filename)
 
@@ -1735,8 +1888,9 @@ class vectorflow(object3d):
         self.points = points 
         self.polygons.append(pids) 
         
-    def cvt_grpoly_obj3d(self, index=None, objtype='singlepoly'):
+    def cvt_grpoly_obj3d(self, objtype='singlepoly'):
         """ 
+            DEBUG - all these functions seem wonkey at best... 
             DEBUG - why not gr_sort? 
             load gr_polys into standard 3d data so we can run ops on it 
            
@@ -1744,39 +1898,30 @@ class vectorflow(object3d):
                 objtype = 'polyline' or 'singlepoly'
 
         """
-
-        #objtype = 'polyline' # 'singlepoly' 
         
         print("converting %s polygons "%len(self.gr_polys))
 
         idx = 0  
-        lidx = 0 #last indexd 
         
         for ig, grpoly in enumerate(self.gr_polys):
-            
-            #DEBUG INDEX?
-            # if index 
-            #print(grpoly)
+            polygons = []
+            for ip, pt in enumerate(grpoly):
 
-            if index is None:
-                polygons = []
-                for ip, pt in enumerate(grpoly):
-                    idx = ip+lidx
-                    
-                    if objtype == 'polyline': 
-                        polygons.append( (idx+1, idx+2) )  
-                    
-                    if objtype == 'singlepoly':
-                        polygons.append( idx+1 )  
+                idx = ip+len(self.points)
+                
+                if objtype == 'polyline': 
+                    self.polygons.append([idx+1, idx+2])
 
+                if objtype == 'singlepoly':
+                    polygons.append( idx+1 )  
+
+            if objtype == 'singlepoly':
                 self.polygons.append(polygons)
-                self.points.extend(self.clean_pts_str(grpoly))
-                lidx = len(grpoly)
-
-                #print(grpoly) 
+            
+            self.points.extend(self.clean_pts_str(grpoly))
 
         #print(self.rotation)
-        self.show() 
+        #self.show() 
 
     ##-------------------------------##
     ##-------------------------------##
@@ -1804,7 +1949,7 @@ class vectorflow(object3d):
         geojson_txt = None
 
         with open(inputfile) as f:
-            gj = geojson.load(f)
+            gj = gjload(f)
         features = gj['features'] 
  
         fixedids = [] 
@@ -1858,10 +2003,14 @@ class vectorflow(object3d):
                         for coord in f.geometry.coordinates:
                             ptidx = 1
                             tmp_poly = [] 
+                            
+                            print(coord)
+
                             for pt in coord:
                                 if type(pt[0])==float and type(pt[1])==float:
                                     tmp_poly.append( (pt[0], pt[1], zaxis) )
                                     ptidx += 1  
+
                             #print("loaded %s points in polygon "%len(tmp_poly)) 
                             if tmp_poly:
                                 self.jsonbuffer.append(tmp_poly) 

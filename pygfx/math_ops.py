@@ -1,23 +1,3 @@
-# ***** BEGIN GPL LICENSE BLOCK *****
-#
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-#
-# ***** END GPL LICENSE BLOCK *****
-
-
 import itertools 
 import math
 import os
@@ -649,6 +629,11 @@ class vec3(object):
         if key==2:
             self.z = item
 
+    #def sqrt(self):
+    #    numpy has this - not sure how to implement
+    #    return math.sqrt(self.x*self.x + self.y*self.y + self.z*self.z )
+
+
     @property
     def aspt(self):
         return (self.x, self.y, self.z)
@@ -707,7 +692,6 @@ class vec3(object):
             rot = -math.atan2(X1y, X1x);
         """ 
  
-
     ##----------------------------------------
     def project_pt(self, offset):
         """ UNTESTED? 
@@ -748,12 +732,12 @@ class vec3(object):
     #     pass
     
     ##----------------------------------------
-
     def lookat(self, target):
         #if you want to point one vector at another all you need to do is subtract! 
         aim = vec3()
         return vec3(target) - self 
 
+    ##----------------------------------------
     def between(self, pt2):
         """ given 2 points in 3D, create a 3D vector (lookat) 
             representing the offset between them 
@@ -776,6 +760,30 @@ class vec3(object):
 
         return pt2 - self
 
+    ##----------------------------------------
+    """
+    def dist_between(self, other):
+        #   DEBUG NOT DONE  
+        #   Calculate the angle between the two vectors
+        
+        print("P1 ", self)
+        print("P2 ", other)
+
+        sub = self-other
+
+        print( np.dot(self, other-self) )
+        print( self.dot(sub) )
+
+        #angle = math.acos(self.dot(sub) )
+        #angle = np.arccos(np.dot(self, other-self) / (np.linalg.norm(self) * np.linalg.norm(other-self)))
+
+        #print("NormP1 ", np.linalg.norm(self))
+        #print("NormP2 ", np.linalg.norm(other))
+        
+        #return np.degrees(angle)
+        return None
+    """
+      
     ##------------------------------------- 
     def angle_between(self, other):
         """ 
@@ -789,6 +797,9 @@ class vec3(object):
             other=vec3(other)
 
         try:
+            #DEBUG this may be better - WHY NO NORMALIZE?? I am lost 
+            #angle = np.arccos(np.dot(point1, point2-point1) / (np.linalg.norm(point1) * np.linalg.norm(point2-point1)))
+
             o = math.acos( self.dot(other) / (self.length*other.length) ) 
             return o 
         except:
@@ -800,11 +811,9 @@ class vec3(object):
         UNFINISHED/NOT WORKING 
 
         https://stackoverflow.com/questions/1251828/calculate-rotations-to-look-at-a-3d-point
-        
         https://math.stackexchange.com/questions/3139155/finding-a-vector-that-points-towards-a-coordinate
 
         ##--- 
-
         rotx = Math.atan2( y, z )
         roty = Math.atan2( x * Math.cos(rotx), z )
         rotz = Math.atan2( Math.cos(rotx), Math.sin(rotx) * Math.sin(roty) )
@@ -846,7 +855,7 @@ class vec3(object):
 
         return self 
 
-     ##----------------------------------------
+    ##----------------------------------------
     def copy(self, vtype=None):
         if vtype == None:
             return type(self)(self.x,self.y,self.z)
@@ -857,7 +866,8 @@ class vec3(object):
         if NUMPY_IS_LOADED:    
             if vtype == 'numpy':
                 return np.array( (self.x,self.y,self.z) )
-
+    
+    ##----------------------------------------
     @property
     def length(self):
         """ output - scalar representing the length of this vector """
@@ -1060,7 +1070,22 @@ class vec3(object):
         def orthogonal_fr_pt(self, vecpt, unitvec, pt ):
             return (vecpt-pt) - ( np.dot((vecpt-pt), unitvec) ) * unitvec
 
-        def np_angle_between(self, v1, v2):
+        ##----------------------------------------
+        def np_angle_between(self, pt1, pt2, out='rad'):
+            if type(pt1)!=np.array:
+                pt1 = np.array(pt1)
+            if type(pt2)!=np.array:
+                pt2 = np.array(pt2)
+
+            angle = np.arccos(np.dot(pt1, pt2-pt1) / (np.linalg.norm(pt1) * np.linalg.norm(pt2-pt1)))
+            if out=='deg':
+                return np.degrees(angle)
+            else:
+                return angle
+
+
+        ##----------------------------------------
+        def np_angle_between2(self, v1, v2):
             """ 
                UNTESTED 
 
@@ -1079,11 +1104,31 @@ class vec3(object):
             if isinstance(v2, tuple):
                 v2 = self.insert(v2)  #wrong?
 
-            v1_u = v1.np_normal;v2_u = v2.np_normal
-
-            #print('### ', v1_u , v2_u )
-
+            v1_u = v1.np_normal
+            v2_u = v2.np_normal
+ 
             return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+
+        ##----------------------------------------
+        def np_dist_between(self, pt1, pt2):
+
+            if type(pt1)==vec3:
+                pt1 = pt1.as_np 
+            if type(pt2)==vec3:
+                pt2 = pt2.as_np
+            
+            if type(pt1)!=np.array:
+                pt1 = np.array(pt1)
+            if type(pt2)!=np.array:
+                pt2 = np.array(pt2)
+
+            # Calculate the difference between the two points.
+            difference = np.subtract(pt2, pt1)
+            # Calculate the norm of the difference vector.
+            norm = np.linalg.norm(difference)
+
+            return norm
+
 
 
     ##------------------------------------- 
@@ -1994,6 +2039,30 @@ class matrix44(object):
 
         self.mu = math_util()
         self.m = [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p]
+
+
+    def from_np(self, np):
+        """ convert a numpy matrix to a matrix44 object
+        """
+        # return type(self)(
+        #     np[0][0] , np[1][0] , np[2][0] ,
+        #     np[0][1] , np[1][1] , np[2][1] ,
+        #     np[0][2] , np[1][2] , np[2][2]
+        # )
+
+        # return type(self)(
+        #     np[0][0], np[1][0], np[2][0], np[3][0],
+        #     np[0][1], np[1][1], np[2][1], np[3][1],
+        #     np[0][2], np[1][2], np[2][2], np[3][2]
+        #     np[0][3], np[1][3], np[2][3], np[3][3]
+        # )
+
+        return type(self)(
+            np[0][0], np[0][1], np[0][2], np[0][3],
+            np[1][0], np[1][1], np[1][2], np[1][3],
+            np[2][0], np[2][1], np[2][2], np[2][3],
+            np[3][0], np[3][1], np[3][2], np[3][3]
+        )
 
     def load_file(self, filename, transpose=False):
        if os.path.lexists(filename):

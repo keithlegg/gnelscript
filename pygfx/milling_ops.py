@@ -1,24 +1,3 @@
-# ***** BEGIN GPL LICENSE BLOCK *****
-#
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-#
-# ***** END GPL LICENSE BLOCK *****
-
-
-
 """
 PYTHON MILLING TO DO 
 
@@ -61,11 +40,6 @@ gear generator
 gerbox generator 
 
 flip paths (cut on backside)
-
-
-GUI
-laser pin?
-
 
 
 SPLINES / ARCS/ ETC 
@@ -123,31 +97,44 @@ import re
 
 import os 
 
+
+
 from gnelscript import SHAPELY_IS_LOADED
-
-if SHAPELY_IS_LOADED:
-    from shapely import buffer, Point, LineString, Polygon, BufferCapStyle, BufferJoinStyle
-
 
 from gnelscript.pygfx.obj3d import object3d
 from gnelscript.pygfx.obj2d import object2d
-
 from gnelscript.pygfx.point_ops import *
 from gnelscript.pygfx.math_ops import *
-
 from gnelscript.pygfx.gis_vector_ops import *
-
 from gnelscript.pygfx.grid_ops import tessellator
-
 
 #from pygfx.gcode.bridgeport import  parser_commands
 from gnelscript.pygfx.gcode.linuxcnc import  parser_commands
 
 
-import geojson
-from geojson import Point, Feature, LineString, FeatureCollection, dump
+##-----------------------------## 
 
+#I resisted using external libraries too long - shapely and trimesh look awesome 
+import networkx as nx
 
+if GEOJSON_IS_LOADED:
+    from geojson import dump  
+    from geojson import Point as gjpt
+    from geojson import Polygon as gjply
+    from geojson import Feature as gjftr
+    from geojson import LineString as gjln
+    from geojson import FeatureCollection as gjfc
+
+if SHAPELY_IS_LOADED:
+    from shapely import buffer, BufferCapStyle, BufferJoinStyle
+    from shapely import Point as shp_pt
+    from shapely import Polygon as shp_ply
+    from shapely import LineString as shp_ln
+    #from shapely import Feature as shp_ftr
+    #from shapely import FeatureCollection as shp_fc
+
+import trimesh
+import numpy as np
 
 
 """
@@ -595,7 +582,7 @@ class gcode_object(object3d):
 ##--------------------------------------------------------------------------##
 ##--------------------------------------------------------------------------##
 
-class cnc_op(gcode_object, vectorflow ):
+class cnc_op( vectorflow ):
     """ 
      gcode parsing was complex enough to get its own class (gcode_object)  
      vectorflow is the experimental tool to seamlessly integreate OBJ, JSON, and NGC 
@@ -613,7 +600,6 @@ class cnc_op(gcode_object, vectorflow ):
 
     def __init__(self):
         super().__init__()  
-        
 
         # simulated position of the cutting head
         self.HEAD_POSX = 0
@@ -624,7 +610,7 @@ class cnc_op(gcode_object, vectorflow ):
     ##-------------------------------## 
     if SHAPELY_IS_LOADED:
         def test_shapely(self):
-            line = LineString([(2, 0), (2, 4), (3, 4)])
+            line = shp_ln([(2, 0), (2, 4), (3, 4)])
             print(line)
 
         ##-------------------------------## 
@@ -633,7 +619,7 @@ class cnc_op(gcode_object, vectorflow ):
             
             geom = [] 
             for poly in self.gr_sort:
-                geom.append( Polygon(self.cvt_3d_to_2d(poly[4])) )
+                geom.append( shp_ply(self.cvt_3d_to_2d(poly[4])) )
             
             return geom
 
@@ -684,7 +670,7 @@ class cnc_op(gcode_object, vectorflow ):
     def _omit_ids_mop(self, ids=None, span=None, unique=True, nth=None):
         
         #DEBUG - not fully working - see indexer docs - nths with crash if you try it 
-        pop = point_operator_3d()
+        pop = pop3d()
         ids = pop.indexer(ids, span, unique, nth)
         
         print(" ### omit ids: ", ids)
@@ -994,139 +980,6 @@ class cnc_op(gcode_object, vectorflow ):
         # rapid move at end 
         self.outfile.append('m2') #program end
     """
-    ##-------------------------------##
-    def _calculate_paths2d_mop(self, do_retracts=True):
-        """ 
-            this walks self.gr_poly and builds an OBJ and NGC file in self.outfile
-            https://linuxcnc.org/docs/html/gcode/g-code.html
-            Top 10 tasty GCODE commands:
-                S - surface speed
-                G20 (Use inch)
-                G21 (Use mm)
-                G90 (Set Absolute Coordinates)
-                G0 -  Rapid Move
-                G1 -  Linear Move
-                M3, M4, M5  S ($)   Spindle Control
-                M6 - 
-                M9 - 
-                M3 - 
-                M2 - program end 
-
-        """
-
-        lastpt = (0,0,0)
-        
-        self.outfile.append('(exported with _calculate_paths2d )')
-        self.outfile.append('(linear scale set to %s of internal coordinates)'%self.global_scale )
-        self.outfile.append('  ')
-
-        self.outfile.append('g20') # inches for unit 
-        #self.outfile.append('G21')  # mm for unit 
-
-        ##-----------------------------------------##
-
-        #move to origin  
-        self.outfile.append('g0 x%s y%s z%s f30'% ( self.hp[0], self.hp[1], self.rh) )   #rapid move to 0 
-        self.ngc_to_obj.append( ( self.hp[0], self.hp[1], self.rh) ) 
-
-        if do_retracts:
-            self.outfile.append('g0z%s'% ( self.rh ) )  #retract in between cuts
-   
-        ##-----------------------------------------##
-        self.outfile.append('  ')
-        self.outfile.append('(exporting filled polygons )')
-
-        # build the gcode up with simple linear movements 
-        ##------------------------------
-
-        #DEBUG - FILL_POLYS ARE A LAYOVER FROM KICAD STUFF - UNTESTED 
-        for fill_poly in self.filled_polys:
-            if do_retracts:
-                pt1 = fill_poly[0] 
-                self.outfile.append('G0 x%s y%s z%s'% (  pt1[0], pt1[1], self.rh ) )  #first point at retract height   
-                self.ngc_to_obj.append( ( self.hp[0], self.hp[1], self.rh) ) 
-            
-            for i,pt in enumerate(fill_poly):
-                self.outfile.append( 'G1 x%s y%s z%s'%( pt[0], pt[1], self.ch ) )
-                self.ngc_to_obj.append( ( pt[0], pt[1], self.ch ) )             
-                lastpt =( pt[0], pt[1], self.ch )
-
-            self.outfile.append( 'G0 x%s y%s z%s'%(lastpt[0], lastpt[1], self.ch) )
-            self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.ch)   ) 
-            if do_retracts:
-                self.outfile.append('g0z%s'% ( self.rh ) )  #retract in between cuts
-                self.ngc_to_obj.append( (lastpt[0], lastpt[1], self.rh)   ) 
-                self.outfile.append('  ')
-
-        ####
-        self.outfile.append('  ')
-        self.outfile.append('(exporting graphic polygons )')
-        
-        ##------------------------------
-
-        # graphical polygons - build the gcode up with simple linear movements
-        for row in self.gr_sort:
-            
-            # preprocess 
-            export_ply = True 
-
-            if row[0] in self.omit_ids:
-                print("# omitting polygon ID %s"%row[0])
-                export_ply = False
-
-            #modified to export sorted data - easy peasy  
-            gr_poly = row[4]
-            
-            ##--
-
-            if len(gr_poly) and export_ply:
-                self.outfile.append('(exporting new polygon )')
-
-                
-                ##-- 
-                #DEBUG - need to sort out clean points - want to run as close rto final xport 
-                #it looses precision 
-
-                # no formatting (full precision)
-                pt1 = gr_poly[0]
-                # do round to get rid of bad string formatting ( exponent in floats) 
-                #pt1 = self.clean_pts_str(gr_poly[0])
-
-                ##-- 
-
-                #### first point at retract height 
-                if do_retracts:
-                    #move to first point RH 
-                    self.outfile.append('x%s y%s z%s'% (  pt1[0] , pt1[1], self.rh ) )               
-                    self.ngc_to_obj.append( ( pt1[0], pt1[1], self.rh ) )             
-
-                ## iterate points in polygon 
-                self.outfile.append( 'G1' )
-                for i,pt in enumerate(gr_poly):
-                    self.outfile.append( 'x%s y%s z%s'%( pt[0], pt[1], self.ch ) )
-                    self.ngc_to_obj.append( (pt[0], pt[1], self.ch) )                   
-                
-                self.outfile.append( 'G0' )
-
-                # move to last point at CH  
-                #self.ngc_to_obj.append( (gr_poly[0][0], gr_poly[0][1], self.ch))   
-                #self.outfile.append( 'x%s y%s z%s'%( (gr_poly[0][0], gr_poly[0][1], self.ch) ) )
-
-                if do_retracts:
-                    self.ngc_to_obj.append( (gr_poly[0][0], gr_poly[0][1], self.rh)  )
-                    self.outfile.append( 'x%s y%s z%s'%( gr_poly[0][0], gr_poly[0][1], self.rh) )
-
-                    #### retract in between cuts
-                    self.outfile.append('g0z%s'% ( self.rh ) )  
-
-                self.outfile.append('  ')
-
-        ##-----------------------------------------##        
-        # self.outfile.append('(exporting segments )')
-
-        ##-----------------------------------------##
-        # rapid move at end 
-        self.outfile.append('m2') #program end
 
     ##-------------------------------##
     def export_centroids_mop(self, folder, name):
@@ -1150,10 +1003,10 @@ class cnc_op(gcode_object, vectorflow ):
 
         #[[id, centroid, extents, len, points ]]
         for i,s in enumerate(self.gr_sort):
-            #    features.append(Feature(geometry=LineString(coordinates=self.extents_fr_bbox(s[2])), properties={"id":i, "len" : len(s[4]) } ))
+            #    features.append(Feature(geometry=gjln(coordinates=self.extents_fr_bbox(s[2])), properties={"id":i, "len" : len(s[4]) } ))
             coords = self.extents_fr_bbox(s[2], periodic=True)
 
-            features.append(Feature(geometry=LineString(coordinates=coords), 
+            features.append(Feature(geometry=gjln(coordinates=coords), 
                                  properties={"id" : 0 
                                             }
                                  ) 
@@ -1161,7 +1014,7 @@ class cnc_op(gcode_object, vectorflow ):
 
         #sort extents  
         coords = self.extents_fr_bbox([self.sort_minx,self.sort_miny,self.sort_maxx,self.sort_maxy], periodic=True)
-        features.append(Feature(geometry=LineString(coordinates=coords), 
+        features.append(Feature(geometry=gjln(coordinates=coords), 
                                 properties={"id" : 0 
                                            }
                                 ) 
@@ -1284,7 +1137,7 @@ class cnc_op(gcode_object, vectorflow ):
                         # (check the number of points, then check thr actual points) 
 
                         tmp_pts=[cen, sort[1]]
-                        features.append(Feature(geometry=LineString(coordinates=tmp_pts)) 
+                        features.append(Feature(geometry=gjln(coordinates=tmp_pts)) 
                                        )
 
         feature_collection = FeatureCollection(features)
@@ -1295,16 +1148,430 @@ class cnc_op(gcode_object, vectorflow ):
 ##-----------------------------------------##
 
 class cam_op(cnc_op):
-    """ True 3D milling operations  
+    """ 
+        This is analagous to a fusion360 (chained) CAM OP 
+
+        True 3D milling operations  
+        the highest level object for CAM and milling 
+
+
+        TODO - MULTIHEAD DISTRIBUTED OPERATIONS !!!
+           define a rgion of work (presumably just half) 
+           jobs get run in parallel !!
+
+
+
+
     """
 
     def __init__(self):
         super().__init__()  
         self.tesl = tessellator() 
+        self.gcparser = gcode_object()
 
     def obj_to_wkt(self):
         print(self.points)
 
+    ##-------------------------------## 
+    #def hemisphere_slice(self, origin, normal, numdivs, path, infile, axis='y'):
+    #    pass 
+        
+
+    ##-------------------------------## 
+    def tm_section_test(self, origin, normal, numdivs, path, infile, axis='y'):
+
+        if type(origin)==vec3:
+            origin = origin.aspt
+                    
+        if type(normal)==vec3:
+            normal = normal.aspt
+
+        mesh = trimesh.load_mesh('%s/%s'%(path,infile))
+
+        slice2d = mesh.section(
+            plane_normal=normal,
+            plane_origin=origin,
+
+        )
+        
+        if slice2d==None:
+            print('### tm_section_test NO POLYGOINS FOUND \n\n')
+            return None 
+
+        geom, m44 = slice2d.to_planar()
+        pts = [poly for poly in geom.polygons_full]
+
+
+
+        """
+        # if we wanted to take a bunch of parallel slices, like for a 3D printer
+        # we can do that easily with the section_multiplane method
+        # we're going to slice the mesh into evenly spaced chunks along z
+        # this takes the (2,3) bounding box and slices it into [minz, maxz]
+        z_extents = mesh.bounds[:,2]
+        # slice every .125 model units (eg, inches)
+        z_levels  = np.arange(*z_extents, step=.125)
+
+        # find a bunch of parallel cross sections
+        sections = mesh.section_multiplane(plane_origin=mesh.bounds[0], 
+                                           plane_normal=[0,0,1], 
+                                           heights=z_levels)
+        sections
+
+        # summing the array of Path2D objects will put all of the curves
+        # into one Path2D object, which we can plot easily
+        combined = np.sum(sections)
+        combined.show()
+
+        # if we want to intersect a line with this 2D polygon, we can use shapely methods
+        polygon = slice_2D.polygons_full[0]
+        # intersect line with one of the polygons
+        hits = polygon.intersection(LineString([[-4,-1], [3,0]]))
+        # check what class the intersection returned
+        hits.__class__
+
+        # we can plot the intersection (red) and our original geometry(black and green)
+        ax = plt.gca()
+        for h in hits.geoms:
+            ax.plot(*h.xy, color='r')
+        slice_2D.show()
+
+        # the medial axis is available for closed Path2D objects
+        (slice_2D + slice_2D.medial_axis()).show()
+        """
+
+        
+        #poly_union = shapely.geometry.MultiPolygon([poly for poly in slice_2D.polygons_full])
+
+        return pts,m44
+
+    ##-------------------------------##     
+    def kdag_merge_points(self, pts):
+        """ experiment with DG graphs in an attempt to merge points 
+        """
+        
+        import networkx as nx
+        G = nx.Graph()
+
+    ##-------------------------------##     
+    def nx_merge_points(self, pts):
+        """ experiment with DG graphs in an attempt to merge points 
+        """
+        
+        import networkx as nx
+        G = nx.Graph()
+
+    ##-------------------------------## 
+    def boundary(mesh, close_paths=True):
+        #https://stackoverflow.com/questions/76435070/how-do-i-use-python-trimesh-to-get-boundary-vertex-indices
+        # Set of all edges and of boundary edges (those that appear only once).
+        edge_set = set()
+        boundary_edges = set()
+
+        # Iterate over all edges, as tuples in the form (i, j) (sorted with i < j to remove ambiguities).
+        # For each edge, three cases are possible:
+        # 1. The edge has never been visited before. In this case, we can add it to the edge set and as a boundary
+        #    candidate as well.
+        # 2. The edge had already been visited once. We want to keep it into the set of all edges but remove it from the
+        #    boundary set.
+        # 3. The edge had already been visited at least twice. This is generally an indication that there is an issue with
+        #    the mesh. More precisely, it is not a manifold, and boundaries are not closed-loops.
+        for e in map(tuple, mesh.edges_sorted):
+            if e not in edge_set:
+                edge_set.add(e)
+                boundary_edges.add(e)
+            elif e in boundary_edges:
+                boundary_edges.remove(e)
+            else:
+                raise RuntimeError(f"The mesh is not a manifold: edge {e} appears more than twice.")
+
+        # Given all boundary vertices, we create a simple dictionary that tells who are their neighbours.
+        neighbours = defaultdict(lambda: [])
+        for v1, v2 in boundary_edges:
+            neighbours[v1].append(v2)
+            neighbours[v2].append(v1)
+
+        # We now look for all boundary paths by "extracting" one loop at a time. After obtaining a path, we remove its edges
+        # from the "boundary_edges" set. The algorithm terminates when all edges have been used.
+        boundary_paths = []
+
+        while len(boundary_edges) > 0:
+            # Given the set of remaining boundary edges, get one of them and use it to start the current boundary path.
+            # In the sequel, v_previous and v_current represent the edge that we are currently processing.
+            v_previous, v_current = next(iter(boundary_edges))
+            boundary_vertices = [v_previous]
+
+            # Keep iterating until we close the current boundary curve (the "next" vertex is the same as the first one).
+            while v_current != boundary_vertices[0]:
+                # We grow the path by adding the vertex "v_current".
+                boundary_vertices.append(v_current)
+
+                # We now check which is the next vertex to visit.
+                v1, v2 = neighbours[v_current]
+                if v1 != v_previous:
+                    v_current, v_previous = v1, v_current
+                elif v2 != v_previous:
+                    v_current, v_previous = v2, v_current
+                else:
+                    # This line should be un-reachable. I am keeping it only to detect bugs in case I made a mistake when
+                    # designing the algorithm.
+                    raise RuntimeError(f"Next vertices to visit ({v1=}, {v2=}) are both equal to {v_previous=}.")
+
+            # Close the path (by repeating the first vertex) if needed.
+            if close_paths:
+                boundary_vertices.append(boundary_vertices[0])
+
+            # "Convert" the vertices from indices to actual Cartesian coordinates.
+            boundary_paths.append(mesh.vertices[boundary_vertices])
+
+            # Remove all boundary edges that were added to the last path.
+            boundary_edges = set(e for e in boundary_edges if e[0] not in boundary_vertices)
+
+        # Return the list of boundary paths.
+        return boundary_paths
+
+    ##-------------------------------## 
+    def tm_meshplane_test(self, origin, normal, numdivs, path, infile, axis='y'):
+
+        out = [] 
+
+        if type(origin)==vec3:
+            origin = origin.aspt
+        if type(normal)==vec3:
+            normal = normal.aspt
+
+        mesh = trimesh.load_mesh('%s/%s'%(path,infile))
+        #mesh = trimesh.creation.icosphere()
+        
+        bbox = mesh.bounds.tolist()
+
+        ############
+        out = trimesh.intersections.mesh_plane(mesh, normal, origin, return_faces=False, local_faces=None, cached_dots=None)
+
+        print(type(out))
+
+        """
+        pts = []  
+        tmp = out.tolist()
+        for pt in tmp: 
+            pts.append( pt )
+        
+        #self.contiguous_segs_to_poly(pts)
+        """ 
+
+        return out 
+
+    ##-------------------------------## 
+    """
+    # FROM https://lukeparry.uk/tag/slicing/
+
+    # Generate a list of slices for each layer across the entire mesh
+    zSlices = np.linspace(-5, 5, 200)
+    k = 1000 # number of slices
+    zMin, zMax = myMesh.bounds[:,2]
+    zBox = np.linspace(zMin, zMax, k)
+
+
+    tris = myMesh.triangles
+
+    # Obtain the min and maximum Z values across the entire mesh
+    zVals = tris[:, :, 2]
+    triMin = np.min(zVals, axis=1)
+    triMax = np.max(zVals, axis=1)
+
+
+    # Below is a manual approach to sorting and collecting the triangles across each layer 
+
+    if False:
+
+        triSortIdx = np.argsort(triMinMax[1,:])
+        triMinMaxSort = triMinMax[:,triSortIdx]
+
+        startTime = time.time()
+
+        sortTris = []
+
+        iSects2 = []
+        for i in range(len(zBox)):
+            minInside = zBox[i].reshape(-1,1) > triMinMax[0, :].reshape(1, -1)
+            maxInside = zBox[i].reshape(-1,1) < triMinMax[1, :].reshape(1, -1)
+            iSects2.append(np.argwhere((minInside & maxInside).ravel()))
+
+        print('endTime array base', time.time() - startTime)
+
+    # An alteratnvie more compact way is to use binary search operator available within
+    # numpy.searchsorted. This locates the bottom and top layer position 
+
+    minIdx = np.searchsorted(zBox, triMin, side='left')
+    maxIdx = np.searchsorted(zBox, triMax, side='left')
+
+    # Attach the corresponding presorted triangles into the 
+    iSects = [[] for i in range(len(zBox))]
+
+    # The iterative part for assigning potential triangles for intersection on a triangle are performed here
+    # Note: Process is very inefficient in native Python O(n*k) 
+    for i in range(len(minIdx)):
+
+        startLayer = minIdx[i]
+        endLayer = maxIdx[i]
+        for layer in iSects[startLayer:endLayer+1]:
+            layer.append(i)
+
+
+    #########################
+    The pre-processing has been completed, now the final slincg may be complete. 
+    Performing some micro-optimisations, further refactoring may be done to adapt the code previously present in Trimesh.
+
+    The process of slicing or intersection, is simple. 
+    Suprisingly, there are a no obvious references for this process. 
+    Slicing a triangular mesh, relies firstly computing the potential intersection of each edge of a faceted mesh, 
+    in this case it is generalised for an abritrary plane. Firstly, the vector between the mesh vertices 
+     and the plane origin is calculated – red lines in the diagram. 
+
+     The dot product is taken with the slicing plane normal nn. 
+     The sign of the dot product indicates if the point lies above or below the plane – zero uniquely is the intersection.
+
+    plane_origin = np.array([0,0,0])
+    plane_normal = np.array([0,0,1])
+
+    vertex_dots = np.dot(myMesh.vertices - plane_origin, plane_normal)
+
+    """
+
+    ##-------------------------------## 
+    # def cross_section(mesh, plane_origin=[0,0,0], plane_normal=[1,0,0]):
+    #     slice_ = mesh.section(plane_origin=plane_origin, 
+    #                           plane_normal=plane_normal)
+    #     # transformation matrix for to_planar 
+    #      to_2D = trimesh.geometry.align_vectors(plane_normal, [0,0,-1])
+    #     
+    #     slice_2D, to_3D = slice_.to_planar(to_2D = to_2D)
+    #     return slice_2D, to_3D
+
+    ##---------------------------------------------
+    
+ 
+    def ltp(self, linestrings):
+        """
+        ltp = linestrings_to_polygon
+
+        Return valid polygon for unordered set of 3D linestrings in numpy array (n,2,3)
+        
+        """
+        n_vertices, dim = linestrings.shape[0] * linestrings.shape[1], linestrings.shape[2]
+        vertices = linestrings.reshape(n_vertices, dim)
+        uniq, index, inv = np.unique(vertices.round(decimals=4), return_index=True, return_inverse=True, axis=0)
+        assert uniq.shape[0] == vertices.shape[0] / 2
+        linestrings_indices = inv.reshape(inv.shape[0]//2, 2)
+        
+        G = nx.from_edgelist([(a,b) for a,b in linestrings_indices])
+        polygon = shapely.geometry.shp_ply(vertices[index][[a for a, b in nx.find_cycle(G)]])
+        assert polygon.is_valid
+        return polygon
+    
+  
+
+    # if you do trimesh.load_path(sections) It will give you a Path3D object 
+    # (or if you want to call the specific function, it's trimesh.path.io.misc.lines_to_path). 
+    # If you transform the sections onto the plane either manually or through path.to_planar, 
+    # It will then have path.polygons_full constructed for you.
+    # As for the result of triangulate_polygon, that looks correct- the vertices are 2D because 
+    # it's coming from a planar polygon, you just need to np.column_stack it with zeros to use it in a 3D mesh.
+    
+    ##---------------------------------------------
+    def tm_multiplane_test(self, heights, origin, normal, numdivs, path, infile, axis='y'):
+
+        mesh = trimesh.load_mesh('%s/%s'%(path,infile))
+        
+        if type(origin)==vec3:
+            origin = origin.aspt
+        if type(normal)==vec3:
+            normal = normal.aspt
+    
+        # get a single cross section of the mesh
+        slice = mesh.section(plane_origin=mesh.centroid, 
+                             plane_normal=[0,0,1])
+
+        # the section will be in the original mesh frame
+        #slice.show()
+         
+        # we can move the 3D curve to a Path2D object easily
+        slice_2D, to_3D = slice.to_planar()
+
+        if origin == None: 
+            print('#WARNING tm_multiplane_test: origin not specified - using object bounds ')
+            origin = mesh.bounds[0]
+         
+        # find a bunch of parallel cross sections
+        sections = mesh.section_multiplane(plane_origin=origin, 
+                                           plane_normal=normal, 
+                                           heights=heights)
+
+        cleansec = []
+        for sec in sections:
+            if sec:
+                cleansec.append(sec)
+
+        print('##tm_multiplane_test: sliced %s polygons '%len(cleansec) )
+
+        pts2d = cleansec[0].vertices
+
+        # summing the array of Path2D objects will put all of the curves into one Path2D
+        combined = np.sum(cleansec)
+        #combined.show()
+
+
+        # # if we want to intersect a line with this 2D polygon, we can use shapely methods
+        # polygon = slice_2D.polygons_full[0]
+        # # intersect line with one of the polygons
+        # hits = polygon.intersection(shp_ln([[-4,-1], [3,0]]))
+        # # check what class the intersection returned
+        # hits.__class__
+        ###
+        # # we can plot the intersection (red) and our original geometry(black and green)
+        # ax = plt.gca()
+        # for h in hits.geoms:
+        #     ax.plot(*h.xy, color='r')
+        # slice_2D.show()
+        ###
+        # the medial axis is available for closed Path2D objects
+        #(slice_2D + slice_2D.medial_axis()).show()
+        ###
+        # #returns: 
+        # # lines ((m,) sequence of (n, 2, 2) float) – Lines in space for m planes
+        # # to_3D ((m, 4, 4) float) – Transform to move each section back to 3D
+        # # face_index ((m,) sequence of (n,) int) – Indexes of mesh.faces for each segment
+
+        """
+        bbox = mesh.bounds.tolist()
+
+        pts3d = combined.to_3D()
+        #pts3d = combined.polygons_full
+        
+        #convert the Tracked array to NP array 
+        npts = pts3d.vertices.view(np.ndarray)
+
+        ptlist = [pts3d.vertices.tolist()] 
+        
+        """
+        #ptlist = self.cvt_2d_to_3d(pts2d.tolist())
+
+        """
+        vflo = vectorflow()
+        vflo.gr_polys = [ptlist]
+        vflo._sort()
+    
+        #vflo.export_geojson_polygon(path, 'trimesh.json') 
+        vflo.export_geojson_lines (path, 'trimesh.json') 
+        vflo.export_geojson_lines(path, 'heed.json')
+        vflo.cvt_grpoly_obj3d(objtype='singlepoly')
+        vflo.save('heed.obj')
+        
+        #return trimesh.path.segments.clean(out) 
+        #ee = trimesh.path.path.Path(out)
+        """
+        
+        return slice.vertices 
 
     ##-----------------------------------
     def batch_ray_intersect(self, step, stacks, spokes, outname, axis='y'):
