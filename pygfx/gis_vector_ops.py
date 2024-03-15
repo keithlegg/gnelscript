@@ -17,6 +17,8 @@ if SHAPELY_IS_LOADED:
     from shapely import Polygon as shp_ply
     from shapely import LineString as shp_ln
 
+
+
 from gnelscript.pygfx.math_ops import  *
 from gnelscript.pygfx.grid_ops import  *
 from gnelscript.pygfx.raster_ops import  *

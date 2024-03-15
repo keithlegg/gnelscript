@@ -9,7 +9,7 @@ import math
 
 
 
-from gnelscript.pygfx.point_ops import polygon_operator
+from gnelscript.pygfx.poly_ops import polygon_operator
 from gnelscript.pygfx.math_ops import vec3, matrix33, matrix44  
 
 
