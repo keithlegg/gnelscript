@@ -814,7 +814,7 @@ class pop3d(object):
             return newpts
         return None
     ##-------------------------------------------##  
-    def cvt_2d_to_3d(self, points, asvec3=False):
+    def cvt_2d_to_3d(self, points, asvec3=False, zval=0):
         """ convert a single (tuple) or multiple (list) 2d points 
             into 3d by adding an empty z axis 
             
@@ -826,18 +826,18 @@ class pop3d(object):
             newpts = []
             for pt in points:
                 if asvec3:
-                    newpts.append(vec3(pt[0], pt[1], 0))  
+                    newpts.append(vec3(pt[0], pt[1], zval))  
                 else:
-                    newpts.append( (pt[0], pt[1], 0)) 
+                    newpts.append( (pt[0], pt[1], zval)) 
             return newpts
 
         else:
             newpts = []
             for pt in points:
                 if asvec3:
-                    newpts.append( vec3(pt[0], pt[1], 0)   )                
+                    newpts.append( vec3(pt[0], pt[1], zval)   )                
                 else:
-                    newpts.append( (pt[0], pt[1], 0)   )
+                    newpts.append( (pt[0], pt[1], zval)   )
             return newpts
         return None
  

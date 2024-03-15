@@ -66,6 +66,15 @@ class object3d(polygon_operator):
         return self.pos
 
     ##------------------------------------------------##
+    def np_load_points_3d (filename):
+          points = []
+          with open(filename, "r") as f:
+            for line in f:
+              point = [float(x) for x in line.split(",")]
+              points.append(point)
+          return np.array(points)
+
+    ##------------------------------------------------##
     def copy(self):
         new = type(self)()
         new.points   = self.points
@@ -482,79 +491,64 @@ class object3d(polygon_operator):
         #beam.apply_translation(pt1 - direction*0.5)
 
 
-    """
-    #input two XYZ points, return distance between points
-    def distance_between_points(point1, point2):
-        # Convert the points to numpy arrays.
-        point1 = np.array(point1)
-        point2 = np.array(point2)
-        # Calculate the difference between the two points.
-        difference = np.subtract(point2, point1)
-        # Calculate the norm of the difference vector.
-        norm = np.linalg.norm(difference)
-        # Return the distance.
-        return norm
-
-    def find_angle_between_points(point1, point2):
-        # Calculate the angle between the two vectors
-        angle = np.arccos(np.dot(point1, point2-point1) / (np.linalg.norm(point1) * np.linalg.norm(point2-point1)))
-        #print("NormP1 ", np.linalg.norm(point1))
-        #print("NormP2 ", np.linalg.norm(point2))
-        return np.degrees(angle)
-     
-    def read_blue_points_file(filename):
-          points = []
-          with open(filename, "r") as f:
-            for line in f:
-              point = [float(x) for x in line.split(",")]
-              points.append(point)
-          return np.array(points)
+    ##------------------------------------- 
+    def vec_connect_pts(self, pts):
+        """
+            #DEBUG - this is for fun 
+            would be cool to iterate all polygons of an object and insert rays for each edge 
+        """
 
 
-    def connect_points():
-        connection_points = read_blue_points_file("fooker.txt")
+        import trimesh 
+        vop = vec3() 
+
+        if type(pts)==list:
+            pts= np.array(pts)
 
         cylinders = []
         beams = []
         scene = trimesh.Scene()
-        # Sort the array by the X coordinate
-        connection_points = connection_points[connection_points[:, 0].argsort()]
-        print(connection_points)
 
-        # Create Cylinders
-        for point in connection_points:
+        # Sort the array by the X coordinate
+        pts = pts[pts[:, 0].argsort()]
+        #print(pts)
+
+        # Create Cylinders at each pt
+        for point in pts:
             height = point[2]
-            cylinder = trimesh.primitives.Cylinder(radius=0.5, height=height, transform=None, sections=32, mutable=True)
+            cylinder = trimesh.primitives.Cylinder(radius=0.05, height=height, transform=None, sections=32, mutable=True)
             cylinder.apply_translation((point[0],point[1],height/2))
             cylinder.collide = False
             cylinders.append(cylinder)
 
-        for index, point in enumerate(connection_points):
-            if index < len(connection_points) - 1:
+        for index, point in enumerate(pts):
+            if index < len(pts) - 1:
                 current_cylinder = point
-                next_cylinder = connection_points[index + 1]
+                next_cylinder = pts[index + 1]
 
-                Angle = find_angle_between_points(current_cylinder, next_cylinder)
+                Angle = vop.np_angle_between(current_cylinder, next_cylinder)
                 Direction = current_cylinder - next_cylinder
-                print("direction", Direction)
-                print("angle ", Angle)
+                
+                #print("direction", Direction)
+                #print("angle ", Angle)
 
                 rotation_matrix = trimesh.geometry.align_vectors([0, 0, 1], Direction, return_angle=False)
 
-                print("r matrix ", rotation_matrix)
-                distance = distance_between_points(current_cylinder, next_cylinder)
-                print(distance)
+                distance = vop.np_dist_between(current_cylinder, next_cylinder)
+                
+                # o = object3d()
+                # o.prim_arrow()
+                # o * rotation_matrix
+                # o.save('rrow.obj')
 
                 beam = trimesh.primitives.Cylinder(radius = 0.1, height = distance, transform=rotation_matrix, sections=32, mutable=True)
-
                 beam.apply_translation(current_cylinder - Direction*0.5)
                 beams.append(beam)
+
 
         scene.add_geometry(cylinders)
         scene.add_geometry(beams)
         scene.export("op.stl")
-    """
-
 
     ##------------------------------------------------## 
     ##------------------------------------------------## 
@@ -1057,16 +1051,14 @@ class object3d(polygon_operator):
         #self.xform_pts( pos )
 
     ###############################################  
-    def prim_ray(self, pos=(0,0,0), vec3=(0,1,0) ): 
+    def prim_ray(self, pos=(0,0,0), vec3=(1,1,1) ): 
         """ derived from prim_arrow (unfinished)
             fully 3D model of an arrow on a vector 
              
         """
 
-        spokes  = 4  # num turns around axis 
-
-        length  = 1
-
+        length   = 1
+        spokes   = 4   
         dia      = .1        # extrude length is double this, or .2 
         shaftlen = length-.2 # cone is .2, that plus this = 1 
         
@@ -1078,7 +1070,6 @@ class object3d(polygon_operator):
         tmpobj.extrude_face(0, distance=shaftlen)
 
         tmpobj1.insert(tmpobj)
-
 
         self.insert(tmpobj1) 
 
@@ -1116,8 +1107,8 @@ class object3d(polygon_operator):
 
         tmpobj1.insert(tmpobj)
         
-        #tmpobj1.points = self.rotate_pts( rot , tmpobj1.points )
-        #tmpobj1.points = self.xform_pts( pos , tmpobj1.points)
+        tmpobj1.points = self.rotate_pts( rot , tmpobj1.points )
+        tmpobj1.points = self.xform_pts( pos , tmpobj1.points)
 
         self.insert(tmpobj1) 
 

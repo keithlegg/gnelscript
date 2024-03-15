@@ -467,6 +467,8 @@ class vectorflow(object3d):
         res_x = bbox[2]-bbox[0]
         res_y = bbox[1]-bbox[3]
         
+        #print('## res_x res_y ',res_x,res_y)
+
         xhalf = res_x/2 
         yhalf = res_y/2 
         ydivs = (res_y/numv)

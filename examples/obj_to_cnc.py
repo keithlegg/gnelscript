@@ -6,7 +6,10 @@ from gnelscript.pygfx.gis_vector_ops import *
 
 ##------------------------------------------------##
 def scan_line_tool(filldensity, inobj, outfolder, outname):
-
+    """ 
+    DEBUG - experimental    
+    """
+    
     #size of circles showing a "hit"
     drawdia = .01 
 
@@ -17,6 +20,8 @@ def scan_line_tool(filldensity, inobj, outfolder, outname):
     loader.rotate( 0,0, 30.5)
 
     g = loader.get_face_geom(0)
+    
+    print(g)
 
     vflo = vectorflow()
     polygon = [g[1][0], g[1][1], g[1][2]]
@@ -28,7 +33,7 @@ def scan_line_tool(filldensity, inobj, outfolder, outname):
 
     hscanlines = int(res_y*filldensity)
 
-    pts = vflo.scanline( 8, hscanlines, polygon )
+    pts = vflo.scanline_ngon( 8, hscanlines, polygon )
     pop2 = pop2d()
 
     for row in pts:

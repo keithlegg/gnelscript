@@ -901,31 +901,34 @@ class polygon_operator(pop3d):
     ##-------------------------------------------##  
     def get_geom_edges(self, geom ):
         """ 
+            GEOM is [[IDS], [PTS] ]
+
+
             takes a geom object and returns another geom of the edges 
             it does this by iterating poly indices in groups of 2 
+
         """
+        DEBUG = False  
+
         if type(geom)is not list and type(geom)is not tuple:
             raise ValueError('input must be geom type (list/tuple) not %s'%type(geom)) 
 
         out_edge_ids = []
         out_edge_pts = []
-  
-        #DEBUG solve this damn data structure issue please
-        #polys = geom[0]
-        polys = geom[0][0]
+
+        polys = geom[0][0] 
 
         for ply in polys:
             
-            print('### POLY     ', ply   )
-            print('### POINTS   ', geom[1] , type(geom[1]) )
+            if DEBUG:
+                print('### POLY     ', ply   )
+                print('### POINTS   ', geom[1] , type(geom[1]) )
             
             for idx in range(len(ply)):
                 # iterate by two and store segments
                 cidx = ply[idx-1]
-                print(cidx)
-
                 out_edge_ids.append((  cidx            ,ply[idx]          )) # poly index
-                #out_edge_pts.append((  geom[1][cidx-2] , geom[1][cidx-1]  )) # point index
+                out_edge_pts.append((  geom[1][cidx-2] , geom[1][cidx-1]  )) # point index
 
         return [out_edge_ids, out_edge_pts]
 
@@ -1621,9 +1624,8 @@ class polygon_operator(pop3d):
     ##-------------------------------------------##  
     def extrude_face(self, f_id, distance):
         """ 
+            DEBUG ITS BROKEN 
             proof of concept - but it makes bad topology - the edges and cap polys dont share verts
-            
-            STILL BROKEN 
 
             obj = object3d()
             obj.load('3d_obj/cube.obj')
@@ -1632,13 +1634,14 @@ class polygon_operator(pop3d):
             obj.save('ext.obj')
 
         """
+        DEBUG = False 
 
         geom  = self.sub_select_geom(ids=[f_id] , reindex=True)
         if geom == None:
             raise ValueError('no geometry found for FID %s'%f_id)
 
         nrml = self.get_face_normal(fid=f_id, unitlen=True) 
-
+        
         nrml = nrml * distance 
         # edge selection iterates a polygons points 2 at a time, 
         # and forms each pair of points into a new line segment 
@@ -1648,6 +1651,10 @@ class polygon_operator(pop3d):
         moved = self.xform_pts( nrml, pts=geom[1])
         e_edges = self.get_geom_edges([geom[0],moved]) 
 
+        if DEBUG:
+            print(geom)
+            print(s_edges)
+  
         # "wall" polygons, geometry connecting the new poly to the old  
         # iterate one set of edges assuming they both have the same number 
         for w in e_edges[0]:
@@ -1661,6 +1668,8 @@ class polygon_operator(pop3d):
 
         # transformed face along normal (cap polygon) 
         self.insert_polygons(plyids=geom[0][0], points=moved, ans=True) 
+ 
+
 
     ##-------------------------------------------##  
     def copy_sop(self, slice=None, ids=None, reindex=False, offset=(0,1,0), rot=(0,0,0), num=2, distance=2):
