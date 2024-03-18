@@ -497,7 +497,8 @@ class object3d(polygon_operator):
             #DEBUG - this is for fun 
             would be cool to iterate all polygons of an object and insert rays for each edge 
         """
-
+        
+        wire_thick = 0.001
 
         import trimesh 
         vop = vec3() 
@@ -513,6 +514,7 @@ class object3d(polygon_operator):
         pts = pts[pts[:, 0].argsort()]
         #print(pts)
 
+        """
         # Create Cylinders at each pt
         for point in pts:
             height = point[2]
@@ -520,6 +522,7 @@ class object3d(polygon_operator):
             cylinder.apply_translation((point[0],point[1],height/2))
             cylinder.collide = False
             cylinders.append(cylinder)
+        """
 
         for index, point in enumerate(pts):
             if index < len(pts) - 1:
@@ -541,7 +544,8 @@ class object3d(polygon_operator):
                 # o * rotation_matrix
                 # o.save('rrow.obj')
 
-                beam = trimesh.primitives.Cylinder(radius = 0.1, height = distance, transform=rotation_matrix, sections=32, mutable=True)
+                beam = trimesh.primitives.Cylinder(radius=wire_thick, height=distance, transform=rotation_matrix, sections=4, mutable=True)
+                
                 beam.apply_translation(current_cylinder - Direction*0.5)
                 beams.append(beam)
 
@@ -1166,7 +1170,7 @@ class object3d(polygon_operator):
             for i in range(18):
                 self.linecolors.append(linecolor)        
 
-        self.insert_polygons(plybfr, pts)
+        self.insert_polygons(plybfr, pts, ans=True)
 
         #self.rotate_pts( rot )
         #if pivot == 'obj':

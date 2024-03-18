@@ -144,23 +144,10 @@ class polygon_operator(pop3d):
 
 
     ##-------------------------------------------## 
-    def contiguous_segs_to_poly (self, linesegs ):
-        """ DEBUG NOT DONE 
-            take an array of [[start,end],..] and connect it to a single polygon
-            this only works if the points are mathematically a match 
-
-            (we could perhaps add some distance matching later )
-
-            ARGS: 
-                linesegs [[XYZ,XYZ], [XYZ,XYZ],.. ]
-
-            RETURNS:
-                polygon  [XYZ,XYZ,XYZ]                
-        """
+    #def contiguous_segs_to_poly (self, linesegs ):
+    #        take an array of [[start,end],..] and connect it to a single polygon
+    #        this only works if the points are mathematically a match 
     
-        #DEBUG
-        pass 
-        
     
     ##-------------------------------------------## 
     def clean_pts_str(self, pts=None):
@@ -1305,7 +1292,6 @@ class polygon_operator(pop3d):
 
     ##-------------------------------------------## 
     ##-------------------------------------------## 
-
     def push_insert_poly(self, ids):
         """
             push a stack of ids by reindexing
@@ -1319,7 +1305,7 @@ class polygon_operator(pop3d):
             #print('new polygon ',n, t)
             self.polygons.append(t)
    
-
+    ##-------------------------------------------## 
     def push_plys(self, ids):
         """
             added as convenience for insert_polygons()
@@ -1339,7 +1325,7 @@ class polygon_operator(pop3d):
 
     #def push_pts(self, ids):
 
-
+    ##-------------------------------------------## 
     def insert_polygons(self, plyids=None, points=None, geom_obj=None, 
                               incrone=False, pos=None, ans=True ):
         """    

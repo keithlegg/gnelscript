@@ -288,7 +288,7 @@ class data_graph(object):
          #duplicate names      
 
 
-    def exists (self, nod):
+    def exists(self, nod):
         for node in self.nodes:
             if node is nod:
                 return True  
@@ -303,7 +303,7 @@ class data_graph(object):
                     return True 
         return False
 
-    def get (self, nod):
+    def get(self, nod):
         """ changed from find_node - 
         works with string or node - if it exists """
         if self.exists(nod):
@@ -317,10 +317,19 @@ class data_graph(object):
                 if type(nod) is str:
                     if node.name==nod:
                         return node 
-        
-        if not self.exists(nod):
-            print('#kdag get : node %s does not exist'%nod)    
 
+    def find_any_attr(self, attrs, attrval):
+        for node in self.nodes:
+            for attr in attrs:
+                if node.getattrib(attr)== attrval:
+                   return node
+        return None
+
+    def find_attr(self, attrnam, attrval):
+        for node in self.nodes:
+            #print(node.getattrib(attrnam))
+            if node.getattrib(attrnam)==attrval:
+                return node
         return None
                                                
     def gettype(self, nod):
@@ -360,12 +369,16 @@ class data_graph(object):
         if node1 == None or node2 ==None:
             print('##### parent: nodes not found')
             return None
-    
-        node1.hasparents = 1
-        node1.parent.append('')
-        node1.parent[0]= (node2.name)
-        node2.haschildren = 1
-        node2.children.append(node1.name)
+        
+        if node1==node2:
+            return None
+        
+        if not node1.hasparents:
+            node1.hasparents = 1
+            node1.parent.append('')
+            node1.parent[0]= (node2.name)
+            node2.haschildren = 1
+            node2.children.append(node1.name)
  
 
         
@@ -405,7 +418,7 @@ class data_graph(object):
        
     def walk_firstnode(self):
         firstnode = self.listnodes()
-        temp= firstnode[0]
+        temp = firstnode[0]
         self.walk(temp.name,'object')
 
     def get_node_attr( self, nod, attr ):
@@ -895,9 +908,23 @@ class data_graph(object):
    
     def walk_down(self, rootnode, mode='obj'):        #name string , or object mode
         node = self.get(rootnode) 
-       
+        
+        #print('########## ', node.name)
+
         if node ==None:
           return None
+
+        if mode =='obj' or mode =='object':
+          print('|'+(self.walkindent*'-')+'+'+ node.name)
+          
+          self.walkbuffer.append(node)
+          self.walk_depth_buffer.append( self.walkindent )
+          childrentemp = node.children
+      
+          for childd in childrentemp:
+              self.walkindent=self.walkindent+1
+              self.walk_down( self.get( childd ), mode ) 
+              self.walkindent=self.walkindent-1
 
         if mode =='name':
           #print '|'+(self.walkindent*'-')+'+'+ node.name
@@ -910,16 +937,7 @@ class data_graph(object):
               self.walk_down( self.get( childd ), mode )
               self.walkindent=self.walkindent-1
 
-        if mode =='obj' or mode =='object':
-          #print '|'+(self.walkindent*'-')+'+'+ node.name
-          self.walkbuffer.append(node)
-          self.walk_depth_buffer.append( self.walkindent )
-          childrentemp = node.children
-      
-          for childd in childrentemp:
-              self.walkindent=self.walkindent+1
-              self.walk_down( self.get( childd ), mode ) 
-              self.walkindent=self.walkindent-1
+
 
     """
     def copy_branch( self, rootnode, newnodename, parent_to, spatial_offset, spatial_scale ):        #name string , or object mode
@@ -970,7 +988,7 @@ class data_graph(object):
    
     def add(self, node):
         if self.exists(node):
-            print('#kdag add: node %s does not exist'% node)
+            print('#kdag add: node %s already exists'% node)
             return False     
         if not self.exists(node):
            self.nodes.append(node)
@@ -995,8 +1013,8 @@ class data_graph(object):
          print('#HAS CHILDREN '+ str ( nodtmp.haschildren))
          if len(nodtmp.children):
            print('#CHILDREN ARE  ')
-           for chilkd in nodtmp.children:
-                  print(chilkd)
+           for child in nodtmp.children:
+                  print(child,' ')
          if len(nodtmp.INPUTS) :
            print('#NODE INPUTS ARE : ')
            print(nodtmp.INPUTS)
@@ -1057,14 +1075,14 @@ class data_graph(object):
         if mode=='full':
            print('#############################')
            print('#GRAPH NAME IS ' + self.graphname )
-           print('#GRAPH CONTAINS ' + str (len(self.nodes)) + ' NODES ')
+           #print('#GRAPH CONTAINS ' + str (len(self.nodes)) + ' NODES ')
            for each in self.nodes:
                print('\n')
                print('#############################')
                print('#NODE NAME IS       '+ each.name)
-               print('#NODE SHORTNAME IS  '+ each.shortname)
-               print('#NODE TYPE IS : '+ each.nodetype)
-               print( '#HAS PARENTS '+ str( each.hasparents ) )
+               #print('#NODE SHORTNAME IS  '+ each.shortname)
+               #print('#NODE TYPE IS : '+ each.nodetype)
+               #print( '#HAS PARENTS '+ str( each.hasparents ) )
            
                if len(each.parent):
                    parnts = ''
@@ -1072,11 +1090,11 @@ class data_graph(object):
                           parnts=parnts+parent
                    print('#PARENT IS  %s'%parnts)
 
-               print ('#HAS CHILDREN '+ str ( each.haschildren))
+               #print ('#HAS CHILDREN '+ str ( each.haschildren))
                if len(each.children):
                    chlds = ''
                    for c in each.children:
-                       chlds=chlds+c
+                       chlds=chlds+' '+c
                    print('#CHILDREN ARE %s '%chlds)
                if len(each.INPUTS) :
                    print('#NODE INPUTS ARE : ')
@@ -1084,12 +1102,12 @@ class data_graph(object):
                if len(each.OUTPUTS):
                    print('#NODE OUTPUTS ARE : ')
                    print(each.OUTPUTS)
-               if each.hasxform ==1:
-                   print( '#TRANSLTION '+ ( str(each.posx)+' '+str(each.posy)+' '+str(each.posz) ) )
-                   print( '#ROTATION '  + ( str(each.rotx)+' '+str(each.roty)+' '+str(each.rotz) ) )
-               if each.listallattrs()!=None:
-                   print('#NODE ATTR DATA IS')
-                   print(each.listallattrs())
+               # if each.hasxform ==1:
+               #     print( '#TRANSLTION '+ ( str(each.posx)+' '+str(each.posy)+' '+str(each.posz) ) )
+               #     print( '#ROTATION '  + ( str(each.rotx)+' '+str(each.roty)+' '+str(each.rotz) ) )
+               # if each.listallattrs()!=None:
+               #     print('#NODE ATTR DATA IS')
+               #     print(each.listallattrs())
 
            print('#############################')
 
@@ -1196,8 +1214,12 @@ class node_base(object):
     def listallattrs (self):
        if len(self.ATTRS)!=0:
          output = []
-         for x,y in map(None,self.ATTRS,self.ATTRVALS):
-             output.append( [x,y] )
+         #for x,y in map(None,self.ATTRS,self.ATTRVALS):
+         #    output.append( [x,y] )
+         for i,a in enumerate(self.ATTRS): 
+             x = self.ATTRS[i]
+             y = self.ATTRVALS[i]
+             output.append( [x,y] )            
          return output
        else:
          return None

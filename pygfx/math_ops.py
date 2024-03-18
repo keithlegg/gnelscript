@@ -1076,6 +1076,8 @@ class vec3(object):
                 pt1 = np.array(pt1)
             if type(pt2)!=np.array:
                 pt2 = np.array(pt2)
+            
+            #print(pt1, pt2)
 
             angle = np.arccos(np.dot(pt1, pt2-pt1) / (np.linalg.norm(pt1) * np.linalg.norm(pt2-pt1)))
             if out=='deg':

@@ -1192,51 +1192,22 @@ class cam_op(cnc_op):
         )
         
         if slice2d==None:
-            print('### tm_section_test NO POLYGOINS FOUND \n\n')
+            print('### tm_section_test NO POLYGONS FOUND \n\n')
             return None 
 
         geom, m44 = slice2d.to_planar()
         pts = [poly for poly in geom.polygons_full]
 
 
-
-        """
-        # if we wanted to take a bunch of parallel slices, like for a 3D printer
-        # we can do that easily with the section_multiplane method
-        # we're going to slice the mesh into evenly spaced chunks along z
-        # this takes the (2,3) bounding box and slices it into [minz, maxz]
-        z_extents = mesh.bounds[:,2]
-        # slice every .125 model units (eg, inches)
-        z_levels  = np.arange(*z_extents, step=.125)
-
-        # find a bunch of parallel cross sections
-        sections = mesh.section_multiplane(plane_origin=mesh.bounds[0], 
-                                           plane_normal=[0,0,1], 
-                                           heights=z_levels)
-        sections
-
-        # summing the array of Path2D objects will put all of the curves
-        # into one Path2D object, which we can plot easily
-        combined = np.sum(sections)
-        combined.show()
-
-        # if we want to intersect a line with this 2D polygon, we can use shapely methods
-        polygon = slice_2D.polygons_full[0]
-        # intersect line with one of the polygons
-        hits = polygon.intersection(LineString([[-4,-1], [3,0]]))
-        # check what class the intersection returned
-        hits.__class__
-
-        # we can plot the intersection (red) and our original geometry(black and green)
-        ax = plt.gca()
-        for h in hits.geoms:
-            ax.plot(*h.xy, color='r')
-        slice_2D.show()
-
-        # the medial axis is available for closed Path2D objects
-        (slice_2D + slice_2D.medial_axis()).show()
-        """
-
+        ##-------------------------------## 
+        # def cross_section(mesh, plane_origin=[0,0,0], plane_normal=[1,0,0]):
+        #     slice_ = mesh.section(plane_origin=plane_origin, 
+        #                           plane_normal=plane_normal)
+        #     # transformation matrix for to_planar 
+        #      to_2D = trimesh.geometry.align_vectors(plane_normal, [0,0,-1])
+        #     
+        #     slice_2D, to_3D = slice_.to_planar(to_2D = to_2D)
+        #     return slice_2D, to_3D
         
         #poly_union = shapely.geometry.MultiPolygon([poly for poly in slice_2D.polygons_full])
 
@@ -1259,8 +1230,11 @@ class cam_op(cnc_op):
         G = nx.Graph()
 
     ##-------------------------------## 
-    def boundary(mesh, close_paths=True):
+    def boundary(self, mesh, close_paths=True):
         #https://stackoverflow.com/questions/76435070/how-do-i-use-python-trimesh-to-get-boundary-vertex-indices
+        
+        from collections import defaultdict 
+
         # Set of all edges and of boundary edges (those that appear only once).
         edge_set = set()
         boundary_edges = set()
@@ -1328,6 +1302,96 @@ class cam_op(cnc_op):
         return boundary_paths
 
     ##-------------------------------## 
+    def create_path(self, max, start_edge, start_point, dic):
+        """
+            https://stackoverflow.com/questions/66035022/sort-line-segments-in-order-of-connections
+
+            USAGE:
+                d= { 0:((3,5), (2,5)), 1:((1,1), (1,2)), 2:((8,4), (3,5)), 13:((1,2), (2,5))}
+                pathids = cop.create_path(len(d)*5, 13, (1,2),d)
+                print(pathids)
+
+        """
+
+        lst=[]
+        edge = start_edge
+        tail = start_point
+        
+        thresh = .001 
+
+
+        def pt_eq(p1, p2):
+            vop = vec3() 
+            d = vop.np_dist_between(p1, p2)
+            if d < thresh:
+                return True
+            return False 
+
+        def ma(match, array):
+            #calculate distance to see if points are "the same"
+            #this is a spatial version of "is this data in the array"
+
+            vop = vec3() 
+            vm = vec3(match)
+
+            d1 = vop.np_dist_between(vm, array[0])
+            d2 = vop.np_dist_between(vm, array[1])
+            if d1 < thresh or d2 < thresh:
+                #print('we have a hit ', d1, d2)
+                return True
+            return False 
+
+        cnt = 0
+        while len(dic.keys()) > len(lst) and cnt!=max:
+            #head = next(filter(lambda x: x != tail, dic[edge]))
+            if pt_eq(tail, dic[edge][0]):
+                    head = dic[edge][1]
+            else:
+                head = dic[edge][0]
+            
+            #print(tail, head)
+
+            for e, points in dic.items():
+                
+                #if head in points and e not in lst:
+                if ma(head, points) and e not in lst:
+                    lst.append(e)
+                    edge = e
+                    tail = head
+            cnt+=1        
+        return lst
+
+
+    ##-------------------------------## 
+    def show_obj_order(self, path, infile):
+        """ DEBUG - NOT SURE WHAT IM DOING HERE 
+            load points from an obj file and draw lines between them 
+        """
+
+        obj = object3d()
+        obj.load('%s/%s'%(path, infile) )
+
+        # #itearate as 2 point segments 
+        # lines = []         
+        # for i in range(1, len(obj.points),2):
+        #     #lines.append( [obj.points[i], obj.points[i+1]] ) 
+        #     lines.append( [i,i+1] ) 
+
+        # #connect to a single point
+        # lines = []         
+        # for i in range(1, len(obj.points),2):
+        #     lines.append( [1,i] ) 
+
+        lines = []         
+        for i in range(1, int(len(obj.points)/2),2):
+            lines.append( [1,i] ) 
+
+        obj2 = object3d() 
+        obj2.points = obj.points 
+        obj2.polygons = lines 
+        obj2.save('%s/pointorder.obj'%(path))
+
+    ##-------------------------------## 
     def tm_meshplane_test(self, origin, normal, numdivs, path, infile, axis='y'):
 
         out = [] 
@@ -1338,23 +1402,10 @@ class cam_op(cnc_op):
             normal = normal.aspt
 
         mesh = trimesh.load_mesh('%s/%s'%(path,infile))
-        #mesh = trimesh.creation.icosphere()
-        
-        bbox = mesh.bounds.tolist()
+    
+        #bbox = mesh.bounds.tolist()
 
-        ############
         out = trimesh.intersections.mesh_plane(mesh, normal, origin, return_faces=False, local_faces=None, cached_dots=None)
-
-        print(type(out))
-
-        """
-        pts = []  
-        tmp = out.tolist()
-        for pt in tmp: 
-            pts.append( pt )
-        
-        #self.contiguous_segs_to_poly(pts)
-        """ 
 
         return out 
 
@@ -1435,15 +1486,7 @@ class cam_op(cnc_op):
 
     """
 
-    ##-------------------------------## 
-    # def cross_section(mesh, plane_origin=[0,0,0], plane_normal=[1,0,0]):
-    #     slice_ = mesh.section(plane_origin=plane_origin, 
-    #                           plane_normal=plane_normal)
-    #     # transformation matrix for to_planar 
-    #      to_2D = trimesh.geometry.align_vectors(plane_normal, [0,0,-1])
-    #     
-    #     slice_2D, to_3D = slice_.to_planar(to_2D = to_2D)
-    #     return slice_2D, to_3D
+
 
     ##---------------------------------------------
     
@@ -1484,16 +1527,14 @@ class cam_op(cnc_op):
             origin = origin.aspt
         if type(normal)==vec3:
             normal = normal.aspt
-    
+     
+        """   
         # get a single cross section of the mesh
         slice = mesh.section(plane_origin=mesh.centroid, 
-                             plane_normal=[0,0,1])
-
-        # the section will be in the original mesh frame
-        #slice.show()
-         
+                             plane_normal=normal)
         # we can move the 3D curve to a Path2D object easily
         slice_2D, to_3D = slice.to_planar()
+        """
 
         if origin == None: 
             print('#WARNING tm_multiplane_test: origin not specified - using object bounds ')
@@ -1511,64 +1552,14 @@ class cam_op(cnc_op):
 
         print('##tm_multiplane_test: sliced %s polygons '%len(cleansec) )
 
-        pts2d = cleansec[0].vertices
-
         # summing the array of Path2D objects will put all of the curves into one Path2D
         combined = np.sum(cleansec)
         #combined.show()
-
-
-        # # if we want to intersect a line with this 2D polygon, we can use shapely methods
-        # polygon = slice_2D.polygons_full[0]
-        # # intersect line with one of the polygons
-        # hits = polygon.intersection(shp_ln([[-4,-1], [3,0]]))
-        # # check what class the intersection returned
-        # hits.__class__
-        ###
-        # # we can plot the intersection (red) and our original geometry(black and green)
-        # ax = plt.gca()
-        # for h in hits.geoms:
-        #     ax.plot(*h.xy, color='r')
-        # slice_2D.show()
-        ###
-        # the medial axis is available for closed Path2D objects
-        #(slice_2D + slice_2D.medial_axis()).show()
-        ###
-        # #returns: 
-        # # lines ((m,) sequence of (n, 2, 2) float) – Lines in space for m planes
-        # # to_3D ((m, 4, 4) float) – Transform to move each section back to 3D
-        # # face_index ((m,) sequence of (n,) int) – Indexes of mesh.faces for each segment
-
-        """
-        bbox = mesh.bounds.tolist()
-
-        pts3d = combined.to_3D()
-        #pts3d = combined.polygons_full
         
-        #convert the Tracked array to NP array 
-        npts = pts3d.vertices.view(np.ndarray)
+        #print(combined.enclosure_shell)
 
-        ptlist = [pts3d.vertices.tolist()] 
-        
-        """
-        #ptlist = self.cvt_2d_to_3d(pts2d.tolist())
-
-        """
-        vflo = vectorflow()
-        vflo.gr_polys = [ptlist]
-        vflo._sort()
-    
-        #vflo.export_geojson_polygon(path, 'trimesh.json') 
-        vflo.export_geojson_lines (path, 'trimesh.json') 
-        vflo.export_geojson_lines(path, 'heed.json')
-        vflo.cvt_grpoly_obj3d(objtype='singlepoly')
-        vflo.save('heed.obj')
-        
-        #return trimesh.path.segments.clean(out) 
-        #ee = trimesh.path.path.Path(out)
-        """
-        
-        return slice.vertices 
+        return cleansec
+        #return slice.vertices 
 
     ##-----------------------------------
     def batch_ray_intersect(self, step, stacks, spokes, outname, axis='y'):

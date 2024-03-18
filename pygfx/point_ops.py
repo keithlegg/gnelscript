@@ -2,13 +2,43 @@
 import os
 import math 
 
-
-
-from gnelscript import NUMPY_IS_LOADED
+from gnelscript import NUMPY_IS_LOADED, GEOJSON_IS_LOADED, SHAPELY_IS_LOADED, \
+                       NETWORKX_IS_LOADED, TRIMESH_IS_LOADED
 
 
 from gnelscript.pygfx.math_ops import math_util as mu
 from gnelscript.pygfx.math_ops import matrix33, matrix44, vec2, vec3  
+
+##-----------------------------##
+
+if GEOJSON_IS_LOADED:
+    from geojson import dump  
+    from geojson import Point as gjpt
+    from geojson import Polygon as gjply
+    from geojson import Feature as gjftr
+    from geojson import LineString as gjln
+    from geojson import FeatureCollection as gjfc
+
+if SHAPELY_IS_LOADED:
+    from shapely import buffer, BufferCapStyle, BufferJoinStyle
+    from shapely import Point as shp_pt
+    from shapely import Polygon as shp_ply
+    from shapely import LineString as shp_ln
+    #from shapely import Feature as shp_ftr
+    #from shapely import FeatureCollection as shp_fc
+
+if NETWORKX_IS_LOADED:
+    import networkx as nx
+
+if TRIMESH_IS_LOADED:
+    import trimesh
+
+if NUMPY_IS_LOADED:
+    import numpy as np  
+
+
+##-----------------------------##
+##-----------------------------## 
 
 
 """
@@ -74,11 +104,6 @@ from gnelscript.pygfx.math_ops import matrix33, matrix44, vec2, vec3
 
 
 
-if NUMPY_IS_LOADED:
-    # print(' ## debug - loading numpy module in point ops. ')
-    import numpy as np  
-else:
-    print(' ## debug - numpy module disabled in point ops. ')
 
 
 
@@ -87,6 +112,41 @@ def printgeom(geom):
         print( " f_id %s - %s"%(i,fid))
     for pt in geom[1]:
         print( " pt %s"%str(pt) )
+
+
+
+##-------------------------------------------##
+##-------------------------------------------## 
+## PLAYING WITH TRIMESH - LOOKS VERY INTERESTING 
+
+#print(dir(trimesh))
+
+# trimesh.util.append_faces(vertices_seq, faces_seq)
+
+# trimesh.load_path(file_obj, file_type=None, **kwargs)
+
+#edges_unique
+
+
+class tm_pop3(object):
+    def __init__(self):
+        self.mesh = None
+
+    def load(self, infile):
+        print('#tm_pop3 loading %s'%infile)
+        self.mesh = trimesh.load_mesh(infile) 
+
+    def move(self):
+        #trimesh.transform_points(points, matrix, translate=True)
+        print()
+
+    def convex_hull(self, pts, outfile):
+        pc = trimesh.PointCloud(vertices=pts)
+        cvh = pc.convex_hull
+        cvh.export(outfile)
+
+
+
 
 
 ##-------------------------------------------##
@@ -137,6 +197,69 @@ class pop3d(object):
     ##-------------------------------------------##   
     #def get_edge_centroid(self, f_id , e_id):
     #    pass
+
+    ##-------------------------------------------## 
+    def pt_in(self, pt, pts):
+        for sample in pts:
+            if str(pt)==str(sample):
+                return True 
+        return False            
+
+    def get_pt_extreme(self, pts, mode='idx'):
+        """ 
+            get the farthest extents of a point group 
+            (the most +X,-X,+Y, etc )
+
+            return the indeces to the points relatove to the array
+            
+            DEBUG - not sure how to handle planar objects where an axis gets the same for both 
+
+        """
+
+        minx=0;miny=0;minz=0 
+        maxx=0;maxy=0;maxz=0 
+    
+        minx_id=0;maxx_id=0
+        miny_id=0;maxy_id=0 
+        minz_id=0;maxz_id=0 
+
+        #print(" gr_polys buffer has %s polys in it "%len(self.gr_polys) )
+        for ii,pt in enumerate(pts):
+            if ii == 0:
+                minx=pt[0]
+                maxx=pt[0]
+                miny=pt[1]
+                maxy=pt[1]
+                minz=pt[2]
+                maxz=pt[2]
+
+            if pt[0]<minx:
+                minx=pt[0]
+                minx_id=ii    
+            if pt[0]>maxx:
+                maxx=pt[0]  
+                maxx_id=ii                  
+            if pt[1]<miny:
+                miny=pt[1]  
+                miny_id=ii                  
+            if pt[1]>maxy:
+                maxy=pt[1]
+                maxy_id=ii                   
+            if pt[2]<minz:
+                minz=pt[2]  
+                minz_id=ii
+            if pt[2]>maxz:
+                maxz=pt[2] 
+                maxz_id=ii
+
+        if mode=='idx':
+            return [minx_id, maxx_id, miny_id, maxy_id, minz_id, maxz_id] 
+        
+        if mode=='scalar':
+            return [minx   , maxx   , miny   , maxy   , minz   , maxz ]
+
+        if mode=='points':
+            return [pts[minx_id], pts[maxx_id], pts[miny_id], pts[maxy_id], pts[minz_id], pts[maxz_id] ]
 
     ##-------------------------------------------## 
     def _csp_str(self, pt):
