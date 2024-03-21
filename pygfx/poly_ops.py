@@ -1897,42 +1897,6 @@ class polygon_operator(pop3d):
         else:    
             self.insert_polygons(new_plys, new_pts)
 
-    ##-------------------------------------------## 
-    def slice_axis(self, low, high, axis='y'):
-        """ extract a section of polygons from a model based on position in space 
-            it should catch any polygon with a point within the range... I think 
-        """
-
-        sliced=[]
-        exists = []
-
-    
-        def add_once(data):
-            if data[0] not in exists:
-                sliced.append(data)                
-                exists.append(data[0])
-
-        for fid,ply in enumerate(self.polygons):
-            tmply=[]
-            for pid in ply:
-                pt = self.points[pid-1]
-                tmply.append(pt)
-
-            for a in tmply:
-                if axis=='x':
-                    if a[0]>low and a[0]< high: 
-                        add_once([fid, [ply ,tmply]])
- 
-                if axis=='y':
-                    if a[1]>low and a[1]< high:  
-                        add_once([fid, [ply ,tmply]])
-                          
-                if axis=='z':
-                    if a[2]>low and a[2]< high:  
-                        add_once([fid,[ply ,tmply]])
-       
-        return sliced
-
     ##-------------------------------------------##   
     ##-------------------------------------------## 
     #file IO / mesh analysis, etc 

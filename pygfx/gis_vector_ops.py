@@ -1927,6 +1927,29 @@ class vectorflow(object3d):
         #print(self.rotation)
         #self.show() 
 
+    def cvt_grsort_obj3d(self, objtype='singlepoly'):
+        idx = 0  
+        
+        for ig, grpoly in enumerate(self.gr_sort):
+            polygons = []
+            for ip, pt in enumerate(grpoly[4]):
+
+                idx = ip+len(self.points)
+                
+                if objtype == 'polyline': 
+                    self.polygons.append([idx+1, idx+2])
+
+                if objtype == 'singlepoly':
+                    polygons.append( idx+1 )  
+
+            if objtype == 'singlepoly':
+                self.polygons.append(polygons)
+            
+            self.points.extend(self.clean_pts_str(grpoly[4]))
+
+        #print(self.rotation)
+        #self.show() 
+
     ##-------------------------------##
     ##-------------------------------##
     ##-------------------------------------------##   
