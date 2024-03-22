@@ -598,14 +598,47 @@ class cam_diskcache(object3d):
 
         self.heights = [] 
         self.normals = [] # normal stack [depth, [ortho_dist, ortho_dist, ...], ... ]
-    
+        self.orthos = [] 
+
     ##-----------------------##
     def load_cache(self, project, file):
+        
+        name = file.split('_')[0]
+
         f = open('%s/%s'%(project,file), 'r')
+        
+        heights = [] 
+        orthos = []
+
+        def clean(inp):
+            return inp.replace(']','') 
+
         for lc,line in enumerate(f):
             if 'heights' in line:
-                print('heights!', line )
+                for n in line.split('heights [')[1].split(','):
+                    heights.append(float(clean(n)))
 
+            if 'orthos' in line:
+                for n in line.split('orthos [')[1].split(','):
+                    orthos.append(float(clean(n)))
+
+        print(heights)
+        print(orthos)
+        
+        files = [] 
+
+        include_orthos = False 
+
+        for h in heights: 
+            files.append('%s/nrml_%s/%s_%s.obj'%(project,h,name,h) )
+            if include_orthos:
+                for o in orthos: 
+                    files.append('%s/nrml_%s/ortho/%s_%s.obj'%(project,h,name,o) )
+
+        obj = object3d()
+        for f in files:
+            obj.load(f)
+        obj.save('%s/previs.obj'%project)    
 
     ##-----------------------##
     def bake_preview(self, project):
@@ -654,7 +687,8 @@ class cam_diskcache(object3d):
         txt.append('path '+       self.folderpath  ) 
         txt.append('cache '+      self.cache_name  ) 
         txt.append('mesh '+       self.meshname    )   
-        txt.append('heights '+str(self.heights)    )    
+        txt.append('heights ' +str(self.heights)   )    
+        txt.append('orthos '  +str(self.orthos)    ) 
         txt.append('normmals '+str(self.normals)   )     
 
         filename = '%s/%s_cache.txt'%(self.folderpath,self.cache_name)
@@ -1443,11 +1477,11 @@ class cam_op(cnc_op):
         return out 
 
     ##-------------------------------## 
-    def slice_multi( self, path , infile, heights):
+    def slice_multi( self, path , infile, heights, scan_axis ='z'):
 
         name = infile.split('.')[0]
         
-        scan_axis ='z'
+        
 
         #cache the mesh object
         self.cam_dc.folderpath   = path
@@ -1525,12 +1559,16 @@ class cam_op(cnc_op):
                 obj2.polygons = [ply]    
                 obj2.save('%s/%s.obj'%(normal_path,nrml_cache))
         
-
                 #now walk the orthos 
                 newpathortho = '%s/ortho'%(normal_path)
                 if not os.path.exists(newpathortho):
                     os.makedirs(newpathortho)
-                distances = [.12,.14,.16,.18]
+
+
+                distances = [.3, .6, .9, 1.2]
+                self.cam_dc.orthos = distances
+
+
 
                 for distval in distances:
                     print('#building ortho cache %s/%s'%(normal_path,nrml_cache))
@@ -1547,7 +1585,7 @@ class cam_op(cnc_op):
                     if geoms:
                         buff = buffer(geoms[0], distval, quad_segs=4)
                         k2 = cam_op() 
-                        k2.cvt_shapely_grsort(buff)
+                        k2.cvt_shapely_grsort(buff, zval=hgt)
                         k2.cvt_grsort_obj3d() 
                         k2.save('%s/%s_%s.obj'%(newpathortho,name,distval))
 

@@ -1932,12 +1932,10 @@ class vectorflow(object3d):
         for ig, grpoly in enumerate(self.gr_sort):
             polygons = []
             for ip, pt in enumerate(grpoly[4]):
-
                 idx = ip+len(self.points)
-                
+
                 if objtype == 'polyline': 
                     self.polygons.append([idx+1, idx+2])
-
                 if objtype == 'singlepoly':
                     polygons.append( idx+1 )  
 
