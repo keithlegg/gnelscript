@@ -829,8 +829,7 @@ class vectorflow(object3d):
 
         # run initial extents calc on sorted polys         
         self.gl_extents()
-
-        print("orig data extents %s %s %s %s "%(self.orig_minx, self.orig_maxx, self.orig_miny, self.orig_maxy) )
+        #print("_sort: data extents %s %s %s %s "%(self.orig_minx, self.orig_maxx, self.orig_miny, self.orig_maxy) )
 
     ##-------------------------------------------## 
     ##-------------------------------------------## 
@@ -1846,7 +1845,7 @@ class vectorflow(object3d):
             convert 3d obj polys into gr_poly buffer to export to json, ect 
             we have to dump the z axis   
         """         
-        print("converting %s polygons to grpoly format "%len(self.polygons))
+        #print("converting %s polygons to grpoly format "%len(self.polygons))
 
         idx = 0  
     

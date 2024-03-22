@@ -1966,7 +1966,7 @@ class polygon_operator(pop3d):
             #if data exists it, FIDS need to be offset 
             fs = self.numpts 
             
-            print('######num ', fs)
+            #print('####load## num ', fs)
              
             for x in contents :
                 #lines = x

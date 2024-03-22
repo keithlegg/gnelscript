@@ -1072,6 +1072,10 @@ class vec3(object):
 
         ##----------------------------------------
         def np_angle_between(self, pt1, pt2, out='rad'):
+            if type(pt1)==vec3:
+                pt1=pt1.as_np
+            if type(pt2)==vec3:
+                pt2=pt2.as_np
             if type(pt1)!=np.array:
                 pt1 = np.array(pt1)
             if type(pt2)!=np.array:
@@ -2043,28 +2047,34 @@ class matrix44(object):
         self.m = [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p]
 
 
-    def from_np(self, np):
+    def from_np(self, np, order='cm'):
         """ convert a numpy matrix to a matrix44 object
+            
+            order can be column major or row major  
+
         """
         # return type(self)(
         #     np[0][0] , np[1][0] , np[2][0] ,
         #     np[0][1] , np[1][1] , np[2][1] ,
         #     np[0][2] , np[1][2] , np[2][2]
         # )
+        
 
-        # return type(self)(
-        #     np[0][0], np[1][0], np[2][0], np[3][0],
-        #     np[0][1], np[1][1], np[2][1], np[3][1],
-        #     np[0][2], np[1][2], np[2][2], np[3][2]
-        #     np[0][3], np[1][3], np[2][3], np[3][3]
-        # )
+        if order=='rm':
+            return type(self)(
+                np[0][0], np[1][0], np[2][0], np[3][0],
+                np[0][1], np[1][1], np[2][1], np[3][1],
+                np[0][2], np[1][2], np[2][2], np[3][2],
+                np[0][3], np[1][3], np[2][3], np[3][3]
+            )
 
-        return type(self)(
-            np[0][0], np[0][1], np[0][2], np[0][3],
-            np[1][0], np[1][1], np[1][2], np[1][3],
-            np[2][0], np[2][1], np[2][2], np[2][3],
-            np[3][0], np[3][1], np[3][2], np[3][3]
-        )
+        if order=='cm':
+            return type(self)(
+                np[0][0], np[0][1], np[0][2], np[0][3],
+                np[1][0], np[1][1], np[1][2], np[1][3],
+                np[2][0], np[2][1], np[2][2], np[2][3],
+                np[3][0], np[3][1], np[3][2], np[3][3]
+            )
 
     def load_file(self, filename, transpose=False):
        if os.path.lexists(filename):
@@ -2196,6 +2206,15 @@ class matrix44(object):
                     self.m[12]*n[2] + self.m[13]*n[6] + self.m[14]*n[10] + self.m[15]*n[14],
                     self.m[12]*n[3] + self.m[13]*n[7] + self.m[14]*n[11] + self.m[15]*n[15]
                    )
+
+    @property
+    def as_np(self):
+        return np.array((
+            [self.m[0] , self.m[1] , self.m[2] , self.m[3]  ],
+            [self.m[4] , self.m[5] , self.m[6] , self.m[7]  ],
+            [self.m[8] , self.m[9] , self.m[10], self.m[11] ],
+            [self.m[12], self.m[13], self.m[14], self.m[15] ]
+        ))   
 
     @property
     def identity(self):
@@ -2504,6 +2523,67 @@ class matrix44(object):
         
         #print(m)
         return m
+
+
+    def align_vectors(self, a, b, return_angle=False):
+        """
+        From - trimesh.geometry.align_vectors 
+
+        Find the rotation matrix that transforms one 3D vector
+        to another.
+
+        Parameters
+        ------------
+        a : (3,) float
+          Unit vector
+        b : (3,) float
+          Unit vector
+        return_angle : bool
+          Return the angle between vectors or not
+
+        Returns
+        -------------
+        matrix : (4, 4) float
+          Homogeneous transform to rotate from `a` to `b`
+        angle : float
+          If `return_angle` angle in radians between `a` and `b`
+
+        """
+        if type(a)==vec3: 
+            a=a.as_np 
+        if type(b)==vec3: 
+            b=b.as_np 
+
+        a = np.array(a, dtype=np.float64)
+        b = np.array(b, dtype=np.float64)
+        if a.shape != (3,) or b.shape != (3,):
+            raise ValueError("vectors must be (3,)!")
+
+        # find the Singular Value Decomposition of the two vectors
+        au = np.linalg.svd(a.reshape((-1, 1)))[0]
+        bu = np.linalg.svd(b.reshape((-1, 1)))[0]
+
+        if np.linalg.det(au) < 0:
+            au[:, -1] *= -1.0
+        if np.linalg.det(bu) < 0:
+            bu[:, -1] *= -1.0
+
+        # put rotation into homogeneous transformation
+        matrix = np.eye(4)
+        matrix[:3, :3] = bu.dot(au.T)
+
+        if return_angle:
+            # projection of a onto b
+            # first row of SVD result is normalized source vector
+            dot = np.dot(au[0], bu[0])
+            # clip to avoid floating point error
+            angle = np.arccos(np.clip(dot, -1.0, 1.0))
+            if dot < -1e-5:
+                angle += np.pi
+            return matrix, angle
+
+        return matrix
+
 
 ##-------------------------------------------##
 ##-------------------------------------------##

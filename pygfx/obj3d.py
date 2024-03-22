@@ -37,20 +37,22 @@ class object3d(polygon_operator):
         #if type(matrix)is vec3:
         #    self.points = self.apply_matrix_pts(pts=self.points, m33=matrix) 
 
-        print(type(matrix)) 
+        #print(type(matrix)) 
         
         if type(matrix)is matrix33:
             self.points = self.apply_matrix_pts(pts=self.points, m33=matrix) 
         if type(matrix)is matrix44:
             self.points = self.apply_matrix_pts(pts=self.points, m44=matrix) 
         if NUMPY_IS_LOADED:
+            #DEBUG - I set the order to ROW MAJOR because that is what worked in one case... 
+
             if type(matrix)==np.ndarray:
                 if matrix.size==9:
                     m33=matrix33()
-                    self.points = self.apply_matrix_pts(pts=self.points, m33=m33.from_np(matrix)) 
+                    self.points = self.apply_matrix_pts(pts=self.points, m33=m33.from_np(matrix,order='rm')) 
                 if matrix.size==16:
                     m44=matrix44()
-                    self.points = self.apply_matrix_pts(pts=self.points, m44=m44.from_np(matrix)) 
+                    self.points = self.apply_matrix_pts(pts=self.points, m44=m44.from_np(matrix,order='rm')) 
 
     def reset(self):
         self.rot          = [0,0,0]
@@ -494,11 +496,11 @@ class object3d(polygon_operator):
     ##------------------------------------- 
     def vec_connect_pts(self, pts):
         """
-            #DEBUG - this is for fun 
-            would be cool to iterate all polygons of an object and insert rays for each edge 
+            connect a series of points with arrows  
         """
-        
-        wire_thick = 0.001
+        NODES_ON = True 
+
+        wire_thick = 0.01
 
         import trimesh 
         vop = vec3() 
@@ -506,26 +508,31 @@ class object3d(polygon_operator):
         if type(pts)==list:
             pts= np.array(pts)
 
-        cylinders = []
+        ballz = []
         beams = []
         scene = trimesh.Scene()
 
-        # Sort the array by the X coordinate
-        pts = pts[pts[:, 0].argsort()]
-        #print(pts)
+        # Sort the array by the X coordinate = DEBUG WHY??
+        #pts = pts[pts[:, 0].argsort()]
 
-        """
-        # Create Cylinders at each pt
-        for point in pts:
-            height = point[2]
-            cylinder = trimesh.primitives.Cylinder(radius=0.05, height=height, transform=None, sections=32, mutable=True)
-            cylinder.apply_translation((point[0],point[1],height/2))
-            cylinder.collide = False
-            cylinders.append(cylinder)
-        """
+
+        if NODES_ON:
+            # Create balls at each pt
+            for point in pts:
+                ball = trimesh.primitives.Sphere(radius=wire_thick*2, subdivisions=1)
+                ball.apply_translation(point) 
+                ball.collide = False
+                ballz.append(ball)
+   
+        
+        o = object3d()
 
         for index, point in enumerate(pts):
-            if index < len(pts) - 1:
+            if index==0: 
+                ball = trimesh.primitives.Sphere(radius=wire_thick*5, subdivisions=1)
+                ball.apply_translation(point) 
+
+            if index < len(pts)-1:
                 current_cylinder = point
                 next_cylinder = pts[index + 1]
 
@@ -538,19 +545,19 @@ class object3d(polygon_operator):
                 rotation_matrix = trimesh.geometry.align_vectors([0, 0, 1], Direction, return_angle=False)
 
                 distance = vop.np_dist_between(current_cylinder, next_cylinder)
-                
-                # o = object3d()
-                # o.prim_arrow()
-                # o * rotation_matrix
-                # o.save('rrow.obj')
+   
+                o.prim_arrow(axis='z', pos=point, mat44=-rotation_matrix)
+
 
                 beam = trimesh.primitives.Cylinder(radius=wire_thick, height=distance, transform=rotation_matrix, sections=4, mutable=True)
                 
                 beam.apply_translation(current_cylinder - Direction*0.5)
                 beams.append(beam)
 
+        o.save('vektor.obj')
 
-        scene.add_geometry(cylinders)
+        scene.add_geometry(ball)
+        scene.add_geometry(ballz)
         scene.add_geometry(beams)
         scene.export("op.stl")
 
@@ -1078,7 +1085,7 @@ class object3d(polygon_operator):
         self.insert(tmpobj1) 
 
     ###############################################  
-    def prim_arrow(self, axis='y', pos=(0,0,0), rot=(0,0,0), vec3=None, size=1, pivot='obj'): 
+    def prim_arrow(self, axis='y', pos=(0,0,0), rot=(0,0,0), mat44=None, size=1, pivot='obj'): 
         """ fully 3D model of an arrow 
             will be used for visualizing vectors 
         """
@@ -1108,6 +1115,11 @@ class object3d(polygon_operator):
             tmpobj.extrude_face(0, distance=shaftlen)            
         else:
             tmpobj.extrude_face(0, distance=-shaftlen)
+
+        #experiment - seems close to working DEBUG 
+        if mat44 is not None: 
+            tmpobj*mat44 
+            tmpobj1*mat44 
 
         tmpobj1.insert(tmpobj)
         

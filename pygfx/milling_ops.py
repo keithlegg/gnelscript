@@ -576,6 +576,97 @@ class gcode_object(object3d):
                         #self.segments.append( [n_idx, [self.POSX, self.POSY, self.POSZ], comm ] )
 
 
+class cam_diskcache(object3d):
+    """
+      CAM_OP 
+      |  |
+      |  AXIS_(NEG_X)
+      |       | slice normal, slice origin 
+      |       | stock size 
+      |       |
+      |       NORMAL_STACK  
+      |          |
+      |          ortho_dist.obj 
+      |          ortho...
+    """    
+
+    def __init__(self):
+        super().__init__()  
+        self.folderpath = '' 
+        self.cache_name = '' 
+        self.meshname = '' 
+
+        self.heights = [] 
+        self.normals = [] # normal stack [depth, [ortho_dist, ortho_dist, ...], ... ]
+    
+    ##-----------------------##
+    def load_cache(self, project, file):
+        f = open('%s/%s'%(project,file), 'r')
+        for lc,line in enumerate(f):
+            if 'heights' in line:
+                print('heights!', line )
+
+
+    ##-----------------------##
+    def bake_preview(self, project):
+        
+        pass 
+
+        """        
+        #make a folder to store normals/orthos
+        normal_path = '%s/nrml_%s'%(path,hgt)
+        if os.path.exists(normal_path):
+        
+
+        nrml_cache = '%s_%s'%(name,hgt)
+
+        #save the normal slice obj  
+        obj2 = object3d() 
+        obj2.points = sortedpts 
+        obj2.polygons = [ply]    
+        obj2.save('%s/%s.obj'%(normal_path,nrml_cache))
+
+        newpathortho = '%s/ortho'%(normal_path)
+        if not os.path.exists(newpathortho):
+            os.makedirs(newpathortho)
+
+        distances = [.12,.14,.16,.18]
+        for dist in distances:
+            self.shapely_buffer( newpathortho, name, '%s/%s.obj'%(normal_path,nrml_cache), dist ) 
+            #shapely_buffer( path, name, inobj, distval)
+        
+        
+        #make a single object for viewing 
+        spl = infile.split('.')[0]
+        names = []
+        for h in heights:
+            names.append('%s/%s_nrml_%s.obj'%(path,spl,h))
+        obj = object3d() 
+        for n in names:
+            obj.load(n)
+        obj.save('previs.obj')    
+        """
+
+    ##-----------------------##
+    def rebuild(self):
+        txt = []
+
+        txt.append('path '+       self.folderpath  ) 
+        txt.append('cache '+      self.cache_name  ) 
+        txt.append('mesh '+       self.meshname    )   
+        txt.append('heights '+str(self.heights)    )    
+        txt.append('normmals '+str(self.normals)   )     
+
+        filename = '%s/%s_cache.txt'%(self.folderpath,self.cache_name)
+
+        print('## rebuilding disk cache %s'%filename )
+
+        with open(filename, 'w') as f:
+            for l in txt:
+                f.write("%s\n" % l)
+
+
+
 
 ##--------------------------------------------------------------------------##
 ##--------------------------------------------------------------------------##
@@ -1165,6 +1256,8 @@ class cam_op(cnc_op):
         super().__init__()  
         self.tesl = tessellator() 
         self.gcparser = gcode_object()
+        self.cam_dc = cam_diskcache()
+
 
     def obj_to_wkt(self):
         print(self.points)
@@ -1194,42 +1287,6 @@ class cam_op(cnc_op):
     #  #if you could get outline at a Z value - (and spiral) - you have working cam 
 
     ##-------------------------------## 
-    def shapely_buffer(self, path, name, inobj, bdists):
-        """ """
-        self.load('%s/%s'%(path,inobj) )
-        self.cvt_obj3d_grpoly()
-        self._sort() 
-        
-        export_previs = True  
-
-        #self.export_geojson_polygon(path, 'head.json') 
-        #self.export_geojson_lines(path, 'orig.json') 
-
-        geoms = self.cvt_grsort_shapely()
-        
-        if len(geoms)==0:
-            print('no geometry in buffer!!')
-        
-        names = []
-        if geoms:
-            for dist in bdists:
-                buff = buffer(geoms[0], dist, quad_segs=4)
-                bam = cam_op() 
-                bam.cvt_shapely_grsort(buff)
-                
-                #bam.export_geojson_polygon(path, 'buffr.json')
-                #bam.export_geojson_lines(path, '%s_%s_.json'%(name[0],dist))
-                bam.cvt_grsort_obj3d() 
-                bam.save('%s/%s_ortho_%s.obj'%(path,name,dist))
-                names.append('%s/%s_ortho_%s.obj'%(path,name,dist))
-
-        ##make a single object for viewing 
-        if export_previs:
-            obj = object3d() 
-            for n in names:
-                obj.load(n)
-            obj.save('previs_buffer.obj')  
-    
 
     ##-------------------------------## 
     def shapely_spiral(self, path, name, inobj, bdists):
@@ -1388,18 +1445,21 @@ class cam_op(cnc_op):
     ##-------------------------------## 
     def slice_multi( self, path , infile, heights):
 
-        EXPORT_OUTLINES = False  
-        EXPORT_POLYGON_OBJ = True  
-        
-        out_polys = [] 
-
         name = infile.split('.')[0]
         
         scan_axis ='z'
 
-        for hgt in heights:
+        #cache the mesh object
+        self.cam_dc.folderpath   = path
+        self.cam_dc.meshname     = infile
+        self.cam_dc.cache_name   = infile.split('.')[0] 
         
-            #mush more to figure out here 
+
+        for hgt in heights:
+            #cache the heights
+            self.cam_dc.heights.append(hgt)
+
+            #much more to figure out here 
             #negative values for height dont work, you need to flip the normal 
             #DEBUG not all points get sorted
             
@@ -1415,8 +1475,6 @@ class cam_op(cnc_op):
                 normal = vec3(0,0,-1)
                 origin = vec3(0,0,hgt)
 
-
-
             poly = self.tm_meshplane_test(origin, normal, path , infile)
              
             ########## 
@@ -1431,12 +1489,6 @@ class cam_op(cnc_op):
             print('# hgt %s sorted   : %s points '%(hgt, len(pts)   ) )
             print('# hgt %s face has : %s face ids '%(hgt, len(faces) ) )
             
-            if EXPORT_OUTLINES:
-                obj = object3d()
-                obj.points = pts 
-                obj.polygons = faces    
-                obj.save('%s/output_%s.obj'%(path,hgt)) 
-
             #convert 3d points to a dict() 
             d = dict()
             for i,pt in enumerate(poly):
@@ -1458,15 +1510,48 @@ class cam_op(cnc_op):
                     ply.append(i+1)
                 
                 #store so we can return the data   
-                out_polys.append(ply) 
+                #out_polys.append(ply) 
+                
+                #make a folder to store normals/orthos
+                normal_path = '%s/nrml_%s'%(path,hgt)
+                if not os.path.exists(normal_path):
+                    os.makedirs(normal_path)
 
-                if EXPORT_POLYGON_OBJ:
-                    obj2 = object3d() 
-                    obj2.points = sortedpts 
-                    obj2.polygons = [ply]    
-                    obj2.save('%s/%s_nrml_%s.obj'%(path,name,hgt))
+                nrml_cache = '%s_%s'%(name,hgt)
+
+                #save the normal slice obj  
+                obj2 = object3d() 
+                obj2.points = sortedpts 
+                obj2.polygons = [ply]    
+                obj2.save('%s/%s.obj'%(normal_path,nrml_cache))
         
-        return out_polys 
+
+                #now walk the orthos 
+                newpathortho = '%s/ortho'%(normal_path)
+                if not os.path.exists(newpathortho):
+                    os.makedirs(newpathortho)
+                distances = [.12,.14,.16,.18]
+
+                for distval in distances:
+                    print('#building ortho cache %s/%s'%(normal_path,nrml_cache))
+                    #self.shapely_buffer( newpathortho, name, '%s/%s.obj'%(normal_path,nrml_cache), distval ) 
+                    #shapely_buffer( path, name, inobj, distval)
+                    
+                    camobj = cam_op() 
+                    camobj.load('%s/%s.obj'%(normal_path,nrml_cache))
+                    camobj.cvt_obj3d_grpoly()
+                    camobj._sort() 
+                    geoms = camobj.cvt_grsort_shapely()
+                    if len(geoms)==0:
+                        print('no geometry in buffer!!')
+                    if geoms:
+                        buff = buffer(geoms[0], distval, quad_segs=4)
+                        k2 = cam_op() 
+                        k2.cvt_shapely_grsort(buff)
+                        k2.cvt_grsort_obj3d() 
+                        k2.save('%s/%s_%s.obj'%(newpathortho,name,distval))
+
+        self.cam_dc.rebuild()
 
     ##---------------------------------------------
     def tm_multiplane_test(self, heights, origin, normal, numdivs, path, infile, axis='y'):
