@@ -29,7 +29,7 @@ def calc_square_diag(self, tl, br):
 
 def calc_2d_square_pt(self, size, origin=None ):
 
-def calc_2d_bbox_pt(self, size, origin=None ):
+def calc_2d_bbox_pts(self, size, origin=None ):
 
 def calc_circle(self, pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
 

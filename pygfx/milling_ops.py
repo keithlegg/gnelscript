@@ -102,7 +102,7 @@ from gnelscript.pygfx.obj3d import object3d
 from gnelscript.pygfx.obj2d import object2d
 from gnelscript.pygfx.point_ops import *
 from gnelscript.pygfx.math_ops import *
-from gnelscript.pygfx.gis_vector_ops import *
+from gnelscript.pygfx.vector_ops import *
 from gnelscript.pygfx.grid_ops import tessellator
 
 #from pygfx.gcode.bridgeport import  parser_commands
@@ -578,16 +578,25 @@ class gcode_object(object3d):
 
 class cam_diskcache(object3d):
     """
-      CAM_OP 
-      |  |
-      |  AXIS_(NEG_X)
-      |       | slice normal, slice origin 
-      |       | stock size 
-      |       |
-      |       NORMAL_STACK  
-      |          |
-      |          ortho_dist.obj 
-      |          ortho...
+        PRJ_NAME  
+          |
+          |- TOOLS
+          |  |  
+          |  BITS 
+          |     - dia, length
+          |
+          |- stock size (extents ++)
+          |    copy of input mesh(es) 
+          |
+          |- prj.txt
+          |    world origin / cutting axis 
+          |    3d extents (aabb) 
+          |
+          CAM_OP 
+          |  |
+          |  AXIS_(NEG_X)
+          |       | slice normal, slice origin 
+          |       NORMAL_STACK  
     """    
 
     def __init__(self):
@@ -600,6 +609,38 @@ class cam_diskcache(object3d):
         self.normals = [] # normal stack [depth, [ortho_dist, ortho_dist, ...], ... ]
         self.orthos = [] 
 
+
+    ##-----------------------##
+    #def insert_normal(self, project, file):
+
+    ##-----------------------##
+    #def extent_fr_normal(self, project, file , zval=None):
+
+
+    ##-----------------------##
+    def extent_fr_normal(self, path, file):
+        #project, file , axis, zval=None
+
+        o = object3d()
+        o.load(file)
+        bbox = o.calc_3d_bbox()
+        return bbox
+
+
+    ##-----------------------##
+    def line_section_from_normal(self, project, file , axis, zval=None):
+        """ return an orthogonal line (two 3D points) 
+            that intersect with a polygon.  
+            assume a polygon is flat and axis-aligned 
+        """  
+        if axis=='x':
+            pass 
+        if axis=='y':
+            pass             
+        if axis=='z':
+            pass
+
+
     ##-----------------------##
     def load_cache(self, project, file):
         
@@ -607,24 +648,38 @@ class cam_diskcache(object3d):
 
         f = open('%s/%s'%(project,file), 'r')
         
-        heights = [] 
         orthos = []
 
         def clean(inp):
             return inp.replace(']','') 
+            return inp.replace('\n','') 
 
         for lc,line in enumerate(f):
+            #if 'normals' in line:
+
             if 'heights' in line:
                 for n in line.split('heights [')[1].split(','):
-                    heights.append(float(clean(n)))
-
+                    self.heights.append(float(clean(n)))
+                
             if 'orthos' in line:
                 for n in line.split('orthos [')[1].split(','):
                     orthos.append(float(clean(n)))
 
-        print(heights)
-        print(orthos)
+            if 'path' in line:
+                self.folderpath = clean(line.split(' ')[1]) 
+
+            if 'cache' in line:
+                self.cache_name = clean(line.split(' ')[1]) 
+
+            if 'mesh' in line:
+                self.meshname = clean(line.split(' ')[1])
+
+
+    ##-----------------------##
+    def build_preview(self, project, file):
         
+        self.load_cache(project, file) 
+            
         files = [] 
 
         include_orthos = False 
@@ -682,11 +737,17 @@ class cam_diskcache(object3d):
 
     ##-----------------------##
     def rebuild(self):
+        """
+            dump internal data into a textfile 
+            TODO - 
+                need a fetraure to insert normal/orthos and reorder 
+        """
+
         txt = []
 
-        txt.append('path '+       self.folderpath  ) 
-        txt.append('cache '+      self.cache_name  ) 
-        txt.append('mesh '+       self.meshname    )   
+        #txt.append('path '+       self.folderpath  ) 
+        #txt.append('cache '+      self.cache_name  ) 
+        #txt.append('mesh '+       self.meshname    )   
         txt.append('heights ' +str(self.heights)   )    
         txt.append('orthos '  +str(self.orthos)    ) 
         txt.append('normmals '+str(self.normals)   )     
@@ -1477,40 +1538,24 @@ class cam_op(cnc_op):
         return out 
 
     ##-------------------------------## 
-    def slice_multi( self, path , infile, heights, scan_axis ='z'):
-
-        name = infile.split('.')[0]
+    def slice_example( self, path, infile, heights, scan_axis ='z', reindex=True):
+        polygons = [] 
         
-        
-
-        #cache the mesh object
-        self.cam_dc.folderpath   = path
-        self.cam_dc.meshname     = infile
-        self.cam_dc.cache_name   = infile.split('.')[0] 
-        
-
         for hgt in heights:
-            #cache the heights
-            self.cam_dc.heights.append(hgt)
-
-            #much more to figure out here 
-            #negative values for height dont work, you need to flip the normal 
-            #DEBUG not all points get sorted
-            
             if scan_axis=='x':
                 normal = vec3(1  ,0 ,0 )
-                origin = vec3(hgt ,0 ,0 )
+                origin = vec3(hgt , 0,0 )
 
             if scan_axis=='y':            
                 normal = vec3(0, -1 ,0 )
-                origin = vec3(0, -hgt,0 )
+                origin = vec3(0, -hgt, 0 )
             
             if scan_axis=='z':         
                 normal = vec3(0,0,-1)
-                origin = vec3(0,0,hgt)
+                origin = vec3(0, 0, hgt)
 
             poly = self.tm_meshplane_test(origin, normal, path , infile)
-             
+
             ########## 
             pts   = [] 
             faces = []
@@ -1532,64 +1577,169 @@ class cam_op(cnc_op):
                 print('#no intersections found at depth %s, exiting.'%hgt)
                 return None 
 
-            if len(d) != 0:                
-                # run the sort 
-                pathids = self.sort_linesegs( len(d), 0, d[0], d )
+            if len(d) != 0:   
+                if reindex:             
+                    # run the sort 
+                    pathids = self.sort_linesegs( len(d), 0, d[0], d )
 
-                # build a sorted list 
-                sortedpts = []
-                ply =[]
-                for i,x in enumerate(pathids):
-                    sortedpts.append( d[x][0])
-                    ply.append(i+1)
-                
-                #store so we can return the data   
-                #out_polys.append(ply) 
-                
-                #make a folder to store normals/orthos
-                normal_path = '%s/nrml_%s'%(path,hgt)
-                if not os.path.exists(normal_path):
-                    os.makedirs(normal_path)
-
-                nrml_cache = '%s_%s'%(name,hgt)
-
-                #save the normal slice obj  
-                obj2 = object3d() 
-                obj2.points = sortedpts 
-                obj2.polygons = [ply]    
-                obj2.save('%s/%s.obj'%(normal_path,nrml_cache))
-        
-                #now walk the orthos 
-                newpathortho = '%s/ortho'%(normal_path)
-                if not os.path.exists(newpathortho):
-                    os.makedirs(newpathortho)
-
-
-                distances = [.3, .6, .9, 1.2]
-                self.cam_dc.orthos = distances
-
-
-
-                for distval in distances:
-                    print('#building ortho cache %s/%s'%(normal_path,nrml_cache))
-                    #self.shapely_buffer( newpathortho, name, '%s/%s.obj'%(normal_path,nrml_cache), distval ) 
-                    #shapely_buffer( path, name, inobj, distval)
+                    # build a sorted list 
+                    sortedpts = []
+                    ply =[]
+                    for i,x in enumerate(pathids):
+                        sortedpts.append( d[x][0])
+                        ply.append(i+1)
                     
-                    camobj = cam_op() 
-                    camobj.load('%s/%s.obj'%(normal_path,nrml_cache))
-                    camobj.cvt_obj3d_grpoly()
-                    camobj._sort() 
-                    geoms = camobj.cvt_grsort_shapely()
-                    if len(geoms)==0:
-                        print('no geometry in buffer!!')
-                    if geoms:
-                        buff = buffer(geoms[0], distval, quad_segs=4)
-                        k2 = cam_op() 
-                        k2.cvt_shapely_grsort(buff, zval=hgt)
-                        k2.cvt_grsort_obj3d() 
-                        k2.save('%s/%s_%s.obj'%(newpathortho,name,distval))
+                    polygons.append([ply, sortedpts])
+                
+                if not reindex:
+                    #warning this is a numpy array of 2X3D pts line segs!!
+                    #polygons.append( poly )
+                    
+                    pts =[] 
+                    ply =[]
+                    for i,x in enumerate(poly):
+                        pts.append( poly[i][0].tolist() )
+                        pts.append( poly[i][1].tolist() )
+                        ply.append( [i+1,i+2])
+                    
+                    polygons.append( [ply, pts]) 
 
-        self.cam_dc.rebuild()
+        return polygons
+                
+    ##-------------------------------## 
+    def batch_slicer( self, path , infile, heights, scan_axis ='z'):
+        """ interface to the experimental disk cache 
+        """
+
+        name = infile.split('.')[0]
+
+        cachefile = '%s/%s_cache.txt'%(path, infile.split('.')[0])
+        
+        if os.path.exists(cachefile):
+            print('\n\n\n\n## batch_slicer: cache files exists.. loading ')
+            self.cam_dc.load_cache(path, '%s_cache.txt'%(infile.split('.')[0]))
+            
+            #self.cam_dc.folderpath   = path
+            #self.cam_dc.meshname     = infile
+
+        else:
+            #cache the mesh object
+            self.cam_dc.folderpath   = path
+            self.cam_dc.meshname     = infile
+            self.cam_dc.cache_name   = infile.split('.')[0] 
+        
+        EXPORTED = 0 
+        
+        #DEBUG - pass these in 
+        orthodists = [.3, .6, .9, 1.2]
+
+
+        for hgt in heights:
+            print(self.cam_dc.heights)
+
+            if hgt in self.cam_dc.heights: 
+                print('\nbatch_slicer - height %s already exosts in cache - skipping \n\n'%(hgt))
+
+            if hgt not in self.cam_dc.heights: 
+                #cache the heights
+                self.cam_dc.heights.append(hgt)
+
+                #much more to figure out here 
+                #negative values for height dont work, you need to flip the normal 
+                #DEBUG not all points get sorted
+                
+                if scan_axis=='x':
+                    normal = vec3(1  ,0 ,0 )
+                    origin = vec3(hgt ,0 ,0 )
+
+                if scan_axis=='y':            
+                    normal = vec3(0, -1 ,0 )
+                    origin = vec3(0, -hgt,0 )
+                
+                if scan_axis=='z':         
+                    normal = vec3(0,0,-1)
+                    origin = vec3(0,0,hgt)
+
+                poly = self.tm_meshplane_test(origin, normal, path , infile)
+                 
+                ########## 
+                pts   = [] 
+                faces = []
+                for i,pt in enumerate(poly): 
+                    pts.append(tuple(pt[0]))
+                    pts.append(tuple(pt[1]))
+                for f in range(0,len(pts),2):
+                    faces.append([f+1,f+2])
+
+                print('# hgt %s sorted   : %s points '%(hgt, len(pts)   ) )
+                print('# hgt %s face has : %s face ids '%(hgt, len(faces) ) )
+                
+                #convert 3d points to a dict() 
+                d = dict()
+                for i,pt in enumerate(poly):
+                    d[i] = [tuple(pt[0]),tuple(pt[1])]
+
+                if len(d) == 0:
+                    print('#no intersections found at depth %s, exiting.'%hgt)
+                    return None 
+
+                if len(d) != 0:                
+                    # run the sort 
+                    pathids = self.sort_linesegs( len(d), 0, d[0], d )
+
+                    # build a sorted list 
+                    sortedpts = []
+                    ply =[]
+                    for i,x in enumerate(pathids):
+                        sortedpts.append( d[x][0])
+                        ply.append(i+1)
+                    
+                    #store so we can return the data   
+                    #out_polys.append(ply) 
+                    
+                    #make a folder to store normals/orthos
+                    normal_path = '%s/nrml_%s'%(path,hgt)
+                    if not os.path.exists(normal_path):
+                        os.makedirs(normal_path)
+
+                    nrml_cache = '%s_%s'%(name,hgt)
+
+                    #save the normal slice obj  
+                    obj2 = object3d() 
+                    obj2.points = sortedpts 
+                    obj2.polygons = [ply]    
+                    obj2.save('%s/%s.obj'%(normal_path,nrml_cache))
+            
+                    #now walk the orthos 
+                    newpathortho = '%s/ortho'%(normal_path)
+                    if not os.path.exists(newpathortho):
+                        os.makedirs(newpathortho)
+
+                    self.cam_dc.orthos = orthodists
+
+                    for distval in orthodists:
+                        print('#building ortho cache %s/%s'%(normal_path,nrml_cache))
+                        #self.shapely_buffer( newpathortho, name, '%s/%s.obj'%(normal_path,nrml_cache), distval ) 
+                        #shapely_buffer( path, name, inobj, distval)
+                        
+                        camobj = cam_op() 
+                        camobj.load('%s/%s.obj'%(normal_path,nrml_cache))
+                        camobj.cvt_obj3d_grpoly()
+                        camobj._sort() 
+                        geoms = camobj.cvt_grsort_shapely()
+                        if len(geoms)==0:
+                            print('no geometry in buffer!!')
+                        if geoms:
+                            buff = buffer(geoms[0], distval, quad_segs=4)
+                            k2 = cam_op() 
+                            k2.cvt_shapely_grsort(buff, zval=hgt)
+                            k2.cvt_grsort_obj3d() 
+                            k2.save('%s/%s_%s.obj'%(newpathortho,name,distval))
+                EXPORTED+=0
+
+        #only rebuild disk cache if anything changed 
+        if EXPORTED:
+            self.cam_dc.rebuild()
 
     ##---------------------------------------------
     def tm_multiplane_test(self, heights, origin, normal, numdivs, path, infile, axis='y'):

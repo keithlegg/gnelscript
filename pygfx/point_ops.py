@@ -787,7 +787,7 @@ class pop3d(object):
         return out
 
     ##-------------------------------------------##    
-    def calc_2d_bbox_pt(self, size, origin=None ):
+    def calc_2d_bbox_pts(self, size, origin=None ):
         """ 
             BBOX is 2D on Z axis 
 

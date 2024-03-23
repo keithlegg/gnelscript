@@ -1910,14 +1910,17 @@ class polygon_operator(pop3d):
 
         for i,pt in enumerate(self.points):
             
+            if type(pt)==int:
+                self._scribe("pt data is bad - likely a badly nested array\n\n\n" )
+
             if pt is None:
-                self._scribe("pt idx %s is None"%i )
+                self._scribe("pt idx %s is None\n\n\n"%i )
 
             elif type(pt)==vec3:
                 fix.append( (pt.x, pt.y, pt.z) )
 
             elif len(pt)==0:
-                self._scribe('found bad data - empty vertex')
+                self._scribe('found bad data - empty vertex\n\n\n')
              
             #CASE     
             #elif len(pt)==0:
@@ -2096,10 +2099,7 @@ class polygon_operator(pop3d):
 
         buf = [] #array of strings to be written out as the OBJ file
 
-        buf.append("# Created by Magic Mirror render toy.")
-        buf.append("# Keith Legg - December 2015.")        
-        buf.append("# version2   - November 2018.\n")
-
+        buf.append("# https://github.com/keithlegg/gnelscript")
         buf.append('\n# Define the vertices')
 
         #DEBUG - PUT MORE ERROR CHECKING ON VERTS, I HAD SOME BAD DATA GET THROUGH 

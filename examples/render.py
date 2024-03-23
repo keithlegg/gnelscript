@@ -15,7 +15,7 @@ if NUMPY_IS_LOADED:
     from gnelscript.tools.raytrace import  *
 
 
-from gnelscript.pygfx.gis_vector_ops import *
+from gnelscript.pygfx.vector_ops import *
 
 
 

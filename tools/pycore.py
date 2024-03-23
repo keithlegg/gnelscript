@@ -8,7 +8,7 @@ from gnelscript.pygfx.point_ops import *
 from gnelscript.pygfx.obj3d import  *
 from gnelscript.pygfx.render import *
 
-#from gnelscript.pygfx.gis_vector_ops import *
+#from gnelscript.pygfx.vector_ops import *
 
 # from gnelscript.pygfx.kicad_ops import * 
 # from gnelscript.pygfx.milling_ops import * 
