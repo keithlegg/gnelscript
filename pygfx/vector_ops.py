@@ -900,7 +900,7 @@ class vectorflow(object3d):
     def gl_extents(self):
         """ global 2D/3D extents 
 
-            we only work on gr_sort - gr_poly is a copy pf the orignial data
+            we only work on gr_sort - gr_poly is a copy of the orignial data
 
             if you run sort() - it automatically sets extents while it is sorting  
             if you want to re-run, use this 
@@ -1022,7 +1022,7 @@ class vectorflow(object3d):
     def get_extents_poly(self, zheight=0.0):
 
         self.gl_extents()
-        
+         
         width  = abs(self.sort_maxx - self.sort_minx) 
         height = abs(self.sort_maxy - self.sort_miny)   
         center = ( self.sort_maxx-(width/2), self.sort_maxy-(height/2) )
@@ -1058,6 +1058,11 @@ class vectorflow(object3d):
         if type=='laser_ngc':
             xx.export_ngc(1, 0, .1, 2, '%s/%s_extents.ngc'%(folder,name), do_laser=True, do3d=False, do_retracts=False)
 
+        if type=='plot_ngc':
+            xx.export_ngc(1, 0, .1, 2, '%s/%s_extents.ngc'%(folder,name), do_laser=True, do3d=False, do_retracts=False, do_gpio=0)
+
+
+
     ##-------------------------------------------## 
     def gl_move_extents_corner(self, which='tl'):
         """
@@ -1077,9 +1082,6 @@ class vectorflow(object3d):
 
         self.gl_translate(shift[0], shift[1], 0)
     
-
-         
-
     
     ##-------------------------------------------## 
     def gl_rotate(self, amt):
@@ -1319,7 +1321,7 @@ class vectorflow(object3d):
         self.outfile.append('m2') #program end
 
     ##-------------------------------##
-    def _calculate_paths2d(self, do_laser=False, do_retracts=True, laserpwm=300, doround=True):
+    def _calculate_paths2d(self, do_retracts=True, laserpwm=300, do_laser=False, do_gpio=False):
         """ 
             SIMPLE SAUCE CAM PROGRAM 
 
@@ -1353,6 +1355,7 @@ class vectorflow(object3d):
 
         """
 
+        doround = True
         pl = 6 #numeric rounding places
         lastpt = (0,0,0)
 
@@ -1371,7 +1374,10 @@ class vectorflow(object3d):
 
         if do_retracts:
             self.outfile.append('g0z%s'% ( self.rh ) )  #retract in between cuts
+        
    
+ 
+
         ##-----------------------------------------##
         self.outfile.append('  ')
         self.outfile.append('(exporting filled polygons )')
@@ -1459,7 +1465,12 @@ class vectorflow(object3d):
                     self.outfile.append('x%s y%s z%s'% (  pt1[0] , pt1[1], self.ch ) )               
                     self.ngc_to_obj.append( ( pt1[0], pt1[1], self.ch ) )             
 
-                
+
+                #do_gpio is both the boolean and the value 
+                if do_gpio is not False:
+                    #self.outfile.append('M64 P%s'% ( do_gpio ) ) #pen up/ pen down 
+                    self.outfile.append('M65 P%s'% ( do_gpio ) ) #pen up/ pen down 
+
                 ##draw the polygons   
                 if do_laser:
                     #laser on
@@ -1470,13 +1481,19 @@ class vectorflow(object3d):
                     self.outfile.append( 'x%s y%s z%s'%( pt[0], pt[1], self.ch ) )
                     self.ngc_to_obj.append( (pt[0], pt[1], self.ch) )                   
                 
- 
+                
+                ## end cycle
+
+                # laser off
                 if do_laser:
                     self.outfile.append( 'M5 S0' )
-                # move to last point at CH  
-                #self.ngc_to_obj.append( (gr_poly[0][0], gr_poly[0][1], self.ch))   
-                #self.outfile.append( 'x%s y%s z%s'%( (gr_poly[0][0], gr_poly[0][1], self.ch) ) )
+                
+                # digital GPIO pin off 
+                if do_gpio is not False:
+                    #self.outfile.append('M65 P%s'% ( do_gpio ) ) #pen up/ pen down  
+                    self.outfile.append('M64 P%s'% ( do_gpio ) ) #pen up/ pen down 
 
+                # retract the head 
                 if do_retracts and not do_laser:
                     self.outfile.append( 'G0' )  
                     self.ngc_to_obj.append( (gr_poly[0][0], gr_poly[0][1], self.ch)  )
@@ -1497,67 +1514,78 @@ class vectorflow(object3d):
 
     ##-------------------------------##     
     ##-------------------------------##
+    
     if GEOJSON_IS_LOADED:
-        #def export_geojson_multiline(self, folder, name ):
+        def _export_gjson_poly(self):
+            pass
 
-        def export_geojson_lines(self, folder, name, periodic=False):
-            # export all loaded polygons in gr_sort buffer as a single geojson polyline 
-            features = []
 
-            #[[id, centroid, extents, len, points ]]
-            for i,s in enumerate(self.gr_sort):
+    if SHAPELY_IS_LOADED:
+        def _export_shply_poly(self):
+            pass
 
-                #make periodic - add the first point to the end 
-                if periodic:
-                    s[4].append(s[4][0])
 
-                # [[id, centroid, extents, len, points ]]   
-                features.append(gjftr(geometry=gjln(coordinates=s[4]), 
-                                     properties={"id" : i 
-                                                }
-                                     ) 
-                             )
 
-            feature_collection = gjfc(features)
-            filename= '%s/%s'%(folder,name)
-            print('## EXPORTING file %s'%filename)
+    def export_geojson_lines(self, folder, name, periodic=False):
+        # export all loaded polygons in gr_sort buffer as a single geojson polyline 
+        features = []
 
-            with open(filename, 'w') as f:
-                dump(feature_collection, f)
+        #[[id, centroid, extents, len, points ]]
+        for i,s in enumerate(self.gr_sort):
+
+            #make periodic - add the first point to the end 
+            if periodic:
+                s[4].append(s[4][0])
+            
+            #print(s[4])
+
+            # [[id, centroid, extents, len, points ]]   
+            features.append(gjftr(geometry=gjln(coordinates=s[4]), 
+                                 properties={"id" : i 
+                                            }
+                                 ) 
+                         )
+
+        feature_collection = gjfc(features)
+        filename= '%s/%s'%(folder,name)
+        print('## EXPORTING file %s'%filename)
+
+        with open(filename, 'w') as f:
+            dump(feature_collection, f)
 
     ##-------------------------------##
-        def export_geojson_polygon(self, folder, name):
-            """
-            DEBUG - WIP 
-            DEBUG - this is mixing shapely objects with GEOJSON objects 
-                the entire toolchain needs a rethink about geometry types - uhhhg 
+    def export_geojson_polygon(self, folder, name):
+        """
+        DEBUG - WIP 
+        DEBUG - this is mixing shapely objects with GEOJSON objects 
+            the entire toolchain needs a rethink about geometry types - uhhhg 
 
-                types are: Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon
+            types are: Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon
 
-            # export all loaded polygons in gr_sort buffer as a geojson polyline 
-            """
+        # export all loaded polygons in gr_sort buffer as a geojson polyline 
+        """
 
-            features = []
+        features = []
 
-            # >>> Polygon([[(2.38, 57.322), (23.194, -20.28), (-120.43, 19.15), (2.38,   57.322)]])  
-            # {"coordinates": [[[2.3..., 57.32...], [23.19..., -20.2...], [-120.4..., 19.1...]]], "type": "Polygon"}
+        # >>> Polygon([[(2.38, 57.322), (23.194, -20.28), (-120.43, 19.15), (2.38,   57.322)]])  
+        # {"coordinates": [[[2.3..., 57.32...], [23.19..., -20.2...], [-120.4..., 19.1...]]], "type": "Polygon"}
 
-            #[[id, centroid, extents, len, points ]]
-            for i,s in enumerate(self.gr_sort):
-                # [[id, centroid, extents, len, points ]]   
-                #features.append(gjftr(geometry=shp_ply(self.cvt_3d_to_2d(s[4])), 
-                features.append(gjftr(geometry=gjply(s[4]), 
-                                     properties={"id" : i 
-                                                }
-                                     ) 
-                             )
+        #[[id, centroid, extents, len, points ]]
+        for i,s in enumerate(self.gr_sort):
+            # [[id, centroid, extents, len, points ]]   
+            #features.append(gjftr(geometry=shp_ply(self.cvt_3d_to_2d(s[4])), 
+            features.append(gjftr(geometry=gjply([s[4]]), 
+                                 properties={"id" : i 
+                                            }
+                                 ) 
+                         )
 
-            feature_collection = gjfc(features)
-            filename= '%s/%s'%(folder,name)
-            print('## EXPORTING file %s'%filename)
+        feature_collection = gjfc(features)
+        filename= '%s/%s'%(folder,name)
+        print('## EXPORTING file %s'%filename)
 
-            with open(filename, 'w') as f:
-                dump(feature_collection, f)
+        with open(filename, 'w') as f:
+            dump(feature_collection, f)
 
     ##-------------------------------##
     def export_grid_gfx(self, name, folder , borders=True, centroids=True):
@@ -2085,7 +2113,7 @@ class vectorflow(object3d):
         print("loaded %s polygons from %s "%(plyidx, inputfile)) 
 
     ##-------------------------------##
-    def export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False, do_retracts=True, do_laser=False, laserpwm=400):
+    def export_ngc(self, rh, ch, cdpi, cmax, filename, do3d=False, do_retracts=True, do_laser=False, laserpwm=400,  do_gpio=False):
         """ rh         - retract height  
             ch         - cut height 
             cdpi       - cut depth per iteration 
@@ -2108,7 +2136,7 @@ class vectorflow(object3d):
             print("## WARNING ## 3D export is not working yet")
             self._calculate_paths3d(do_laser=do_laser, do_retracts=do_retracts)
         else:
-            self._calculate_paths2d(do_laser=do_laser, do_retracts=do_retracts,laserpwm=laserpwm)
+            self._calculate_paths2d(do_laser=do_laser, do_retracts=do_retracts,laserpwm=laserpwm, do_gpio=do_gpio)
         
         print("gr_sort buffer has %s polys in it. "%(len(self.gr_sort)))
         fobj = open( filename,"w") #encoding='utf-8'

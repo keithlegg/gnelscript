@@ -6,11 +6,131 @@ from gnelscript.pygfx.milling_ops import *
 
 
 
+##------------------------------------##
+
+
+
+def viz_pt_order(): 
+    o2 = object3d() 
+    
+    #o2.load('3d_obj/sphere2.obj')
+
+    o2.prim_triangle(axis='x')
+    o2.save('prim.obj')
+
+    obj = object3d()
+    obj.vec_connect_pts( pts = o2.points)
+
+ 
+
+#viz_pt_order()
+
+
+##----------------------------------------##
+def run_batch(path, infile, heights):
+    cop = cam_op()
+    polys = cop.batch_slicer(path, infile , heights, scan_axis ='z')
+
+##----------------------------------------##
+def run_slices(path, infile, heights):
+    cop = cam_op()
+    polys = cop.slice_multi(path , infile, heights, scan_axis ='z')
+
+    print(len(polys))
+
+##----------------------------------------##
+
+def json_to_ngc(path, name):
+    vflo = vectorflow()
+    vflo.load_geojson('%s/%s.json'%(path,name))
+    vflo.gl_scale(.5)
+    vflo.export_extents_ngc(path, 'warp')
+    vflo.export_ngc(.3, 0, .1, 2, '%s/%s.ngc'%(path,name),  do3d=False, do_retracts=True)
+
+#def export_ngc( rh, ch, cdpi, cmax, filename, do3d=False, do_retracts=True, do_laser=False, laserpwm=400):
+
+#vector_render_3dobj(GLOBAL_PROJ, 'spacetime.obj', 'spacetime')
 
 
 
 ##----------------------------------------##
+def resize_export():
+    vflo = vectorflow() 
+    vflo.load_geojson('%s/nixe.json'%GLOBAL_PROJ) 
 
+    #flip because my machine uses bottom RIGHT origin
+    vflo.gl_scale([-1,1,1])
+
+    #move from center to all positive  
+    vflo.gl_move_extents_corner(which='bl')
+
+    #resize a bit more 
+    #sx,sy = vflo.machine_size(scale=.8)
+    vflo.gl_scale([5,5,1])
+
+    vflo.export_extents_ngc(GLOBAL_PROJ, 'nixe')
+    vflo.export_ngc(1, 0, .1, 2, '%s/nixe.ngc'%(GLOBAL_PROJ), do_laser=True, do3d=False, do_retracts=False, laserpwm=600)
+
+#resize_export()
+
+
+
+##------------------------------------##
+
+
+def toymesh(path, infile):
+    cop = cam_op()
+    
+    #obj = object3d() 
+    #obj.load('%s/%s'%(path,infile))
+    
+    #mesh = trimesh.load_mesh(path+'/'+infile) 
+    #b = mesh.facets_boundary
+
+    print(b)
+
+
+
+    #bp = cop.boundary(mesh)
+
+    #print(bp)
+
+    #tm = tm_pop3()
+    #tm.load('%s/%s'%(path,'/3d_obj/sphere.obj') )
+
+
+
+
+##----------------------------------------##
+##----------------------------------------##
+
+
+def simple_slicer(path):
+    cop = cam_op()
+    heights = [4,5,6]
+    #normal=[0,1,0] 
+    #origin=[0,0,0]
+
+    poly = cop.slice_example( path , '3d_obj/head.obj', heights, scan_axis ='y' )
+    for i,p in enumerate(poly):
+        obj = object3d()
+        obj.polygons=[p[0]]
+        obj.points=p[1]
+        obj.save('orthosect_%s.obj'%i)
+
+
+#PROJPATH = GLOBAL_PROJ+'/project'
+#heights = [float(x/10.0) for x in range(10, 30, 5)]
+#run_batch(PROJPATH, '/head.obj', heights )
+
+
+
+##----------------------------------------##
+##----------------------------------------##
+
+
+##----------------------------------------##
+##----------------------------------------##
 
 def intersect_hemisphere( path , infile, heights):
     DEBUG_OUTLINES = False  

@@ -498,6 +498,38 @@ def redraw(  infolder, colorbg_file, lineweight, bluramt, brightamt, blacklines=
     final = Image.composite(colorbg, allblack, alledges) 
     final.save("%s/cartoon.bmp"%(infolder))
 
+
+##----------------------------------------------------
+##----------------------------------------------------
+##----------------------------------------------------
+##----------------------------------------------------
+
+
+def make_rect(path, name): 
+    vflo = vectorflow()
+    vflo.prim_rect(axis='z', sizex=2, sizey=2, sizez=1)
+    vflo.cvt_obj3d_grpoly()
+    vflo.export_geojson_polygon(path, '%sply.json'%name)
+    vflo.export_geojson_lines(path, '%slin.json'%name)
+
+#make_rect(GLOBAL_PROJ, 'quad')
+
+
+
+def move_json(path, name): 
+    vflo = vectorflow()
+    vflo.load_geojson('%s/%s.json'%(path,name))
+    #vflo.gl_translate(0,-.3,0)
+    #vflo.gl_scale([.9,.9,.9])
+    vflo.export_geojson_polygon(path, '%s.json'%name)
+
+
+#move_json(GLOBAL_PROJ, 'spacewarp')
+
+
+
+
+
 ##----------------------------------------------------
 def geojson_to_ngc(folder, fnames, onefile=False):
     kiparser = vectorflow()
@@ -843,9 +875,11 @@ def iso_flat_render(folder, rotation, objfile, outjson):
     #vflo.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(folder, 'vvvxxbef'), do3d=False, do_retracts=False)
     #vflo.export_sorted_extents(folder,'vvvxxbef.json')
     #vflo.export_sorted_centroids(folder, 'centers.json')
-    #vflo.export_geojson_lines(folder, 'vvvxxbef.json', periodic=False)
     
+    vflo.export_geojson_lines(  folder, '_extents.json', periodic=False)
     vflo.export_geojson_polygon(folder, outjson)
+
+
 
 
 def vector_render_3dobj(folder, objname, outngc):
@@ -1122,8 +1156,12 @@ def load_gcode(basepath, path, name):
     #vflo.save('%s/%s.obj'%(basepath, name) )
 
 
+
 ##----------------------------------------------------
 
+
+
+##----------------------------------------------------
 def kicad_to_json(path, infile, outfile):
     vflo = vectorflow()
     pcb = pcbfile()
@@ -1145,6 +1183,30 @@ def kicad_to_json(path, infile, outfile):
     vflo.export_geojson_polygon(path, outfile)
 
 
+
+##----------------------------------------------------
+
+def test_plotter(path, infile, outfile):
+    vec = vectorflow()
+    vec.load_geojson(path+'/'+infile)
+    
+    vec.gl_scale(4)
+
+    #name = infile.split('.')
+
+    #DEBUG extents is not scaling!! grr 
+    #print(vec.gl_extents())
+    vec.export_extents_ngc(path , outfile, type='plot_ngc')
+
+    #vec.export_geojson_polygon()
+
+    #self,       rh,ch,cdpi,cmax, filename, do3d=False, do_retracts=True, do_laser=False, laserpwm=400):
+    vec.export_ngc(0,0,0, 0, filename='%s/%s.ngc'%(path,outfile), do3d=False, do_retracts=True, do_laser=False, laserpwm=400 ,  do_gpio=0)
+
+
+
+
+##----------------------------------------------------
 ##----------------------------------------------------
 
 
@@ -1182,6 +1244,9 @@ def recursive_spiral(basepath):
     vflo.cvt_obj3d_grpoly()
     #vflo.export_geojson_polygon(basepath, 'spiral.json')
     vflo.export_geojson_lines(basepath, 'spiral.json') 
+
+
+
 
 
 
