@@ -1686,6 +1686,8 @@ class matrix33(object):
     def from_euler(self, rotation):
         """
             derived from the rotate_pts_3d function 
+            input in degrees 
+            
         """
 
         xrot = rotation[0]

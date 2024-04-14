@@ -198,6 +198,54 @@ class pop3d(object):
     #def get_edge_centroid(self, f_id , e_id):
     #    pass
 
+
+    ##-------------------------------------------##
+    def copy_rotate(self, points, pos=None, num=4, axis='y'):
+        """DEBUG UNTESTED 
+           for tesselating 
+           take a group of points - duplicate them, apply a rotation and repeat 
+       
+        """
+
+        out = [] 
+
+        tmp =[] 
+        
+        num=num+1 
+        
+        angle = 360/num 
+
+        for i in range(num):
+            tmp = points 
+            
+            m33= matrix33()
+
+            if axis=='x':
+                m33.from_euler([angle*i,0       ,0])
+            if axis=='y':
+                m33.from_euler([0      ,angle*i ,0])
+            if axis=='z':
+                m33.from_euler([0      ,0       ,angle*i])
+
+            tmp = self.apply_matrix_pts(pts=points, m33=m33)
+            
+            #optional move  
+            if pos is not None:
+                #tmp = self.trs_points(out, translate=pos) 
+
+                tmp2 = []
+                for pt in tmp: 
+                    x = pt[0] + pos[0]
+                    y = pt[1] + pos[1]
+                    z = pt[2] + pos[2]
+                    tmp2.append( (x,y,z) )
+                out.extend(tmp2)
+
+            
+
+        return out 
+
+
     ##-------------------------------------------## 
     def pt_in(self, pt, pts):
         for sample in pts:
@@ -205,6 +253,12 @@ class pop3d(object):
                 return True 
         return False            
 
+
+    #def pt_is_close(self, pt, pts):
+    #   check to see if points are near each other 
+
+
+    ##-------------------------------------------## 
     def get_pt_extreme(self, pts, mode='idx'):
         """ 
             get the farthest extents of a point group 

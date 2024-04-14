@@ -141,6 +141,25 @@ class vectorflow(object3d):
 
 
     ##-------------------------------##
+    def clip_by_location(self, location, dist ):
+        """DEBUG - NOT DONE YET 
+           iterate polygons - return on the polygons near a location specified  
+           by a 2D point and a distance  
+        """
+        out = [] 
+
+        #append([idx , cen, bbox, len(points), points])
+
+        for poly in self.gr_sort:
+            #distance = self.
+            print(poly[1])
+
+
+        return out  
+
+
+
+    ##-------------------------------##
     ##-------------------------------##
 
     ##-------------------------------##
@@ -273,21 +292,41 @@ class vectorflow(object3d):
 
         """
 
-    ##-------------------------------##        
-    # def reindex_contiguous_segs (self, linesegs ):
-    #     """ repair the messy trimesh plane geom 
-    #         linesegs = list of list of line segments
-    #                    only works if all segments are "watertight"  
-    #     """
-    #     fixed = [] 
-    #     for seg in linesegs: 
-    #         print(seg)
 
 
     ##-------------------------------##
     ##-------------------------------##
-    #def scale_to_unit(self, inunits='mm', outunits='mm'):
+    #def gl_scale_to_unit(self, inunits='mm', outunits='mm'):
     #    pass
+    
+    ##-------------------------------------------## 
+    #@property
+    def gl_size_3d(self):
+        #return 3 floats, X,Y,Z size 
+
+        self.gl_extents()
+         
+        width  = abs(self.sort_maxx - self.sort_minx) 
+        height = abs(self.sort_maxy - self.sort_miny)   
+        depth  = abs(self.sort_maxz - self.sort_minz) 
+
+        return [width, height, depth]
+
+
+    ##-------------------------------##
+
+
+    ##-------------------------------##
+
+
+    ##-------------------------------##
+    def gl_scale_to_fit(self, xmax, ymax, zmax=None):
+        size = self.gl_size_3d()
+        
+        ratio_x = xmax/size[0]
+        ratio_y = ymax/size[1]
+        #ratio_z = zmax/size[2]
+        return [ratio_x, ratio_y]
 
 
     ##-------------------------------##
@@ -641,7 +680,9 @@ class vectorflow(object3d):
 
     ##-------------------------------##
     def build_tesselation_sample(self):
-        """ DAG + point generator = tesselator """
+        """ DAG + point generator = tesselator 
+        """
+
         print('# generating sample data from tesselator nodes')
         if len(self.tesl.nodes)==0:
             print('# error - no nodes in tesselator: exiting')
@@ -663,31 +704,122 @@ class vectorflow(object3d):
             #pts = self.pop2d.calc_circle_2d(cen[0],cen[1], .01, periodic=True, spokes=3)
             #cell.points.extend( pts )
 
-            #if you connect the midpoint of edges, it subdivides 
-            #cell.points.extend( [e1m,e3m] )
-            #cell.points.extend( [e2m,e4m] )
+            ## if you connect the midpoint of edges, it subdivides 
+            # cell.points.extend( [e1m,e3m] )
+            # cell.points.extend( [e2m,e4m] )
 
-            #lines radiating from center are basically a 2nd order divison 
+            ## lines radiating from center are basically a 2nd order divison 
+            # cell.points.extend( [cen, e1m] )
+            # cell.points.extend( [cen, e2m] )
+            # cell.points.extend( [cen, e3m] )
+            # cell.points.extend( [cen, e4m] )                        
+            
+            #this makes a quad diagonal inside the original 
+            #cell.points.extend( [e1m, e2m, e3m, e4m] ) 
+            cell.points = ( [e1m, e2m, e3m, e4m] ) 
+
+
+    ##-------------------------------##
+    def build_tesselation_test2(self):
+
+        print('# generating sample data from tesselator nodes')
+        if len(self.tesl.nodes)==0:
+            print('# error - no nodes in tesselator: exiting')
+            return None 
+
+        for cell in self.tesl.nodes:
+            e1m = cell.getattrib('e1mid')[0]
+            e2m = cell.getattrib('e2mid')[0]
+            e3m = cell.getattrib('e3mid')[0]
+            e4m = cell.getattrib('e4mid')[0]
+
+            cell_width  = cell.getattrib('width')
+            cell_height = cell.getattrib('height')
+       
+            
+            #print('################')
+            #print(cell_width)
+            #print(cell_width)
+
+            #BBOX center - not quite accurate, use the projected center below
+            #cen = cell.getattrib('centroid') 
+            tmp = vec2() 
+            cen = tmp.intersect_2d_from_3D([e1m,e3m], [e2m,e4m])
+
+            ########################################
+
+            # #copy rotate == tesselate 
+            pts = [(-.1,.7,0), (.1,.7,0), (.1,-.7,0), (-.1,-.7,0)]
+            #cell.points.extend( pts )
+
+            # #newpts = self.pop3d.copy_rotate( points=pts,  pos=[cen[0],cen[1],0], num=10, axis='z')
+            newpts = self.pop3d.copy_rotate( points=pts,  pos=[cen[0],cen[1],0], num=3, axis='z')
+            print(newpts)
+
+            cell.points.extend( newpts )
+            
+
+
+
+            ########################################
+
+            #mark the center with a shape (debug need to use multipolygon instead of linetype )
+            #pts = self.pop2d.calc_circle_2d(cen[0],cen[1], .01, periodic=True, spokes=3)
+            #cell.points.extend( pts )
+
+            ## if you connect the midpoint of edges, it subdivides 
+            # cell.points.extend( [e1m,e3m] )
+            # cell.points.extend( [e2m,e4m] )
+
+            ## lines radiating from center are basically a 2nd order divison 
             #cell.points.extend( [cen, e1m] )
             #cell.points.extend( [cen, e2m] )
             #cell.points.extend( [cen, e3m] )
             #cell.points.extend( [cen, e4m] )                        
             
-            #this makes a quad diagonal inside the original 
-            cell.points.extend( [e1m, e2m, e3m, e4m] ) 
+
+            #cell.points = ( [e1m, e2m, e3m, e4m] ) 
 
     ##-------------------------------##
-    def render_cells(self):
-        """ bake the points stored in each node into the points to be dumped to a file 
+    def get_cells_pts(self):
+        """ bake the points stored in each node into the points into an array 
         """
+
+        out = [] 
 
         for i,cell in enumerate(self.tesl.nodes):
             #cen = cell.getattrib('centroid')
             if cell.points:
-                self.gr_polys.append(self.cvt_2d_to_3d(cell.points))
+                out.append(self.cvt_2d_to_3d(cell.points))
+        
+        return out 
+
+    ##-------------------------------##
+    def cvt_tessl_grsort(self):
+        """
+        render_cells - bake the points stored in each node into the points to be dumped to a file 
+        """
+        
+        #DEBUG do this instead 
+        cells = self.get_cells_pts()
+        
+        for cell in cells:
+            self.gr_polys.append(cell)
+
         
         self._sort()
  
+
+    ##-------------------------------##
+    def get_all_cell_as_pts(self):
+        out = [] 
+
+        for i,cell in enumerate(self.tesl.nodes):
+            #DEBUG - should centroid be position? more flexible if not 
+            out.append(cell.getattrib('centroid'))
+
+        return out 
+
 
     ##-------------------------------##
     def draw_dots_2d(self, dia, spokes, holes):
@@ -1040,6 +1172,7 @@ class vectorflow(object3d):
         return [tl,tr,br,bl,tl]
 
 
+    ##-------------------------------------------##
     def gl_bbox(self):
         return self.cvt_3d_to_2d(self.get_extents_poly())
 
@@ -1547,7 +1680,7 @@ class vectorflow(object3d):
                          )
 
         feature_collection = gjfc(features)
-        filename= '%s/%s'%(folder,name)
+        filename= '%s/%s_lin.json'%(folder,name)
         print('## EXPORTING file %s'%filename)
 
         with open(filename, 'w') as f:
@@ -1581,7 +1714,7 @@ class vectorflow(object3d):
                          )
 
         feature_collection = gjfc(features)
-        filename= '%s/%s'%(folder,name)
+        filename= '%s/%s_ply.json'%(folder,name)
         print('## EXPORTING file %s'%filename)
 
         with open(filename, 'w') as f:
@@ -1664,13 +1797,17 @@ class vectorflow(object3d):
         for i,s in enumerate(self.gr_sort):
             #               [[id, centroid, extents, len, points ]] 
             xtn = s[2] 
-            
             width = abs(xtn[2]-xtn[0])
             height = abs(xtn[3]-xtn[1])
 
+            
+            #print('######################## ', len(s[4]) )
+
+
             #fancy filtering based on polygons 
-            #does it have 4 sides? 5== peridoic 4 pts 
-            if(len(s[4])==5): 
+            #does it have 4 sides? 5== periodic 4 pts 
+            #DEBUG - if 5 make sure start pt == end pt 
+            if len(s[4])==4 or len(s[4])==5: 
                 
                 ## helper function - easier but limited 
                 #self.tesl.new_cell_2d('ply_%s'%i, width,height, i,0,0, s[1][0],s[1][1],zdepth ) 
@@ -1685,7 +1822,7 @@ class vectorflow(object3d):
                 #newc.addattr('idx_y', idx_y)
                 #newc.addattr('idx_z', idx_z)
 
-                newc.addattr('width', width)
+                newc.addattr('width' , width)
                 newc.addattr('height', height)
 
                 ####
@@ -2056,7 +2193,7 @@ class vectorflow(object3d):
                             ptidx = 1
                             tmp_poly = [] 
                             
-                            print(coord)
+                            #print(coord)
 
                             for pt in coord:
                                 if type(pt[0])==float and type(pt[1])==float:

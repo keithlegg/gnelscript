@@ -144,7 +144,6 @@ def tesselator(path, outfilename):
     
     kip.make_grid(.3, path, 3, 3)
     o = object3d()
-
     
     divs = 6
     degs = 360/divs 
@@ -163,6 +162,8 @@ def tesselator(path, outfilename):
     ##-- 
     kip.export_grid_gfx(outfilename, path, borders=False, centroids=False)
     #kip.export_grid_gfx('gridgfx', path, borders=True, centroids=True)
+
+
 
 
 def sq_tesselator(size, path, grdivs, rotdivs, scpts):
