@@ -22,6 +22,7 @@ class object3d(polygon_operator):
 
         #self.geom_history = []
  
+        #DEBUG - I dont think I ever really implemented this 
         self.rot       = [0,0,0]
         self.pos       = [0,0,0]
         self.scale     = [1,1,1]

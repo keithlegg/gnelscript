@@ -516,10 +516,24 @@ def tesselate_json(folder, injson, outjson):
     vflo.load_geojson( '%s/%s'%(folder, injson) )
     
     #builds a DAG node for each centroid of all polys - (QUAD polys only)
-    #vflo.cvt_grsort_todag()
+    if False:
+        vflo.cvt_grsort_todag()
 
     #or build a grid of nodes 
-    vflo.tesl.build_2d_cells( 4, 4, scale=10)
+    if True:
+        vflo.tesl.minx = -1 
+        vflo.tesl.miny = -1 
+        vflo.tesl.maxx = 1 
+        vflo.tesl.maxy = 1 
+        vflo.tesl.build_2d_cells( 10, 10, scale=1)
+    
+    if False:
+        ## example of how to add a single cell    
+        ## DEBUG - add a function to do this and procederally set the attrs from data passed in 
+        vflo.tesl.new_cell_2d('bob', 
+                              2, 2,
+                              0, 0, 0, 
+                              0, 0, 0)
 
     #procedurally build some basic geom in the cells     
     #vflo.build_tesselation_sample()
@@ -530,7 +544,7 @@ def tesselate_json(folder, injson, outjson):
 
     vflo.cvt_tessl_grsort()
 
-    #vflo.export_geojson_lines(  folder, outjson)
+    vflo.export_geojson_lines(  folder, outjson)
     vflo.export_geojson_polygon(  folder, outjson)
 
 

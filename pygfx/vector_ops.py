@@ -685,7 +685,7 @@ class vectorflow(object3d):
 
         print('# generating sample data from tesselator nodes')
         if len(self.tesl.nodes)==0:
-            print('# error - no nodes in tesselator: exiting')
+            print('\n# error - no nodes in tesselator: exiting\n')
             return None 
 
         for cell in self.tesl.nodes:
@@ -724,10 +724,13 @@ class vectorflow(object3d):
 
         print('# generating sample data from tesselator nodes')
         if len(self.tesl.nodes)==0:
-            print('# error - no nodes in tesselator: exiting')
+            print('\n# error - no nodes in tesselator: exiting\n')
             return None 
 
         for cell in self.tesl.nodes:
+            
+            #print(cell.getattrib('e1mid'))
+
             e1m = cell.getattrib('e1mid')[0]
             e2m = cell.getattrib('e2mid')[0]
             e3m = cell.getattrib('e3mid')[0]
@@ -740,23 +743,36 @@ class vectorflow(object3d):
             #print('################')
             #print(cell_width)
             #print(cell_width)
-
+            
             #BBOX center - not quite accurate, use the projected center below
-            #cen = cell.getattrib('centroid') 
-            tmp = vec2() 
-            cen = tmp.intersect_2d_from_3D([e1m,e3m], [e2m,e4m])
+            cen = cell.getattrib('centroid') 
+            #print('##########', cen, e1m,e2m,e3m,e4m)
+            
+            #DEBUG - THIS IS BROKEN 
+            # tmp = vec2() 
+            # try:
+            #     cen = tmp.intersect_2d_from_3D([e1m,e3m], [e2m,e4m])
+            # except: 
+            #     print('\n## WARNING - build_tesselation_test2 , intersection failed... bad edge attrs in cell?')
+            #     print('## EDGES ARE ',e1m,e2m,e3m,e4m)
+
 
             ########################################
 
             # #copy rotate == tesselate 
-            pts = [(-.1,.7,0), (.1,.7,0), (.1,-.7,0), (-.1,-.7,0)]
-            #cell.points.extend( pts )
+            pts = [(-.1,.3,0), (.1,.3,0), (.3,1,0), (.3,1,0), (.1,-.3,0), (-.1,-.3,0)]
+            o = object3d() 
+            pts = o.scale_pts(.2, pts)
 
-            # #newpts = self.pop3d.copy_rotate( points=pts,  pos=[cen[0],cen[1],0], num=10, axis='z')
-            newpts = self.pop3d.copy_rotate( points=pts,  pos=[cen[0],cen[1],0], num=3, axis='z')
-            print(newpts)
-
-            cell.points.extend( newpts )
+            #leave these for testing - add only these points            
+            if True:
+                cell.points.extend( [pts] )
+            
+            #leave these for testing    
+            if False:
+                newpts = self.pop3d.copy_rotate( points=pts,  pos=[cen[0],cen[1],0], num=4, axis='z')
+                for poly in newpts:
+                    cell.points.append( poly )
             
 
 
@@ -779,6 +795,13 @@ class vectorflow(object3d):
             
 
             #cell.points = ( [e1m, e2m, e3m, e4m] ) 
+    ##-------------------------------##
+    
+    #IT WOULD BE NOICE TO SEE WHAT THE DATA LOOKS LIKE FOR DEBUGGING 
+    # def shape(self, inp):
+    #     for x in inp:
+    #         print(type(x))
+
 
     ##-------------------------------##
     def get_cells_pts(self):
@@ -790,7 +813,10 @@ class vectorflow(object3d):
         for i,cell in enumerate(self.tesl.nodes):
             #cen = cell.getattrib('centroid')
             if cell.points:
-                out.append(self.cvt_2d_to_3d(cell.points))
+                
+                #self.shape(cell.points)
+                for ply in cell.points:
+                    out.append(self.cvt_2d_to_3d(ply))
         
         return out 
 
@@ -804,9 +830,10 @@ class vectorflow(object3d):
         cells = self.get_cells_pts()
         
         for cell in cells:
+            #print(cell)
+
             self.gr_polys.append(cell)
 
-        
         self._sort()
  
 

@@ -117,7 +117,8 @@ class tessellator(data_graph):
     def new_cell_2d(self, name, 
                           width, height,
                           idx_x, idx_y, idx_z, 
-                          coordx, coordy, coordz):
+                          coordx, coordy, coordz,
+                          attrs=None):
 
         c = cell(name,
                  width, height,
@@ -126,15 +127,27 @@ class tessellator(data_graph):
 
         c.set_position([coordx, coordy, coordz])
         #c.set_rotation ([, , ])
-
         c.addattr('centroid', [coordx,coordy])
-
         c.addattr('idx_x', idx_x)
         c.addattr('idx_y', idx_y)
         c.addattr('idx_z', idx_z)
-
         c.addattr('width', width)
         c.addattr('height', height)
+    
+        ##calc the edges (midpoints of edges) for a sqaure polygon 
+        o = object3d() 
+        o.prim_rect(pos=(coordx,coordy,coordz), sizex=width, sizey=height)
+        s=o.points 
+         
+        ## DEBUG midpoints of opposing edges can also derive an angle per cell  
+        e1mid = o.locate_pt_along3d(s[0], s[1], 1)
+        e2mid = o.locate_pt_along3d(s[1], s[2], 1)
+        e3mid = o.locate_pt_along3d(s[2], s[3], 1)
+        e4mid = o.locate_pt_along3d(s[3], s[0], 1)
+        c.addattr('e1mid', e1mid)
+        c.addattr('e2mid', e2mid)
+        c.addattr('e3mid', e3mid)
+        c.addattr('e4mid', e4mid)
 
         self.add(c)
 
@@ -163,8 +176,9 @@ class tessellator(data_graph):
         spacing_x = res_x/numx 
         spacing_y = res_y/numy
 
-        print( "tesselation size: resx %s resy %s space x %s space y %s "% (res_x, res_y, spacing_x, spacing_y ) )
+        print( "\n\ntesselation size: resx %s resy %s space x %s space y %s "% (res_x, res_y, spacing_x, spacing_y ) )
 
+        ##---------------------
         for idx_x in range(self.x_squares):
             for idx_y in range(self.y_squares):
                 coordx = self.minx+spacing_x*idx_x

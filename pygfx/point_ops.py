@@ -200,7 +200,7 @@ class pop3d(object):
 
 
     ##-------------------------------------------##
-    def copy_rotate(self, points, pos=None, num=4, axis='y'):
+    def copy_rotate(self, points, pos=None, num=4, axis='y', onepoly=False):
         """DEBUG UNTESTED 
            for tesselating 
            take a group of points - duplicate them, apply a rotation and repeat 
@@ -210,9 +210,7 @@ class pop3d(object):
         out = [] 
 
         tmp =[] 
-        
-        num=num+1 
-        
+
         angle = 360/num 
 
         for i in range(num):
@@ -239,8 +237,10 @@ class pop3d(object):
                     y = pt[1] + pos[1]
                     z = pt[2] + pos[2]
                     tmp2.append( (x,y,z) )
-                out.extend(tmp2)
-
+                if onepoly:    
+                    out.extend(tmp2)
+                else:
+                    out.append(tmp2)                    
             
 
         return out 
