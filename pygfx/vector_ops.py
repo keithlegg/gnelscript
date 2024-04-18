@@ -720,7 +720,7 @@ class vectorflow(object3d):
 
 
     ##-------------------------------##
-    def build_tesselation_test2(self):
+    def build_tesselation_test2(self, numrots, seedpts):
 
         print('# generating sample data from tesselator nodes')
         if len(self.tesl.nodes)==0:
@@ -740,10 +740,6 @@ class vectorflow(object3d):
             cell_height = cell.getattrib('height')
        
             
-            #print('################')
-            #print(cell_width)
-            #print(cell_width)
-            
             #BBOX center - not quite accurate, use the projected center below
             cen = cell.getattrib('centroid') 
             #print('##########', cen, e1m,e2m,e3m,e4m)
@@ -760,17 +756,17 @@ class vectorflow(object3d):
             ########################################
 
             # #copy rotate == tesselate 
-            pts = [(-.1,.3,0), (.1,.3,0), (.3,1,0), (.3,1,0), (.1,-.3,0), (-.1,-.3,0)]
+            #pts = [(-.1,.3,0), (.1,.3,0), (.3,1,0), (.1,-.3,0), (-.1,-.3,0)]
             o = object3d() 
-            pts = o.scale_pts(.2, pts)
+            pts = o.scale_pts([.1,.2,-.1], seedpts)
 
             #leave these for testing - add only these points            
-            if True:
+            if False:
                 cell.points.extend( [pts] )
             
             #leave these for testing    
-            if False:
-                newpts = self.pop3d.copy_rotate( points=pts,  pos=[cen[0],cen[1],0], num=4, axis='z')
+            if True:
+                newpts = self.pop3d.copy_rotate( points=pts,  pos=[cen[0],cen[1],0], num=numrots, axis='z')
                 for poly in newpts:
                     cell.points.append( poly )
             
@@ -1684,6 +1680,18 @@ class vectorflow(object3d):
         def _export_shply_poly(self):
             pass
 
+    def shapely_buffer(self, geom, dist):
+
+        buf = buffer(geom, dist)
+
+        xpts, ypts = buf.exterior.coords.xy
+        xlst = xpts.tolist()
+        ylst = ypts.tolist()
+        
+        pts =[]
+        for i in range(len(xlst)):
+            pts.append( (xlst[i], ylst[i]) )
+        return pts 
 
 
     def export_geojson_lines(self, folder, name, periodic=False):
@@ -2063,7 +2071,29 @@ class vectorflow(object3d):
             self.gr_polys.append(polygon)
         
         self._sort()
- 
+
+    ##-------------------------------##  
+    def cvt_grsort_gjson(self):
+        features = []
+        for i,s in enumerate(self.gr_sort):
+            features.append(gjftr(geometry=gjply([s[4]]), 
+                                 properties={"id" : i 
+                                            }
+                                 ) 
+                         )
+
+        return gjfc(features)
+
+
+    ##-------------------------------## 
+    def cvt_grsort_shapely(self):
+        #               [[id, centroid, extents, len, points ]]  
+        geom = [] 
+        for poly in self.gr_sort:
+            geom.append( shp_ply(self.cvt_3d_to_2d(poly[4])) )
+        
+        return geom
+
     ##-------------------------------##
     def cvt_grpoly_3dobj(self, index=None):
         """DEBUG - sort of works but only with one polygon  """
@@ -2082,7 +2112,8 @@ class vectorflow(object3d):
             
         self.points = points 
         self.polygons.append(pids) 
-        
+    
+    ##-------------------------------##         
     def cvt_grpoly_obj3d(self, objtype='singlepoly'):
         """ 
             DEBUG - all these functions seem wonkey at best... 

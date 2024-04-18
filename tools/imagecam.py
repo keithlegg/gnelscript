@@ -505,18 +505,40 @@ def redraw(  infolder, colorbg_file, lineweight, bluramt, brightamt, blacklines=
 ##----------------------------------------------------
 
 
+def pcb_to_tesselated(path, inpcb):
+    pcb = pcbfile()
+    vflo = vectorflow()
 
 
-def tesselate_json(folder, injson, outjson):
+    # zval, path, infname):
+    pcb.load_kicadpcb(0, path, inpcb)
+    o = object3d() 
+
+    pts = o.scale_pts(.05, pts=pcb.gr_polys[0])
+    
+    vflo.gr_polys = [pts] 
+    vflo._sort() 
+    vflo.gl_move_center()
+    
+    seed = vflo.gr_sort[0][4]
+    #(scale, numx, numy, numrots, seedpts, folder, injson, outjson):
+    tesselate_json(4, 10, 10, 3, seed, path, 'warped.json', 'tesslated.json')
+
+    #vflo.export_geojson_polygon(path, 'kicad')
+
+
+##----------------------------------
+
+def tesselate_json(scale, numx, numy, numrots, seedpts, folder, injson, outjson):
     """scan 2D polygons, look for 4 sided only, bisect the edges  
     """
     do_export = False  
 
     vflo = vectorflow()
-    vflo.load_geojson( '%s/%s'%(folder, injson) )
-    
+
     #builds a DAG node for each centroid of all polys - (QUAD polys only)
     if False:
+        vflo.load_geojson( '%s/%s'%(folder, injson) )
         vflo.cvt_grsort_todag()
 
     #or build a grid of nodes 
@@ -525,7 +547,7 @@ def tesselate_json(folder, injson, outjson):
         vflo.tesl.miny = -1 
         vflo.tesl.maxx = 1 
         vflo.tesl.maxy = 1 
-        vflo.tesl.build_2d_cells( 10, 10, scale=1)
+        vflo.tesl.build_2d_cells( numx, numy, scale=scale)
     
     if False:
         ## example of how to add a single cell    
@@ -537,12 +559,40 @@ def tesselate_json(folder, injson, outjson):
 
     #procedurally build some basic geom in the cells     
     #vflo.build_tesselation_sample()
-    vflo.build_tesselation_test2()
+
+    #pts = [(-.1,.3,0), (.3,1,0), (.1,-.3,0), (-.1,-.3,0)]
+    vflo.build_tesselation_test2(numrots, seedpts)
 
     vflo.gr_polys = [] 
     vflo.gr_sort = [] 
 
     vflo.cvt_tessl_grsort()
+
+    #flatten the polygons into some bad topology 
+    points=[]
+    for ply in vflo.gr_sort:
+        points.extend(ply[4])
+    
+    ####
+
+    v2 = vectorflow()
+    v2.gr_polys.append(points)
+    v2._sort()
+    fc = v2.cvt_grsort_shapely()
+
+    bply = v2.shapely_buffer(fc[0],0)
+    
+    print(bply)
+
+    v2.gr_polys=[]
+    v2.gr_sort=[]
+    v2.gr_polys.append(v2.cvt_2d_to_3d(bply))
+    v2._sort()
+    
+    v2.export_geojson_lines(  folder, 'fixed')
+    v2.export_geojson_polygon(  folder, 'fixed')
+
+
 
     vflo.export_geojson_lines(  folder, outjson)
     vflo.export_geojson_polygon(  folder, outjson)

@@ -1,6 +1,10 @@
 import re 
 
 
+#from gnelscript.pygfx.obj3d import *
+
+
+
 
 class pcbfile():
     """ 
@@ -45,9 +49,9 @@ class pcbfile():
         self.gr_polys      = []  #list of list of points 
         self.modules       = []  #list of list of [name, [(),()] ] 
 
-        self.gr_polygon_buffer   = [] # buffer to dump into array of arrays (gr)
-        self.fill_polygon_buffer = [] # buffer to dump into array of arrays (filled_polys)
-        self.polygon_buffer      = [] # buffer to dump into array of arrays (modules)
+        #self.gr_polygon_buffer   = [] # buffer to dump into array of arrays (gr)
+        #self.fill_polygon_buffer = [] # buffer to dump into array of arrays (filled_polys)
+        #self.polygon_buffer      = [] # buffer to dump into array of arrays (modules)
 
         self.segment_buffer = [] # buffer to dump into array of arrays (line_segments)
         self.module_buffer  = [] # buffer to dump into array of arrays (modules)

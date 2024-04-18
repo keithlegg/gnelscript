@@ -497,7 +497,7 @@ class polygon_operator(pop3d):
         ptsz = []
         
         if len(pts[0])==2:
-            print('# centroid: error data appears to not be 3d')
+            print('\n\n# centroid: error data appears to not be 3d\n')
             return None 
             
         if pts is not None:

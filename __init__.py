@@ -1,5 +1,5 @@
 
-GLOBAL_PROJ ='/Users/klegg/serv/gnolmec'
+#GLOBAL_PROJ ='PATH_TO_WORK_FOLDER'
 
 
 
