@@ -580,22 +580,23 @@ def tesselate_json(scale, numx, numy, numrots, seedpts, folder, injson, outjson)
     v2._sort()
     fc = v2.cvt_grsort_shapely()
 
+    #buffer with 0 distance can "repair" topology
     bply = v2.shapely_buffer(fc[0],0)
-    
-    print(bply)
 
     v2.gr_polys=[]
     v2.gr_sort=[]
     v2.gr_polys.append(v2.cvt_2d_to_3d(bply))
     v2._sort()
-    
-    v2.export_geojson_lines(  folder, 'fixed')
-    v2.export_geojson_polygon(  folder, 'fixed')
 
+    #buffered (fixed) geom    
+    if True:
+        v2.export_geojson_lines(  folder, 'fixed')
+        v2.export_geojson_polygon(  folder, 'fixed')
 
-
-    vflo.export_geojson_lines(  folder, outjson)
-    vflo.export_geojson_polygon(  folder, outjson)
+    #original broken geom
+    if False:
+       vflo.export_geojson_lines(  folder, outjson)
+       vflo.export_geojson_polygon(  folder, outjson)
 
 
     """

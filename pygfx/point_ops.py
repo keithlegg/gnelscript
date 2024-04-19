@@ -374,7 +374,15 @@ class pop3d(object):
         """ 
             batch mutliply points by a matrix 
         """
-  
+
+        if NUMPY_IS_LOADED:
+            if type(m33)==np.ndarray:
+                tmp=matrix33()
+                m33=tmp.from_np(m33,order='rm') 
+            if type(m44)==np.ndarray:
+                tmp=matrix44()
+                m44=tmp.from_np(m44,order='rm')  
+
         tmp_buffer = [] 
 
         # apply the transform here
