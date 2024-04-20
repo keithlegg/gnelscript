@@ -926,7 +926,7 @@ class pop3d(object):
         return tmp_pts
 
     ##-------------------------------------------##
-    def calc_circle(self, pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23):
+    def calc_circle(self, pos=(0,0,0), rot=(0,0,0), dia=1, axis='z', periodic=True, spokes=23, start=0, end=360):
         """ spokes = num spokes 
             
             point generators build raw points, not renderable geometry    
@@ -948,18 +948,19 @@ class pop3d(object):
         dtr = self.mu.dtr
 
         for i in range(spokes):
-            if axis=='x':
-                py = oy + (math.sin(dtr(dit))*dia) 
-                pz = oz + (math.cos(dtr(dit))*dia) 
-                out.append( (px, py, pz))
-            if axis=='y':
-                px = ox + (math.sin(dtr(dit))*dia) 
-                pz = oz + (math.cos(dtr(dit))*dia) 
-                out.append( (px, py, pz))
-            if axis=='z':
-                px = ox + (math.sin(dtr(dit))*dia) 
-                py = oy + (math.cos(dtr(dit))*dia) 
-                out.append( (px, py, pz))                
+            if dit>=start and dit<=end:
+                if axis=='x':
+                    py = oy + (math.sin(dtr(dit))*dia) 
+                    pz = oz + (math.cos(dtr(dit))*dia) 
+                    out.append( (px, py, pz))
+                if axis=='y':
+                    px = ox + (math.sin(dtr(dit))*dia) 
+                    pz = oz + (math.cos(dtr(dit))*dia) 
+                    out.append( (px, py, pz))
+                if axis=='z':
+                    px = ox + (math.sin(dtr(dit))*dia) 
+                    py = oy + (math.cos(dtr(dit))*dia) 
+                    out.append( (px, py, pz))                
             dit+=degs
         
         #out = self.xform_pts( pos, out) 

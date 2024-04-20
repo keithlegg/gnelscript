@@ -573,6 +573,88 @@ def tesselate_json(scale, numx, numy, numrots, seedpts, folder, injson, outjson)
     for ply in vflo.gr_sort:
         points.extend(ply[4])
     
+
+    ##
+    #convert geom to shapely so we can run buffer on it 
+    v2 = vectorflow()
+    v2.gr_polys.append(points)
+    v2._sort()
+    fc = v2.cvt_grsort_shapely()
+
+    #buffer with 0 distance can "repair" topology
+    bply = v2.shapely_buffer(fc[0],0)
+
+    #clear any existing geom 
+    v2.gr_polys=[]
+    v2.gr_sort=[]
+
+    v2.gr_polys.append(v2.cvt_2d_to_3d(bply))
+    v2._sort()
+    
+
+    #build 3D geom from the points
+    if True:
+        v2.cvt_grpoly_obj3d()
+        v2.vec_connect_pts(pts=v2.cvt_2d_to_3d(bply), axis='x', draw_obj='rect_2d')
+        #v2.vec_connect_pts(pts=v2.cvt_2d_to_3d(bply), axis='z', draw_obj='arrow')
+
+    #buffered (fixed) geom    
+    if True:
+        v2.export_geojson_lines(  folder, 'fixed')
+        v2.export_geojson_polygon(  folder, 'fixed')
+
+    #original broken geom
+    if False:
+       vflo.export_geojson_lines(  folder, outjson)
+       vflo.export_geojson_polygon(  folder, outjson)
+
+
+
+##----------------------------------------------------
+def tesselation_examples(scale, numx, numy, numrots, seedpts, folder, injson, outjson):
+    """scan 2D polygons, look for 4 sided only, bisect the edges  
+    """
+    do_export = False  
+
+    vflo = vectorflow()
+
+    #builds a DAG node for each centroid of all polys - (QUAD polys only)
+    if False:
+        vflo.load_geojson( '%s/%s'%(folder, injson) )
+        vflo.cvt_grsort_todag()
+
+    #or build a grid of nodes 
+    if True:
+        vflo.tesl.minx = -1 
+        vflo.tesl.miny = -1 
+        vflo.tesl.maxx = 1 
+        vflo.tesl.maxy = 1 
+        vflo.tesl.build_2d_cells( numx, numy, scale=scale)
+    
+    if False:
+        ## example of how to add a single cell    
+        ## DEBUG - add a function to do this and procederally set the attrs from data passed in 
+        vflo.tesl.new_cell_2d('bob', 
+                              2, 2,
+                              0, 0, 0, 
+                              0, 0, 0)
+
+    #procedurally build some basic geom in the cells     
+    #vflo.build_tesselation_sample()
+
+    #pts = [(-.1,.3,0), (.3,1,0), (.1,-.3,0), (-.1,-.3,0)]
+    vflo.build_tesselation_test2(numrots, seedpts)
+
+    vflo.gr_polys = [] 
+    vflo.gr_sort = [] 
+
+    vflo.cvt_tessl_grsort()
+
+    #flatten the polygons into some bad topology 
+    points=[]
+    for ply in vflo.gr_sort:
+        points.extend(ply[4])
+    
     ####
 
     v2 = vectorflow()
@@ -598,20 +680,6 @@ def tesselate_json(scale, numx, numy, numrots, seedpts, folder, injson, outjson)
        vflo.export_geojson_lines(  folder, outjson)
        vflo.export_geojson_polygon(  folder, outjson)
 
-
-    """
-    pts = vflo.get_cells_pts() 
-    #print(vflo.get_all_cell_as_pts() )
-    vf2 = vectorflow()
-    vf2.gr_polys.extend(pts)
-    vf2._sort()
-    
-    if do_export:
-        vf2.export_geojson_polygon(folder, outjson)
-        vf2.export_geojson_lines(  folder, outjson)
-
-        #vflo.export_ngc(1, 0, .1, 2, '%s/%s.ngc'%(folder, outjson), do_laser=False, do3d=False, do_retracts=False, do_gpio=0)  
-    """
 
 ##----------------------------------------------------
 

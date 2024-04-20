@@ -495,13 +495,14 @@ class object3d(polygon_operator):
 
 
     ##------------------------------------- 
-    def vec_connect_pts(self, pts, draw_obj='arrow'):
+    def vec_connect_pts(self, pts, draw_obj='arrow', axis='z', width=.1):
         """
+            build geometery from points - 
+
             connect a series of points with arrows  
+
         """
         NODES_ON = True 
-
-        wire_thick = 0.01
 
         import trimesh 
         vop = vec3() 
@@ -520,7 +521,7 @@ class object3d(polygon_operator):
         if NODES_ON:
             # Create balls at each pt
             for point in pts:
-                ball = trimesh.primitives.Sphere(radius=wire_thick*2, subdivisions=1)
+                ball = trimesh.primitives.Sphere(radius=width*2, subdivisions=1)
                 ball.apply_translation(point) 
                 ball.collide = False
                 ballz.append(ball)
@@ -530,32 +531,35 @@ class object3d(polygon_operator):
 
         for index, point in enumerate(pts):
             if index==0: 
-                ball = trimesh.primitives.Sphere(radius=wire_thick*5, subdivisions=1)
+                ball = trimesh.primitives.Sphere(radius=width*5, subdivisions=1)
                 ball.apply_translation(point) 
 
             if index < len(pts)-1:
-                current_cylinder = point
-                next_cylinder = pts[index + 1]
+                current_pt = point
+                next_pt = pts[index + 1]
 
-                Angle = vop.np_angle_between(current_cylinder, next_cylinder)
-                Direction = current_cylinder - next_cylinder
+                angle = vop.np_angle_between(current_pt, next_pt)
+                direction = current_pt - next_pt
                 
-                #print("direction", Direction)
-                #print("angle ", Angle)
+                rotation_matrix = trimesh.geometry.align_vectors([0, 0, 1], direction, return_angle=False)
 
-                rotation_matrix = trimesh.geometry.align_vectors([0, 0, 1], Direction, return_angle=False)
+                distance = vop.np_dist_between(current_pt, next_pt)
 
-                distance = vop.np_dist_between(current_cylinder, next_cylinder)
-                
+                if False: 
+                    print('######')
+                    print("direction ", direction)
+                    print("angle     ", angle)
+                    print("distance  ", distance)
+
                 if draw_obj=='arrow': 
-                    o.prim_arrow(axis='z', pos=point, mat44=-rotation_matrix)
+                    o.prim_arrow(axis=axis, pos=point, mat44=-rotation_matrix)
                 elif draw_obj=='rect_2d':
-                    o.prim_rect2d(axis='y', sizex=.1, sizey=1, sizez=.1, pos=point, m44=-rotation_matrix)
+                    o.prim_rect2d(axis=axis, sizex=1, sizey=width, sizez=distance, pos=point, m44=-rotation_matrix)
+                    #o.prim_rect2d(axis='x', sizex=1, sizey=width, sizez=distance, pos=point, m44=-rotation_matrix)
 
-
-                beam = trimesh.primitives.Cylinder(radius=wire_thick, height=distance, transform=rotation_matrix, sections=4, mutable=True)
+                beam = trimesh.primitives.Cylinder(radius=width, height=distance, transform=rotation_matrix, sections=4, mutable=True)
                 
-                beam.apply_translation(current_cylinder - Direction*0.5)
+                beam.apply_translation(current_pt - direction*0.5)
                 beams.append(beam)
 
         o.save('vektor.obj')
@@ -1093,16 +1097,17 @@ class object3d(polygon_operator):
 
     ##----------------------------------------------## 
     def prim_rect2d(self, axis='y', pos=(0,0,0), sizex=1, sizey=1, sizez=1, periodic=False, m44=None):
-        """this is like prim_rect - but with a mtrix for transform  
-           single polygon operations (that can be stacked together ?) 
+        """this is like prim_rect - but with a mtrix for transform 
+           used for connecting points  
         """
     
         tmp = object3d() 
 
+
         if axis == 'x':
-            pts = [(0,-sizey,-sizez), (0,-sizey,sizez), (0,sizey,sizez), (0,sizey,-sizez) ] #X AXIS
+            pts = [(0,-sizey,0), (0,-sizey,sizez), (0,sizey,sizez), (0,sizey,0) ] #X AXIS
         if axis == 'y':
-            pts = [(-sizex,0,-sizez), (-sizex,0,sizez), (sizex,0,sizez), (sizex,0,-sizez) ] #Y AXIS
+            pts = [(-sizex,0,0), (-sizex,0,sizez), (sizex,0,sizez), (sizex,0,0) ] #Y AXIS
         if axis == 'z':
             pts = [(-sizex,-sizey,0), (-sizex,sizey,0), (sizex,sizey,0), (sizex,-sizey,0) ] #Z AXIS
 
@@ -1110,23 +1115,11 @@ class object3d(polygon_operator):
             poly    = [(1,2,3,4,1)]
         else:    
             poly    = [(1,2,3,4)]
-       
 
-        # #experiment - seems close to working DEBUG 
-        #if mat44 is not None: 
-        #    tmp*mat44 
-
-        print(type(m44))
-        
         rpts = self.apply_matrix_pts(pts, m44=m44)
         pts = self.xform_pts( pos, rpts )
 
         tmp.insert_polygons(poly, pts)
-
-
-
-
-
         self.insert(tmp) 
 
 

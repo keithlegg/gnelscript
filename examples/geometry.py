@@ -11,7 +11,86 @@ from gnelscript.pygfx.obj3d import  *
 
 """
 
+def lathe(path, name):
+    """ needs to have the same num U and V to work  
 
+        usage:
+            # simplest possible lathe example (must be square , num pts == num revolutions)
+            pts = [(.1,.1,0),(1,1,0),(2,2,0),(3,3,0)]
+            obj.lathe(pts, 4)
+
+
+            # using bezier curve function 
+            num = 23
+            start = (1 ,  0, 0)
+            ctrl1 = (.5,  0, 0)
+            ctrl2 = ( 0, .5, 0)
+            end   = (0 ,  1, 0)
+            curve = obj.cubic_bezier(num, start, ctrl1, ctrl2, end)
+            obj.lathe(curve, num)
+    
+    """ 
+    
+    obj = object3d()
+
+    #------ 
+
+    num = 10
+
+    start  = (2 ,  0, 0)
+    ctrl1  = (.5,  .5, 0)
+    ctrl2  = (3, .5, 0)
+    end    = (1 ,  1, 0)
+    curve1 = [  start, ctrl1, ctrl2, end ]
+
+    curvepts = obj.cubic_bezier(num, start, ctrl1, ctrl2, end )
+
+    start  = (1   ,  1   , 0)
+    ctrl1  = (2.5 ,  1.0   , 0)
+    ctrl2  = (1   ,  1.5 , 0)
+    end    = (2   ,  2   , 0)
+    curve2 = [ start, ctrl1, ctrl2, end ]
+  
+    tmp      = obj.cubic_bezier(num, start, ctrl1, ctrl2, end )
+   
+    curvepts.extend(tmp)
+
+    #obj.draw_splines( num, [curve1, curve2], drawctrls=True, drawhulls=True) 
+
+    #obj.lathe2(curvepts, num*2)
+    
+    obj.lathe(curvepts, num*2)
+
+    #for i in range(120):
+    #    obj.extrude_face(i, -.4)
+
+    #scal command kills COLOR - DOH !
+    #obj.scale_pts( (1,2,1) )
+
+    #------ 
+    
+    # num = 20
+    # #cross_section = obj.calc_circle(pos=(1,0,0), rot=(0,180,0), dia=.5, axis='z', periodic=True, spokes=num-1)
+    # cross_section = obj.calc_circle(pos=(1,0,0), dia=.5, axis='z', periodic=True, spokes=num-1)
+    # cross_section.reverse()
+    # obj.lathe(cross_section, num)
+
+
+    obj.save('%s/%s'%(path,name))
+
+##-------------------------------------------------------## 
+
+def matrix_extrusion():
+    #rotate a 3d object to a series of points to "extrude" a line
+
+    obj = object3d()
+
+    seedpts = obj.calc_circle(dia=3,spokes=10, start=0, end=180)
+    obj.points = seedpts 
+    obj.save('vec_connect.obj')
+
+    #obj.vec_connect_pts(pts=seedpts, draw_obj='rect_2d')
+    obj.vec_connect_pts(pts=seedpts, draw_obj='rect_2d', axis='x', width=.05)
 
 
 
