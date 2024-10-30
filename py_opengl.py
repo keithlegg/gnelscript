@@ -7,6 +7,7 @@ import sys
 
 ESCAPE = '\033'
 
+
 window = 0
 rtri = 0.0
 
