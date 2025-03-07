@@ -925,7 +925,7 @@ class object3d(polygon_operator):
         obj = self._icosahedron(pos=pos, radius=size, build_geom=True)
         
         #DEBUG NOT WORKING YET # 
-        obj._subdiv(size)
+        #obj._subdiv(size)
         
         self.insert(obj)
 
